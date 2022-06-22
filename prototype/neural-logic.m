@@ -4,6 +4,7 @@ BeginPackage["neurallogic`"]
 
 BinaryNN::usage = "Specifies a binary neural network.";
 Harden::usage = "Convert soft-bit to hard-bit.";
+Soften::usage = "Convert hard-bit to soft-bit.";
 
 (* Added for testing only *)
 NeuralMajority::usage = "Specifies a differentiable boolean majority function.";
@@ -17,9 +18,17 @@ BitLossBackward::usage = "";
 
 Begin["`Private`"]
 
+(* 
+  TODO:
+  - Harden the entire net to a boolean function
+  - Support loss function on multiple bit output ports
+  - bias term
+*)
 (* Boolean utilities *)
 
-Harden[softBit_] := If[softBit > 0.5, 1, 0];
+(* Soft-bits between -1 and +1 *)
+Harden[softBit_] := If[softBit > 0.0, 1, 0]
+Soften[hardBit_] := If[hardBit == 1, 1.0, -1.0]
 
 (* Differentiable boolean majority *)
 
@@ -29,7 +38,15 @@ NeuralMajorityForward[] := Function[
   },
   Block[
     {
-      (* TODO: replace Sort with more efficient median sort. *)
+      (* Currently using sort (probably compiles to QuickSort)
+        - average O(n log n)
+        - worst-case O(n^2)
+      *)
+      (* Replace with Floyd-Rivest algorithm:
+        - average n + \min(k, n - k) + O(\sqrt{n \log n}) comparisons with probability at least 1 - 2n^{-1/2}
+        - worst-case O(n^2)
+        See https://danlark.org/2020/11/11/miniselect-practical-and-generic-selection-algorithms/
+      *)
       s = Sort[MapIndexed[{#1, #2[[1]]*1.0} &, input]], 
       i = Ceiling[Length[input]/2.0]
     },
@@ -62,8 +79,7 @@ NeuralMajority[] := CompiledLayer[NeuralMajorityForward[], NeuralMajorityBackwar
 WeightedNeuralMajority[weights_List] := NetGraph[
   <|
     "Weights" -> NetArrayLayer["Array" -> weights, "Output" -> Length[weights]],
-    "WeightedBits" -> FunctionLayer[(1 - #Weights) + #Bits (2 #Weights - 1) &, 
-    "Output" -> Length[weights]],
+    "WeightedBits" -> FunctionLayer[Clip[#Weights #Bits, {-1, 1}] &, "Output" -> Length[weights]],
     "Majority" -> NeuralMajority[],
     "MajorityBit" -> PartLayer[1],
     "Reshape" -> ReshapeLayer[{1}]
@@ -77,7 +93,7 @@ WeightedNeuralMajority[weights_List] := NetGraph[
   }
 ]
 
-WeightedNeuralMajority[n_] := WeightedNeuralMajority[RandomReal[{0.45, 0.55}, n]]
+WeightedNeuralMajority[n_] := WeightedNeuralMajority[RandomReal[{-0.2, 0.2}, n]]
 
 (* Neural majority layer *)
 
@@ -106,7 +122,7 @@ BitLossForward[inputSize_, eps_] := Function[
       targetBits = Take[input, -inputSize]
     },
     Table[
-      If[(predictedBits[[n]] > (0.5 + eps) && targetBits[[n]] > 0.5) || (predictedBits[[n]] < (0.5 - eps) && targetBits[[n]] < 0.5),
+      If[(predictedBits[[n]] > (0.0 + eps) && targetBits[[n]] > 0.0) || (predictedBits[[n]] < (0.0 - eps) && targetBits[[n]] < 0.0),
         0.0,
         (predictedBits[[n]] - targetBits[[n]])^2
       ], 
@@ -127,7 +143,7 @@ BitLossBackward[inputSize_, eps_] := Function[
     },
     Table[
       If[n <= inputSize,
-        If[(predictedBits[[n]] > (0.5 + eps) && targetBits[[n]] > 0.5) || (predictedBits[[n]] < (0.5 - eps) && targetBits[[n]] < 0.5),
+        If[(predictedBits[[n]] > (0.0 + eps) && targetBits[[n]] > 0.0) || (predictedBits[[n]] < (0.0 - eps) && targetBits[[n]] < 0.0),
           0.0,
           2 (predictedBits[[n]] - targetBits[[n]])
         ],
@@ -138,7 +154,11 @@ BitLossBackward[inputSize_, eps_] := Function[
   ]
 ]
 
-BitLoss[inputSize_] := With[{eps = 0.45}, 
+(* 
+  Small margin (e.g. 0.01) accelerates learning although trajectory is noisier. 
+  Large margin (e.g. 1.0) slows learning but trajectory is more smooth.
+*)
+BitLoss[inputSize_] := With[{eps = 1.0}, 
   CompiledLayer[
     BitLossForward[inputSize, eps], 
     BitLossBackward[inputSize, eps], 
