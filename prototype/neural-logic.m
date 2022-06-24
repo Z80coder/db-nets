@@ -1,36 +1,53 @@
 (* ::Package:: *)
 
-BeginPackage["neurallogic`"]
-
-BinaryNN::usage = "Specifies a binary neural network.";
-Harden::usage = "Convert soft-bit to hard-bit.";
-Soften::usage = "Convert hard-bit to soft-bit.";
-
-(* Added for testing only *)
-NeuralMajority::usage = "Specifies a differentiable boolean majority function.";
-WeightedNeuralMajority::usage = "Specifies a differentiable weighted boolean majority function.";
-NeuralMajorityLayer::usage = "Specifies a neural majority layer.";
-BitLoss::usage = "Specifies a bit loss function.";
-NeuralMajorityForward::usage = "";
-NeuralMajorityBackward::usage = "";
-BitLossForward::usage = "";
-BitLossBackward::usage = "";
-
-Begin["`Private`"]
-
 (* 
   TODO:
   - Harden the entire net to a boolean function
   - Support loss function on multiple bit output ports
   - bias term
 *)
+
+(* ------------------------------------------------------------------ *)
+BeginPackage["neurallogic`"]
+(* ------------------------------------------------------------------ *)
+
+BinaryNN::usage = "Specifies a binary neural network and returns a {soft, hard} binary neural network pair.";
+AppendLoss::usage = "Appends a loss function to a (soft) binary neural network.";
+Harden::usage = "Convert soft-bit to hard-bit.";
+Soften::usage = "Convert hard-bit to soft-bit.";
+HardBinaryNN::usage = "Constructs a hard binary neural network from a trained soft binary neural network.";
+ExtractWeights::usage = "Extract the weights from a soft neural network.";
+
+(* Added for testing only *)
+NeuralMajority::usage = "Specifies a differentiable boolean majority function.";
+WeightedNeuralMajority::usage = "Specifies a differentiable weighted boolean majority function.";
+NeuralMajorityLayer::usage = "Specifies a neural majority layer.";
+BooleanMajorityLayer::usage = "Specifies a boolean majority layer.";
+BooleanNetChain::usage = "Specifies a boolean neural network chain.";
+BitLoss::usage = "Specifies a bit loss function.";
+NeuralMajorityForward::usage = "Forward pass of a neural majority layer.";
+NeuralMajorityBackward::usage = "Backward pass of a neural majority layer.";
+BitLossForward::usage = "Forward pass of a bit loss function.";
+BitLossBackward::usage = "Backward pass of a bit loss function.";
+
+(* ------------------------------------------------------------------ *)
+Begin["`Private`"]
+(* ------------------------------------------------------------------ *)
+
+(* ------------------------------------------------------------------ *)
 (* Boolean utilities *)
+(* ------------------------------------------------------------------ *)
 
 (* Soft-bits between -1 and +1 *)
-Harden[softBit_] := If[softBit > 0.0, 1, 0]
+Harden[softBit_] := If[softBit > 0.0, True, False]
+Harden[softBit_List] := Map[Harden, softBit]
+
+(* Hard-bits between 0 and 1 *)
 Soften[hardBit_] := If[hardBit == 1, 1.0, -1.0]
 
+(* ------------------------------------------------------------------ *)
 (* Differentiable boolean majority *)
+(* ------------------------------------------------------------------ *)
 
 NeuralMajorityForward[] := Function[
   {
@@ -48,7 +65,7 @@ NeuralMajorityForward[] := Function[
         See https://danlark.org/2020/11/11/miniselect-practical-and-generic-selection-algorithms/
       *)
       s = Sort[MapIndexed[{#1, #2[[1]]*1.0} &, input]], 
-      i = Ceiling[Length[input]/2.0]
+      i = Floor[Ceiling[Length[input]/2.0]]
     },
     {First[s[[i]]], Last[s[[i]]]}
   ]
@@ -74,7 +91,9 @@ NeuralMajorityBackward[] := Function[
 
 NeuralMajority[] := CompiledLayer[NeuralMajorityForward[], NeuralMajorityBackward[]]
 
+(* ------------------------------------------------------------------ *)
 (* Differentiable weighted boolean majority *)
+(* ------------------------------------------------------------------ *)
 
 WeightedNeuralMajority[weights_List] := NetGraph[
   <|
@@ -95,23 +114,51 @@ WeightedNeuralMajority[weights_List] := NetGraph[
 
 WeightedNeuralMajority[n_] := WeightedNeuralMajority[RandomReal[{-0.2, 0.2}, n]]
 
-(* Neural majority layer *)
+(* ------------------------------------------------------------------ *)
+(* Majority layer *)
+(* ------------------------------------------------------------------ *)
 
 NeuralMajorityLayer[inputSize_, layerSize_] := NetGraph[
-  Association[
-    Map[
-      "majority" <> ToString[#] -> WeightedNeuralMajority[inputSize] &, 
-      Range[layerSize]
+    Association[
+      Map[
+        "majority" <> ToString[#] -> WeightedNeuralMajority[inputSize] &, 
+        Range[layerSize]
+      ],
+      "catenate" -> CatenateLayer[]
     ],
-    "catenate" -> CatenateLayer[]
-  ],
-  Map[
-    "majority" <> ToString[#] -> "catenate" &,
-    Range[layerSize]
+    Map[
+      "majority" <> ToString[#] -> "catenate" &,
+      Range[layerSize]
+    ]
   ]
+
+BooleanMajorityLayer[input_, weights_] := Map[Inner[Xnor, input, #, Majority] &, weights]
+
+BooleanNetChain[spec_List] := Function[{input, weights},
+  Block[{activations = input},
+    Scan[
+      Block[{layerWeights = #},
+        activations = BooleanMajorityLayer[activations, layerWeights];
+      ] &,
+      weights
+    ];
+    activations
+  ]
+] 
+
+(* ------------------------------------------------------------------ *)
+(* Specify binary neural networks *)
+(* ------------------------------------------------------------------ *)
+
+BinaryNN[spec_List] := Module[{softNet, hardNet},
+  softNet = NetChain[NeuralMajorityLayer @@ # & /@ spec];
+  hardNet = BooleanNetChain[spec];
+  {softNet, hardNet}
 ]
 
+(* ------------------------------------------------------------------ *)
 (* Bit loss *)
+(* ------------------------------------------------------------------ *)
 
 (* First half of input is the prediction, and the second half of the input is the target *)
 BitLossForward[inputSize_, eps_] := Function[
@@ -167,9 +214,11 @@ BitLoss[inputSize_] := With[{eps = 1.0},
   ]
 ]
 
-(* Differentiable binary neural network *)
+(* ------------------------------------------------------------------ *)
+(* Trainable (soft) binary neural network *)
+(* ------------------------------------------------------------------ *)
 
-BinaryNN[net_] := Block[{netOutputSize = NetExtract[net, "Output"]},
+AppendLoss[net_] := Block[{netOutputSize = NetExtract[net, "Output"]},
   NetGraph[
     <|
       "MajorityNet" -> net,
@@ -185,6 +234,28 @@ BinaryNN[net_] := Block[{netOutputSize = NetExtract[net, "Output"]},
       "loss" -> NetPort["Loss"]
     }
   ]
+]
+
+(* ------------------------------------------------------------------ *)
+(* Network hardening *)
+(* ------------------------------------------------------------------ *)
+
+ExtractWeights[net_] := Module[{layers, layerSizes, majorityNames, majorityNeuronLayers},
+  layers = NetExtract[net, All];
+  layerSizes = Information[#, "ArraysCount"] & /@ layers;
+  majorityNames = Map[Map[{"majority" <> ToString[#]} &, Range[#]] &, layerSizes];
+  majorityNeuronLayers = MapThread[NetExtract, {layers, majorityNames}];
+  Map[
+    Map[Normal[NetExtract[NetExtract[#, "Weights"], "Arrays"]["Array"]] &, #] &,
+    majorityNeuronLayers
+  ]
+]
+
+HardBinaryNN[hardNet_, trainedSoftNet_] := Module[{hardenedWeights, inputSize},
+  hardenedWeights = Harden[ExtractWeights[trainedSoftNet]];
+  inputSize = Length[First[First[hardenedWeights]]];
+  inputSymbols = Map[Symbol["x" <> ToString[#]] &, Range[inputSize]];
+  Function[Evaluate[inputSymbols], Evaluate[hardNet[inputSymbols, hardenedWeights]]]
 ]
 
 End[]
