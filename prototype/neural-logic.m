@@ -62,9 +62,11 @@ NeuralNOTLayer[weights_List] := NetGraph[
       MapThread[#1 #2 &, {#Input, #Weights}] &, 
       "Input" -> Length[weights]
     ]
+    (*"NonLin" -> ElementwiseLayer["HardTanh"]*)
   |>,
   {
     "Weights" -> NetPort["Not", "Weights"]
+    (*"Not" -> "NonLin"*)
   }
 ]
 
@@ -82,7 +84,7 @@ NeuralLogicLayer[inputSize_, layerSize_, f_Function] := NetGraph[
       ],
       {
         "Catenate" -> CatenateLayer[]
-        (*"Sigmoid" -> ElementwiseLayer["Sigmoid"]*)
+        (*"NonLin" -> ElementwiseLayer["HardTanh"]*)
       }
   ]],
   Join[
@@ -90,7 +92,7 @@ NeuralLogicLayer[inputSize_, layerSize_, f_Function] := NetGraph[
       "n" <> ToString[#] -> "Catenate" &,
       Range[layerSize]
     ]
-    (*{"Catenate" -> "Sigmoid"}*)
+    (*{"Catenate" -> "NonLin"}*)
   ]
 ]
 
@@ -138,7 +140,7 @@ NeuralAND[weights_List] := NetGraph[
   }
 ]
 
-NeuralAND[n_] := NeuralAND[RandomSoftBit[n]]
+NeuralAND[n_] := NeuralAND[RandomReal[{-0.001, 0.001}, n]]
 
 NeuralANDLayer[inputSize_, layerSize_] := NeuralLogicLayer[inputSize, layerSize, NeuralAND[#] &]
 
@@ -165,7 +167,7 @@ NeuralOR[weights_List] := NetGraph[
   }
 ]
 
-NeuralOR[n_] := NeuralOR[RandomSoftBit[n]]
+NeuralOR[n_] := NeuralOR[RandomReal[{-0.001, 0.001}, n]]
 
 NeuralORLayer[inputSize_, layerSize_] := NeuralLogicLayer[inputSize, layerSize, NeuralOR[#] &]
 
@@ -184,7 +186,7 @@ NeuralDNFLayer[inputSize_, andSize_, orSize_] := NetGraph[
   <|
     "NOT layer" -> NeuralNOTLayer[inputSize],
     "AND layer" -> NeuralANDLayer[inputSize, andSize],
-    "OR layer" -> NeuralORLayer[layerSize, orSize]
+    "OR layer" -> NeuralORLayer[andSize, orSize]
   |>,
   {
     "NOT layer" -> "AND layer",
@@ -288,6 +290,7 @@ NeuralMajorityLayer[inputSize_, layerSize_] := NetGraph[
 
 BooleanMajorityLayer[input_, weights_] := Map[Inner[Xnor, input, #, Majority] &, weights]
 
+
 BooleanMajorityChain[spec_List] := Function[{input, weights},
   Block[{activations = input},
     Scan[
@@ -308,6 +311,7 @@ SetAttributes[BinaryNN, HoldFirst]
 
 BinaryNN[spec_List] := Module[{softNet, hardNet},
   softNet = NetChain[# & /@ spec];
+  (* TODO: update for mixed layers *)
   hardNet = BooleanMajorityChain[spec];
   {softNet, hardNet}
 ]
@@ -361,7 +365,7 @@ BitLossBackward[inputSize_, eps_] := Function[
   Small margin (e.g. 0.01) accelerates learning although trajectory is noisier. 
   Large margin (e.g. 1.0) slows learning but trajectory is more smooth.
 *)
-BitLoss[inputSize_] := With[{eps = 0.1}, 
+BitLoss[inputSize_] := With[{eps = 1.0}, 
   CompiledLayer[
     BitLossForward[inputSize, eps], 
     BitLossBackward[inputSize, eps], 
@@ -377,13 +381,13 @@ BitLoss[inputSize_] := With[{eps = 0.1},
 AppendLoss[net_] := Block[{netOutputSize = NetExtract[net, "Output"]},
   NetGraph[
     <|
-      "MajorityNet" -> net,
+      "NeuralLogicNet" -> net,
       "Catenate" -> CatenateLayer[],
       "BitLoss" -> BitLoss[netOutputSize],
       "loss" -> SummationLayer[]
     |>,
     {
-      "MajorityNet" -> "Catenate",
+      "NeuralLogicNet" -> "Catenate",
       NetPort["Target"] -> "Catenate",
       "Catenate" -> "BitLoss",
       "BitLoss" -> "loss",
@@ -396,6 +400,7 @@ AppendLoss[net_] := Block[{netOutputSize = NetExtract[net, "Output"]},
 (* Network hardening *)
 (* ------------------------------------------------------------------ *)
 
+(* TODO: update for mixed layers *)
 ExtractWeights[net_] := Module[{layers, layerSizes, majorityNames, majorityNeuronLayers},
   layers = NetExtract[net, All];
   layerSizes = Information[#, "ArraysCount"] & /@ layers;
@@ -407,6 +412,7 @@ ExtractWeights[net_] := Module[{layers, layerSizes, majorityNames, majorityNeuro
   ]
 ]
 
+(* TODO: update for mixed layers *)
 HardBinaryNN[hardNet_, trainedSoftNet_] := Module[{hardenedWeights, inputSize},
   hardenedWeights = Harden[ExtractWeights[trainedSoftNet]];
   inputSize = Length[First[First[hardenedWeights]]];
