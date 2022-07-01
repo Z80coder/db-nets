@@ -42,40 +42,45 @@ Begin["`Private`"]
 (* Boolean utilities *)
 (* ------------------------------------------------------------------ *)
 
-(* Soft-bits between -1 and +1 *)
-Harden[softBit_] := If[softBit > 0.0, True, False]
-Harden[softBit_List] := Map[Harden, softBit]
+Harden[softBit_] := If[softBit > 0.5, True, False]
+Harden[softBits_List] := Map[Harden, softBits]
 
-(* Hard-bits between 0 and 1 *)
-Soften[hardBit_] := If[hardBit == 1, 1.0, -1.0]
+Soften[hardBit_] := If[hardBit == 1, 1.0, 0.0]
+Soften[hardBits_List] := Map[Soften, hardBits]
 
-RandomSoftBit[n_] := RandomReal[{-0.2, 0.2}, n]
+ClipSoftBit[x_] := Clip[x, {0.00000001, 0.9999999}]
 
 (* ------------------------------------------------------------------ *)
 (* Neural NOT layer *)
 (* ------------------------------------------------------------------ *)
 
+(* 
+*)
 NeuralNOTLayer[weights_List] := NetGraph[
   <|
     "Weights" -> NetArrayLayer["Array" -> weights],
+    "NonLin1" -> ElementwiseLayer[ClipSoftBit], (* Ensure weights are [0,1] *)
     "Not" -> FunctionLayer[
-      MapThread[#1 #2 &, {#Input, #Weights}] &, 
+      MapThread[1 - #2 + #1 (2 #2 - 1) &, {#Input, #Weights}] &, 
       "Input" -> Length[weights]
-    ]
-    (*"NonLin" -> ElementwiseLayer["HardTanh"]*)
+    ],
+    "NonLin2" -> ElementwiseLayer[ClipSoftBit] (* Ensure output is [0,1] *)
   |>,
   {
-    "Weights" -> NetPort["Not", "Weights"]
-    (*"Not" -> "NonLin"*)
+    "Weights" -> "NonLin1",
+    "NonLin1" -> NetPort["Not", "Weights"],
+    "Not" -> "NonLin2"
   }
 ]
 
-NeuralNOTLayer[n_] := NeuralNOTLayer[RandomSoftBit[n]]
+NeuralNOTLayer[n_] := NeuralNOTLayer[RandomReal[{0.45, 0.55}, n]]
 
 (* ------------------------------------------------------------------ *)
 (* Neural logic layer *)
 (* ------------------------------------------------------------------ *)
 
+(* 
+*)
 NeuralLogicLayer[inputSize_, layerSize_, f_Function] := NetGraph[
   Association[Join[
       Map[
@@ -83,18 +88,25 @@ NeuralLogicLayer[inputSize_, layerSize_, f_Function] := NetGraph[
         Range[layerSize]
       ],
       {
-        "Catenate" -> CatenateLayer[]
-        (*"NonLin" -> ElementwiseLayer["HardTanh"]*)
+        "Catenate" -> CatenateLayer[],
+        "NonLin" -> ElementwiseLayer[ClipSoftBit] (* Ensure output is [0,1] *)
       }
   ]],
   Join[
     Map[
       "n" <> ToString[#] -> "Catenate" &,
       Range[layerSize]
-    ]
-    (*{"Catenate" -> "NonLin"}*)
+    ],
+    {"Catenate" -> "NonLin"}
   ]
 ]
+
+(* ------------------------------------------------------------------ *)
+(* Widen and narrow *)
+(* ------------------------------------------------------------------ *)
+
+NarrowSoftBit[x_] := LogisticSigmoid[x]
+WidenSoftBit[x_] := 2 x - 1
 
 (* ------------------------------------------------------------------ *)
 (* Differentiable AND *)
@@ -102,16 +114,14 @@ NeuralLogicLayer[inputSize_, layerSize_, f_Function] := NetGraph[
 
 (*
   Computes the soft-AND of all input soft-bits.
-  The input soft-bits are assumed to be between -1 and +1.
-  The output is a soft-bit between -1 and +1.
 
   The weight soft-bit controls how "active" the AND operation is.
 
-  E.g. If the weight is -1 (i.e. fully false) then the AND operation
-  is fully inoperative and the output is 1 (fully true) regardless
+  E.g. If the weight is fully false then the AND operation
+  is fully inoperative and the output is fully true regardless
   of the input. In this case soft-AND acts like a nop.
 
-  E.g. If the weight is +1 then the AND operation is fully operative
+  E.g. If the weight is fully true then the AND operation is fully operative
   and the output is the input bit. In this case soft-AND acts like a
   pass-through function.
 
@@ -120,27 +130,33 @@ NeuralLogicLayer[inputSize_, layerSize_, f_Function] := NetGraph[
 *)
 NeuralAND[weights_List] := NetGraph[
   <|
+    "Weights" -> NetArrayLayer["Array" -> weights],
+    "NonLin" -> ElementwiseLayer[ClipSoftBit], (* Ensure weights are [0,1] *)
     "SoftInclude" -> FunctionLayer[
       MapThread[
-        1 - 1/2 (1 + 1/2 (-1 - #1)) (1 + #2) &, 
+        1 - #2 (1 - #1) &, 
         {#Input, #Weights}
       ] &, 
       "Input" -> Length[weights]
     ],
-    "And1" -> FunctionLayer[Times],
-    "And2" -> FunctionLayer[2.0 # - 1.0 &],
-    "Weights" -> NetArrayLayer["Array" -> weights],
+    (* LogSumExp trick *)
+    "And1" -> ElementwiseLayer[Log],
+    "And2" -> SummationLayer[],
+    "And3" -> FunctionLayer[Exp],
     "Reshape" -> ReshapeLayer[{1}]
+    (* N.B. Outut is not ensured to be in [0,1]. This is taken care of by NeuralLogicLayer *)
   |>,
   {
-   "Weights" -> NetPort["SoftInclude", "Weights"],
-   "SoftInclude" -> "And1",
-   "And1" -> "And2",
-   "And2" -> "Reshape"
+    "Weights" -> "NonLin",
+    "NonLin" -> NetPort["SoftInclude", "Weights"],
+    "SoftInclude" -> "And1",
+    "And1" -> "And2",
+    "And2" -> "And3", 
+    "And3" -> "Reshape"
   }
 ]
 
-NeuralAND[n_] := NeuralAND[RandomReal[{-0.001, 0.001}, n]]
+NeuralAND[n_] := NeuralAND[RandomReal[{0.1, 0.9}, n]]
 
 NeuralANDLayer[inputSize_, layerSize_] := NeuralLogicLayer[inputSize, layerSize, NeuralAND[#] &]
 
@@ -148,26 +164,37 @@ NeuralANDLayer[inputSize_, layerSize_] := NeuralLogicLayer[inputSize, layerSize,
 (* Differentiable OR *)
 (* ------------------------------------------------------------------ *)
 
+(*
+*)
 NeuralOR[weights_List] := NetGraph[
   <|
+    "Weights" -> NetArrayLayer["Array" -> weights],
+    "NonLin" -> ElementwiseLayer[ClipSoftBit],
     "SoftInclude" -> FunctionLayer[
-      MapThread[1 - 1/4 (1 + #1) (1 + #2) &, {#Input, #Weights}] &, 
+      MapThread[
+        1 - #1 #2 &, 
+        {#Input, #Weights}
+      ] &, 
       "Input" -> Length[weights]
    ],
-   "Or1" -> FunctionLayer[Times[#] &],
-   "Or2" -> FunctionLayer[-1 + 2(1 - #) &],
-   "Weights" -> NetArrayLayer["Array" -> weights],
+   "Or1" -> ElementwiseLayer[Log],
+   "Or2" -> SummationLayer[],
+   "Or3" -> FunctionLayer[Exp],
+   "Or4" -> FunctionLayer[1 - # &],
    "Reshape" -> ReshapeLayer[{1}]
   |>,
   {
-    "Weights" -> NetPort["SoftInclude", "Weights"],
+    "Weights" -> "NonLin",
+    "NonLin" -> NetPort["SoftInclude", "Weights"],
     "SoftInclude" -> "Or1",
     "Or1" -> "Or2",
-    "Or2" -> "Reshape"
+    "Or2" -> "Or3",
+    "Or3" -> "Or4",
+    "Or4" -> "Reshape"
   }
 ]
 
-NeuralOR[n_] := NeuralOR[RandomReal[{-0.001, 0.001}, n]]
+NeuralOR[n_] := NeuralOR[RandomReal[{0.1, 0.9}, n]]
 
 NeuralORLayer[inputSize_, layerSize_] := NeuralLogicLayer[inputSize, layerSize, NeuralOR[#] &]
 
@@ -290,7 +317,6 @@ NeuralMajorityLayer[inputSize_, layerSize_] := NetGraph[
 
 BooleanMajorityLayer[input_, weights_] := Map[Inner[Xnor, input, #, Majority] &, weights]
 
-
 BooleanMajorityChain[spec_List] := Function[{input, weights},
   Block[{activations = input},
     Scan[
@@ -329,10 +355,10 @@ BitLossForward[inputSize_, eps_] := Function[
       targetBits = Take[input, -inputSize]
     },
     Table[
-      If[(predictedBits[[n]] > (0.0 + eps) && targetBits[[n]] > 0.0) || (predictedBits[[n]] < (0.0 - eps) && targetBits[[n]] < 0.0),
+      If[(predictedBits[[n]] > (0.5 + eps) && targetBits[[n]] > 0.5) || (predictedBits[[n]] < (0.5 - eps) && targetBits[[n]] < 0.5),
         0.0,
         (predictedBits[[n]] - targetBits[[n]])^2
-      ], 
+      ],
       {n, 1, inputSize}
     ]
   ]
@@ -350,7 +376,7 @@ BitLossBackward[inputSize_, eps_] := Function[
     },
     Table[
       If[n <= inputSize,
-        If[(predictedBits[[n]] > (0.0 + eps) && targetBits[[n]] > 0.0) || (predictedBits[[n]] < (0.0 - eps) && targetBits[[n]] < 0.0),
+        If[(predictedBits[[n]] > (0.5 + eps) && targetBits[[n]] > 0.5) || (predictedBits[[n]] < (0.5 - eps) && targetBits[[n]] < 0.5),
           0.0,
           2 (predictedBits[[n]] - targetBits[[n]])
         ],
@@ -365,7 +391,7 @@ BitLossBackward[inputSize_, eps_] := Function[
   Small margin (e.g. 0.01) accelerates learning although trajectory is noisier. 
   Large margin (e.g. 1.0) slows learning but trajectory is more smooth.
 *)
-BitLoss[inputSize_] := With[{eps = 1.0}, 
+BitLoss[inputSize_] := With[{eps = 0.01}, 
   CompiledLayer[
     BitLossForward[inputSize, eps], 
     BitLossBackward[inputSize, eps], 
