@@ -266,7 +266,13 @@ NeuralMajorityBackward[] := Function[
       g = First[outgrad]
     },
     Table[
-      If[i == j, g, If[i < j, 0.0, 0.0]],
+      If[i == j, 
+        g, (* Backprop the median bit *)
+        If[i < j, 
+          0.0, (* Make non-zero if we want to affect more than just median bit *)
+          0.0
+        ]
+      ],
       {j, 1, Length[input]}
     ]
   ]
@@ -281,7 +287,7 @@ NeuralMajority[] := CompiledLayer[NeuralMajorityForward[], NeuralMajorityBackwar
 WeightedNeuralMajority[weights_List] := NetGraph[
   <|
     "Weights" -> NetArrayLayer["Array" -> weights, "Output" -> Length[weights]],
-    "WeightedBits" -> FunctionLayer[#Weights #Bits &, "Output" -> Length[weights]],
+    "WeightedBits" -> FunctionLayer[1 - #Bits + #Weights (2 #Bits - 1) &, "Output" -> Length[weights]],
     "NonLin" -> ElementwiseLayer[ClipSoftBit], 
     "Majority" -> NeuralMajority[],
     "MajorityBit" -> PartLayer[1],
