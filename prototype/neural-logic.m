@@ -287,7 +287,12 @@ NeuralMajority[] := CompiledLayer[NeuralMajorityForward[], NeuralMajorityBackwar
 WeightedNeuralMajority[weights_List] := NetGraph[
   <|
     "Weights" -> NetArrayLayer["Array" -> weights, "Output" -> Length[weights]],
-    "WeightedBits" -> FunctionLayer[1 - #Bits + #Weights (2 #Bits - 1) &, "Output" -> Length[weights]],
+    "WeightedBits" -> FunctionLayer[
+      1 - #Bits + #Weights (2 #Bits - 1) &, 
+      "Bits" -> Length[weights], 
+      "Weights" -> Length[weights], 
+      "Output" -> Length[weights]
+    ],
     "NonLin" -> ElementwiseLayer[ClipSoftBit], 
     "Majority" -> NeuralMajority[],
     "MajorityBit" -> PartLayer[1],
@@ -416,7 +421,7 @@ AppendLoss[net_] := Block[{netOutputSize = NetExtract[net, "Output"]},
   NetGraph[
     <|
       "NeuralLogicNet" -> net,
-      "Catenate" -> CatenateLayer[],
+      "Catenate" -> CatenateLayer["Input" -> {netOutputSize, netOutputSize}],
       "BitLoss" -> BitLoss[netOutputSize],
       "loss" -> SummationLayer[]
     |>,
