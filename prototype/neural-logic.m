@@ -50,6 +50,8 @@ Soften[hardBits_List] := Map[Soften, hardBits]
 
 ClipSoftBit[x_] := Clip[x, {0.00000001, 0.9999999}]
 
+RandomSoftBit[n_] := RandomReal[{0.1, 0.9}, n]
+
 (* ------------------------------------------------------------------ *)
 (* Neural NOT layer *)
 (* ------------------------------------------------------------------ *)
@@ -73,7 +75,7 @@ NeuralNOTLayer[weights_List] := NetGraph[
   }
 ]
 
-NeuralNOTLayer[n_] := NeuralNOTLayer[RandomReal[{0.45, 0.55}, n]]
+NeuralNOTLayer[n_] := NeuralNOTLayer[RandomSoftBit[n]]
 
 (* ------------------------------------------------------------------ *)
 (* Neural logic layer *)
@@ -100,13 +102,6 @@ NeuralLogicLayer[inputSize_, layerSize_, f_Function] := NetGraph[
     {"Catenate" -> "NonLin"}
   ]
 ]
-
-(* ------------------------------------------------------------------ *)
-(* Widen and narrow *)
-(* ------------------------------------------------------------------ *)
-
-NarrowSoftBit[x_] := LogisticSigmoid[x]
-WidenSoftBit[x_] := 2 x - 1
 
 (* ------------------------------------------------------------------ *)
 (* Differentiable AND *)
@@ -156,7 +151,7 @@ NeuralAND[weights_List] := NetGraph[
   }
 ]
 
-NeuralAND[n_] := NeuralAND[RandomReal[{0.1, 0.9}, n]]
+NeuralAND[n_] := NeuralAND[RandomSoftBit[n]]
 
 NeuralANDLayer[inputSize_, layerSize_] := NeuralLogicLayer[inputSize, layerSize, NeuralAND[#] &]
 
@@ -247,7 +242,12 @@ NeuralMajorityForward[] := Function[
         - worst-case O(n^2)
         See https://danlark.org/2020/11/11/miniselect-practical-and-generic-selection-algorithms/
       *)
-      s = Sort[MapIndexed[{#1, #2[[1]]*1.0} &, input]], 
+      s = Sort[
+        MapIndexed[
+          {#1, #2[[1]]*1.0} &, 
+          input
+        ]
+      ], 
       i = Floor[Ceiling[Length[input]/2.0]]
     },
     {First[s[[i]]], Last[s[[i]]]}
@@ -281,7 +281,8 @@ NeuralMajority[] := CompiledLayer[NeuralMajorityForward[], NeuralMajorityBackwar
 WeightedNeuralMajority[weights_List] := NetGraph[
   <|
     "Weights" -> NetArrayLayer["Array" -> weights, "Output" -> Length[weights]],
-    "WeightedBits" -> FunctionLayer[Clip[#Weights #Bits, {-1, 1}] &, "Output" -> Length[weights]],
+    "WeightedBits" -> FunctionLayer[#Weights #Bits &, "Output" -> Length[weights]],
+    "NonLin" -> ElementwiseLayer[ClipSoftBit], 
     "Majority" -> NeuralMajority[],
     "MajorityBit" -> PartLayer[1],
     "Reshape" -> ReshapeLayer[{1}]
@@ -289,7 +290,8 @@ WeightedNeuralMajority[weights_List] := NetGraph[
   {
     "Weights" -> "WeightedBits",
     NetPort["Input"] -> "WeightedBits",
-    "WeightedBits" -> "Majority",
+    "WeightedBits" -> "NonLin",
+    "NonLin" -> "Majority",
     "Majority" -> "MajorityBit",
     "MajorityBit" -> "Reshape"
   }
@@ -391,7 +393,7 @@ BitLossBackward[inputSize_, eps_] := Function[
   Small margin (e.g. 0.01) accelerates learning although trajectory is noisier. 
   Large margin (e.g. 1.0) slows learning but trajectory is more smooth.
 *)
-BitLoss[inputSize_] := With[{eps = 0.01}, 
+BitLoss[inputSize_] := With[{eps = 0.5}, 
   CompiledLayer[
     BitLossForward[inputSize, eps], 
     BitLossBackward[inputSize, eps], 
