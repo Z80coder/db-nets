@@ -31,16 +31,17 @@ NeuralAND::usage = "Specifies a differentiable boolean AND function.";
 NeuralANDLayer::usage = "Specifies a neural AND layer.";
 NeuralOR::usage = "Specifies a differentiable boolean OR function.";
 NeuralORLayer::usage = "Specifies a neural OR layer.";
-NeuralNOTLayer::usage = "Specifies a neural NOT layer.";
 NeuralNOT::usage = "Specifies a differentiable boolean NOT function.";
 NeuralDNFLayer::usage = "Specifies a neural DNF layer.";
-ClipSoftBit::usage = "Clip a soft bit to between (0 + eps) or (1 - eps).";
+HardClip::usage = "Clips a hard bit between 0 and 1.";
+LogisticClip::usage = "Clips a bit logistically between 0 and 1.";
 HardIncludeAND::usage = "Differentiable hard AND logic.";
 HardIncludeOR::usage = "Differentiable hard OR logic.";
 HardNeuralAND::usage = "Differentiable hard AND logic.";
 HardNeuralOR::usage = "Differentiable hard OR logic.";
 Blip::usage = "Specifies a differentiable blip function.";
 Stretch::usage = "Specifies a differentiable stretch function.";
+InitializeNeuralLogicNet::usage = "Initialize a neural logic network.";
 (*BinaryClassificationLayer::usage = "Specifies a binary classification layer.";*)
 
 (* ------------------------------------------------------------------ *)
@@ -59,150 +60,81 @@ Harden[softBits_List] := Map[Harden, softBits]
 Soften[hardBit_] := If[hardBit == 1, 1.0, 0.0]
 Soften[hardBits_List] := Map[Soften, hardBits]
 
-ClipSoftBit[x_] := LogisticSigmoid[5(2 x - 1)]
-ClipSoftBit[x_] := Clip[x, {0.00000001, 0.9999999}]
+HardClip[x_] := Clip[x, {0.00000001, 0.9999999}]
+LogisticClip[x_] := LogisticSigmoid[5(2 x - 1)]
 
 RandomSoftBit[n_] := RandomReal[{0.1, 0.9}, n]
 
 (* ------------------------------------------------------------------ *)
-(* Neural logic layer *)
+(* Differentiable NOT, AND, OR *)
 (* ------------------------------------------------------------------ *)
 
-(* 
-*)
-NeuralLogicLayer[inputSize_, layerSize_, f_Function] := NetGraph[
-  Association[Join[
-      Map[
-        "n" <> ToString[#] -> f[inputSize] &, 
-        Range[layerSize]
-      ],
-      {
-        "Catenate" -> CatenateLayer[],
-        "NonLin" -> ElementwiseLayer[ClipSoftBit] (* Ensure output is [0,1] *)
-      }
-  ]],
-  Join[
-    Map[
-      "n" <> ToString[#] -> "Catenate" &,
-      Range[layerSize]
-    ],
-    {"Catenate" -> "NonLin"}
-  ]
-]
-
-(* ------------------------------------------------------------------ *)
-(* Neural NOT layer *)
-(* ------------------------------------------------------------------ *)
-
-(*
-  TODO: rename to IncludeNOT layer because it acts either as pass-through or as a NOT layer.
-  So the weight selects for the presence of a NOT gate.
-*)
-
-(* 
-*)
-NeuralNOT[weights_List] := NetGraph[
+NeuralNOT[inputSize_] := NetGraph[
   <|
-    "Weights" -> NetArrayLayer["Array" -> weights],
-    "NonLin" -> ElementwiseLayer[ClipSoftBit], (*Ensure weights are [0,1]*)
-    "Not" -> FunctionLayer[
-      MapThread[1 - #2 + #1 (2 #2 - 1) &, {#Input, #Weights}] &, 
-      "Input" -> Length[weights]
-    ]
-    (* N.B. Output is not ensured to be in [0,1]. This is taken care of by NeuralLogicLayer *)
+    "Weights" -> NetArrayLayer["Output" -> inputSize],
+    "WeightsClip" -> ElementwiseLayer[HardClip], 
+    "Not" -> ThreadingLayer[1 - #Weights + #Input (2 #Weights - 1) &, 1],
+    "OutputClip" -> ElementwiseLayer[HardClip] 
   |>,
   {
-    "Weights" -> "NonLin",
-    "NonLin" -> NetPort["Not", "Weights"]
+    "Weights" -> "WeightsClip",
+    "WeightsClip" -> NetPort["Not", "Weights"],
+    "Not" -> "OutputClip"
   }
 ]
 
-NeuralNOT[n_] := NeuralNOT[RandomReal[{0.45, 0.55}, n]]
-
-NeuralNOTLayer[n_] := NeuralNOT[RandomSoftBit[n]]
-
-(*
-  This for fancier convolution and pooling layers.
-*)
-(*
-NeuralNOTLayer[inputSize_, layerSize_] := NetGraph[
-  Association[
-    Join[
-      Map[
-        "n" <> ToString[#] -> NeuralNOT[inputSize] &, 
-        Range[layerSize]
-      ],
-      {
-        "Catenate" -> CatenateLayer[],
-        "NonLin" -> ElementwiseLayer[ClipSoftBit], (* Ensure output is [0,1] *)
-        "Reshape" -> ReshapeLayer[{layerSize, inputSize}]
-      }
-    ]
-  ],
-  Join[
-    Map[
-        "n" <> ToString[#] -> "Catenate" &,
-        Range[layerSize]
-    ],
-    {
-      "Catenate" -> "NonLin",
-      "NonLin" -> "Reshape"
-    }
-  ]
-]
-*)
-
-(* ------------------------------------------------------------------ *)
-(* Differentiable AND *)
-(* ------------------------------------------------------------------ *)
-
-(*
-  Computes the soft-AND of all input soft-bits.
-
-  The weight soft-bit controls how "active" the AND operation is.
-
-  E.g. If the weight is fully false then the AND operation
-  is fully inoperative and the output is fully true regardless
-  of the input. In this case soft-AND acts like a nop.
-
-  E.g. If the weight is fully true then the AND operation is fully operative
-  and the output is the input bit. In this case soft-AND acts like a
-  pass-through function.
-
-  Each input soft-bit has its own associated weight, and therefore
-  soft-participates in the overall output of the neuron.
-*)
-NeuralAND[weights_List] := NetGraph[
+NeuralAND[inputSize_, layerSize_] := NetGraph[
   <|
-    "Weights" -> NetArrayLayer["Array" -> Drop[weights, -1]],
-    "NonLin1" -> ElementwiseLayer[ClipSoftBit], (* Ensure weights are [0,1] *)
-    "SoftInclude" -> FunctionLayer[
-      MapThread[
-        1 - #2 (1 - #1) &, 
-        {#Input, #Weights}
-      ] &, 
-      "Input" -> Length[weights] - 1
-    ],
+    "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
+    "WeightsClip" -> ElementwiseLayer[HardClip],
+    "SoftInclude" -> ThreadingLayer[1 - #Weights (1 - #Input) &, 1, "Output" -> {layerSize, inputSize}],
     (* LogSumExp trick *)
     "And1" -> ElementwiseLayer[Log],
-    "And2" -> SummationLayer[],
-    "And3" -> FunctionLayer[Exp],
-    "Reshape" -> ReshapeLayer[{1}],
-    "NonLin2" -> ElementwiseLayer[ClipSoftBit], (* Ensure output is [0,1] *)
-    "Not" -> NeuralNOT[{Last[weights]}]
-    (* N.B. Output is not ensured to be in [0,1]. This is taken care of by NeuralLogicLayer *)
+    "And2" -> AggregationLayer[Total],
+    "And3" -> ElementwiseLayer[Exp],
+    "OutputClip" -> ElementwiseLayer[HardClip] 
   |>,
   {
-    "Weights" -> "NonLin1",
-    "NonLin1" -> NetPort["SoftInclude", "Weights"],
+    "Weights" -> "WeightsClip",
+    "WeightsClip" -> NetPort["SoftInclude", "Weights"],
     "SoftInclude" -> "And1",
     "And1" -> "And2",
-    "And2" -> "And3", 
-    "And3" -> "Reshape",
-    "Reshape" -> "NonLin2",
-    "NonLin2" -> "Not"
+    "And2" -> "And3",
+    "And3" -> "OutputClip"
   }
 ]
+
+NeuralOR[inputSize_, layerSize_] := NetGraph[
+  <|
+    "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
+    "WeightsClip" -> ElementwiseLayer[HardClip],
+    "SoftInclude" -> ThreadingLayer[1 - #Weights #Input &, 1, "Output" -> {layerSize, inputSize}],
+    (* LogSumExp trick *) 
+    "Or1" -> ElementwiseLayer[Log],
+    "Or2" -> AggregationLayer[Total],
+    "Or3" -> ElementwiseLayer[Exp],
+    "Or4" -> ElementwiseLayer[1 - # &],
+    "OutputClip" -> ElementwiseLayer[HardClip]
+  |>,
+  {
+    "Weights" -> "WeightsClip",
+    "WeightsClip" -> NetPort["SoftInclude", "Weights"],
+    "SoftInclude" -> "Or1",
+    "Or1" -> "Or2",
+    "Or2" -> "Or3",
+    "Or3" -> "Or4",
+    "Or4" -> "OutputClip"
+  }
+]
+
+InitializeNeuralLogicNet[net_] := NetInitialize[
+  net,
+  Method -> {"Random", "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[-1, 1]]}
+]
+
+(* ------------------------------------------------------------------ *)
+(* Differentiable HARD AND *)
+(* ------------------------------------------------------------------ *)
 
 (* TODO: compare hardening performance between these two options. *)
 
@@ -337,8 +269,6 @@ HardNeuralAND[weights_List] := NetGraph[
   }
 ]
 
-NeuralAND[n_] := NeuralAND[RandomSoftBit[n + 1]]
-NeuralANDLayer[inputSize_, layerSize_] := NeuralLogicLayer[inputSize, layerSize, NeuralAND[#] &]
 
 (*
 HardNeuralAND[n_] := HardNeuralAND[RandomReal[{0.45, 0.55}, n + 1]]
@@ -346,38 +276,8 @@ NeuralANDLayer[inputSize_, layerSize_] := NeuralLogicLayer[inputSize, layerSize,
 *)
 
 (* ------------------------------------------------------------------ *)
-(* Differentiable OR *)
+(* Differentiable HARD OR *)
 (* ------------------------------------------------------------------ *)
-
-(*
-*)
-NeuralOR[weights_List] := NetGraph[
-  <|
-    "Weights" -> NetArrayLayer["Array" -> weights],
-    "NonLin" -> ElementwiseLayer[ClipSoftBit],
-    "SoftInclude" -> FunctionLayer[
-      MapThread[
-        1 - #1 #2 &, 
-        {#Input, #Weights}
-      ] &, 
-      "Input" -> Length[weights]
-   ],
-   "Or1" -> ElementwiseLayer[Log],
-   "Or2" -> SummationLayer[],
-   "Or3" -> FunctionLayer[Exp],
-   "Or4" -> FunctionLayer[1 - # &],
-   "Reshape" -> ReshapeLayer[{1}]
-  |>,
-  {
-    "Weights" -> "NonLin",
-    "NonLin" -> NetPort["SoftInclude", "Weights"],
-    "SoftInclude" -> "Or1",
-    "Or1" -> "Or2",
-    "Or2" -> "Or3",
-    "Or3" -> "Or4",
-    "Or4" -> "Reshape"
-  }
-]
 
 HardIncludeOR[b_, w_] := 1 - HardIncludeAND[1-b, w]
 
@@ -411,8 +311,10 @@ HardNeuralOR[weights_List] := NetGraph[
   }
 ]
 
+(*
 NeuralOR[n_] := NeuralOR[RandomReal[{0.1, 0.9}, n]]
 NeuralORLayer[inputSize_, layerSize_] := NeuralLogicLayer[inputSize, layerSize, NeuralOR[#] &]
+*)
 
 (*
 HardNeuralOR[n_] := HardNeuralOR[RandomReal[{0.45, 0.55}, n + 1]]
@@ -635,7 +537,7 @@ BitLossBackward[inputSize_, eps_] := Function[
   Small margin (e.g. 0.01) accelerates learning although trajectory is noisier. 
   Large margin (e.g. 0.5) slows learning but trajectory is more smooth.
 *)
-BitLoss[inputSize_] := With[{eps = 0.01}, 
+BitLoss[inputSize_] := With[{eps = 0.00001}, 
   CompiledLayer[
     BitLossForward[inputSize, eps], 
     BitLossBackward[inputSize, eps], 
