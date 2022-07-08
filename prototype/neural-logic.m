@@ -133,16 +133,70 @@ InitializeNeuralLogicNet[net_] := NetInitialize[
 ]
 
 (* ------------------------------------------------------------------ *)
+(* Differentiable HARD NOT, HARD AND, HARD OR *)
+(* ------------------------------------------------------------------ *)
+
+HardAND[b_, w_] := 
+  If[w > 1/2,
+    If[b > 1/2,
+      b,
+      (2 w - 1) b + 1 - w
+    ], (*else w<=1/2*)
+    If[b > 1/2,
+      - 2 w (1 - b) + 1,
+      1 - w
+    ]
+  ]
+
+HardNeuralAND[inputSize_, layerSize_] := NetGraph[
+  <|
+    "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
+    "WeightsClip" -> ElementwiseLayer[HardClip],
+    "HardInclude" -> ThreadingLayer[HardAND[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
+    "And1" -> AggregationLayer[Min],
+    "OutputClip" -> ElementwiseLayer[HardClip] 
+  |>,
+  {
+    "Weights" -> "WeightsClip",
+    "WeightsClip" -> NetPort["HardInclude", "Weights"],
+    "HardInclude" -> "And1",
+    "And1" -> "OutputClip"
+  }
+]
+
+HardOR[b_, w_] := 1 - HardAND[1-b, w]
+
+HardNeuralOR[inputSize_, layerSize_] := NetGraph[
+  <|
+    "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
+    "WeightsClip" -> ElementwiseLayer[HardClip],
+    "HardInclude" -> ThreadingLayer[HardOR[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
+    "Or1" -> AggregationLayer[Max],
+    "OutputClip" -> ElementwiseLayer[HardClip]
+  |>,
+  {
+    "Weights" -> "WeightsClip",
+    "WeightsClip" -> NetPort["HardInclude", "Weights"],
+    "HardInclude" -> "Or1",
+    "Or1" -> "OutputClip"
+  }
+]
+
+(* ------------------------------------------------------------------ *)
+(* DEPRECATED BELOW HERE *)
+(* ------------------------------------------------------------------ *)
+
+(* ------------------------------------------------------------------ *)
 (* Differentiable HARD AND *)
 (* ------------------------------------------------------------------ *)
 
 (* TODO: compare hardening performance between these two options. *)
 
 (* Simple, but doesn't always go through (1/2, 1/2). Bad*)
-HardIncludeAND[b_, w_] := w b + 1 - w
+(*HardIncludeAND[b_, w_] := w b + 1 - w*)
 
 (* Complex (piecewise linear) version of above that does always goo through (1/2, 1/2).*)
-HardIncludeAND[b_, w_] := If[w > 1/2,
+(*HardIncludeAND[b_, w_] := If[w > 1/2,
   If[b > 1/2,
     b,
     (2 w - 1) b + 1 - w
@@ -152,6 +206,7 @@ HardIncludeAND[b_, w_] := If[w > 1/2,
     1 - w
   ]
 ]
+*)
 
 (* Complex (piecewise linear) version of above that does always goo through (1/2, 1/2).*)
 (* Existence of Blip seems to prevent learning ... unsure why *)
@@ -234,6 +289,7 @@ HardIncludeAND[b_, w_] := If[w > 1/2,
 
 *)
 
+(*
 HardNeuralAND[weights_List] := NetGraph[
   <|
     "Weights" -> NetArrayLayer["Array" -> Drop[weights, -1]],
@@ -268,7 +324,7 @@ HardNeuralAND[weights_List] := NetGraph[
     "Reshape" -> "Not"
   }
 ]
-
+*)
 
 (*
 HardNeuralAND[n_] := HardNeuralAND[RandomReal[{0.45, 0.55}, n + 1]]
@@ -279,9 +335,9 @@ NeuralANDLayer[inputSize_, layerSize_] := NeuralLogicLayer[inputSize, layerSize,
 (* Differentiable HARD OR *)
 (* ------------------------------------------------------------------ *)
 
+(*
 HardIncludeOR[b_, w_] := 1 - HardIncludeAND[1-b, w]
 
-(*
 HardIncludeOR[b_, w_] := If[w > 1/2,
   (1 - 2 (1 - w)) b + (1 - w),
   (* else w<=1/2 *)
@@ -289,6 +345,7 @@ HardIncludeOR[b_, w_] := If[w > 1/2,
 ]
 *)
 
+(*
 HardNeuralOR[weights_List] := NetGraph[
   <|
     "Weights" -> NetArrayLayer["Array" -> Drop[weights, -1]],
@@ -310,6 +367,7 @@ HardNeuralOR[weights_List] := NetGraph[
     "Reshape" -> "Not"
   }
 ]
+*)
 
 (*
 NeuralOR[n_] := NeuralOR[RandomReal[{0.1, 0.9}, n]]
@@ -332,6 +390,7 @@ NeuralORLayer[inputSize_, layerSize_] := NeuralLogicLayer[inputSize, layerSize, 
   all possible DNF expressions.
   Ignoring NOTs then andSize does not need to be larger than 2^(inputSize - 1)
 *)
+(*
 NeuralDNFLayer[inputSize_, andSize_, orSize_] := NetGraph[
   <|
     (*"NOT layer 1" -> NeuralNOTLayer[inputSize],*)
@@ -343,6 +402,7 @@ NeuralDNFLayer[inputSize_, andSize_, orSize_] := NetGraph[
     "AND layer" -> "OR layer"
   }
 ]
+*)
 
 (* ------------------------------------------------------------------ *)
 (* Differentiable boolean majority *)
@@ -477,6 +537,7 @@ BooleanMajorityChain[spec_List] := Function[{input, weights},
 (* Specify binary neural networks *)
 (* ------------------------------------------------------------------ *)
 
+(*
 SetAttributes[BinaryNN, HoldFirst]
 
 BinaryNN[spec_List] := Module[{softNet, hardNet},
@@ -485,6 +546,7 @@ BinaryNN[spec_List] := Module[{softNet, hardNet},
   hardNet = BooleanMajorityChain[spec];
   {softNet, hardNet}
 ]
+*)
 
 (* ------------------------------------------------------------------ *)
 (* Bit loss *)
@@ -537,7 +599,7 @@ BitLossBackward[inputSize_, eps_] := Function[
   Small margin (e.g. 0.01) accelerates learning although trajectory is noisier. 
   Large margin (e.g. 0.5) slows learning but trajectory is more smooth.
 *)
-BitLoss[inputSize_] := With[{eps = 0.00001}, 
+BitLoss[inputSize_] := With[{eps = 0.5}, 
   CompiledLayer[
     BitLossForward[inputSize, eps], 
     BitLossBackward[inputSize, eps], 
@@ -568,35 +630,6 @@ AppendLoss[net_] := Block[{netOutputSize = NetExtract[net, "Output"]},
     }
   ]
 ]
-
-(* n bits per class *)
-(* Conceptually wrong*)
-(*
-BinaryClassificationLayer[net_, numClasses_] := Block[{
-    netOutputSize = NetExtract[net, "Output"],
-    outputPortSize
-  },
-  outputPortSize = netOutputSize / numClasses;
-  NetGraph[
-    <|
-      "NeuralLogicNet" -> net,
-      "Reshape" -> ReshapeLayer[{numClasses, outputPortSize}],
-      "Probs" -> FunctionLayer[
-        Map[
-          (1.0 * Total[#]) / (1.0 * outputPortSize) &, 
-          #Input
-        ] &, 
-        "Input" -> {numClasses, outputPortSize},
-        "Output" -> {numClasses}
-      ]
-    |>,
-    {
-      "NeuralLogicNet" -> "Reshape",
-      "Reshape" -> "Probs"
-    }
-  ]
-]
-*)
 
 (* ------------------------------------------------------------------ *)
 (* Network hardening *)
