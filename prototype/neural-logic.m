@@ -599,7 +599,7 @@ BitLossBackward[inputSize_, eps_] := Function[
   Small margin (e.g. 0.01) accelerates learning although trajectory is noisier. 
   Large margin (e.g. 0.5) slows learning but trajectory is more smooth.
 *)
-BitLoss[inputSize_] := With[{eps = 0.5}, 
+BitLoss[inputSize_] := With[{eps = 0.1}, 
   CompiledLayer[
     BitLossForward[inputSize, eps], 
     BitLossBackward[inputSize, eps], 
