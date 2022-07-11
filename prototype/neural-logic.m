@@ -43,6 +43,8 @@ Blip::usage = "Specifies a differentiable blip function.";
 Stretch::usage = "Specifies a differentiable stretch function.";
 InitializeNeuralLogicNet::usage = "Initialize a neural logic network.";
 (*BinaryClassificationLayer::usage = "Specifies a binary classification layer.";*)
+HardNeuralLoss::usage = "Specifies a hard neural loss function.";
+AppendHardNeuralLoss::usage = "Appends a hard neural loss function to a neural network.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -129,7 +131,9 @@ NeuralOR[inputSize_, layerSize_] := NetGraph[
 
 InitializeNeuralLogicNet[net_] := NetInitialize[
   net,
-  Method -> {"Random", "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[-1, 1]]}
+  (*Method -> {"Random", "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[-1, 1]]}*)
+  Method -> {"Random", "Weights" -> UniformDistribution[{0.01, 0.7}]}
+  (*Method -> {"Random", "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[1, 1]]}*)
 ]
 
 (* ------------------------------------------------------------------ *)
@@ -153,14 +157,29 @@ HardNeuralAND[inputSize_, layerSize_] := NetGraph[
     "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
     "WeightsClip" -> ElementwiseLayer[HardClip],
     "HardInclude" -> ThreadingLayer[HardAND[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-    "And1" -> AggregationLayer[Min],
+    "Min" -> AggregationLayer[Min],
+    (*
+    "Mean" -> AggregationLayer[Mean],
+    "And" -> FunctionLayer[
+      If[#Min > 1/2,
+        #Min + #Mean (1 - #Min^2),
+        #Min + #Mean (1/2 - #Min^2)
+      ] &
+    ],
+    *)
     "OutputClip" -> ElementwiseLayer[HardClip] 
   |>,
   {
     "Weights" -> "WeightsClip",
     "WeightsClip" -> NetPort["HardInclude", "Weights"],
-    "HardInclude" -> "And1",
-    "And1" -> "OutputClip"
+    "HardInclude" -> "Min",
+    "Min" -> "OutputClip"
+    (*
+    "HardInclude" -> {"Min", "Mean"},
+    "Min" -> NetPort["And", "Min"],
+    "Mean" -> NetPort["And", "Mean"],
+    "And" -> "OutputClip"
+    *)
   }
 ]
 
@@ -172,7 +191,7 @@ HardNeuralOR[inputSize_, layerSize_] := NetGraph[
     "WeightsClip" -> ElementwiseLayer[HardClip],
     "HardInclude" -> ThreadingLayer[HardOR[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
     "Or1" -> AggregationLayer[Max],
-    "OutputClip" -> ElementwiseLayer[HardClip]
+    "OutputClip" -> ElementwiseLayer[LogisticClip]
   |>,
   {
     "Weights" -> "WeightsClip",
@@ -182,9 +201,78 @@ HardNeuralOR[inputSize_, layerSize_] := NetGraph[
   }
 ]
 
+
+AppendHardNeuralLoss[net_] := NetGraph[
+  <|
+    "NeuralLogicNet" -> net,
+    (*"loss" -> HardNeuralLoss[10]*)
+    "loss" -> MeanSquaredLossLayer[]
+    (*
+    "SoftMaxLayer" -> SoftmaxLayer[],
+    "loss" -> CrossEntropyLossLayer["Probabilities"]
+    *)
+  |>,  
+  {
+    "NeuralLogicNet" -> NetPort["loss", "Input"],
+    "loss" -> NetPort["Loss"]
+  }
+]
+
+(* ------------------------------------------------------------------ *)
+(* Differentiable HARD NOT, HARD AND, HARD OR *)
+(* ------------------------------------------------------------------ *)
+
 (* ------------------------------------------------------------------ *)
 (* DEPRECATED BELOW HERE *)
 (* ------------------------------------------------------------------ *)
+
+(*
+HardNeuralLoss[a_] := NetGraph[
+  <|
+    "L1" -> FunctionLayer[
+      Max[0, (1 - 2 #Target) 1/(2 a)(#Input - 1/2) + 1/2]^2 &
+    ],
+    "Total" -> SummationLayer[]
+  |>,
+  {
+    "L1" -> "Total"
+  }
+]
+
+HardNeuralLoss[a_] := With[{m = a / 2},
+  NetGraph[
+    <|
+      "L" -> FunctionLayer[
+        With[{d = Abs[#Input - #Target]},
+          If[d <= 1/2,
+            LogisticSigmoid[a (2 d - 1)],
+            m d + 1/2 (1 - m)
+
+          ]
+        ] &
+      ],
+      "Total" -> SummationLayer[]
+    |>,
+    {
+      "L" -> "Total"
+    }
+  ]
+]
+
+HardNeuralLoss[a_] := NetGraph[
+  <|
+    "L1" -> ThreadingLayer[
+       a (1 - 2 #Target) (2 #Input - 1) &
+    ],
+    "L2" -> ElementwiseLayer[#/(1+Abs[#])&],
+    "Total" -> SummationLayer[]
+  |>,
+  {
+    "L1" -> "L2",
+    "L2" -> "Total"
+  }
+]
+*)
 
 (* ------------------------------------------------------------------ *)
 (* Differentiable HARD AND *)
@@ -562,9 +650,8 @@ BitLossForward[inputSize_, eps_] := Function[
     },
     Table[
       (* TODO: unify with backward function *)
-      If[(predictedBits[[n]] > (0.5 + eps) && targetBits[[n]] > 0.5) || (predictedBits[[n]] < (0.5 - eps) && targetBits[[n]] < 0.5),
+      If[(predictedBits[[n]] > (0.5 + eps) && targetBits[[n]] > 0.5) || (predictedBits[[n]] <= (0.5 - eps) && targetBits[[n]] <= 0.5),
         0.0,
-        (* TODO: Perhaps measure error to hinge point? *)
         (predictedBits[[n]] - targetBits[[n]])^2
       ],
       {n, 1, inputSize}
@@ -584,7 +671,7 @@ BitLossBackward[inputSize_, eps_] := Function[
     },
     Table[
       If[n <= inputSize,
-        If[(predictedBits[[n]] > (0.5 + eps) && targetBits[[n]] > 0.5) || (predictedBits[[n]] < (0.5 - eps) && targetBits[[n]] < 0.5),
+        If[(predictedBits[[n]] > (0.5 + eps) && targetBits[[n]] > 0.5) || (predictedBits[[n]] <= (0.5 - eps) && targetBits[[n]] <= 0.5),
           0.0,
           2 (predictedBits[[n]] - targetBits[[n]])
         ],
@@ -599,7 +686,7 @@ BitLossBackward[inputSize_, eps_] := Function[
   Small margin (e.g. 0.01) accelerates learning although trajectory is noisier. 
   Large margin (e.g. 0.5) slows learning but trajectory is more smooth.
 *)
-BitLoss[inputSize_] := With[{eps = 0.1}, 
+BitLoss[inputSize_] := With[{eps = 0.2},
   CompiledLayer[
     BitLossForward[inputSize, eps], 
     BitLossBackward[inputSize, eps], 
