@@ -7,6 +7,7 @@
   - Work out the policy for the sizes that ensure all possible DNF expressions
     can be learned. Ten change parameter to [0, 1] from 0 capacity to full capacity to represent
     all possible DNF expressions. Ignoring NOTs then andSize does not need to be larger than 2^(inputSize - 1)
+  - XOR neuron
 *)
 
 (* ------------------------------------------------------------------ *)
@@ -98,8 +99,7 @@ HardAND[b_, w_] :=
     ]
   ]
 
-
-HardNeuralAND[inputSize_, layerSize_] := InitializeBiasToZero[NetGraph[
+HardNeuralAND[inputSize_, layerSize_] := NetGraph[
   <|
     "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
     "WeightsClip" -> ElementwiseLayer[HardClip],
@@ -113,21 +113,21 @@ HardNeuralAND[inputSize_, layerSize_] := InitializeBiasToZero[NetGraph[
     "HardInclude" -> "Min",
     "Min" -> "OutputClip"
   }
-]]
+]
 
-HardNeuralNAND[inputSize_, layerSize_] := NetGraph[
+HardNeuralNAND[inputSize_, layerSize_] := InitializeBiasToZero[NetGraph[
   <|
     "AND" -> HardNeuralAND[inputSize, layerSize],
-    "NOT" -> InitializeBiasToZero[NeuralNOT[layerSize]]
+    "NOT" -> NeuralNOT[layerSize]
   |>,
   {
     "AND" -> "NOT"
   }
-]
+]]
 
 HardOR[b_, w_] := 1 - HardAND[1-b, w]
 
-HardNeuralOR[inputSize_, layerSize_] := InitializeBiasToZero[NetGraph[
+HardNeuralOR[inputSize_, layerSize_] := NetGraph[
   <|
     "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
     "WeightsClip" -> ElementwiseLayer[HardClip],
@@ -141,17 +141,17 @@ HardNeuralOR[inputSize_, layerSize_] := InitializeBiasToZero[NetGraph[
     "HardInclude" -> "Max",
     "Max" -> "OutputClip"
   }
-]]
+]
 
-HardNeuralNOR[inputSize_, layerSize_] := NetGraph[
+HardNeuralNOR[inputSize_, layerSize_] := InitializeBiasToZero[NetGraph[
   <|
     "OR" -> HardNeuralOR[inputSize, layerSize],
-    "NOT" -> InitializeBalanced[NeuralNOT[layerSize]]
+    "NOT" -> NeuralNOT[layerSize]
   |>,
   {
     "OR" -> "NOT"
   }
-]
+]]
 
 (* 
   Currently using sort (probably compiles to QuickSort)
