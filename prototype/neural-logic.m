@@ -3,6 +3,7 @@
 (* 
   TODO:
   - Bias term
+  - Initialisation policies
   - Work out the policy for the sizes that ensure all possible DNF expressions
     can be learned. Ten change parameter to [0, 1] from 0 capacity to full capacity to represent
     all possible DNF expressions. Ignoring NOTs then andSize does not need to be larger than 2^(inputSize - 1)
@@ -16,12 +17,17 @@ Harden::usage = "Hards soft bits.";
 Soften::usage = "Soften hard bits.";
 NeuralNOT::usage = "Neural NOT.";
 HardNeuralAND::usage = "Hard neural AND.";
+HardNeuralNAND::usage = "Hard neural NAND.";
 HardNeuralOR::usage = "Hard neural OR.";
+HardNeuralNOR::usage = "Hard neural NOR.";
 PortLayer::usage = "Port layer.";
 AppendHardClassificationLoss::usage = "Append hard classification loss.";
 NeuralOR::usage = "Neural OR.";
 NeuralAND::usage = "Neural AND.";
-InitializeNeuralLogicNet::usage = "Initialize neural logic network.";
+HardClip::usage = "Hard clip.";
+LogisticClip::usage = "Logistic clip.";
+HardNOT::usage = "Hard NOT.";
+HardNeuralMajority::usage = "Hard neural majority.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -52,12 +58,26 @@ LogisticClip[x_] := LogisticSigmoid[4(2 x - 1)]
 (* Differentiable HARD NOT, HARD AND, HARD OR *)
 (* ------------------------------------------------------------------ *)
 
+HardNOT[input_, weights_] := 1 - weights + input (2 weights - 1)
+
+InitializeBalanced[net_] := NetInitialize[net,
+  Method -> {"Random", "Weights" -> UniformDistribution[{0.4, 0.6}]}
+]
+
+InitializeBiasToZero[net_] := NetInitialize[net,
+  Method -> {"Random", "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[-1, 1]]}
+]
+
+InitializeBiasToOne[net_] := NetInitialize[net,
+  Method -> {"Random", "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[1, 1]]}
+]
+
 NeuralNOT[inputSize_] := NetGraph[
   <|
     "Weights" -> NetArrayLayer["Output" -> inputSize],
     "WeightsClip" -> ElementwiseLayer[HardClip], 
-    "Not" -> ThreadingLayer[1 - #Weights + #Input (2 #Weights - 1) &, 1],
-    "OutputClip" -> ElementwiseLayer[HardClip] 
+    "Not" -> ThreadingLayer[HardNOT[#Input, #Weights] &, 1],
+    "OutputClip" -> ElementwiseLayer[LogisticClip] 
   |>,
   {
     "Weights" -> "WeightsClip",
@@ -78,13 +98,14 @@ HardAND[b_, w_] :=
     ]
   ]
 
-HardNeuralAND[inputSize_, layerSize_] := NetGraph[
+
+HardNeuralAND[inputSize_, layerSize_] := InitializeBiasToZero[NetGraph[
   <|
     "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
     "WeightsClip" -> ElementwiseLayer[HardClip],
     "HardInclude" -> ThreadingLayer[HardAND[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
     "Min" -> AggregationLayer[Min],
-    "OutputClip" -> ElementwiseLayer[HardClip] 
+    "OutputClip" -> ElementwiseLayer[LogisticClip] 
   |>,
   {
     "Weights" -> "WeightsClip",
@@ -92,17 +113,27 @@ HardNeuralAND[inputSize_, layerSize_] := NetGraph[
     "HardInclude" -> "Min",
     "Min" -> "OutputClip"
   }
+]]
+
+HardNeuralNAND[inputSize_, layerSize_] := NetGraph[
+  <|
+    "AND" -> HardNeuralAND[inputSize, layerSize],
+    "NOT" -> InitializeBiasToZero[NeuralNOT[layerSize]]
+  |>,
+  {
+    "AND" -> "NOT"
+  }
 ]
 
 HardOR[b_, w_] := 1 - HardAND[1-b, w]
 
-HardNeuralOR[inputSize_, layerSize_] := NetGraph[
+HardNeuralOR[inputSize_, layerSize_] := InitializeBiasToZero[NetGraph[
   <|
     "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
     "WeightsClip" -> ElementwiseLayer[HardClip],
     "HardInclude" -> ThreadingLayer[HardOR[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
     "Max" -> AggregationLayer[Max],
-    "OutputClip" -> ElementwiseLayer[HardClip]
+    "OutputClip" -> ElementwiseLayer[LogisticClip]
   |>,
   {
     "Weights" -> "WeightsClip",
@@ -110,6 +141,48 @@ HardNeuralOR[inputSize_, layerSize_] := NetGraph[
     "HardInclude" -> "Max",
     "Max" -> "OutputClip"
   }
+]]
+
+HardNeuralNOR[inputSize_, layerSize_] := NetGraph[
+  <|
+    "OR" -> HardNeuralOR[inputSize, layerSize],
+    "NOT" -> InitializeBalanced[NeuralNOT[layerSize]]
+  |>,
+  {
+    "OR" -> "NOT"
+  }
+]
+
+(* 
+  Currently using sort (probably compiles to QuickSort)
+    - average O(n log n)
+    - worst-case O(n^2)
+  Replace with Floyd-Rivest algorithm:
+    - average n + \min(k, n - k) + O(\sqrt{n \log n}) comparisons with probability at least 1 - 2n^{-1/2}
+    - worst-case O(n^2)
+    - See https://danlark.org/2020/11/11/miniselect-practical-and-generic-selection-algorithms/
+    - See also https://www.semanticscholar.org/paper/A-Fast-and-Flexible-Sorting-Algorithm-with-CUDA-Chen-Qin/648bd14cf19dd1a5ed5c09271bced0b3c6762dd9
+      for sorting on GPUs.
+*)
+HardNeuralMajority[inputSize_, layerSize_] := With[
+  {medianIndex = Ceiling[(inputSize + 1)/2]},
+  InitializeBalanced[NetGraph[
+    <|
+      "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
+      "WeightsClip" -> ElementwiseLayer[HardClip],
+      "HardInclude" -> ThreadingLayer[HardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
+      "Sort" -> FunctionLayer[Sort /@ # &],
+      "Medians" -> PartLayer[{All, medianIndex}],
+      "OutputClip" -> ElementwiseLayer[HardClip]
+    |>,
+    {
+      "Weights" -> "WeightsClip",
+      "WeightsClip" -> NetPort["HardInclude", "Weights"],
+      "HardInclude" -> "Sort",
+      "Sort" -> "Medians",
+      "Medians" -> "OutputClip"
+    }
+  ]]
 ]
 
 PortLayer[inputSize_, numPorts_] := ReshapeLayer[{numPorts, inputSize / numPorts}]
@@ -125,13 +198,6 @@ AppendHardClassificationLoss[net_] := NetGraph[
     "Probs" -> NetPort["loss", "Input"],
     "loss" -> NetPort["Loss"]
   }
-]
-
-InitializeNeuralLogicNet[net_] := NetInitialize[
-  net,
-  Method -> {"Random", "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[-1, 1]]}
-  (*Method -> {"Random", "Weights" -> UniformDistribution[{0.01, 0.7}]}*)
-  (*Method -> {"Random", "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[1, 1]]}*)
 ]
 
 (* ------------------------------------------------------------------ *)
@@ -182,118 +248,7 @@ NeuralOR[inputSize_, layerSize_] := NetGraph[
   }
 ]
 
-(* ------------------------------------------------------------------ *)
 (* WIP *)
-(* ------------------------------------------------------------------ *)
-
-(* ------------------------------------------------------------------ *)
-(* Differentiable boolean majority *)
-(* ------------------------------------------------------------------ *)
-
-(*
-  Computes the soft-majority of all input soft-bits.
-  The input soft-bits are assumed to be between -1 and +1.
-  The output is a soft-bit between -1 and +1.
-*)
-NeuralMajorityForward[] := Function[
-  {
-    Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 1]]
-  },
-  Block[
-    {
-      (* Currently using sort (probably compiles to QuickSort)
-        - average O(n log n)
-        - worst-case O(n^2)
-      *)
-      (* Replace with Floyd-Rivest algorithm:
-        - average n + \min(k, n - k) + O(\sqrt{n \log n}) comparisons with probability at least 1 - 2n^{-1/2}
-        - worst-case O(n^2)
-        See https://danlark.org/2020/11/11/miniselect-practical-and-generic-selection-algorithms/
-        - See also https://www.semanticscholar.org/paper/A-Fast-and-Flexible-Sorting-Algorithm-with-CUDA-Chen-Qin/648bd14cf19dd1a5ed5c09271bced0b3c6762dd9
-        for sorting on GPUs.
-        - What about training a small NN that takes values between 0 and 1 and then predicts arg min or arg max? Probably slower than just sorting.
-      *)
-      s = Sort[
-        MapIndexed[
-          {#1, #2[[1]]*1.0} &, 
-          input
-        ]
-      ], 
-      i = Floor[Ceiling[Length[input]/2.0]]
-    },
-    {First[s[[i]]], Last[s[[i]]]}
-  ]
-]
-  
-NeuralMajorityBackward[] := Function[
-  {
-    Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 1]],
-    Typed[outgrad, TypeSpecifier["PackedArray"]["MachineReal", 1]],
-    Typed[output, TypeSpecifier["PackedArray"]["MachineReal", 1]]
-  },
-  Block[
-    {
-      i = Round[Last[output]],
-      g = First[outgrad]
-    },
-    Table[
-      If[i == j, 
-        g, (* Backprop the median bit *)
-        If[i < j, 
-          0.0, (* Make non-zero if we want to affect more than just median bit *)
-          0.0
-        ]
-      ],
-      {j, 1, Length[input]}
-    ]
-  ]
-]
-
-NeuralMajority[] := CompiledLayer[NeuralMajorityForward[], NeuralMajorityBackward[]]
-
-WeightedNeuralMajority[weights_List] := NetGraph[
-  <|
-    "Weights" -> NetArrayLayer["Array" -> weights, "Output" -> Length[weights]],
-    "WeightedBits" -> FunctionLayer[
-      1 - #Bits + #Weights (2 #Bits - 1) &, 
-      "Bits" -> Length[weights], 
-      "Weights" -> Length[weights], 
-      "Output" -> Length[weights]
-    ],
-    "NonLin" -> ElementwiseLayer[ClipSoftBit], 
-    "Majority" -> NeuralMajority[],
-    "MajorityBit" -> PartLayer[1],
-    "Reshape" -> ReshapeLayer[{1}]
-  |>,
-  {
-    "Weights" -> "WeightedBits",
-    NetPort["Input"] -> "WeightedBits",
-    "WeightedBits" -> "NonLin",
-    "NonLin" -> "Majority",
-    "Majority" -> "MajorityBit",
-    "MajorityBit" -> "Reshape"
-  }
-]
-
-WeightedNeuralMajority[n_] := WeightedNeuralMajority[RandomSoftBit[n]]
-
-(* ------------------------------------------------------------------ *)
-(* Majority layer *)
-(* ------------------------------------------------------------------ *)
-
-NeuralMajorityLayer[inputSize_, layerSize_] := NetGraph[
-    Association[
-      Map[
-        "majority" <> ToString[#] -> WeightedNeuralMajority[inputSize] &, 
-        Range[layerSize]
-      ],
-      "catenate" -> CatenateLayer[]
-    ],
-    Map[
-      "majority" <> ToString[#] -> "catenate" &,
-      Range[layerSize]
-    ]
-  ]
 
 (*
 BooleanMajorityLayer[input_, weights_] := Map[Inner[Xnor, input, #, Majority] &, weights]
