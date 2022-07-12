@@ -44,7 +44,8 @@ Stretch::usage = "Specifies a differentiable stretch function.";
 InitializeNeuralLogicNet::usage = "Initialize a neural logic network.";
 (*BinaryClassificationLayer::usage = "Specifies a binary classification layer.";*)
 HardNeuralLoss::usage = "Specifies a hard neural loss function.";
-AppendHardNeuralLoss::usage = "Appends a hard neural loss function to a neural network.";
+AppendHardClassificationLoss::usage = "Appends a hard neural loss function to a neural network.";
+HardClassificationLayer::usage = "Specifies a hard classification layer.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -63,7 +64,7 @@ Soften[hardBit_] := If[hardBit == 1, 1.0, 0.0]
 Soften[hardBits_List] := Map[Soften, hardBits]
 
 HardClip[x_] := Clip[x, {0.00000001, 0.9999999}]
-LogisticClip[x_] := LogisticSigmoid[5(2 x - 1)]
+LogisticClip[x_] := LogisticSigmoid[4(2 x - 1)]
 
 RandomSoftBit[n_] := RandomReal[{0.1, 0.9}, n]
 
@@ -131,8 +132,8 @@ NeuralOR[inputSize_, layerSize_] := NetGraph[
 
 InitializeNeuralLogicNet[net_] := NetInitialize[
   net,
-  (*Method -> {"Random", "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[-1, 1]]}*)
-  Method -> {"Random", "Weights" -> UniformDistribution[{0.01, 0.7}]}
+  Method -> {"Random", "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[-1, 1]]}
+  (*Method -> {"Random", "Weights" -> UniformDistribution[{0.01, 0.7}]}*)
   (*Method -> {"Random", "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[1, 1]]}*)
 ]
 
@@ -158,28 +159,13 @@ HardNeuralAND[inputSize_, layerSize_] := NetGraph[
     "WeightsClip" -> ElementwiseLayer[HardClip],
     "HardInclude" -> ThreadingLayer[HardAND[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
     "Min" -> AggregationLayer[Min],
-    (*
-    "Mean" -> AggregationLayer[Mean],
-    "And" -> FunctionLayer[
-      If[#Min > 1/2,
-        #Min + #Mean (1 - #Min^2),
-        #Min + #Mean (1/2 - #Min^2)
-      ] &
-    ],
-    *)
-    "OutputClip" -> ElementwiseLayer[HardClip] 
+    "OutputClip" -> ElementwiseLayer[LogisticClip] 
   |>,
   {
     "Weights" -> "WeightsClip",
     "WeightsClip" -> NetPort["HardInclude", "Weights"],
     "HardInclude" -> "Min",
     "Min" -> "OutputClip"
-    (*
-    "HardInclude" -> {"Min", "Mean"},
-    "Min" -> NetPort["And", "Min"],
-    "Mean" -> NetPort["And", "Mean"],
-    "And" -> "OutputClip"
-    *)
   }
 ]
 
@@ -190,30 +176,28 @@ HardNeuralOR[inputSize_, layerSize_] := NetGraph[
     "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
     "WeightsClip" -> ElementwiseLayer[HardClip],
     "HardInclude" -> ThreadingLayer[HardOR[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-    "Or1" -> AggregationLayer[Max],
+    "Max" -> AggregationLayer[Max],
     "OutputClip" -> ElementwiseLayer[LogisticClip]
   |>,
   {
     "Weights" -> "WeightsClip",
     "WeightsClip" -> NetPort["HardInclude", "Weights"],
-    "HardInclude" -> "Or1",
-    "Or1" -> "OutputClip"
+    "HardInclude" -> "Max",
+    "Max" -> "OutputClip"
   }
 ]
 
+HardClassificationLayer[inputSize_, numClasses_] := ReshapeLayer[{numClasses, inputSize / numClasses}]
 
-AppendHardNeuralLoss[net_] := NetGraph[
+AppendHardClassificationLoss[net_] := NetGraph[
   <|
     "NeuralLogicNet" -> net,
-    (*"loss" -> HardNeuralLoss[10]*)
+    "Probs" -> AggregationLayer[Mean],
     "loss" -> MeanSquaredLossLayer[]
-    (*
-    "SoftMaxLayer" -> SoftmaxLayer[],
-    "loss" -> CrossEntropyLossLayer["Probabilities"]
-    *)
   |>,  
   {
-    "NeuralLogicNet" -> NetPort["loss", "Input"],
+    "NeuralLogicNet" -> "Probs",
+    "Probs" -> NetPort["loss", "Input"],
     "loss" -> NetPort["Loss"]
   }
 ]
@@ -225,6 +209,16 @@ AppendHardNeuralLoss[net_] := NetGraph[
 (* ------------------------------------------------------------------ *)
 (* DEPRECATED BELOW HERE *)
 (* ------------------------------------------------------------------ *)
+
+    (*
+    "Mean" -> AggregationLayer[Mean],
+    "And" -> FunctionLayer[
+      If[#Min > 1/2,
+        #Min + #Mean (1 - #Min^2),
+        #Min + #Mean (1/2 - #Min^2)
+      ] &
+    ],
+    *)
 
 (*
 HardNeuralLoss[a_] := NetGraph[
