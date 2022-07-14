@@ -38,6 +38,7 @@ HardAND::usage = "Hard AND.";
 HardOR::usage = "Hard OR.";
 HardMajority::usage = "Hard majority.";
 ExtractWeights::usage = "Extract weights.";
+HardNetFunction::usage = "Hard net function.";
 
 (* ------------------------------------------------------------------ *)
 Begin["`Private`"]
@@ -344,6 +345,25 @@ AppendHardClassificationLoss[net_] := NetGraph[
 ]
 
 (* ------------------------------------------------------------------ *)
+(* Network hardening *)
+(* ------------------------------------------------------------------ *)
+
+ExtractWeights[net_] := Module[{weights, arrays},
+  weights = Select[Quiet[NetExtract[net, {All, "Weights"}]], ! MissingQ[#] &];
+  arrays = NetExtract[#, "Arrays"]["Array"] & /@ weights;
+  Normal /@ arrays
+]
+
+HardNetFunction[hardNet_, trainedSoftNet_] := Module[{softWeights},
+  softWeights = ExtractWeights[trainedSoftNet];
+  With[{hardWeights = Harden[softWeights]},
+    Function[{input},
+      hardNet[{input, hardWeights}]
+    ]
+  ]
+]
+
+(* ------------------------------------------------------------------ *)
 (* Approximate differentiable AND, OR *)
 (* ------------------------------------------------------------------ *)
 
@@ -389,16 +409,6 @@ NeuralOR[inputSize_, layerSize_] := NetGraph[
     "Or3" -> "Or4",
     "Or4" -> "OutputClip"
   }
-]
-
-(* ------------------------------------------------------------------ *)
-(* Network hardening *)
-(* ------------------------------------------------------------------ *)
-
-ExtractWeights[net_] := Module[{weights, arrays},
-  weights = Select[Quiet[NetExtract[net, {All, "Weights"}]], ! MissingQ[#] &];
-  arrays = NetExtract[#, "Arrays"]["Array"] & /@ weights;
-  Normal /@ arrays
 ]
 
 End[]
