@@ -37,6 +37,7 @@ HardNOR::usage = "Hard NOR.";
 HardAND::usage = "Hard AND.";
 HardOR::usage = "Hard OR.";
 HardMajority::usage = "Hard majority.";
+ExtractWeights::usage = "Extract weights.";
 
 (* ------------------------------------------------------------------ *)
 Begin["`Private`"]
@@ -390,66 +391,15 @@ NeuralOR[inputSize_, layerSize_] := NetGraph[
   }
 ]
 
-(* WIP *)
-
-(*
-BooleanMajorityLayer[input_, weights_] := Map[Inner[Xnor, input, #, Majority] &, weights]
-
-BooleanMajorityChain[spec_List] := Function[{input, weights},
-  Block[{activations = input},
-    Scan[
-      Block[{layerWeights = #},
-        activations = BooleanMajorityLayer[activations, layerWeights];
-      ] &,
-      weights
-    ];
-    activations
-  ]
-] 
-*)
-
-(* ------------------------------------------------------------------ *)
-(* Specify binary neural networks *)
-(* ------------------------------------------------------------------ *)
-
-(*
-SetAttributes[BinaryNN, HoldFirst]
-
-BinaryNN[spec_List] := Module[{softNet, hardNet},
-  softNet = NetChain[# & /@ spec];
-  (* TODO: update for mixed layers *)
-  hardNet = BooleanMajorityChain[spec];
-  {softNet, hardNet}
-]
-*)
-
 (* ------------------------------------------------------------------ *)
 (* Network hardening *)
 (* ------------------------------------------------------------------ *)
 
-(* TODO: update for mixed layers *)
-(*
-ExtractWeights[net_] := Module[{layers, layerSizes, majorityNames, majorityNeuronLayers},
-  layers = NetExtract[net, All];
-  layerSizes = Information[#, "ArraysCount"] & /@ layers;
-  majorityNames = Map[Map[{"majority" <> ToString[#]} &, Range[#]] &, layerSizes];
-  majorityNeuronLayers = MapThread[NetExtract, {layers, majorityNames}];
-  Map[
-    Map[Normal[NetExtract[NetExtract[#, "Weights"], "Arrays"]["Array"]] &, #] &,
-    majorityNeuronLayers
-  ]
+ExtractWeights[net_] := Module[{weights, arrays},
+  weights = Select[Quiet[NetExtract[net, {All, "Weights"}]], ! MissingQ[#] &];
+  arrays = NetExtract[#, "Arrays"]["Array"] & /@ weights;
+  Normal /@ arrays
 ]
-*)
-
-(* TODO: update for mixed layers *)
-(*
-HardBinaryNN[hardNet_, trainedSoftNet_] := Module[{hardenedWeights, inputSize},
-  hardenedWeights = Harden[ExtractWeights[trainedSoftNet]];
-  inputSize = Length[First[First[hardenedWeights]]];
-  inputSymbols = Map[Symbol["x" <> ToString[#]] &, Range[inputSize]];
-  Function[Evaluate[inputSymbols], Evaluate[hardNet[inputSymbols, hardenedWeights]]]
-]
-*)
 
 End[]
 
