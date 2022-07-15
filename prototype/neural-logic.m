@@ -39,6 +39,11 @@ HardOR::usage = "Hard OR.";
 HardMajority::usage = "Hard majority.";
 ExtractWeights::usage = "Extract weights.";
 HardNetFunction::usage = "Hard net function.";
+HardWeightSize::usage = "Hard weight size.";
+SoftWeightSize::usage = "Soft weight size.";
+SpaceSaving::usage = "Space saving.";
+
+(* ------------------------------------------------------------------ *)
 
 (* ------------------------------------------------------------------ *)
 Begin["`Private`"]
@@ -258,9 +263,7 @@ HardNeuralNOR[inputSize_, layerSize_] := With[
 
 HardMajority[{input_List, weights_List}] := 
   {
-    Block[{weightedInputs = Map[HardNOT[{input, #}] &, First[weights]]},
-      MapApply[Majority, weightedInputs]
-    ],
+    Map[Majority @@ First[HardNOT[{input, #}]] &, First[weights]],
     Drop[weights, 1]
   }
 
@@ -275,23 +278,30 @@ HardMajority[{input_List, weights_List}] :=
 *)
 HardNeuralMajority[inputSize_, layerSize_] := {
   With[{medianIndex = Ceiling[(inputSize + 1)/2]},
-    InitializeBalanced[NetGraph[
-      <|
-        "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
-        "WeightsClip" -> ElementwiseLayer[HardClip],
-        "HardInclude" -> ThreadingLayer[SoftNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-        "Sort" -> FunctionLayer[Sort /@ # &],
-        "Medians" -> PartLayer[{All, medianIndex}],
-        "OutputClip" -> ElementwiseLayer[LogisticClip]
-      |>,
-      {
-        "Weights" -> "WeightsClip",
-        "WeightsClip" -> NetPort["HardInclude", "Weights"],
-        "HardInclude" -> "Sort",
-        "Sort" -> "Medians",
-        "Medians" -> "OutputClip"
-      }
-    ]]
+    InitializeBalanced[
+      NetGraph[
+        <|
+          "MAJORITY" -> NetGraph[
+            <|
+              "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
+              "WeightsClip" -> ElementwiseLayer[HardClip],
+              "HardInclude" -> ThreadingLayer[SoftNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
+              "Sort" -> FunctionLayer[Sort /@ # &],
+              "Medians" -> PartLayer[{All, medianIndex}],
+              "OutputClip" -> ElementwiseLayer[LogisticClip]
+            |>,
+            {
+              "Weights" -> "WeightsClip",
+              "WeightsClip" -> NetPort["HardInclude", "Weights"],
+              "HardInclude" -> "Sort",
+              "Sort" -> "Medians",
+              "Medians" -> "OutputClip"
+            }
+          ]
+        |>,
+        {}
+      ]
+    ]
   ],
   HardMajority
 }
@@ -348,8 +358,12 @@ AppendHardClassificationLoss[net_] := NetGraph[
 (* Network hardening *)
 (* ------------------------------------------------------------------ *)
 
-ExtractWeights[net_] := Module[{weights, arrays},
-  weights = Select[Quiet[NetExtract[net, {All, "Weights"}]], ! MissingQ[#] &];
+ExtractWeights[net_] := Module[{layers, weights, arrays},
+  layers = NetExtract[net, All];
+  weights = Select[Flatten[
+    Values[Quiet[NetExtract[#, {All, "Weights"}]] & /@ layers]],
+    !MissingQ[#] &
+  ];
   arrays = NetExtract[#, "Arrays"]["Array"] & /@ weights;
   Normal /@ arrays
 ]
@@ -358,8 +372,25 @@ HardNetFunction[hardNet_, trainedSoftNet_] := Module[{softWeights},
   softWeights = ExtractWeights[trainedSoftNet];
   With[{hardWeights = Harden[softWeights]},
     Function[{input},
-      hardNet[{input, hardWeights}]
+      First[hardNet[{input, hardWeights}]]
     ]
+  ]
+]
+
+SoftWeightSize[weights_] := Quantity[Length[Flatten[weights]] * 32.0 / 8000.0, "kilobytes"]
+
+HardWeightSize[weights_] := Quantity[Length[Flatten[weights]] / 8000.0, "kilobytes"]
+
+SpaceSaving[net_] := Block[
+  {weights = ExtractWeights[net], softSize, hardSize},
+  softSize = SoftWeightSize[weights];
+  hardSize = HardWeightSize[weights];
+  Column[
+    {
+      "Soft net size = " <> ToString[softSize], 
+      "Hard net size = " <> ToString[hardSize],
+      "Saving factor = " <> ToString[softSize/hardSize]
+    }
   ]
 ]
 
