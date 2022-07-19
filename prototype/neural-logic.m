@@ -341,15 +341,164 @@ HardNeuralChain[layers_List] := Module[{chain = Transpose[layers]},
 (* Hard classification loss *)
 (* ------------------------------------------------------------------ *)
 
+(* TODO: need to interpret output differently *)
+AppendHardClassificationLoss[net_, portSize_] := NetGraph[
+  <|
+    "NeuralLogicNet" -> net,
+    "Units" -> NetArrayLayer["Array" -> Table[2^i - 1, {i, 1, portSize}], LearningRateMultipliers -> 0],
+    "UnitMask" -> ThreadingLayer[#Input #Units &, 1],
+    "Integers" -> AggregationLayer[Total],
+    "Probs" -> ElementwiseLayer[(# / 2^portSize - 1) &],
+    "SoftmaxLayer" -> SoftmaxLayer[],
+    "loss" -> CrossEntropyLossLayer["Binary"]
+  |>,  
+  {
+    "NeuralLogicNet" -> "UnitMask",
+    "Units" -> NetPort["UnitMask", "Units"],
+    "UnitMask" -> "Integers",
+    "Integers" -> "Probs",
+    "Probs" -> "SoftmaxLayer",
+    "SoftmaxLayer" -> NetPort["loss", "Input"],
+    "loss" -> NetPort["Loss"]
+  }
+]
+
+(* Amazing soft performance but doesn't harden. *)
 AppendHardClassificationLoss[net_] := NetGraph[
   <|
     "NeuralLogicNet" -> net,
-    "Probs" -> AggregationLayer[Mean],
-    "loss" -> MeanSquaredLossLayer[]
+    "Harden" -> FunctionLayer[
+      Function[
+        <|
+          "SoftHigh" -> If[# > 0.5, #, 0.0] & /@ #, 
+          "HardHigh" -> If[# > 0.5, 1.0, 0.0] & /@ #
+        |>
+      ]
+    ],
+    "MeanSoftHigh" -> AggregationLayer[Mean],
+    "TotalHardHigh" -> AggregationLayer[Total],
+    "Normalize" -> FunctionLayer[#TotalHardHigh + #MeanSoftHigh &],
+    "SoftmaxLayer" -> SoftmaxLayer[],
+    "loss" -> CrossEntropyLossLayer["Binary"]
   |>,  
   {
-    "NeuralLogicNet" -> "Probs",
-    "Probs" -> NetPort["loss", "Input"],
+    "NeuralLogicNet" -> "Harden",
+    NetPort["Harden", "Output1"] -> "MeanSoftHigh",
+    NetPort["Harden", "Output2"] -> "TotalHardHigh",
+    "MeanSoftHigh" -> NetPort["Normalize", "MeanSoftHigh"],
+    "TotalHardHigh" -> NetPort["Normalize", "TotalHardHigh"],
+    "Normalize" -> "SoftmaxLayer",
+    "SoftmaxLayer" -> NetPort["loss", "Input"],
+    "loss" -> NetPort["Loss"]
+  }
+]
+
+AppendHardClassificationLoss[net_] := NetGraph[
+  <|
+    "NeuralLogicNet" -> net,
+    "Harden" -> FunctionLayer[
+      Function[
+        <|
+          "SoftHigh" -> If[# > 0.5, #, 0.0] & /@ #, (* Output 1 *)
+          "SoftLow" -> If[# <= 0.5, #, 0.0] & /@ #, (* Output 2 *)
+          "HardHigh" -> If[# > 0.5, 1.0, 0.0] & /@ # (* Output 3 *)
+        |>
+      ]
+    ],
+    "MinSoftHigh" -> AggregationLayer[Min],
+    "MaxSoftLow" -> AggregationLayer[Max],
+    "TotalHardHigh" -> AggregationLayer[Total],
+    "Combine" -> FunctionLayer[
+      #TotalHardHigh + #MinSoftHigh - (0.5 - #MaxSoftLow) &
+    ],
+    "TotalCombine" -> AggregationLayer[Total, All],
+    "Normalize" -> FunctionLayer[#Combine / #TotalCombine &],
+    "loss" -> CrossEntropyLossLayer["Binary"]
+  |>,  
+  {
+    "NeuralLogicNet" -> "Harden",
+    NetPort["Harden", "Output1"] -> "MinSoftHigh",
+    NetPort["Harden", "Output2"] -> "MaxSoftLow",
+    NetPort["Harden", "Output3"] -> "TotalHardHigh",
+    "MinSoftHigh" -> NetPort["Combine", "MinSoftHigh"],
+    "MaxSoftLow" -> NetPort["Combine", "MaxSoftLow"],
+    "TotalHardHigh" -> NetPort["Combine", "TotalHardHigh"],
+    "Combine" -> "TotalCombine",
+    "Combine" -> NetPort["Normalize", "Combine"],
+    "TotalCombine" -> NetPort["Normalize", "TotalCombine"],
+    "Normalize" -> NetPort["loss", "Input"],
+    "loss" -> NetPort["Loss"]
+  }
+]
+
+AppendHardClassificationLoss[net_] := NetGraph[
+  <|
+    "NeuralLogicNet" -> net,
+    "Harden" -> ElementwiseLayer[LogisticSigmoid[5(2 # - 1)] &],
+    "Mean" -> AggregationLayer[Mean],
+    "loss" -> CrossEntropyLossLayer["Binary"]
+  |>,  
+  {
+    "NeuralLogicNet" -> "Harden",
+    "Harden" -> "Mean",
+    "Mean" -> NetPort["loss", "Input"],
+    "loss" -> NetPort["Loss"]
+  }
+]
+
+(* TODO: need to interpret output differently *)
+AppendHardClassificationLoss[net_, portSize_] := NetGraph[
+  <|
+    "NeuralLogicNet" -> net,
+    "Units" -> NetArrayLayer["Array" -> Table[2^i - 1, {i, 1, portSize}], LearningRateMultipliers -> 0],
+    "Hardening" -> FunctionLayer[If[# > 0.5, #, 0.0] &],
+    "UnitMask" -> ThreadingLayer[#Input #Units &, 1],
+    "Integers" -> AggregationLayer[Total],
+    "Probs" -> ElementwiseLayer[(# / 2^portSize - 1) &],
+    "SoftmaxLayer" -> SoftmaxLayer[],
+    "loss" -> CrossEntropyLossLayer["Binary"]
+  |>,  
+  {
+    "NeuralLogicNet" -> "Hardening",
+    "Hardening" -> NetPort["UnitMask", "Input"],
+    "Units" -> NetPort["UnitMask", "Units"],
+    "UnitMask" -> "Integers",
+    "Integers" -> "Probs",
+    "Probs" -> "SoftmaxLayer",
+    "SoftmaxLayer" -> NetPort["loss", "Input"],
+    "loss" -> NetPort["Loss"]
+  }
+]
+
+AppendHardClassificationLoss[net_, portSize_] := NetGraph[
+  <|
+    "NeuralLogicNet" -> net,
+    "Harden" -> FunctionLayer[
+      Function[
+        <|
+          "SoftHigh" -> If[# > 0.5, #, 0.0] & /@ #, (* Output 1 *) 
+          "SoftLow" -> If[# <= 0.5, 1 - #, 0.0] & /@ #, (* Output 2 *) 
+          "HardHigh" -> If[# > 0.5, 1.0, 0.0] & /@ # (* Output 3 *) 
+        |>
+      ]
+    ],
+    "TotalSoftHigh" -> AggregationLayer[Total],
+    "TotalSoftLow" -> AggregationLayer[Total],
+    "TotalHardHigh" -> AggregationLayer[Total],
+    "Normalize" -> FunctionLayer[#TotalHardHigh + (0.5 + 0.5(#TotalSoftHigh - #TotalSoftLow) / portSize) &],
+    "SoftmaxLayer" -> SoftmaxLayer[],
+    "loss" -> CrossEntropyLossLayer["Probabilities"]
+  |>,  
+  {
+    "NeuralLogicNet" -> "Harden",
+    NetPort["Harden", "Output1"] -> "TotalSoftHigh",
+    NetPort["Harden", "Output2"] -> "TotalSoftLow",
+    NetPort["Harden", "Output3"] -> "TotalHardHigh",
+    "TotalSoftHigh" -> NetPort["Normalize", "TotalSoftHigh"],
+    "TotalSoftLow" -> NetPort["Normalize", "TotalSoftLow"],
+    "TotalHardHigh" -> NetPort["Normalize", "TotalHardHigh"],
+    "Normalize" -> "SoftmaxLayer",
+    "SoftmaxLayer" -> NetPort["loss", "Input"],
     "loss" -> NetPort["Loss"]
   }
 ]
