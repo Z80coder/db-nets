@@ -21,7 +21,6 @@ HardNeuralNAND::usage = "Hard neural NAND.";
 HardNeuralOR::usage = "Hard neural OR.";
 HardNeuralNOR::usage = "Hard neural NOR.";
 HardNeuralPortLayer::usage = "Port layer.";
-HardClassificationLoss::usage = "Hard classification loss.";
 NeuralOR::usage = "Neural OR.";
 NeuralAND::usage = "Neural AND.";
 SoftAND::usage = "Hard AND.";
@@ -42,6 +41,12 @@ HardNetFunction::usage = "Hard net function.";
 HardWeightSize::usage = "Hard weight size.";
 SoftWeightSize::usage = "Soft weight size.";
 SpaceSaving::usage = "Space saving.";
+
+HardClassificationLoss::usage = "Hard classification loss.";
+HardeningClassificationLoss::usage = "Hardening classification loss.";
+SoftClassificationLoss::usage = "Soft classification loss.";
+
+(* ------------------------------------------------------------------ *)
 
 (* ------------------------------------------------------------------ *)
 
@@ -343,47 +348,59 @@ HardNeuralChain[layers_List] := Module[{chain = Transpose[layers]},
 (* ------------------------------------------------------------------ *)
 
 HardClassificationLoss[numClasses_, portSize_] := 
-  With[{highMargin = 0.3, lowMargin = 0.7},
+  With[{lowMargin = 0.4, highMargin = 0.6},
     NetGraph[
       <|
+        (* Compute the hard-bit outputs on each port *)
         "Harden" -> FunctionLayer[
           If[# > 0.5, 1, 0] & /@ # &, 
-          "Input" -> {numClasses, portSize}, 
-          "Output" -> {numClasses, portSize}
+          "Input" -> {numClasses, portSize}, "Output" -> {numClasses, portSize}
         ],
-        "HardTotals" -> AggregationLayer[Total],
+        (* Compute the hard-bit totals on each port *)
+        "HardTotals" -> AggregationLayer[Total], (* TODO: should this be Total, 2?*)
+        (* Calculate the maximum hard-bit total across all ports *)
         "MaxHardHigh" -> AggregationLayer[Max, All],
-        "MaxPortMask" -> 
-        ThreadingLayer[
-          If[#HardTotals == #MaxHardHigh, 1, 0] &, 1, 
-          "Output" -> {numClasses}
+        (* Compute a boolean mask for each port. 
+            1 => port is dominant in terms of hard-bits, or port corresponds to target
+            0 => port is dominated
+          *)
+        "MaxPortMask" -> ThreadingLayer[
+          If[#Target == 1,
+            0,
+            If[#HardTotals >= #MaxHardHigh, 1, 0] 
+          ] &, 
+          1, "Output" -> {numClasses}
         ],
+        (* Mask out all soft-bits in non-dominant ports. Retain soft-bits in dominant ports. *)
         "ActivePortBits" -> FunctionLayer[#MaxPortMask #Input &],
-        "HighSoftBits" -> FunctionLayer[
-          If[# > highMargin, #, 0] & /@ # &, 
-          "Input" -> {numClasses, portSize}, "Output" -> {numClasses, portSize}
-        ],
+        (* Retain all soft-bits considered "low" in dominant ports. *)
         "LowSoftBits" -> FunctionLayer[
-          If[# <= lowMargin, #, 0] & /@ # &, 
+          If[# <= highMargin, #, 0] & /@ # &, 
           "Input" -> {numClasses, portSize}, "Output" -> {numClasses, portSize}
         ],
-        "CandidateSoftBits" -> ThreadingLayer[
-          If[#Target == 1, #LowSoftBits, #HighSoftBits] &, 
-          2, "Output" -> {numClasses, portSize}
+        (* Retain all soft-bits considered "high" in dominant ports. *)
+        "HighSoftBits" -> FunctionLayer[
+          If[# >= lowMargin, #, 0] & /@ # &, 
+          "Input" -> {numClasses, portSize}, "Output" -> {numClasses, portSize}
         ],
+        (* Compute active soft-bits distance to margin thresholds. *)
         "Margins" -> ThreadingLayer[
           If[#Target == 1,
-            If[#CandidateSoftBits == 0, 100, (lowMargin - #CandidateSoftBits)],
-            If[#CandidateSoftBits == 0, 100, (#CandidateSoftBits - highMargin)]
+            If[#LowSoftBits == 0, 100, (highMargin - #LowSoftBits)], (* Positive numbers, lowest is closest to margin*)
+            If[#HighSoftBits == 0, 100, (#HighSoftBits - lowMargin)] (* Positive numbers, lowest is closest to margin*)
           ] &,
           2, "Output" -> {numClasses, portSize}
         ],
+        (* Compute the value of the active soft-bits closest to margin thresholds. *)
         "MinMargins" -> AggregationLayer[Min],
+        (* Select the minimal margins *)
         "MarginalSoftBits" -> ThreadingLayer[
-          If[#Margins == #MinMargins, #CandidateSoftBits, 0] &, 
+          If[(#Margins == #MinMargins (*|| True*)) && #Margins != 100, #Margins, 0] &, 
           2, "Output" -> {numClasses, portSize}
         ],
+        (* Square the margins *)
         "SoftBitError" -> ElementwiseLayer[#^2 &],
+        (* Sum for loss *)
         "Error" -> SummationLayer[]
     |>,
     {
@@ -392,11 +409,9 @@ HardClassificationLoss[numClasses_, portSize_] :=
       "MaxHardHigh" -> NetPort["MaxPortMask", "MaxHardHigh"],
       "MaxPortMask" -> NetPort["ActivePortBits", "MaxPortMask"],
       "ActivePortBits" -> {"HighSoftBits", "LowSoftBits"},
-      "HighSoftBits" -> NetPort["CandidateSoftBits", "HighSoftBits"],
-      "LowSoftBits" -> NetPort["CandidateSoftBits", "LowSoftBits"],
-      "CandidateSoftBits" -> NetPort["Margins", "CandidateSoftBits"],
+      "HighSoftBits" -> NetPort["Margins", "HighSoftBits"],
+      "LowSoftBits" -> NetPort["Margins", "LowSoftBits"],
       "Margins" -> "MinMargins",
-      "CandidateSoftBits" -> NetPort["MarginalSoftBits", "CandidateSoftBits"],
       "Margins" -> NetPort["MarginalSoftBits", "Margins"],
       "MinMargins" -> NetPort["MarginalSoftBits", "MinMargins"],
       "MarginalSoftBits" -> "SoftBitError",
@@ -404,6 +419,82 @@ HardClassificationLoss[numClasses_, portSize_] :=
       "Error" -> NetPort["Loss"]
     }
   ]
+]
+
+HardeningClassificationLoss[a_] := NetGraph[
+  <|
+    (* Compute the hard-bit outputs on each port *)
+    "Hardened" -> ElementwiseLayer[If[# > 0.5, 1, 0] &],
+    (* Compute the hard-bit means *)
+    "HardMean" -> AggregationLayer[Mean],
+    (* Compute the soft-bit means *)
+    "SoftMean" -> AggregationLayer[Mean],
+    (* Compute the error between hard and soft-bit means *)
+    "Hardening Error" -> CrossEntropyLossLayer["Binary"],
+    "ScaledLoss" -> FunctionLayer[a # &]
+  |>,
+  {
+    "Hardened" -> "HardMean",
+    "HardMean" -> NetPort["Hardening Error", "Target"],
+    "SoftMean" -> NetPort["Hardening Error", "Input"],
+    NetPort["Hardening Error", "Loss"] -> "ScaledLoss",
+    "ScaledLoss" -> NetPort["Loss"]
+  }
+]
+
+(*
+HardeningClassificationLoss[a_] := NetGraph[
+  <|
+    "Hardened" -> ElementwiseLayer[If[# > 0.5, 1, 0] &],
+    "HardProbs" -> AggregationLayer[Mean],
+    "SoftProbs" -> AggregationLayer[Total],
+    "SoftmaxLayer" -> SoftmaxLayer[],
+    "Hardening Error" -> CrossEntropyLossLayer["Probabilities"],
+    "ScaledLoss" -> FunctionLayer[a # &]
+  |>,
+  {
+    "Hardened" -> "HardProbs",
+    "SoftProbs" -> "SoftmaxLayer",
+    "SoftmaxLayer" -> NetPort["Hardening Error", "Input"],
+    "HardProbs" -> NetPort["Hardening Error", "Target"],
+    NetPort["Hardening Error", "Loss"] -> "ScaledLoss",
+    "ScaledLoss" -> NetPort["Loss"]
+  }
+]
+*)
+
+HardClassificationLoss[numClasses_, portSize_, a_] := NetGraph[
+  <|
+    "Hardened" -> ElementwiseLayer[
+      If[# > 0.5, 1, 0] &, 
+      "Input" -> {numClasses, portSize}, "Output" -> {numClasses, portSize}],
+    "HardProbs" -> AggregationLayer[Mean, 2],
+    "SoftProbs" -> AggregationLayer[Total, 2],
+    "SoftmaxLayer" -> SoftmaxLayer[],
+    "Target Error" -> CrossEntropyLossLayer["Probabilities"],
+    "Hardening Error" -> CrossEntropyLossLayer["Binary"],
+    "ScaledLoss" -> FunctionLayer[a # &]
+  |>,
+  {
+    "Hardened" -> "HardProbs",
+    "SoftProbs" -> "SoftmaxLayer",
+    "SoftmaxLayer" -> NetPort["Target Error", "Input"],
+    "SoftmaxLayer" -> NetPort["Hardening Error", "Input"],
+    "HardProbs" -> NetPort["Hardening Error", "Target"],
+    "Hardening Error" -> "ScaledLoss",
+    NetPort["Target Error", "Loss"] -> NetPort["Loss1"],
+    "ScaledLoss" -> NetPort["Loss2"]
+  } 
+]
+
+HardClassificationLoss[] := NetGraph[
+  <|
+    "SoftProbs" -> AggregationLayer[Mean, 2],
+    "Target Error" -> MeanSquaredLossLayer[]
+  |>,
+  {
+    "SoftProbs" -> NetPort["Target Error", "Input"]
+  } 
 ]
 
 (* ------------------------------------------------------------------ *)
