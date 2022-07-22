@@ -3,6 +3,7 @@
 (* 
   TODO:
   - Initialisation policies
+  - Compiled loss that computes hard loss but sends error-signal back as soft loss
   - Work out the policy for the sizes that ensure all possible DNF expressions
     can be learned. Ten change parameter to [0, 1] from 0 capacity to full capacity to represent
     all possible DNF expressions. Ignoring NOTs then andSize does not need to be larger than 2^(inputSize - 1)
@@ -42,43 +43,63 @@ HardWeightSize::usage = "Hard weight size.";
 SoftWeightSize::usage = "Soft weight size.";
 SpaceSaving::usage = "Space saving.";
 HardClassificationLoss::usage = "Hard classification loss.";
+InitializeBiasToZero::usage = "Initialize bias to zero.";
+InitializeBiasToOne::usage = "Initialize bias to one.";
+InitializeBalanced::usage = "Initialize balanced.";
+InitializeToConstant::usage = "Initialize to constant.";
 
 (* ------------------------------------------------------------------ *)
 
-(* ------------------------------------------------------------------ *)
-
-(* ------------------------------------------------------------------ *)
 Begin["`Private`"]
-(* ------------------------------------------------------------------ *)
 
 (* ------------------------------------------------------------------ *)
 (* Boolean utilities *)
 (* ------------------------------------------------------------------ *)
 
 Harden[softBit_] := If[softBit > 0.5, True, False]
-Harden[softBits_List] := Map[Harden, softBits]
+Harden[softBits_List] := Harden /@ softBits
 
 Soften[hardBit_] := If[hardBit == 1, 1.0, 0.0]
 Soften[hardBits_List] := Map[Soften, hardBits]
 
 HardClip[x_] := Clip[x, {0.00000001, 0.9999999}]
 LogisticClip[x_] := LogisticSigmoid[4(2 x - 1)]
-(*LogisticClip[x_] := HardClip[x]*)
 
 (* ------------------------------------------------------------------ *)
 (* Initalization policies *)
 (* ------------------------------------------------------------------ *)
 
+InitializeToConstant[net_, k_] := NetInitialize[net,
+  Method -> {
+    "Random", 
+    "Weights" -> UniformDistribution[{k, k}],
+    "Biases" -> UniformDistribution[{k, k}]
+  }
+]
+
 InitializeBalanced[net_] := NetInitialize[net,
-  Method -> {"Random", "Weights" -> UniformDistribution[{0.4, 0.6}]}
+  Method -> {
+    "Random", 
+    "Weights" -> UniformDistribution[{0.4, 0.6}],
+    "Biases" -> UniformDistribution[{0.4, 0.6}]
+  }
 ]
 
 InitializeBiasToZero[net_] := NetInitialize[net,
-  Method -> {"Random", "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[-1, 1]]}
+  Method -> {
+    "Random", 
+    "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[-1, 1]],
+    "Biases" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[-1, 1]]
+  }
 ]
 
 InitializeBiasToOne[net_] := NetInitialize[net,
-  Method -> {"Random", "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[1, 1]]}
+  Method -> 
+  {
+    "Random", 
+    "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[1, 1]],
+    "Biases" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[1, 1]]
+  }
 ]
 
 (* ------------------------------------------------------------------ *)
@@ -111,7 +132,7 @@ HardNeuralNOT[inputSize_] := {
       "Weights" -> "WeightsClip",
       "WeightsClip" -> NetPort["Not", "Weights"],
       "Not" -> "OutputClip"
-    }
+    } 
   ],
   HardNOT
 }
@@ -351,6 +372,18 @@ HardClassificationLoss[] := NetGraph[
   |>,
   {
     "SoftProbs" -> NetPort["Target Error", "Input"]
+  } 
+]
+
+HardClassificationLoss[] := NetGraph[
+  <|
+    "SoftProbs" -> AggregationLayer[Total, 2],
+    "SoftmaxLayer" -> SoftmaxLayer[],
+    "Target Error" -> CrossEntropyLossLayer["Probabilities"]
+  |>,
+  {
+    "SoftProbs" -> "SoftmaxLayer",
+    "SoftmaxLayer" -> NetPort["Target Error", "Input"]
   } 
 ]
 
