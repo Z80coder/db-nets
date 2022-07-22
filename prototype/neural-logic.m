@@ -21,7 +21,6 @@ HardNeuralNAND::usage = "Hard neural NAND.";
 HardNeuralOR::usage = "Hard neural OR.";
 HardNeuralNOR::usage = "Hard neural NOR.";
 HardNeuralPortLayer::usage = "Port layer.";
-HardClassificationLoss::usage = "Hard classification loss.";
 NeuralOR::usage = "Neural OR.";
 NeuralAND::usage = "Neural AND.";
 SoftAND::usage = "Hard AND.";
@@ -42,6 +41,9 @@ HardNetFunction::usage = "Hard net function.";
 HardWeightSize::usage = "Hard weight size.";
 SoftWeightSize::usage = "Soft weight size.";
 SpaceSaving::usage = "Space saving.";
+HardClassificationLoss::usage = "Hard classification loss.";
+
+(* ------------------------------------------------------------------ *)
 
 (* ------------------------------------------------------------------ *)
 
@@ -342,68 +344,14 @@ HardNeuralChain[layers_List] := Module[{chain = Transpose[layers]},
 (* Hard classification loss *)
 (* ------------------------------------------------------------------ *)
 
-HardClassificationLoss[numClasses_, portSize_] := 
-  With[{highMargin = 0.3, lowMargin = 0.7},
-    NetGraph[
-      <|
-        "Harden" -> FunctionLayer[
-          If[# > 0.5, 1, 0] & /@ # &, 
-          "Input" -> {numClasses, portSize}, 
-          "Output" -> {numClasses, portSize}
-        ],
-        "HardTotals" -> AggregationLayer[Total],
-        "MaxHardHigh" -> AggregationLayer[Max, All],
-        "MaxPortMask" -> 
-        ThreadingLayer[
-          If[#HardTotals == #MaxHardHigh, 1, 0] &, 1, 
-          "Output" -> {numClasses}
-        ],
-        "ActivePortBits" -> FunctionLayer[#MaxPortMask #Input &],
-        "HighSoftBits" -> FunctionLayer[
-          If[# > highMargin, #, 0] & /@ # &, 
-          "Input" -> {numClasses, portSize}, "Output" -> {numClasses, portSize}
-        ],
-        "LowSoftBits" -> FunctionLayer[
-          If[# <= lowMargin, #, 0] & /@ # &, 
-          "Input" -> {numClasses, portSize}, "Output" -> {numClasses, portSize}
-        ],
-        "CandidateSoftBits" -> ThreadingLayer[
-          If[#Target == 1, #LowSoftBits, #HighSoftBits] &, 
-          2, "Output" -> {numClasses, portSize}
-        ],
-        "Margins" -> ThreadingLayer[
-          If[#Target == 1,
-            If[#CandidateSoftBits == 0, 100, (lowMargin - #CandidateSoftBits)],
-            If[#CandidateSoftBits == 0, 100, (#CandidateSoftBits - highMargin)]
-          ] &,
-          2, "Output" -> {numClasses, portSize}
-        ],
-        "MinMargins" -> AggregationLayer[Min],
-        "MarginalSoftBits" -> ThreadingLayer[
-          If[#Margins == #MinMargins, #CandidateSoftBits, 0] &, 
-          2, "Output" -> {numClasses, portSize}
-        ],
-        "SoftBitError" -> ElementwiseLayer[#^2 &],
-        "Error" -> SummationLayer[]
-    |>,
-    {
-      "Harden" -> "HardTotals",
-      "HardTotals" -> {"MaxHardHigh", NetPort["MaxPortMask", "HardTotals"]},
-      "MaxHardHigh" -> NetPort["MaxPortMask", "MaxHardHigh"],
-      "MaxPortMask" -> NetPort["ActivePortBits", "MaxPortMask"],
-      "ActivePortBits" -> {"HighSoftBits", "LowSoftBits"},
-      "HighSoftBits" -> NetPort["CandidateSoftBits", "HighSoftBits"],
-      "LowSoftBits" -> NetPort["CandidateSoftBits", "LowSoftBits"],
-      "CandidateSoftBits" -> NetPort["Margins", "CandidateSoftBits"],
-      "Margins" -> "MinMargins",
-      "CandidateSoftBits" -> NetPort["MarginalSoftBits", "CandidateSoftBits"],
-      "Margins" -> NetPort["MarginalSoftBits", "Margins"],
-      "MinMargins" -> NetPort["MarginalSoftBits", "MinMargins"],
-      "MarginalSoftBits" -> "SoftBitError",
-      "SoftBitError" -> "Error",
-      "Error" -> NetPort["Loss"]
-    }
-  ]
+HardClassificationLoss[] := NetGraph[
+  <|
+    "SoftProbs" -> AggregationLayer[Mean, 2],
+    "Target Error" -> MeanSquaredLossLayer[]
+  |>,
+  {
+    "SoftProbs" -> NetPort["Target Error", "Input"]
+  } 
 ]
 
 (* ------------------------------------------------------------------ *)
