@@ -497,6 +497,18 @@ HardClassificationLoss[] := NetGraph[
   } 
 ]
 
+HardClassificationLoss[] := NetGraph[
+  <|
+    "SoftProbs" -> AggregationLayer[Total, 2],
+    "SoftmaxLayer" -> SoftmaxLayer[],
+    "Target Error" -> CrossEntropyLossLayer["Probabilities"]
+  |>,
+  {
+    "SoftProbs" -> "SoftmaxLayer",
+    "SoftmaxLayer" -> NetPort["Target Error", "Input"]
+  } 
+]
+
 (* ------------------------------------------------------------------ *)
 (* Network hardening *)
 (* ------------------------------------------------------------------ *)
