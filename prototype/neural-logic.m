@@ -47,6 +47,7 @@ InitializeBiasToZero::usage = "Initialize bias to zero.";
 InitializeBiasToOne::usage = "Initialize bias to one.";
 InitializeBalanced::usage = "Initialize balanced.";
 InitializeToConstant::usage = "Initialize to constant.";
+HardeningLayer::usage = "Hardening layer.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -362,28 +363,43 @@ HardNeuralChain[layers_List] := Module[{chain = Transpose[layers]},
 ]
 
 (* ------------------------------------------------------------------ *)
+(* Hardening layer *)
+(* ------------------------------------------------------------------ *)
+
+HardeningForward[] := Function[
+  {Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 2]]},
+  If[# > 0.5, 0.9, 0.1] & /@ # & /@ input
+]
+
+HardeningBackward[] := Function[
+  {
+    Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 2]],
+    Typed[outgrad, TypeSpecifier["PackedArray"]["MachineReal", 2]]
+  },
+  (* Straight-through estimator *)
+  outgrad
+]
+
+HardeningLayer[] := CompiledLayer[
+  HardeningForward[], 
+  HardeningBackward[]
+]
+
+(* ------------------------------------------------------------------ *)
 (* Hard classification loss *)
 (* ------------------------------------------------------------------ *)
 
 HardClassificationLoss[] := NetGraph[
   <|
-    "SoftProbs" -> AggregationLayer[Mean, 2],
-    "Target Error" -> MeanSquaredLossLayer[]
-  |>,
-  {
-    "SoftProbs" -> NetPort["Target Error", "Input"]
-  } 
-]
-
-HardClassificationLoss[] := NetGraph[
-  <|
+    "Harden" -> HardeningLayer[],
     "SoftProbs" -> AggregationLayer[Total, 2],
     "SoftmaxLayer" -> SoftmaxLayer[],
-    "Target Error" -> CrossEntropyLossLayer["Probabilities"]
+    "Error" -> CrossEntropyLossLayer["Probabilities"]
   |>,
   {
+    "Harden" -> "SoftProbs",
     "SoftProbs" -> "SoftmaxLayer",
-    "SoftmaxLayer" -> NetPort["Target Error", "Input"]
+    "SoftmaxLayer" -> NetPort["Error", "Input"]
   } 
 ]
 
