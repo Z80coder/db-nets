@@ -48,6 +48,7 @@ InitializeBiasToOne::usage = "Initialize bias to one.";
 InitializeBalanced::usage = "Initialize balanced.";
 InitializeToConstant::usage = "Initialize to constant.";
 HardeningLayer::usage = "Hardening layer.";
+HardNeuralCount::usage = "Hard neural count.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -329,6 +330,44 @@ HardNeuralMajority[inputSize_, layerSize_] := {
     ]
   ],
   HardMajority
+}
+
+(* ------------------------------------------------------------------ *)
+(* Hard COUNT *)
+(* ------------------------------------------------------------------ *)
+
+HardNeuralCount[arraySize_] := {
+  NetGraph[
+    <|
+      "COUNT" -> NetGraph[
+        <|
+          "Sort" -> FunctionLayer[
+            Sort /@ # &
+          ],
+          "DropLast" -> FunctionLayer[
+            Part[#, 1 ;; arraySize - 1] & /@ # &
+          ],
+          "PadFalse" -> FunctionLayer[
+            ArrayPad[#, {{1, 0}}] & /@ # &
+          ],
+          "CountBooleans" -> FunctionLayer[
+            (* !a && b *)
+            MapThread[Min[SoftNOT[#1, 0], #2] &, {#Input2, #Input1}, 2] &
+          ],
+          "OutputClip" -> ElementwiseLayer[LogisticClip]
+        |>,
+        {
+          "Sort" -> NetPort["CountBooleans", "Input1"],
+          "Sort" -> "DropLast",
+          "DropLast" -> "PadFalse",
+          "PadFalse" -> NetPort["CountBooleans", "Input2"],
+          "CountBooleans" -> "OutputClip"
+        }
+      ]
+    |>,
+    {}
+  ],
+  HardCount
 }
 
 (* ------------------------------------------------------------------ *)
