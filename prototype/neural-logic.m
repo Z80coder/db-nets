@@ -2,12 +2,12 @@
 
 (* 
   TODO:
+  - Generalise COUNT to BooleanCountingFunction and specialise to XOR etc. Also considere
+    explicit XOR neuron (and possibility of extending idea to create a more efficient Majority neuron)
   - Initialisation policies
-  - Compiled loss that computes hard loss but sends error-signal back as soft loss
   - Work out the policy for the sizes that ensure all possible DNF expressions
-    can be learned. Ten change parameter to [0, 1] from 0 capacity to full capacity to represent
+    can be learned. Then change parameter to [0, 1] from 0 capacity to full capacity to represent
     all possible DNF expressions. Ignoring NOTs then andSize does not need to be larger than 2^(inputSize - 1)
-  - XOR neuron (and possibility of extending idea to create a more efficient Majority neuron)
 *)
 
 (* ------------------------------------------------------------------ *)
