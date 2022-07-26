@@ -49,6 +49,11 @@ InitializeBalanced::usage = "Initialize balanced.";
 InitializeToConstant::usage = "Initialize to constant.";
 HardeningLayer::usage = "Hardening layer.";
 HardNeuralCount::usage = "Hard neural count.";
+HardNeuralExactlyK::usage = "Hard neural exactly k.";
+HardNeuralLTEK::usage = "Hard neural less than or equal to k.";
+Require::usage = "Require.";
+
+(* ------------------------------------------------------------------ *)
 
 (* ------------------------------------------------------------------ *)
 
@@ -334,40 +339,89 @@ HardNeuralMajority[inputSize_, layerSize_] := {
 
 (* ------------------------------------------------------------------ *)
 (* Hard COUNT *)
+(* Experimental *)
 (* ------------------------------------------------------------------ *)
 
-HardNeuralCount[arraySize_] := {
+HardNeuralCount[numArrays_, arraySize_] := {
   NetGraph[
     <|
-      "COUNT" -> NetGraph[
-        <|
-          "Sort" -> FunctionLayer[
-            Sort /@ # &
-          ],
-          "DropLast" -> FunctionLayer[
-            Part[#, 1 ;; arraySize - 1] & /@ # &
-          ],
-          "PadFalse" -> FunctionLayer[
-            ArrayPad[#, {{1, 0}}] & /@ # &
-          ],
-          "CountBooleans" -> FunctionLayer[
-            (* !a && b *)
-            MapThread[Min[SoftNOT[#1, 0], #2] &, {#Input2, #Input1}, 2] &
-          ],
-          "OutputClip" -> ElementwiseLayer[LogisticClip]
-        |>,
-        {
-          "Sort" -> NetPort["CountBooleans", "Input1"],
-          "Sort" -> "DropLast",
-          "DropLast" -> "PadFalse",
-          "PadFalse" -> NetPort["CountBooleans", "Input2"],
-          "CountBooleans" -> "OutputClip"
-        }
+      "Sort" -> FunctionLayer[
+        Sort /@ # &
+      ],
+      "DropLast" -> FunctionLayer[
+        Part[#, 1 ;; arraySize - 1] & /@ # &
+      ],
+      "PadFalse" -> FunctionLayer[
+        ArrayPad[#, {{1, 0}}] & /@ # &,
+        "Output" -> {numArrays, arraySize}
+      ],
+      "CountBooleans" -> FunctionLayer[
+        (* !a && b *)
+        MapThread[Min[SoftNOT[#1, 0], #2] &, {#Input2, #Input1}, 2] &
+      ],
+      "OutputClip" -> ElementwiseLayer[LogisticClip]
+    |>,
+    {
+      "Sort" -> NetPort["CountBooleans", "Input1"],
+      "Sort" -> "DropLast",
+      "DropLast" -> "PadFalse",
+      "PadFalse" -> NetPort["CountBooleans", "Input2"],
+      "CountBooleans" -> "OutputClip"
+    }
+  ],
+  (* TODO: implement this *)
+  HardCount
+}
+
+HardNeuralExactlyK[numArrays_, arraySize_, k_] := {
+  NetGraph[
+    <|
+      "Count" -> HardNeuralCount[numArrays, arraySize][[1]],
+      "SelectK" -> FunctionLayer[
+        Part[#, arraySize - k + 1] & /@ # &
       ]
     |>,
-    {}
+    {
+      "Count" -> "SelectK"
+    }
   ],
-  HardCount
+  (* TODO: implement this *)
+  HardExactlyK
+}
+
+HardNeuralLTEK[numArrays_, arraySize_, k_] := {
+  NetGraph[
+    <|
+      "Count" -> HardNeuralCount[numArrays, arraySize][[1]],
+      "CountsLTEK" -> FunctionLayer[
+        Part[#, arraySize - k + 1 ;; arraySize] & /@ # &
+      ],
+      "LTEK" -> AggregationLayer[Max]
+    |>,
+    {
+      "Count" -> "CountsLTEK",
+      "CountsLTEK" -> "LTEK"
+    }
+  ],
+  (* TODO: implement this *)
+  LTEK
+}
+
+Require[requirement_] := {
+  NetGraph[
+    <|
+      "Requirement" -> requirement,
+      "Require" -> ThreadingLayer[
+        Min[#K, #Input] &,
+        2
+      ]
+    |>,
+    {
+      "Requirement" -> NetPort["Require", "K"]
+    }
+  ],
+  (* TODO: implement this *)
+  Require
 }
 
 (* ------------------------------------------------------------------ *)
