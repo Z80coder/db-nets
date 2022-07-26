@@ -5,7 +5,7 @@ Prototyping neural logic architectures.
 Questions? Ask @Z80coder
 
 <p align="left">
-<img width="250" src="https://user-images.githubusercontent.com/55286208/180860177-7a39685d-7f88-442d-a079-5a96d49955a3.gif">
+<img width="500" src="https://user-images.githubusercontent.com/55286208/180952306-c993c99d-abf9-48b2-adc7-6146ff5961bd.gif">
 </p>
 
 ## Development videos
@@ -13,5 +13,3 @@ Questions? Ask @Z80coder
 - [The Soft-NOT operator](https://drive.google.com/file/d/1C9egUO9SWSXba7VEqqUPfECYXeLFf5g0/view?usp=sharing)
 
 More to come!
-
-
