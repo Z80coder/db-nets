@@ -2,7 +2,7 @@
 
 (* 
   TODO:
-  - Generalise COUNT to BooleanCountingFunction and specialise to XOR etc. Also considere
+  - Generalise COUNT to BooleanCountingFunction and specialise to XOR etc. Also consider
     explicit XOR neuron (and possibility of extending idea to create a more efficient Majority neuron)
   - Initialisation policies
   - Work out the policy for the sizes that ensure all possible DNF expressions
@@ -52,6 +52,7 @@ HardNeuralCount::usage = "Hard neural count.";
 HardNeuralExactlyK::usage = "Hard neural exactly k.";
 HardNeuralLTEK::usage = "Hard neural less than or equal to k.";
 Require::usage = "Require.";
+HardDropoutLayer::usage = "Hard dropout layer.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -342,6 +343,7 @@ HardNeuralMajority[inputSize_, layerSize_] := {
 (* Experimental *)
 (* ------------------------------------------------------------------ *)
 
+(* TODO: Simplify with Ordering layer *)
 HardNeuralCount[numArrays_, arraySize_] := {
   NetGraph[
     <|
@@ -425,6 +427,27 @@ Require[requirement_] := {
 }
 
 (* ------------------------------------------------------------------ *)
+(* Hard Dropout layer *)
+(* ------------------------------------------------------------------ *)
+
+HardDropout[{input_List, weights_List}] := {input, weights}
+
+HardDropoutLayer[p_] := {
+  NetGraph[
+    <|
+      "Dropout" -> DropoutLayer[p, "OutputPorts" -> "BinaryMask"],
+      "Mask" -> FunctionLayer[#BinaryMask #Input &]
+    |>,
+    {
+      NetPort["Input"] -> NetPort["Dropout", "Input"],
+      NetPort["Input"] -> NetPort["Mask", "Input"],
+      NetPort["Dropout", "BinaryMask"] -> NetPort["Mask", "BinaryMask"]
+    }
+  ],
+  HardDropout
+}
+
+(* ------------------------------------------------------------------ *)
 (* Hard port layer *)
 (* ------------------------------------------------------------------ *)
 
@@ -482,6 +505,22 @@ HardeningLayer[] := CompiledLayer[
 (* Hard classification loss *)
 (* ------------------------------------------------------------------ *)
 
+(*
+  TODO: CrossEntropy seems better but need to do a full
+  experimental comparison.
+*)
+HardClassificationLoss[] := NetGraph[
+  <|
+    "Harden" -> HardeningLayer[],
+    "Mean" -> AggregationLayer[Mean, 2],
+    "Error" -> MeanSquaredLossLayer[]
+  |>,
+  {
+    "Harden" -> "Mean",
+    "Mean" -> NetPort["Error", "Input"]
+  } 
+]
+
 HardClassificationLoss[] := NetGraph[
   <|
     "Harden" -> HardeningLayer[],
@@ -495,6 +534,7 @@ HardClassificationLoss[] := NetGraph[
     "SoftmaxLayer" -> NetPort["Error", "Input"]
   } 
 ]
+
 
 (* ------------------------------------------------------------------ *)
 (* Network hardening *)
