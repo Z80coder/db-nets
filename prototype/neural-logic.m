@@ -586,18 +586,18 @@ NeuralAND[inputSize_, layerSize_] := NetGraph[
     "WeightsClip" -> ElementwiseLayer[HardClip],
     "SoftInclude" -> ThreadingLayer[1 - #Weights (1 - #Input) &, 1, "Output" -> {layerSize, inputSize}],
     (* LogSumExp trick *)
-    "And1" -> ElementwiseLayer[Log],
-    "And2" -> AggregationLayer[Total],
-    "And3" -> ElementwiseLayer[Exp],
+    "Log" -> ElementwiseLayer[Log],
+    "Sum" -> AggregationLayer[Total],
+    "Exp" -> ElementwiseLayer[Exp],
     "OutputClip" -> ElementwiseLayer[HardClip] 
   |>,
   {
     "Weights" -> "WeightsClip",
     "WeightsClip" -> NetPort["SoftInclude", "Weights"],
-    "SoftInclude" -> "And1",
-    "And1" -> "And2",
-    "And2" -> "And3",
-    "And3" -> "OutputClip"
+    "SoftInclude" -> "Log",
+    "Log" -> "Sum",
+    "Sum" -> "Exp",
+    "Exp" -> "OutputClip"
   }
 ]
 
