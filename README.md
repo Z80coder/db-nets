@@ -11,5 +11,6 @@ Questions? Ask @Z80coder
 ## Development videos
 
 - [The Soft-NOT operator](https://drive.google.com/file/d/1C9egUO9SWSXba7VEqqUPfECYXeLFf5g0/view?usp=sharing)
+- [The Soft-AND operator](https://drive.google.com/file/d/133U60sUh4qzjrieZyMfEzULsZJF27lov/view?usp=sharing)
 
 More to come!
