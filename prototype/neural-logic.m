@@ -24,9 +24,9 @@ HardNeuralNOR::usage = "Hard neural NOR.";
 HardNeuralPortLayer::usage = "Port layer.";
 NeuralOR::usage = "Neural OR.";
 NeuralAND::usage = "Neural AND.";
-SoftAND::usage = "Hard AND.";
-SoftOR::usage = "Soft OR.";
-SoftNOT::usage = "Soft NOT.";
+DifferentiableHardAND::usage = "Differentiable hard AND.";
+DifferentiableHardOR::usage = "Differentiable hard OR.";
+DifferentiableHardNOT::usage = "Differentiable hard NOT.";
 HardClip::usage = "Hard clip.";
 LogisticClip::usage = "Logistic clip.";
 HardNeuralMajority::usage = "Hard neural majority.";
@@ -120,7 +120,7 @@ InitializeBiasToOne[net_] := NetInitialize[net,
   Hence, corresponding hard logic is: (b && w) || (! b && ! w)
     or equivalently ! (b \[Xor] w)
 *)
-SoftNOT[input_, weights_] := 1 - weights + input (2 weights - 1)
+DifferentiableHardNOT[input_, weights_] := 1 - weights + input (2 weights - 1)
 
 HardNOT[{input_List, weights_List}] := 
   {
@@ -133,7 +133,7 @@ HardNeuralNOT[inputSize_] := {
     <|
       "Weights" -> NetArrayLayer["Output" -> inputSize],
       "WeightsClip" -> ElementwiseLayer[HardClip], 
-      "Not" -> ThreadingLayer[SoftNOT[#Input, #Weights] &, 1],
+      "Not" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1],
       "OutputClip" -> ElementwiseLayer[LogisticClip] 
     |>,
     {
@@ -154,7 +154,7 @@ HardNeuralNOT[inputSize_] := {
   w = 1 => AND is fully active
   Hence, corresponding hard logic is: b || !w
 *)
-SoftAND[b_, w_] := 
+DifferentiableHardAND[b_, w_] := 
   If[w > 1/2,
     If[b > 1/2,
       b,
@@ -179,7 +179,7 @@ HardNeuralAND[inputSize_, layerSize_] := {
     <|
       "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
       "WeightsClip" -> ElementwiseLayer[HardClip],
-      "HardInclude" -> ThreadingLayer[SoftAND[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
+      "HardInclude" -> ThreadingLayer[DifferentiableHardAND[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
       "Min" -> AggregationLayer[Min],
       "OutputClip" -> ElementwiseLayer[LogisticClip] 
     |>,
@@ -232,7 +232,7 @@ HardNeuralNAND[inputSize_, layerSize_] := With[
   w = 1 => OR is fully active
   Hence, corresponding hard logic is: b && w
 *)
-SoftOR[b_, w_] := 1 - SoftAND[1-b, w]
+DifferentiableHardOR[b_, w_] := 1 - DifferentiableHardAND[1-b, w]
 
 HardOR[{input_List, weights_List}] :=
   {
@@ -245,7 +245,7 @@ HardNeuralOR[inputSize_, layerSize_] := {
     <|
       "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
       "WeightsClip" -> ElementwiseLayer[HardClip],
-      "HardInclude" -> ThreadingLayer[SoftOR[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
+      "HardInclude" -> ThreadingLayer[DifferentiableHardOR[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
       "Max" -> AggregationLayer[Max],
       "OutputClip" -> ElementwiseLayer[LogisticClip]
     |>,
@@ -317,7 +317,7 @@ HardNeuralMajority[inputSize_, layerSize_] := {
             <|
               "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
               "WeightsClip" -> ElementwiseLayer[HardClip],
-              "HardInclude" -> ThreadingLayer[SoftNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
+              "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
               "Sort" -> FunctionLayer[Sort /@ # &],
               "Medians" -> PartLayer[{All, medianIndex}],
               "OutputClip" -> ElementwiseLayer[LogisticClip]
@@ -359,7 +359,7 @@ HardNeuralCount[numArrays_, arraySize_] := {
       ],
       "CountBooleans" -> FunctionLayer[
         (* !a && b *)
-        MapThread[Min[SoftNOT[#1, 0], #2] &, {#Input2, #Input1}, 2] &
+        MapThread[Min[DifferentiableHardNOT[#1, 0], #2] &, {#Input2, #Input1}, 2] &
       ],
       "OutputClip" -> ElementwiseLayer[LogisticClip]
     |>,
