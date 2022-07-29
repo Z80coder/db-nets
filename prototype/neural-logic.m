@@ -55,6 +55,7 @@ Require::usage = "Require.";
 HardDropoutLayer::usage = "Hard dropout layer.";
 RandomUniformSoftBits::usage = "Random soft bit layer.";
 RandomNormalSoftBits::usage = "Random soft bit layer.";
+RandomBalancedNormalSoftBits::usage = "Random balanced normal soft bit layer.";
 SoftBits::usage = "Create some soft bits.";
 
 (* ------------------------------------------------------------------ *)
@@ -78,7 +79,7 @@ LogisticClip[x_] := LogisticSigmoid[4(2 x - 1)]
 (* Initalization policies *)
 (* ------------------------------------------------------------------ *)
 
-InitializeToConstant[net_, k_] := NetInitialize[net,
+InitializeToConstant[net_, k_] := NetInitialize[net, All,
   Method -> {
     "Random", 
     "Weights" -> UniformDistribution[{k, k}],
@@ -86,7 +87,7 @@ InitializeToConstant[net_, k_] := NetInitialize[net,
   }
 ]
 
-InitializeBalanced[net_] := NetInitialize[net,
+InitializeBalanced[net_] := NetInitialize[net, All,
   Method -> {
     "Random", 
     "Weights" -> UniformDistribution[{0.4, 0.6}],
@@ -94,7 +95,7 @@ InitializeBalanced[net_] := NetInitialize[net,
   }
 ]
 
-InitializeBiasToZero[net_] := NetInitialize[net,
+InitializeBiasToZero[net_] := NetInitialize[net, All,
   Method -> {
     "Random", 
     "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[-1, 1]],
@@ -102,7 +103,7 @@ InitializeBiasToZero[net_] := NetInitialize[net,
   }
 ]
 
-InitializeBiasToOne[net_] := NetInitialize[net,
+InitializeBiasToOne[net_] := NetInitialize[net, All,
   Method -> 
   {
     "Random", 
@@ -115,7 +116,7 @@ InitializeBiasToOne[net_] := NetInitialize[net,
 (* Learnable soft-bit deterministic variables *)
 (* ------------------------------------------------------------------ *)
 
-SoftBits[size_] := InitializeBiasToZero[NetGraph[
+SoftBits[size_] := NetGraph[
   <|
     "Weights" -> NetArrayLayer["Output" -> size],
     "WeightsClip" -> ElementwiseLayer[HardClip] 
@@ -123,19 +124,22 @@ SoftBits[size_] := InitializeBiasToZero[NetGraph[
   {
     "Weights" -> "WeightsClip"
   }
-]]
+]
+
+BalancedSoftBits[size_] := InitializeBalanced[SoftBits[size]]
+BiasedToZeroSoftBits[size_] := InitializeBiasToZero[SoftBits[size]]
 
 (* ------------------------------------------------------------------ *)
 (* Learnable soft-bit random variables *)
 (* ------------------------------------------------------------------ *)
 
-RandomUniformSoftBits[size_] := NetGraph[
+RandomUniformSoftBits[aWeights_List, bWeights_List] := NetGraph[
   <|
-    "A" -> NetArrayLayer["Array" -> Table[RandomReal[{0.0, 1.0}], size], "Output" -> size],
+    "A" -> NetArrayLayer["Array" -> aWeights, "Output" -> Length[aWeights]],
+    "B" -> NetArrayLayer["Array" -> aWeights, "Output" -> Length[aWeights]],
     "ClipA" -> ElementwiseLayer[Clip[#, {0, 1}] &],
-    "B" -> NetArrayLayer["Array" -> Table[RandomReal[{0.0, 1.0}], size], "Output" -> size],
     "ClipB" -> ElementwiseLayer[Clip[#, {0, 1}] &],
-    "Distribution" -> RandomArrayLayer[UniformDistribution[{0, 1}], "Output" -> size],
+    "Distribution" -> RandomArrayLayer[UniformDistribution[{0, 1}], "Output" -> Length[aWeights]],
     "Variates" -> FunctionLayer[#A + (#B - #A) #Random &]
   |>,
   {
@@ -147,11 +151,13 @@ RandomUniformSoftBits[size_] := NetGraph[
   }
 ]
 
-RandomNormalSoftBits[size_] := NetGraph[
+RandomUniformSoftBits[size_] := RandomUniformSoftBits[Table[RandomReal[{0.0, 1.0}], size], Table[RandomReal[{0.0, 1.0}, size]]]
+
+RandomNormalSoftBits[muWeights_List, sigmaWeights_List] := NetGraph[
   <|
-    "Mu" -> NetArrayLayer["Array" -> Table[RandomReal[{0, 0.5}], size], "Output" -> size],
-    "Sigma" -> NetArrayLayer["Array" -> Table[RandomReal[{0, 0.5}], size], "Output" -> size],
-    "Distribution" -> RandomArrayLayer[NormalDistribution[0, 1], "Output" -> size],
+    "Mu" -> NetArrayLayer["Array" -> muWeights, "Output" -> Length[muWeights]],
+    "Sigma" -> NetArrayLayer["Array" -> sigmaWeights, "Output" -> Length[muWeights]],
+    "Distribution" -> RandomArrayLayer[NormalDistribution[0, 1], "Output" -> Length[muWeights]],
     "Variates" -> FunctionLayer[#Mu + #Sigma * #Random &],
     "ClipVariates" -> ElementwiseLayer[Clip[#, {0, 1}] &]
   |>,
@@ -162,6 +168,9 @@ RandomNormalSoftBits[size_] := NetGraph[
     "Variates" -> "ClipVariates"
   }
 ]
+
+RandomNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 0.5}], size], Table[RandomReal[{0, 0.1}], size]]
+RandomBalancedNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 1}], size], Table[RandomReal[{0, 0.1}], size]]
 
 (* ------------------------------------------------------------------ *)
 (* Hard NOT *)
@@ -181,7 +190,7 @@ HardNOT[{input_List, weights_List}] :=
     Drop[weights, 1]
   }
 
-HardNeuralNOT[inputSize_, weights_Function:SoftBits] := {
+HardNeuralNOT[inputSize_, weights_Function:BalancedSoftBits] := {
   NetGraph[
     <|
       "Weights" -> weights[inputSize],
@@ -225,20 +234,20 @@ HardAND[{input_List, weights_List}] :=
     Drop[weights, 1]
   }
 
-HardNeuralAND[inputSize_, layerSize_, weights_Function:SoftBits] := {
+HardNeuralAND[inputSize_, layerSize_, weights_Function:BiasedToZeroSoftBits] := {
   NetGraph[
     <|
       "Weights" -> weights[layerSize * inputSize],
       "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
       "HardInclude" -> ThreadingLayer[DifferentiableHardAND[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-      "Min" -> AggregationLayer[Min],
+      "And" -> AggregationLayer[Min],
       "OutputClip" -> ElementwiseLayer[LogisticClip] 
     |>,
     {
       "Weights" -> "Reshape",
       "Reshape" -> NetPort["HardInclude", "Weights"],
-      "HardInclude" -> "Min",
-      "Min" -> "OutputClip"
+      "HardInclude" -> "And",
+      "And" -> "OutputClip"
     }
   ],
   HardAND
@@ -250,14 +259,11 @@ HardNeuralAND[inputSize_, layerSize_, weights_Function:SoftBits] := {
 
 HardNAND[{input_List, weights_List}] := HardNOT[HardAND[{input, weights}]]
 
-HardNeuralNAND[inputSize_, layerSize_, weights_Function:SoftBits] := {
-  NetGraph[
-    <|
-      "AND" -> First[HardNeuralAND[inputSize, layerSize, weights[#]&]],
-      "NOT" -> First[HardNeuralNOT[layerSize, weights[#]&]]
-    |>,
+HardNeuralNAND[inputSize_, layerSize_, andWeights_Function:BiasedToZeroSoftBits, notWeights_Function:BalancedSoftBits] := {
+  NetChain[
     {
-      "AND" -> "NOT"
+      First[HardNeuralAND[inputSize, layerSize, andWeights[#]&]],
+      First[HardNeuralNOT[layerSize, notWeights[#]&]]
     }
   ],
   HardNAND
@@ -280,20 +286,20 @@ HardOR[{input_List, weights_List}] :=
     Drop[weights, 1]
   }
 
-HardNeuralOR[inputSize_, layerSize_, weights_Function:SoftBits] := {
+HardNeuralOR[inputSize_, layerSize_, weights_Function:BiasedToZeroSoftBits] := {
   NetGraph[
     <|
       "Weights" -> weights[layerSize * inputSize],
       "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
       "HardInclude" -> ThreadingLayer[DifferentiableHardOR[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-      "Max" -> AggregationLayer[Max],
+      "Or" -> AggregationLayer[Max],
       "OutputClip" -> ElementwiseLayer[LogisticClip]
     |>,
     {
       "Weights" -> "Reshape",
       "Reshape" -> NetPort["HardInclude", "Weights"],
-      "HardInclude" -> "Max",
-      "Max" -> "OutputClip"
+      "HardInclude" -> "Or",
+      "Or" -> "OutputClip"
     }
   ],
   HardOR
@@ -305,14 +311,11 @@ HardNeuralOR[inputSize_, layerSize_, weights_Function:SoftBits] := {
 
 HardNOR[{input_List, weights_List}] := HardNOT[HardOR[{input, weights}]]
 
-HardNeuralNOR[inputSize_, layerSize_, weights_Function:SoftBits] := {
-  NetGraph[
-    <|
-      "OR" -> First[HardNeuralOR[inputSize, layerSize, weights[#]&]],
-      "NOT" -> First[HardNeuralNOT[layerSize, weights[#]&]]
-    |>,
+HardNeuralNOR[inputSize_, layerSize_, orWeights_Function:BiasedToZeroSoftBits, notWeights_Function:BalancedSoftBits] := {
+  NetChain[
     {
-      "OR" -> "NOT"
+      First[HardNeuralOR[inputSize, layerSize, orWeights[#]&]],
+      First[HardNeuralNOT[layerSize, notWeights[#]&]]
     }
   ],
   HardNOR
@@ -337,7 +340,7 @@ HardMajority[{input_List, weights_List}] :=
     - worst-case O(n^2)
     - See https://danlark.org/2020/11/11/miniselect-practical-and-generic-selection-algorithms/
 *)
-HardNeuralMajority[inputSize_, layerSize_, weights_Function:SoftBits] := {
+HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
   With[{medianIndex = Ceiling[(inputSize + 1)/2]},
     NetGraph[
       <|
