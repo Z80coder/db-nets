@@ -53,8 +53,9 @@ HardNeuralExactlyK::usage = "Hard neural exactly k.";
 HardNeuralLTEK::usage = "Hard neural less than or equal to k.";
 Require::usage = "Require.";
 HardDropoutLayer::usage = "Hard dropout layer.";
-
-(* ------------------------------------------------------------------ *)
+RandomUniformSoftBits::usage = "Random soft bit layer.";
+RandomNormalSoftBits::usage = "Random soft bit layer.";
+SoftBits::usage = "Create some soft bits.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -111,6 +112,58 @@ InitializeBiasToOne[net_] := NetInitialize[net,
 ]
 
 (* ------------------------------------------------------------------ *)
+(* Learnable soft-bit deterministic variables *)
+(* ------------------------------------------------------------------ *)
+
+SoftBits[size_] := InitializeBiasToZero[NetGraph[
+  <|
+    "Weights" -> NetArrayLayer["Output" -> size],
+    "WeightsClip" -> ElementwiseLayer[HardClip] 
+  |>,
+  {
+    "Weights" -> "WeightsClip"
+  }
+]]
+
+(* ------------------------------------------------------------------ *)
+(* Learnable soft-bit random variables *)
+(* ------------------------------------------------------------------ *)
+
+RandomUniformSoftBits[size_] := NetGraph[
+  <|
+    "A" -> NetArrayLayer["Array" -> Table[RandomReal[{0.0, 1.0}], size], "Output" -> size],
+    "ClipA" -> ElementwiseLayer[Clip[#, {0, 1}] &],
+    "B" -> NetArrayLayer["Array" -> Table[RandomReal[{0.0, 1.0}], size], "Output" -> size],
+    "ClipB" -> ElementwiseLayer[Clip[#, {0, 1}] &],
+    "Distribution" -> RandomArrayLayer[UniformDistribution[{0, 1}], "Output" -> size],
+    "Variates" -> FunctionLayer[#A + (#B - #A) #Random &]
+  |>,
+  {
+    "Distribution" -> NetPort["Variates", "Random"],
+    "A" -> "ClipA",
+    "B" -> "ClipB",
+    "ClipA" -> NetPort["Variates", "A"],
+    "ClipB" -> NetPort["Variates", "B"]
+  }
+]
+
+RandomNormalSoftBits[size_] := NetGraph[
+  <|
+    "Mu" -> NetArrayLayer["Array" -> Table[RandomReal[{0, 0.5}], size], "Output" -> size],
+    "Sigma" -> NetArrayLayer["Array" -> Table[RandomReal[{0, 0.5}], size], "Output" -> size],
+    "Distribution" -> RandomArrayLayer[NormalDistribution[0, 1], "Output" -> size],
+    "Variates" -> FunctionLayer[#Mu + #Sigma * #Random &],
+    "ClipVariates" -> ElementwiseLayer[Clip[#, {0, 1}] &]
+  |>,
+  {
+    "Distribution" -> NetPort["Variates", "Random"],
+    "Mu" -> NetPort["Variates", "Mu"],
+    "Sigma" -> NetPort["Variates", "Sigma"],
+    "Variates" -> "ClipVariates"
+  }
+]
+
+(* ------------------------------------------------------------------ *)
 (* Hard NOT *)
 (* ------------------------------------------------------------------ *)
 
@@ -128,17 +181,15 @@ HardNOT[{input_List, weights_List}] :=
     Drop[weights, 1]
   }
 
-HardNeuralNOT[inputSize_] := {
+HardNeuralNOT[inputSize_, weights_Function:SoftBits] := {
   NetGraph[
     <|
-      "Weights" -> NetArrayLayer["Output" -> inputSize],
-      "WeightsClip" -> ElementwiseLayer[HardClip], 
+      "Weights" -> weights[inputSize],
       "Not" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1],
       "OutputClip" -> ElementwiseLayer[LogisticClip] 
     |>,
     {
-      "Weights" -> "WeightsClip",
-      "WeightsClip" -> NetPort["Not", "Weights"],
+      "Weights" -> NetPort["Not", "Weights"],
       "Not" -> "OutputClip"
     } 
   ],
@@ -174,18 +225,18 @@ HardAND[{input_List, weights_List}] :=
     Drop[weights, 1]
   }
 
-HardNeuralAND[inputSize_, layerSize_] := {
+HardNeuralAND[inputSize_, layerSize_, weights_Function:SoftBits] := {
   NetGraph[
     <|
-      "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
-      "WeightsClip" -> ElementwiseLayer[HardClip],
+      "Weights" -> weights[layerSize * inputSize],
+      "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
       "HardInclude" -> ThreadingLayer[DifferentiableHardAND[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
       "Min" -> AggregationLayer[Min],
       "OutputClip" -> ElementwiseLayer[LogisticClip] 
     |>,
     {
-      "Weights" -> "WeightsClip",
-      "WeightsClip" -> NetPort["HardInclude", "Weights"],
+      "Weights" -> "Reshape",
+      "Reshape" -> NetPort["HardInclude", "Weights"],
       "HardInclude" -> "Min",
       "Min" -> "OutputClip"
     }
@@ -199,29 +250,18 @@ HardNeuralAND[inputSize_, layerSize_] := {
 
 HardNAND[{input_List, weights_List}] := HardNOT[HardAND[{input, weights}]]
 
-HardNeuralNAND[inputSize_, layerSize_] := With[
-  {
-    neuralAND = HardNeuralAND[inputSize, layerSize],
-    neuralNOT = HardNeuralNOT[layerSize]
-  },
-  With[
+HardNeuralNAND[inputSize_, layerSize_, weights_Function:SoftBits] := {
+  NetGraph[
+    <|
+      "AND" -> First[HardNeuralAND[inputSize, layerSize, weights[#]&]],
+      "NOT" -> First[HardNeuralNOT[layerSize, weights[#]&]]
+    |>,
     {
-      softNeuralAND = First[neuralAND], softNeuralNOT = First[neuralNOT]
-    },
-    {
-      InitializeBiasToZero[NetGraph[
-        <|
-          "AND" -> softNeuralAND,
-          "NOT" -> softNeuralNOT
-        |>,
-        {
-          "AND" -> "NOT"
-        }
-      ]],
-      HardNAND
+      "AND" -> "NOT"
     }
-  ]
-]
+  ],
+  HardNAND
+}
 
 (* ------------------------------------------------------------------ *)
 (* Hard OR *)
@@ -240,18 +280,18 @@ HardOR[{input_List, weights_List}] :=
     Drop[weights, 1]
   }
 
-HardNeuralOR[inputSize_, layerSize_] := {
+HardNeuralOR[inputSize_, layerSize_, weights_Function:SoftBits] := {
   NetGraph[
     <|
-      "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
-      "WeightsClip" -> ElementwiseLayer[HardClip],
+      "Weights" -> weights[layerSize * inputSize],
+      "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
       "HardInclude" -> ThreadingLayer[DifferentiableHardOR[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
       "Max" -> AggregationLayer[Max],
       "OutputClip" -> ElementwiseLayer[LogisticClip]
     |>,
     {
-      "Weights" -> "WeightsClip",
-      "WeightsClip" -> NetPort["HardInclude", "Weights"],
+      "Weights" -> "Reshape",
+      "Reshape" -> NetPort["HardInclude", "Weights"],
       "HardInclude" -> "Max",
       "Max" -> "OutputClip"
     }
@@ -265,29 +305,18 @@ HardNeuralOR[inputSize_, layerSize_] := {
 
 HardNOR[{input_List, weights_List}] := HardNOT[HardOR[{input, weights}]]
 
-HardNeuralNOR[inputSize_, layerSize_] := With[
-  {
-    neuralOR = HardNeuralOR[inputSize, layerSize],
-    neuralNOT = HardNeuralNOT[layerSize]
-  },
-  With[
+HardNeuralNOR[inputSize_, layerSize_, weights_Function:SoftBits] := {
+  NetGraph[
+    <|
+      "OR" -> First[HardNeuralOR[inputSize, layerSize, weights[#]&]],
+      "NOT" -> First[HardNeuralNOT[layerSize, weights[#]&]]
+    |>,
     {
-      softNeuralOR = First[neuralOR], softNeuralNOT = First[neuralNOT]
-    },
-    {
-      InitializeBiasToZero[NetGraph[
-        <|
-          "OR" -> softNeuralOR,
-          "NOT" -> softNeuralNOT
-        |>,
-        {
-          "OR" -> "NOT"
-        }
-      ]],
-      HardNOR
+      "OR" -> "NOT"
     }
-  ]
-]
+  ],
+  HardNOR
+}
 
 (* ------------------------------------------------------------------ *)
 (* Hard MAJORITY *)
@@ -308,31 +337,24 @@ HardMajority[{input_List, weights_List}] :=
     - worst-case O(n^2)
     - See https://danlark.org/2020/11/11/miniselect-practical-and-generic-selection-algorithms/
 *)
-HardNeuralMajority[inputSize_, layerSize_] := {
+HardNeuralMajority[inputSize_, layerSize_, weights_Function:SoftBits] := {
   With[{medianIndex = Ceiling[(inputSize + 1)/2]},
-    InitializeBalanced[
-      NetGraph[
-        <|
-          "MAJORITY" -> NetGraph[
-            <|
-              "Weights" -> NetArrayLayer["Output" -> {layerSize, inputSize}],
-              "WeightsClip" -> ElementwiseLayer[HardClip],
-              "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-              "Sort" -> FunctionLayer[Sort /@ # &],
-              "Medians" -> PartLayer[{All, medianIndex}],
-              "OutputClip" -> ElementwiseLayer[LogisticClip]
-            |>,
-            {
-              "Weights" -> "WeightsClip",
-              "WeightsClip" -> NetPort["HardInclude", "Weights"],
-              "HardInclude" -> "Sort",
-              "Sort" -> "Medians",
-              "Medians" -> "OutputClip"
-            }
-          ]
-        |>,
-        {}
-      ]
+    NetGraph[
+      <|
+        "Weights" -> weights[layerSize * inputSize],
+        "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
+        "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
+        "Sort" -> FunctionLayer[Sort /@ # &],
+        "Medians" -> PartLayer[{All, medianIndex}],
+        "OutputClip" -> ElementwiseLayer[LogisticClip]
+      |>,
+      {
+        "Weights" -> "Reshape",
+        "Reshape" -> NetPort["HardInclude", "Weights"],
+        "HardInclude" -> "Sort",
+        "Sort" -> "Medians",
+        "Medians" -> "OutputClip"
+      }
     ]
   ],
   HardMajority
@@ -534,7 +556,6 @@ HardClassificationLoss[] := NetGraph[
     "SoftmaxLayer" -> NetPort["Error", "Input"]
   } 
 ]
-
 
 (* ------------------------------------------------------------------ *)
 (* Network hardening *)
