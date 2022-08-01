@@ -173,6 +173,28 @@ RandomNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 0.5}], 
 RandomBalancedNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 1}], size], Table[RandomReal[{0, 0.1}], size]]
 
 (* ------------------------------------------------------------------ *)
+(* EXPERIMENTAL *)
+(* HardMinAll, HardMaxAll *)
+(* ------------------------------------------------------------------ *)
+
+HardMinAll[] := NetGraph[
+  <|
+    "Min" -> AggregationLayer[Min],
+    "Mean" -> AggregationLayer[Mean],
+    "Filter" -> FunctionLayer[
+      If[#Min > 1/2,
+        #Min + (((#Min - 1/2) #Mean) (1 - #Min))^2,
+        #Min + ((1/2 - #Min) #Mean)^2
+      ] &
+    ]
+  |>,
+  {
+    "Min" -> NetPort["Filter", "Min"],
+    "Mean" -> NetPort["Filter", "Mean"]
+  }
+]
+
+(* ------------------------------------------------------------------ *)
 (* Hard NOT *)
 (* ------------------------------------------------------------------ *)
 
