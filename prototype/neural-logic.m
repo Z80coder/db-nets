@@ -21,7 +21,7 @@ HardNeuralAND::usage = "Hard neural AND.";
 HardNeuralNAND::usage = "Hard neural NAND.";
 HardNeuralOR::usage = "Hard neural OR.";
 HardNeuralNOR::usage = "Hard neural NOR.";
-HardNeuralPortLayer::usage = "Port layer.";
+HardNeuralReshapeLayer::usage = "Port layer.";
 NeuralOR::usage = "Neural OR.";
 NeuralAND::usage = "Neural AND.";
 DifferentiableHardAND::usage = "Differentiable hard AND.";
@@ -208,8 +208,10 @@ DifferentiableHardNOT[input_, weights_] := 1 - weights + input (2 weights - 1)
 
 HardNOT[{input_List, weights_List}] := 
   {
+    (* Output *)
     Not /@ Thread[Xor[input, First[weights]]],
-    Drop[weights, 1]
+    (* Consume weights *)
+    Drop[weights, UpTo[1]]
   }
 
 HardNeuralNOT[inputSize_, weights_Function:BalancedSoftBits] := {
@@ -248,13 +250,20 @@ DifferentiableHardAND[b_, w_] :=
     ]
   ]
 
-HardAND[{input_List, weights_List}] :=
-  {
-    Block[{notWeights = (Not /@ #) & /@ First[weights]},
-      MapApply[And, Map[Thread[Or[input, #]] &, notWeights]]
-    ],
-    Drop[weights, 1]
-  }
+HardAND[layerSize_] := Function[{inputs},
+  Block[{input, weights, layerWeights, reshapedWeights, notWeights},
+    {input, weights} = inputs;
+    {
+      (* Output *)
+      layerWeights = First[weights];
+      reshapedWeights = Partition[layerWeights, Length[layerWeights] / layerSize];
+      notWeights = (Not /@ #) & /@ reshapedWeights;
+      MapApply[And, Map[Thread[Or[input, #]] &, notWeights]],
+      (* Consume weights *)
+      Drop[weights, UpTo[1]]
+    }
+  ]
+]
 
 HardNeuralAND[inputSize_, layerSize_, weights_Function:BiasedToZeroSoftBits] := {
   NetGraph[
@@ -272,14 +281,16 @@ HardNeuralAND[inputSize_, layerSize_, weights_Function:BiasedToZeroSoftBits] := 
       "And" -> "OutputClip"
     }
   ],
-  HardAND
+  HardAND[layerSize]
 }
 
 (* ------------------------------------------------------------------ *)
 (* Hard NAND *)
 (* ------------------------------------------------------------------ *)
 
-HardNAND[{input_List, weights_List}] := HardNOT[HardAND[{input, weights}]]
+HardNAND[layerSize_] := Function[{inputs},
+  HardNOT[HardAND[layerSize][inputs]]
+]
 
 HardNeuralNAND[inputSize_, layerSize_, andWeights_Function:BiasedToZeroSoftBits, notWeights_Function:BalancedSoftBits] := {
   NetChain[
@@ -288,7 +299,7 @@ HardNeuralNAND[inputSize_, layerSize_, andWeights_Function:BiasedToZeroSoftBits,
       First[HardNeuralNOT[layerSize, notWeights[#]&]]
     }
   ],
-  HardNAND
+  HardNAND[layerSize]
 }
 
 (* ------------------------------------------------------------------ *)
@@ -302,13 +313,29 @@ HardNeuralNAND[inputSize_, layerSize_, andWeights_Function:BiasedToZeroSoftBits,
 *)
 DifferentiableHardOR[b_, w_] := 1 - DifferentiableHardAND[1-b, w]
 
+(*
 HardOR[{input_List, weights_List}] :=
   {
     MapApply[Or, Map[Thread[And[input, #]] &, First[weights]]],
     Drop[weights, 1]
   }
+*)
 
-HardNeuralOR[inputSize_, layerSize_, weights_Function:BiasedToZeroSoftBits] := {
+HardOR[layerSize_] := Function[{inputs},
+  Block[{input, weights, layerWeights, reshapedWeights},
+    {input, weights} = inputs;
+    {
+      (* Output *)
+      layerWeights = First[weights];
+      reshapedWeights = Partition[layerWeights, Length[layerWeights] / layerSize];
+      MapApply[Or, Map[Thread[And[input, #]] &, reshapedWeights]],
+      (* Consume weights *)
+      Drop[weights, UpTo[1]]
+    }
+  ]
+]
+
+HardNeuralOR[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
   NetGraph[
     <|
       "Weights" -> weights[layerSize * inputSize],
@@ -324,14 +351,16 @@ HardNeuralOR[inputSize_, layerSize_, weights_Function:BiasedToZeroSoftBits] := {
       "Or" -> "OutputClip"
     }
   ],
-  HardOR
+  HardOR[layerSize]
 }
 
 (* ------------------------------------------------------------------ *)
 (* Hard NOR *)
 (* ------------------------------------------------------------------ *)
 
-HardNOR[{input_List, weights_List}] := HardNOT[HardOR[{input, weights}]]
+HardNOR[layerSize_] := Function[{inputs},
+  HardNOT[HardOR[layerSize][inputs]]
+]
 
 HardNeuralNOR[inputSize_, layerSize_, orWeights_Function:BiasedToZeroSoftBits, notWeights_Function:BalancedSoftBits] := {
   NetChain[
@@ -340,18 +369,26 @@ HardNeuralNOR[inputSize_, layerSize_, orWeights_Function:BiasedToZeroSoftBits, n
       First[HardNeuralNOT[layerSize, notWeights[#]&]]
     }
   ],
-  HardNOR
+  HardNOR[layerSize]
 }
 
 (* ------------------------------------------------------------------ *)
 (* Hard MAJORITY *)
 (* ------------------------------------------------------------------ *)
 
-HardMajority[{input_List, weights_List}] := 
-  {
-    Map[Majority @@ First[HardNOT[{input, #}]] &, First[weights]],
-    Drop[weights, 1]
-  }
+HardMajority[layerSize_] := Function[{inputs},
+  Block[{input, weights, layerWeights, reshapedWeights},
+    {input, weights} = inputs;
+    {
+      (* Output *)
+      layerWeights = First[weights];
+      reshapedWeights = Partition[layerWeights, Length[layerWeights] / layerSize];
+      Map[Majority @@ First[HardNOT[{input, #}]] &, reshapedWeights],
+      (* Consume weights *)
+      Drop[weights, UpTo[1]]
+    }
+  ]
+]
 
 (* 
   Currently using sort (probably compiles to QuickSort)
@@ -382,7 +419,7 @@ HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] :=
       }
     ]
   ],
-  HardMajority
+  HardMajority[layerSize]
 }
 
 (* ------------------------------------------------------------------ *)
@@ -495,17 +532,22 @@ HardDropoutLayer[p_] := {
 }
 
 (* ------------------------------------------------------------------ *)
-(* Hard port layer *)
+(* Hard reshape layer *)
 (* ------------------------------------------------------------------ *)
 
-HardNeuralPortLayer[inputSize_, numPorts_] := {
-  ReshapeLayer[{numPorts, inputSize / numPorts}],
-  Function[{input},
+HardReshapeLayer[numPorts_] := Function[{inputs},
+  Block[{input, weights},
+    {input, weights} = inputs;
     {
-      Partition[First[input], numPorts], 
-      Last[input]
+      Partition[input, Length[input] / numPorts], 
+      Drop[weights, UpTo[1]]
     }
   ]
+]
+
+HardNeuralReshapeLayer[inputSize_, numPorts_] := {
+  ReshapeLayer[{numPorts, inputSize / numPorts}],
+  HardReshapeLayer[numPorts]
 }
 
 (* ------------------------------------------------------------------ *)
@@ -586,14 +628,8 @@ HardClassificationLoss[] := NetGraph[
 (* Network hardening *)
 (* ------------------------------------------------------------------ *)
 
-ExtractWeights[net_] := Module[{layers, weights, arrays},
-  layers = NetExtract[net, All];
-  weights = Select[Flatten[
-    Values[Quiet[NetExtract[#, {All, "Weights"}]] & /@ layers]],
-    !MissingQ[#] &
-  ];
-  arrays = NetExtract[#, "Arrays"]["Array"] & /@ weights;
-  Normal /@ arrays
+ExtractWeights[net_] := Normal[
+  NetExtract[#, "Arrays"]["Array"]] & /@ Cases[NetExtract[NetFlatten[net], All], _NetArrayLayer
 ]
 
 HardNetFunction[hardNet_, trainedSoftNet_] := Module[{softWeights},
