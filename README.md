@@ -13,5 +13,6 @@ Questions? Ask @Z80coder
 - [The Soft-NOT operator](https://drive.google.com/file/d/1C9egUO9SWSXba7VEqqUPfECYXeLFf5g0/view?usp=sharing)
 - [The Soft-AND operator](https://drive.google.com/file/d/133U60sUh4qzjrieZyMfEzULsZJF27lov/view?usp=sharing)
 - [The differentiable Hard-AND operator](https://drive.google.com/file/d/1cdfMkO0xg-IUYK3avHqfarLJRXGtWcRf/view?usp=sharing)
+- [The differentiable Hard-OR operator](https://drive.google.com/file/d/1v1WMfOWx4PQbjyoPJo82QNh2DGBhM4uH/view?usp=sharing)
 
 More to come!
