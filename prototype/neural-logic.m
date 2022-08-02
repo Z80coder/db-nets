@@ -628,7 +628,7 @@ ExtractWeights[net_] := Normal[
 HardNetFunction[hardNet_, trainedSoftNet_] := Module[{softWeights},
   softWeights = ExtractWeights[trainedSoftNet];
   With[{hardWeights = Harden[softWeights]},
-    Function[{input},
+    Function[Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 1]],
       First[hardNet[{input, hardWeights}]]
     ]
   ]
