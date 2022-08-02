@@ -313,14 +313,6 @@ HardNeuralNAND[inputSize_, layerSize_, andWeights_Function:BiasedToZeroSoftBits,
 *)
 DifferentiableHardOR[b_, w_] := 1 - DifferentiableHardAND[1-b, w]
 
-(*
-HardOR[{input_List, weights_List}] :=
-  {
-    MapApply[Or, Map[Thread[And[input, #]] &, First[weights]]],
-    Drop[weights, 1]
-  }
-*)
-
 HardOR[layerSize_] := Function[{inputs},
   Block[{input, weights, layerWeights, reshapedWeights},
     {input, weights} = inputs;
