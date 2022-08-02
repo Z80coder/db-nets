@@ -620,6 +620,7 @@ HardClassificationLoss[] := NetGraph[
 (* Network hardening *)
 (* ------------------------------------------------------------------ *)
 
+(* TODO: support random variable weights *)
 ExtractWeights[net_] := Normal[
   NetExtract[#, "Arrays"]["Array"]] & /@ Cases[NetExtract[NetFlatten[net], All], _NetArrayLayer
 ]
