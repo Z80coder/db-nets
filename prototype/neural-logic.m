@@ -37,8 +37,11 @@ HardNOR::usage = "Hard NOR.";
 HardAND::usage = "Hard AND.";
 HardOR::usage = "Hard OR.";
 HardMajority::usage = "Hard majority.";
+GetWeights::usage = "Get weights.";
 ExtractWeights::usage = "Extract weights.";
 HardNetFunction::usage = "Hard net function.";
+HardNetBooleanExpression::usage = "Hard net boolean expression.";
+HardNetBooleanFunction::usage = "Hard net boolean function.";
 HardWeightSize::usage = "Hard weight size.";
 SoftWeightSize::usage = "Soft weight size.";
 SpaceSaving::usage = "Space saving.";
@@ -621,17 +624,40 @@ HardClassificationLoss[] := NetGraph[
 (* ------------------------------------------------------------------ *)
 
 (* TODO: support random variable weights *)
-ExtractWeights[net_] := Normal[
-  NetExtract[#, "Arrays"]["Array"]] & /@ Cases[NetExtract[NetFlatten[net], All], _NetArrayLayer
-]
+GetWeights[net_] := NetExtract[#, "Arrays"]["Array"] & /@ Cases[NetExtract[NetFlatten[net], All], _NetArrayLayer]
+ 
+ExtractWeights[net_] := Normal[GetWeights[net]]
 
 HardNetFunction[hardNet_, trainedSoftNet_] := Module[{softWeights},
   softWeights = ExtractWeights[trainedSoftNet];
   With[{hardWeights = Harden[softWeights]},
-    Function[Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 1]],
+    Function[{input},
       First[hardNet[{input, hardWeights}]]
     ]
   ]
+]
+
+HardNetBooleanExpression[hardNetFunction_Function, inputSize_] := Module[
+  {
+    inputs = Table[Symbol["b" <> ToString[i]], {i, inputSize}]
+  },
+  hardNetFunction[inputs]
+]
+
+HardNetBooleanFunction[hardNetFunction_Function, inputSize_] := Block[
+  {
+    hardNetBooleanExpression = HardNetBooleanExpression[hardNetFunction, inputSize],
+    signature = Typed[Symbol["input"], TypeSpecifier["NumericArray"]["MachineInteger", 1]],
+    replacements = Quiet[Table[
+      Symbol["b" <> ToString[i]] -> With[{b = Symbol["input"][[i]]}, 
+          If[b == 1, True, False]
+        ],
+      {i, inputSize}]
+    ],
+    indexExpression
+  },
+  indexExpression = hardNetBooleanExpression /. replacements;
+  Function[Evaluate[signature], Evaluate[indexExpression]]
 ]
 
 SoftWeightSize[weights_] := Quantity[Length[Flatten[weights]] * 32.0 / 8000.0, "kilobytes"]
