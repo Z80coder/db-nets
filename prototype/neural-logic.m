@@ -79,7 +79,8 @@ Soften[hardBit_] := If[hardBit == 1, 1.0, 0.0]
 Soften[hardBits_List] := Map[Soften, hardBits]
 
 HardClip[x_] := Clip[x, {0.00000001, 0.9999999}]
-LogisticClip[x_] := LogisticSigmoid[8(2 x - 1)]
+LogisticClip[x_] := LogisticSigmoid[4(2 x - 1)]
+LogisticClip[x_] := HardClip[x]
 
 (* ------------------------------------------------------------------ *)
 (* Initalization policies *)
