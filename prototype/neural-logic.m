@@ -43,8 +43,8 @@ HardNetFunction::usage = "Hard net function.";
 HardNetBooleanExpression::usage = "Hard net boolean expression.";
 HardNetBooleanFunction::usage = "Hard net boolean function.";
 HardClassificationLoss::usage = "Hard classification loss.";
-InitializeBiasToZero::usage = "Initialize bias to zero.";
-InitializeBiasToOne::usage = "Initialize bias to one.";
+InitializeNearToZero::usage = "Initialize bias to zero.";
+InitializeNearToOne::usage = "Initialize bias to one.";
 InitializeBalanced::usage = "Initialize balanced.";
 InitializeToConstant::usage = "Initialize to constant.";
 HardeningLayer::usage = "Hardening layer.";
@@ -102,7 +102,7 @@ InitializeBalanced[net_] := NetInitialize[net, All,
   }
 ]
 
-InitializeBiasToZero[net_] := NetInitialize[net, All,
+InitializeNearToZero[net_] := NetInitialize[net, All,
   Method -> {
     "Random", 
     "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[-1, 1]],
@@ -110,7 +110,7 @@ InitializeBiasToZero[net_] := NetInitialize[net, All,
   }
 ]
 
-InitializeBiasToOne[net_] := NetInitialize[net, All,
+InitializeNearToOne[net_] := NetInitialize[net, All,
   Method -> 
   {
     "Random", 
@@ -134,7 +134,7 @@ SoftBits[size_] := NetGraph[
 ]
 
 BalancedSoftBits[size_] := InitializeBalanced[SoftBits[size]]
-BiasedToZeroSoftBits[size_] := InitializeBiasToZero[SoftBits[size]]
+BiasedToZeroSoftBits[size_] := InitializeNearToZero[SoftBits[size]]
 
 (* ------------------------------------------------------------------ *)
 (* Learnable soft-bit random variables *)
@@ -218,7 +218,7 @@ HardNOT[{input_List, weights_List}] :=
     (* Output *)
     Not /@ Thread[Xor[input, First[weights]]],
     (* Consume weights *)
-    Drop[weights, UpTo[1]]
+    Drop[weights, 1]
   }
 
 HardNeuralNOT[inputSize_, weights_Function:BalancedSoftBits] := {
@@ -267,7 +267,7 @@ HardAND[layerSize_] := Function[{inputs},
       notWeights = (Not /@ #) & /@ reshapedWeights;
       MapApply[And, Map[Thread[Or[input, #]] &, notWeights]],
       (* Consume weights *)
-      Drop[weights, UpTo[1]]
+      Drop[weights, 1]
     }
   ]
 ]
@@ -329,7 +329,7 @@ HardOR[layerSize_] := Function[{inputs},
       reshapedWeights = Partition[layerWeights, Length[layerWeights] / layerSize];
       MapApply[Or, Map[Thread[And[input, #]] &, reshapedWeights]],
       (* Consume weights *)
-      Drop[weights, UpTo[1]]
+      Drop[weights, 1]
     }
   ]
 ]
@@ -384,7 +384,7 @@ HardMajority[layerSize_] := Function[{inputs},
       reshapedWeights = Partition[layerWeights, Length[layerWeights] / layerSize];
       Map[Majority @@ First[HardNOT[{input, #}]] &, reshapedWeights],
       (* Consume weights *)
-      Drop[weights, UpTo[1]]
+      Drop[weights, 1]
     }
   ]
 ]
@@ -540,7 +540,7 @@ HardReshapeLayer[numPorts_] := Function[{inputs},
     {input, weights} = inputs;
     {
       Partition[input, Length[input] / numPorts], 
-      Drop[weights, UpTo[1]]
+      weights
     }
   ]
 ]
