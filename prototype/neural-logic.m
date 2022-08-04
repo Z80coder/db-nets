@@ -37,11 +37,11 @@ HardNOR::usage = "Hard NOR.";
 HardAND::usage = "Hard AND.";
 HardOR::usage = "Hard OR.";
 HardMajority::usage = "Hard majority.";
+GetWeights::usage = "Get weights.";
 ExtractWeights::usage = "Extract weights.";
 HardNetFunction::usage = "Hard net function.";
-HardWeightSize::usage = "Hard weight size.";
-SoftWeightSize::usage = "Soft weight size.";
-SpaceSaving::usage = "Space saving.";
+HardNetBooleanExpression::usage = "Hard net boolean expression.";
+HardNetBooleanFunction::usage = "Hard net boolean function.";
 HardClassificationLoss::usage = "Hard classification loss.";
 InitializeBiasToZero::usage = "Initialize bias to zero.";
 InitializeBiasToOne::usage = "Initialize bias to one.";
@@ -57,6 +57,12 @@ RandomUniformSoftBits::usage = "Random soft bit layer.";
 RandomNormalSoftBits::usage = "Random soft bit layer.";
 RandomBalancedNormalSoftBits::usage = "Random balanced normal soft bit layer.";
 SoftBits::usage = "Create some soft bits.";
+HardNetClassBits::usage = "Hard net class bits.";
+HardNetClassScores::usage = "Hard net class scores.";
+HardNetClassProbabilities::usage = "Hard net class probabilities.";
+HardNetClassPrediction::usage = "Hard net class prediction.";
+HardNetClassify::usage = "Hard net classify.";
+HardNetClassifyEvaluation::usage = "Hard net classify evaluation.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -74,6 +80,7 @@ Soften[hardBits_List] := Map[Soften, hardBits]
 
 HardClip[x_] := Clip[x, {0.00000001, 0.9999999}]
 LogisticClip[x_] := LogisticSigmoid[4(2 x - 1)]
+LogisticClip[x_] := HardClip[x]
 
 (* ------------------------------------------------------------------ *)
 (* Initalization policies *)
@@ -391,6 +398,7 @@ HardMajority[layerSize_] := Function[{inputs},
     - worst-case O(n^2)
     - See https://danlark.org/2020/11/11/miniselect-practical-and-generic-selection-algorithms/
 *)
+(* TODO: remove NOT from basic Majority *)
 HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
   With[{medianIndex = Ceiling[(inputSize + 1)/2]},
     NetGraph[
@@ -621,9 +629,9 @@ HardClassificationLoss[] := NetGraph[
 (* ------------------------------------------------------------------ *)
 
 (* TODO: support random variable weights *)
-ExtractWeights[net_] := Normal[
-  NetExtract[#, "Arrays"]["Array"]] & /@ Cases[NetExtract[NetFlatten[net], All], _NetArrayLayer
-]
+GetWeights[net_] := NetExtract[#, "Arrays"]["Array"] & /@ Cases[NetExtract[NetFlatten[net], All], _NetArrayLayer]
+ 
+ExtractWeights[net_] := Normal[GetWeights[net]]
 
 HardNetFunction[hardNet_, trainedSoftNet_] := Module[{softWeights},
   softWeights = ExtractWeights[trainedSoftNet];
@@ -634,21 +642,85 @@ HardNetFunction[hardNet_, trainedSoftNet_] := Module[{softWeights},
   ]
 ]
 
-SoftWeightSize[weights_] := Quantity[Length[Flatten[weights]] * 32.0 / 8000.0, "kilobytes"]
+HardNetBooleanExpression[hardNetFunction_Function, inputSize_] := Module[
+  {
+    inputs = Table[Symbol["b" <> ToString[i]], {i, inputSize}]
+  },
+  hardNetFunction[inputs]
+]
 
-HardWeightSize[weights_] := Quantity[Length[Flatten[weights]] / 8000.0, "kilobytes"]
+HardNetBooleanFunction[hardNetFunction_Function, inputSize_] := Block[
+  {
+    hardNetBooleanExpression = HardNetBooleanExpression[hardNetFunction, inputSize],
+    signature = Typed[Symbol["input"], TypeSpecifier["NumericArray"]["MachineInteger", 1]],
+    replacements = Quiet[Table[
+      Symbol["b" <> ToString[i]] -> With[{b = Symbol["input"][[i]]}, 
+          If[b == 1, True, False]
+        ],
+      {i, inputSize}]
+    ],
+    indexExpression
+  },
+  indexExpression = hardNetBooleanExpression /. replacements;
+  Function[Evaluate[signature], Evaluate[indexExpression]]
+]
 
-SpaceSaving[net_] := Block[
-  {weights = ExtractWeights[net], softSize, hardSize},
-  softSize = SoftWeightSize[weights];
-  hardSize = HardWeightSize[weights];
-  Column[
-    {
-      "Soft net size = " <> ToString[softSize], 
-      "Hard net size = " <> ToString[hardSize],
-      "Saving factor = " <> ToString[softSize/hardSize]
-    }
+(* ------------------------------------------------------------------ *)
+(* Classifiery querying and evaluation *)
+(* ------------------------------------------------------------------ *)
+
+HardNetClassBits[hardNet_Function, featureLayer_NetGraph, data_] := Normal[hardNet[Normal[featureLayer[#]]] & /@ data]
+
+HardNetClassScores[classBits_] := (Total /@ Boole[#]) & /@ classBits
+
+HardNetClassProbabilities[classScores_] := N[Exp[#]/Total[Exp[#], {-1}]] & /@ classScores
+
+HardNetClassPrediction[classProbabilities_, decoder_NetDecoder] := decoder /@ classProbabilities
+
+HardNetClassify[hardNet_Function, featureLayer_NetGraph, decoder_NetDecoder, data_, targetName_String] := 
+  ResourceFunction[ResourceObject[
+      <|
+        "Name" -> "DynamicMap",
+        "ShortName" -> "DynamicMap", 
+        "UUID" -> "962b5001-b624-4bc4-9b1e-401e550f4f2b", 
+        "ResourceType" -> "Function", "Version" -> "4.0.0", 
+        "Description" -> "Map functions over lists while showing dynamic progress", 
+        "RepositoryLocation" -> URL["https://www.wolframcloud.com/objects/resourcesystem/api/1.0"], 
+        "SymbolName" -> "FunctionRepository`$f51668a7ac6041a9b46390842a7243d8`DynamicMap", 
+        "FunctionLocation" -> CloudObject["https://www.wolframcloud.com/obj/9d55b90e-e3c6-4d27-bdcf-8c3ebb4fe19a"]
+      |>, 
+      ResourceSystemBase -> Automatic
+  ]][
+    <|
+      "Prediction" -> First[
+        HardNetClassPrediction[
+          HardNetClassProbabilities[
+            HardNetClassScores[
+              HardNetClassBits[hardNet, featureLayer, {KeyDrop[{targetName}] @ #}]
+            ]
+          ],
+          decoder
+        ]
+      ],
+      "Target" -> #[targetName]
+    |> &,
+    data
   ]
+
+HardNetClassifyEvaluation[hardNetClassify_] := Module[
+  {
+    counts = Counts[hardNetClassify], 
+    correctExamples, 
+    accuracy
+  },
+  correctExamples = Select[
+    Normal[counts], 
+    With[{assoc = First[#]}, 
+      Length[DeleteDuplicates[Values[assoc]]] == 1
+    ] &
+  ];
+  accuracy = N[Total[Last /@ correctExamples]/Total[counts]];
+  <|"Accuracy" -> accuracy|>
 ]
 
 (* ------------------------------------------------------------------ *)
