@@ -398,6 +398,7 @@ HardMajority[layerSize_] := Function[{inputs},
     - worst-case O(n^2)
     - See https://danlark.org/2020/11/11/miniselect-practical-and-generic-selection-algorithms/
 *)
+(* TODO: remove NOT from basic Majority *)
 HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
   With[{medianIndex = Ceiling[(inputSize + 1)/2]},
     NetGraph[
