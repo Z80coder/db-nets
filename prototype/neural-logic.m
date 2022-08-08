@@ -38,8 +38,10 @@ HardAND::usage = "Hard AND.";
 HardOR::usage = "Hard OR.";
 HardMajority::usage = "Hard majority.";
 GetWeights::usage = "Get weights.";
+GetNetArrays::usage = "Get net arrays.";
 ExtractWeights::usage = "Extract weights.";
 HardNetFunction::usage = "Hard net function.";
+HardNetTransformWeights::usage = "Hard net transform weights.";
 HardNetBooleanExpression::usage = "Hard net boolean expression.";
 HardNetBooleanFunction::usage = "Hard net boolean function.";
 HardClassificationLoss::usage = "Hard classification loss.";
@@ -79,6 +81,8 @@ Soften[hardBit_] := If[hardBit == 1, 1.0, 0.0]
 Soften[hardBits_List] := Map[Soften, hardBits]
 
 HardClip[x_] := Clip[x, {0.00000001, 0.9999999}]
+HardClip[x_] := Clip[x, {0.0, 1.0}]
+
 LogisticClip[x_] := LogisticSigmoid[4(2 x - 1)]
 LogisticClip[x_] := HardClip[x]
 
@@ -126,7 +130,8 @@ InitializeNearToOne[net_] := NetInitialize[net, All,
 SoftBits[size_] := NetGraph[
   <|
     "Weights" -> NetArrayLayer["Output" -> size],
-    "WeightsClip" -> ElementwiseLayer[HardClip] 
+    (*"WeightsClip" -> ElementwiseLayer[HardClip]*)
+    "WeightsClip" -> HardeningLayer[]
   |>,
   {
     "Weights" -> "WeightsClip"
@@ -134,7 +139,7 @@ SoftBits[size_] := NetGraph[
 ]
 
 BalancedSoftBits[size_] := InitializeBalanced[SoftBits[size]]
-BiasedToZeroSoftBits[size_] := InitializeNearToZero[SoftBits[size]]
+NearZeroSoftBits[size_] := InitializeNearToZero[SoftBits[size]]
 
 (* ------------------------------------------------------------------ *)
 (* Learnable soft-bit random variables *)
@@ -225,12 +230,12 @@ HardNeuralNOT[inputSize_, weights_Function:BalancedSoftBits] := {
   NetGraph[
     <|
       "Weights" -> weights[inputSize],
-      "Not" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1],
-      "OutputClip" -> ElementwiseLayer[LogisticClip] 
+      "Not" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1](*,
+      "OutputClip" -> ElementwiseLayer[LogisticClip]*)
     |>,
     {
-      "Weights" -> NetPort["Not", "Weights"],
-      "Not" -> "OutputClip"
+      "Weights" -> NetPort["Not", "Weights"](*,
+      "Not" -> "OutputClip"*)
     } 
   ],
   HardNOT
@@ -257,6 +262,8 @@ DifferentiableHardAND[b_, w_] :=
     ]
   ]
 
+DifferentiableHardAND[b_, w_] := Max[b, 1 - w]
+
 HardAND[layerSize_] := Function[{inputs},
   Block[{input, weights, layerWeights, reshapedWeights, notWeights},
     {input, weights} = inputs;
@@ -272,20 +279,20 @@ HardAND[layerSize_] := Function[{inputs},
   ]
 ]
 
-HardNeuralAND[inputSize_, layerSize_, weights_Function:BiasedToZeroSoftBits] := {
+HardNeuralAND[inputSize_, layerSize_, weights_Function:NearZeroSoftBits] := {
   NetGraph[
     <|
       "Weights" -> weights[layerSize * inputSize],
       "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
       "HardInclude" -> ThreadingLayer[DifferentiableHardAND[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-      "And" -> AggregationLayer[Min],
-      "OutputClip" -> ElementwiseLayer[LogisticClip] 
+      "And" -> AggregationLayer[Min](*,
+      "OutputClip" -> ElementwiseLayer[LogisticClip]*)
     |>,
     {
       "Weights" -> "Reshape",
       "Reshape" -> NetPort["HardInclude", "Weights"],
-      "HardInclude" -> "And",
-      "And" -> "OutputClip"
+      "HardInclude" -> "And"(*,
+      "And" -> "OutputClip"*)
     }
   ],
   HardAND[layerSize]
@@ -299,7 +306,7 @@ HardNAND[layerSize_] := Function[{inputs},
   HardNOT[HardAND[layerSize][inputs]]
 ]
 
-HardNeuralNAND[inputSize_, layerSize_, andWeights_Function:BiasedToZeroSoftBits, notWeights_Function:BalancedSoftBits] := {
+HardNeuralNAND[inputSize_, layerSize_, andWeights_Function:NearZeroSoftBits, notWeights_Function:BalancedSoftBits] := {
   NetChain[
     {
       First[HardNeuralAND[inputSize, layerSize, andWeights[#]&]],
@@ -340,14 +347,14 @@ HardNeuralOR[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
       "Weights" -> weights[layerSize * inputSize],
       "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
       "HardInclude" -> ThreadingLayer[DifferentiableHardOR[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-      "Or" -> AggregationLayer[Max],
-      "OutputClip" -> ElementwiseLayer[LogisticClip]
+      "Or" -> AggregationLayer[Max](*,
+      "OutputClip" -> ElementwiseLayer[LogisticClip]*)
     |>,
     {
       "Weights" -> "Reshape",
       "Reshape" -> NetPort["HardInclude", "Weights"],
-      "HardInclude" -> "Or",
-      "Or" -> "OutputClip"
+      "HardInclude" -> "Or"(*,
+      "Or" -> "OutputClip"*)
     }
   ],
   HardOR[layerSize]
@@ -361,7 +368,7 @@ HardNOR[layerSize_] := Function[{inputs},
   HardNOT[HardOR[layerSize][inputs]]
 ]
 
-HardNeuralNOR[inputSize_, layerSize_, orWeights_Function:BiasedToZeroSoftBits, notWeights_Function:BalancedSoftBits] := {
+HardNeuralNOR[inputSize_, layerSize_, orWeights_Function:NearZeroSoftBits, notWeights_Function:BalancedSoftBits] := {
   NetChain[
     {
       First[HardNeuralOR[inputSize, layerSize, orWeights[#]&]],
@@ -407,15 +414,15 @@ HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] :=
         "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
         "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
         "Sort" -> FunctionLayer[Sort /@ # &],
-        "Medians" -> PartLayer[{All, medianIndex}],
-        "OutputClip" -> ElementwiseLayer[LogisticClip]
+        "Medians" -> PartLayer[{All, medianIndex}](*,
+        "OutputClip" -> ElementwiseLayer[LogisticClip]*)
       |>,
       {
         "Weights" -> "Reshape",
         "Reshape" -> NetPort["HardInclude", "Weights"],
         "HardInclude" -> "Sort",
-        "Sort" -> "Medians",
-        "Medians" -> "OutputClip"
+        "Sort" -> "Medians"(*,
+        "Medians" -> "OutputClip"*)
       }
     ]
   ],
@@ -444,15 +451,15 @@ HardNeuralCount[numArrays_, arraySize_] := {
       "CountBooleans" -> FunctionLayer[
         (* !a && b *)
         MapThread[Min[DifferentiableHardNOT[#1, 0], #2] &, {#Input2, #Input1}, 2] &
-      ],
-      "OutputClip" -> ElementwiseLayer[LogisticClip]
+      ](*,
+      "OutputClip" -> ElementwiseLayer[LogisticClip]*)
     |>,
     {
       "Sort" -> NetPort["CountBooleans", "Input1"],
       "Sort" -> "DropLast",
       "DropLast" -> "PadFalse",
-      "PadFalse" -> NetPort["CountBooleans", "Input2"],
-      "CountBooleans" -> "OutputClip"
+      "PadFalse" -> NetPort["CountBooleans", "Input2"](*,
+      "CountBooleans" -> "OutputClip"*)
     }
   ],
   (* TODO: implement this *)
@@ -573,7 +580,26 @@ HardNeuralChain[layers_List] := Module[{chain = Transpose[layers]},
 
 HardeningForward[] := Function[
   {Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 2]]},
-  If[# > 0.5, 0.9, 0.1] & /@ # & /@ input
+(* 
+  If[# > 0.5, 1.0, 0.0] is less numerically stable and allows
+  soft weights to cluster around the 0.5 hard decision
+  boundary. If[# > 0.5, 0.51, 0.49] is more numerically
+  stable and forces soft weights away from the hard decision
+  boundary, but prevents the net from getting correct feedback
+  (all examples appear to have a permanent ineradicable
+  loss).
+*)
+  If[# > 0.5, 0.99, 0.01] & /@ # & /@ input
+]
+
+HardeningForward[] := Function[
+  {Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 2]]},
+  If[# < 0.4 || # > 0.6, If[# > 0.5, 0.99, 0.01], 0.5] & /@ # & /@ input
+]
+
+HardeningForward[] := Function[
+  {Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 2]]},
+  If[# > 0.5, 1.0, 0.0] & /@ # & /@ input
 ]
 
 HardeningBackward[] := Function[
@@ -585,10 +611,7 @@ HardeningBackward[] := Function[
   outgrad
 ]
 
-HardeningLayer[] := CompiledLayer[
-  HardeningForward[], 
-  HardeningBackward[]
-]
+HardeningLayer[] := CompiledLayer[HardeningForward[], HardeningBackward[]]
 
 (* ------------------------------------------------------------------ *)
 (* Hard classification loss *)
@@ -600,25 +623,25 @@ HardeningLayer[] := CompiledLayer[
 *)
 HardClassificationLoss[] := NetGraph[
   <|
-    "Harden" -> HardeningLayer[],
+    (*"Harden" -> HardeningLayer[],*)
     "Mean" -> AggregationLayer[Mean, 2],
     "Error" -> MeanSquaredLossLayer[]
   |>,
   {
-    "Harden" -> "Mean",
+    (*"Harden" -> "Mean",*)
     "Mean" -> NetPort["Error", "Input"]
   } 
 ]
 
 HardClassificationLoss[] := NetGraph[
   <|
-    "Harden" -> HardeningLayer[],
+    (*"Harden" -> HardeningLayer[],*)
     "SoftProbs" -> AggregationLayer[Total, 2],
     "SoftmaxLayer" -> SoftmaxLayer[],
     "Error" -> CrossEntropyLossLayer["Probabilities"]
   |>,
   {
-    "Harden" -> "SoftProbs",
+    (*"Harden" -> "SoftProbs",*)
     "SoftProbs" -> "SoftmaxLayer",
     "SoftmaxLayer" -> NetPort["Error", "Input"]
   } 
@@ -628,8 +651,10 @@ HardClassificationLoss[] := NetGraph[
 (* Network hardening *)
 (* ------------------------------------------------------------------ *)
 
-(* TODO: support random variable weights *)
-GetWeights[net_] := NetExtract[#, "Arrays"]["Array"] & /@ Cases[NetExtract[NetFlatten[net], All], _NetArrayLayer]
+(* TODO: support non-deterministic weights *)
+GetNetArrays[net_] := Select[Normal[NetFlatten[net]], MatchQ[#, _NetArrayLayer] &]
+
+GetWeights[net_] := NetExtract[#, "Arrays"]["Array"] & /@ Values[GetNetArrays[net]]
  
 ExtractWeights[net_] := Normal[GetWeights[net]]
 
@@ -642,6 +667,20 @@ HardNetFunction[hardNet_, trainedSoftNet_] := Module[{softWeights},
   ]
 ]
 
+(* TODO: remove need for client to understand weights are 2-layered *)
+HardNetTransformWeights[net_, f_Function] := Module[
+  {
+    arrayNames = Keys[GetNetArrays[net]],
+    transformedWeights = f /@ ExtractWeights[net], 
+    transformedArrays
+  },
+  transformedArrays = MapIndexed[
+    arrayNames[[#2[[1]]]] -> NetArrayLayer["Array" -> #1, "Output" -> Length[#1]] &,
+    transformedWeights
+  ];
+  NetReplacePart[NetFlatten[net], transformedArrays]
+]
+
 HardNetBooleanExpression[hardNetFunction_Function, inputSize_] := Module[
   {
     inputs = Table[Symbol["b" <> ToString[i]], {i, inputSize}]
@@ -649,9 +688,8 @@ HardNetBooleanExpression[hardNetFunction_Function, inputSize_] := Module[
   hardNetFunction[inputs]
 ]
 
-HardNetBooleanFunction[hardNetFunction_Function, inputSize_] := Block[
+HardNetBooleanFunction[hardNetBooleanExpression_, inputSize_] := Block[
   {
-    hardNetBooleanExpression = HardNetBooleanExpression[hardNetFunction, inputSize],
     signature = Typed[Symbol["input"], TypeSpecifier["NumericArray"]["MachineInteger", 1]],
     replacements = Quiet[Table[
       Symbol["b" <> ToString[i]] -> With[{b = Symbol["input"][[i]]}, 
@@ -661,21 +699,21 @@ HardNetBooleanFunction[hardNetFunction_Function, inputSize_] := Block[
     ],
     indexExpression
   },
-  indexExpression = hardNetBooleanExpression /. replacements;
+  indexExpression = hardNetBooleanExpression //. replacements;
   Function[Evaluate[signature], Evaluate[indexExpression]]
 ]
 
 (* ------------------------------------------------------------------ *)
-(* Classifiery querying and evaluation *)
+(* Classifier querying and evaluation *)
 (* ------------------------------------------------------------------ *)
 
-HardNetClassBits[hardNet_Function, featureLayer_NetGraph, data_] := Normal[hardNet[Normal[featureLayer[#]]] & /@ data]
+HardNetClassBits[hardNet_Function, featureLayer_NetGraph, data_] := Normal[hardNet[Harden[Normal[featureLayer[#]]]] & /@ data]
 
 HardNetClassScores[classBits_] := (Total /@ Boole[#]) & /@ classBits
 
-HardNetClassProbabilities[classScores_] := N[Exp[#]/Total[Exp[#], {-1}]] & /@ classScores
+HardNetClassProbabilities[classScores_] := N[Exp[#]/Total[Exp[#]]] & /@ classScores
 
-HardNetClassPrediction[classProbabilities_, decoder_NetDecoder] := decoder /@ classProbabilities
+HardNetClassPrediction[classProbabilities_, decoder_NetDecoder] := decoder @ classProbabilities
 
 HardNetClassify[hardNet_Function, featureLayer_NetGraph, decoder_NetDecoder, data_, targetName_String] := 
   ResourceFunction[ResourceObject[
@@ -683,7 +721,8 @@ HardNetClassify[hardNet_Function, featureLayer_NetGraph, decoder_NetDecoder, dat
         "Name" -> "DynamicMap",
         "ShortName" -> "DynamicMap", 
         "UUID" -> "962b5001-b624-4bc4-9b1e-401e550f4f2b", 
-        "ResourceType" -> "Function", "Version" -> "4.0.0", 
+        "ResourceType" -> "Function",
+        "Version" -> "4.0.0", 
         "Description" -> "Map functions over lists while showing dynamic progress", 
         "RepositoryLocation" -> URL["https://www.wolframcloud.com/objects/resourcesystem/api/1.0"], 
         "SymbolName" -> "FunctionRepository`$f51668a7ac6041a9b46390842a7243d8`DynamicMap", 
@@ -720,7 +759,7 @@ HardNetClassifyEvaluation[hardNetClassify_] := Module[
     ] &
   ];
   accuracy = N[Total[Last /@ correctExamples]/Total[counts]];
-  <|"Accuracy" -> accuracy|>
+  <|"Accuracy" -> accuracy, "Counts" -> Reverse[Sort[counts]]|>
 ]
 
 (* ------------------------------------------------------------------ *)
