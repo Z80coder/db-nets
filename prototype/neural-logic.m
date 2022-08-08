@@ -713,7 +713,7 @@ HardNetClassScores[classBits_] := (Total /@ Boole[#]) & /@ classBits
 
 HardNetClassProbabilities[classScores_] := N[Exp[#]/Total[Exp[#]]] & /@ classScores
 
-HardNetClassPrediction[classProbabilities_, decoder_NetDecoder] := decoder @ classProbabilities
+HardNetClassPrediction[classProbabilities_, decoder_NetDecoder] := First[decoder @ classProbabilities]
 
 HardNetClassify[hardNet_Function, featureLayer_NetGraph, decoder_NetDecoder, data_, targetName_String] := 
   ResourceFunction[ResourceObject[
@@ -731,15 +731,13 @@ HardNetClassify[hardNet_Function, featureLayer_NetGraph, decoder_NetDecoder, dat
       ResourceSystemBase -> Automatic
   ]][
     <|
-      "Prediction" -> First[
-        HardNetClassPrediction[
+      "Prediction" -> HardNetClassPrediction[
           HardNetClassProbabilities[
             HardNetClassScores[
               HardNetClassBits[hardNet, featureLayer, {KeyDrop[{targetName}] @ #}]
-            ]
-          ],
-          decoder
-        ]
+          ]
+        ],
+        decoder
       ],
       "Target" -> #[targetName]
     |> &,
@@ -747,19 +745,12 @@ HardNetClassify[hardNet_Function, featureLayer_NetGraph, decoder_NetDecoder, dat
   ]
 
 HardNetClassifyEvaluation[hardNetClassify_] := Module[
-  {
-    counts = Counts[hardNetClassify], 
-    correctExamples, 
-    accuracy
-  },
-  correctExamples = Select[
-    Normal[counts], 
-    With[{assoc = First[#]}, 
-      Length[DeleteDuplicates[Values[assoc]]] == 1
-    ] &
-  ];
-  accuracy = N[Total[Last /@ correctExamples]/Total[counts]];
-  <|"Accuracy" -> accuracy, "Counts" -> Reverse[Sort[counts]]|>
+  {results = Counts[hardNetClassify], correctResults, totalCorrect, totalResults, accuracy},
+  correctResults = KeySelect[results, Length[DeleteDuplicates[Values[#]]] == 1 &];
+  totalCorrect = Total[correctResults];
+  totalResults = Total[results];
+  accuracy = N[totalCorrect / totalResults];
+  <|"Accuracy" -> accuracy, "Results" -> Reverse[Sort[results]]|>
 ]
 
 (* ------------------------------------------------------------------ *)
