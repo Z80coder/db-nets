@@ -130,11 +130,10 @@ InitializeNearToOne[net_] := NetInitialize[net, All,
 SoftBits[size_] := NetGraph[
   <|
     "Weights" -> NetArrayLayer["Output" -> size],
-    (*"WeightsClip" -> ElementwiseLayer[HardClip]*)
-    "WeightsClip" -> HardeningLayer[]
+    "Harden" -> HardeningLayer[]
   |>,
   {
-    "Weights" -> "WeightsClip"
+    "Weights" -> "Harden"
   }
 ]
 
@@ -285,7 +284,8 @@ HardNeuralAND[inputSize_, layerSize_, weights_Function:NearZeroSoftBits] := {
       "Weights" -> weights[layerSize * inputSize],
       "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
       "HardInclude" -> ThreadingLayer[DifferentiableHardAND[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-      "And" -> AggregationLayer[Min](*,
+      "And" -> AggregationLayer[Times]
+      (*"And" -> AggregationLayer[Min],
       "OutputClip" -> ElementwiseLayer[LogisticClip]*)
     |>,
     {
@@ -715,7 +715,7 @@ HardNetClassProbabilities[classScores_] := N[Exp[#]/Total[Exp[#]]] & /@ classSco
 
 HardNetClassPrediction[classProbabilities_, decoder_NetDecoder] := First[decoder @ classProbabilities]
 
-HardNetClassify[hardNet_Function, featureLayer_NetGraph, decoder_NetDecoder, data_, targetName_String] := 
+HardNetClassify[hardNet_Function, featureLayer_NetGraph, decoder_, data_, targetName_String] := 
   ResourceFunction[ResourceObject[
       <|
         "Name" -> "DynamicMap",
