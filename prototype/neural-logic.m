@@ -80,11 +80,8 @@ Harden[softBits_List] := Harden /@ softBits
 Soften[hardBit_] := If[hardBit == 1, 1.0, 0.0]
 Soften[hardBits_List] := Map[Soften, hardBits]
 
-HardClip[x_] := Clip[x, {0.00000001, 0.9999999}]
-HardClip[x_] := Clip[x, {0.0, 1.0}]
-
+HardClip[x_, d_:0.0] := Clip[x, {d, 1.0 - d}]
 LogisticClip[x_] := LogisticSigmoid[4(2 x - 1)]
-LogisticClip[x_] := HardClip[x]
 
 (* ------------------------------------------------------------------ *)
 (* Initalization policies *)
@@ -122,6 +119,26 @@ InitializeNearToOne[net_] := NetInitialize[net, All,
     "Biases" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[1, 1]]
   }
 ]
+
+(* ------------------------------------------------------------------ *)
+(* Hardening layer *)
+(* ------------------------------------------------------------------ *)
+
+HardeningForward[] := Function[
+  {Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 2]]},
+  If[# > 0.5, 1.0, 0.0] & /@ # & /@ input
+]
+
+HardeningBackward[] := Function[
+  {
+    Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 2]],
+    Typed[outgrad, TypeSpecifier["PackedArray"]["MachineReal", 2]]
+  },
+  (* Straight-through estimator *)
+  outgrad
+]
+
+HardeningLayer[] := CompiledLayer[HardeningForward[], HardeningBackward[]]
 
 (* ------------------------------------------------------------------ *)
 (* Learnable soft-bit deterministic variables *)
@@ -229,12 +246,10 @@ HardNeuralNOT[inputSize_, weights_Function:BalancedSoftBits] := {
   NetGraph[
     <|
       "Weights" -> weights[inputSize],
-      "Not" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1](*,
-      "OutputClip" -> ElementwiseLayer[LogisticClip]*)
+      "Not" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1]
     |>,
     {
-      "Weights" -> NetPort["Not", "Weights"](*,
-      "Not" -> "OutputClip"*)
+      "Weights" -> NetPort["Not", "Weights"]
     } 
   ],
   HardNOT
@@ -249,18 +264,6 @@ HardNeuralNOT[inputSize_, weights_Function:BalancedSoftBits] := {
   w = 1 => AND is fully active
   Hence, corresponding hard logic is: b || !w
 *)
-DifferentiableHardAND[b_, w_] := 
-  If[w > 1/2,
-    If[b > 1/2,
-      b,
-      (2 w - 1) b + 1 - w
-    ], (*else w<=1/2*)
-    If[b > 1/2,
-      - 2 w (1 - b) + 1,
-      1 - w
-    ]
-  ]
-
 DifferentiableHardAND[b_, w_] := Max[b, 1 - w]
 
 HardAND[layerSize_] := Function[{inputs},
@@ -284,15 +287,12 @@ HardNeuralAND[inputSize_, layerSize_, weights_Function:NearZeroSoftBits] := {
       "Weights" -> weights[layerSize * inputSize],
       "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
       "HardInclude" -> ThreadingLayer[DifferentiableHardAND[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-      "And" -> AggregationLayer[Times]
-      (*"And" -> AggregationLayer[Min],
-      "OutputClip" -> ElementwiseLayer[LogisticClip]*)
+      "And" -> AggregationLayer[Min]
     |>,
     {
       "Weights" -> "Reshape",
       "Reshape" -> NetPort["HardInclude", "Weights"],
-      "HardInclude" -> "And"(*,
-      "And" -> "OutputClip"*)
+      "HardInclude" -> "And"
     }
   ],
   HardAND[layerSize]
@@ -347,14 +347,12 @@ HardNeuralOR[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
       "Weights" -> weights[layerSize * inputSize],
       "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
       "HardInclude" -> ThreadingLayer[DifferentiableHardOR[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-      "Or" -> AggregationLayer[Max](*,
-      "OutputClip" -> ElementwiseLayer[LogisticClip]*)
+      "Or" -> AggregationLayer[Max]
     |>,
     {
       "Weights" -> "Reshape",
       "Reshape" -> NetPort["HardInclude", "Weights"],
-      "HardInclude" -> "Or"(*,
-      "Or" -> "OutputClip"*)
+      "HardInclude" -> "Or"
     }
   ],
   HardOR[layerSize]
@@ -414,20 +412,39 @@ HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] :=
         "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
         "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
         "Sort" -> FunctionLayer[Sort /@ # &],
-        "Medians" -> PartLayer[{All, medianIndex}](*,
-        "OutputClip" -> ElementwiseLayer[LogisticClip]*)
+        "Medians" -> PartLayer[{All, medianIndex}]
       |>,
       {
         "Weights" -> "Reshape",
         "Reshape" -> NetPort["HardInclude", "Weights"],
         "HardInclude" -> "Sort",
-        "Sort" -> "Medians"(*,
-        "Medians" -> "OutputClip"*)
+        "Sort" -> "Medians"
       }
     ]
   ],
   HardMajority[layerSize]
 }
+
+(*
+HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
+  NetGraph[
+    <|
+      "Weights" -> weights[layerSize * inputSize],
+      "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
+      "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
+      "Mean" -> AggregationLayer[Mean],
+      "Harden" -> HardeningLayer[]
+    |>,
+    {
+      "Weights" -> "Reshape",
+      "Reshape" -> NetPort["HardInclude", "Weights"],
+      "HardInclude" -> "Mean",
+      "Mean" -> "Harden"
+    }
+  ],
+  HardMajority[layerSize]
+}
+*)
 
 (* ------------------------------------------------------------------ *)
 (* Hard COUNT *)
@@ -575,45 +592,6 @@ HardNeuralChain[layers_List] := Module[{chain = Transpose[layers]},
 ]
 
 (* ------------------------------------------------------------------ *)
-(* Hardening layer *)
-(* ------------------------------------------------------------------ *)
-
-HardeningForward[] := Function[
-  {Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 2]]},
-(* 
-  If[# > 0.5, 1.0, 0.0] is less numerically stable and allows
-  soft weights to cluster around the 0.5 hard decision
-  boundary. If[# > 0.5, 0.51, 0.49] is more numerically
-  stable and forces soft weights away from the hard decision
-  boundary, but prevents the net from getting correct feedback
-  (all examples appear to have a permanent ineradicable
-  loss).
-*)
-  If[# > 0.5, 0.99, 0.01] & /@ # & /@ input
-]
-
-HardeningForward[] := Function[
-  {Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 2]]},
-  If[# < 0.4 || # > 0.6, If[# > 0.5, 0.99, 0.01], 0.5] & /@ # & /@ input
-]
-
-HardeningForward[] := Function[
-  {Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 2]]},
-  If[# > 0.5, 1.0, 0.0] & /@ # & /@ input
-]
-
-HardeningBackward[] := Function[
-  {
-    Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 2]],
-    Typed[outgrad, TypeSpecifier["PackedArray"]["MachineReal", 2]]
-  },
-  (* Straight-through estimator *)
-  outgrad
-]
-
-HardeningLayer[] := CompiledLayer[HardeningForward[], HardeningBackward[]]
-
-(* ------------------------------------------------------------------ *)
 (* Hard classification loss *)
 (* ------------------------------------------------------------------ *)
 
@@ -735,10 +713,10 @@ HardNetClassify[hardNet_Function, featureLayer_NetGraph, decoder_, data_, target
           HardNetClassProbabilities[
             HardNetClassScores[
               HardNetClassBits[hardNet, featureLayer, {KeyDrop[{targetName}] @ #}]
-          ]
+            ]
+          ],
+          decoder
         ],
-        decoder
-      ],
       "Target" -> #[targetName]
     |> &,
     data
