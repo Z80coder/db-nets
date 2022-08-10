@@ -44,6 +44,7 @@ HardNetFunction::usage = "Hard net function.";
 HardNetTransformWeights::usage = "Hard net transform weights.";
 HardNetBooleanExpression::usage = "Hard net boolean expression.";
 HardNetBooleanFunction::usage = "Hard net boolean function.";
+HardNet::usage = "Hard net.";
 HardClassificationLoss::usage = "Hard classification loss.";
 InitializeNearToZero::usage = "Initialize bias to zero.";
 InitializeNearToOne::usage = "Initialize bias to one.";
@@ -201,28 +202,6 @@ RandomNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 0.5}], 
 RandomBalancedNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 1}], size], Table[RandomReal[{0, 0.1}], size]]
 
 (* ------------------------------------------------------------------ *)
-(* EXPERIMENTAL *)
-(* HardMinAll, HardMaxAll *)
-(* ------------------------------------------------------------------ *)
-
-HardMinAll[] := NetGraph[
-  <|
-    "Min" -> AggregationLayer[Min],
-    "Mean" -> AggregationLayer[Mean],
-    "Filter" -> FunctionLayer[
-      If[#Min > 1/2,
-        #Min + (((#Min - 1/2) #Mean) (1 - #Min))^2,
-        #Min + ((1/2 - #Min) #Mean)^2
-      ] &
-    ]
-  |>,
-  {
-    "Min" -> NetPort["Filter", "Min"],
-    "Mean" -> NetPort["Filter", "Mean"]
-  }
-]
-
-(* ------------------------------------------------------------------ *)
 (* Hard NOT *)
 (* ------------------------------------------------------------------ *)
 
@@ -234,10 +213,12 @@ HardMinAll[] := NetGraph[
 *)
 DifferentiableHardNOT[input_, weights_] := 1 - weights + input (2 weights - 1)
 
+HardNOT[input_List, weights_List] := Not /@ Thread[Xor[input, weights]]
+
 HardNOT[{input_List, weights_List}] := 
   {
     (* Output *)
-    Not /@ Thread[Xor[input, First[weights]]],
+    HardNOT[input, First[weights]],
     (* Consume weights *)
     Drop[weights, 1]
   }
@@ -381,51 +362,21 @@ HardNeuralNOR[inputSize_, layerSize_, orWeights_Function:NearZeroSoftBits, notWe
 (* ------------------------------------------------------------------ *)
 
 HardMajority[layerSize_] := Function[{inputs},
-  Block[{input, weights, layerWeights, reshapedWeights},
+  Block[{input, weights, layerWeights, reshapedWeights, notInputs},
     {input, weights} = inputs;
     {
       (* Output *)
       layerWeights = First[weights];
       reshapedWeights = Partition[layerWeights, Length[layerWeights] / layerSize];
-      Map[Majority @@ First[HardNOT[{input, #}]] &, reshapedWeights],
+      notInputs = Map[HardNOT[input, #] &, reshapedWeights];
+      Majority @@ # & /@ notInputs,
       (* Consume weights *)
       Drop[weights, 1]
     }
   ]
 ]
 
-(* 
-  Currently using sort (probably compiles to QuickSort)
-    - average O(n log n)
-    - worst-case O(n^2)
-  Replace with Floyd-Rivest algorithm:
-    - average n + \min(k, n - k) + O(\sqrt{n \log n}) comparisons with probability at least 1 - 2n^{-1/2}
-    - worst-case O(n^2)
-    - See https://danlark.org/2020/11/11/miniselect-practical-and-generic-selection-algorithms/
-*)
 (* TODO: remove NOT from basic Majority *)
-HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
-  With[{medianIndex = Ceiling[(inputSize + 1)/2]},
-    NetGraph[
-      <|
-        "Weights" -> weights[layerSize * inputSize],
-        "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
-        "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-        "Sort" -> FunctionLayer[Sort /@ # &],
-        "Medians" -> PartLayer[{All, medianIndex}]
-      |>,
-      {
-        "Weights" -> "Reshape",
-        "Reshape" -> NetPort["HardInclude", "Weights"],
-        "HardInclude" -> "Sort",
-        "Sort" -> "Medians"
-      }
-    ]
-  ],
-  HardMajority[layerSize]
-}
-
-(*
 HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
   NetGraph[
     <|
@@ -444,7 +395,6 @@ HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] :=
   ],
   HardMajority[layerSize]
 }
-*)
 
 (* ------------------------------------------------------------------ *)
 (* Hard COUNT *)
@@ -601,25 +551,21 @@ HardNeuralChain[layers_List] := Module[{chain = Transpose[layers]},
 *)
 HardClassificationLoss[] := NetGraph[
   <|
-    (*"Harden" -> HardeningLayer[],*)
     "Mean" -> AggregationLayer[Mean, 2],
     "Error" -> MeanSquaredLossLayer[]
   |>,
   {
-    (*"Harden" -> "Mean",*)
     "Mean" -> NetPort["Error", "Input"]
   } 
 ]
 
 HardClassificationLoss[] := NetGraph[
   <|
-    (*"Harden" -> HardeningLayer[],*)
     "SoftProbs" -> AggregationLayer[Total, 2],
     "SoftmaxLayer" -> SoftmaxLayer[],
     "Error" -> CrossEntropyLossLayer["Probabilities"]
   |>,
   {
-    (*"Harden" -> "SoftProbs",*)
     "SoftProbs" -> "SoftmaxLayer",
     "SoftmaxLayer" -> NetPort["Error", "Input"]
   } 
@@ -645,11 +591,10 @@ HardNetFunction[hardNet_, trainedSoftNet_] := Module[{softWeights},
   ]
 ]
 
-(* TODO: remove need for client to understand weights are 2-layered *)
 HardNetTransformWeights[net_, f_Function] := Module[
   {
     arrayNames = Keys[GetNetArrays[net]],
-    transformedWeights = f /@ ExtractWeights[net], 
+    transformedWeights = f /@ # & /@ ExtractWeights[net], 
     transformedArrays
   },
   transformedArrays = MapIndexed[
@@ -658,6 +603,8 @@ HardNetTransformWeights[net_, f_Function] := Module[
   ];
   NetReplacePart[NetFlatten[net], transformedArrays]
 ]
+
+HardNet[net_] := HardNetTransformWeights[net, Boole[Harden[#]] &]
 
 HardNetBooleanExpression[hardNetFunction_Function, inputSize_] := Module[
   {
