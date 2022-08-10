@@ -148,10 +148,10 @@ HardeningLayer[] := CompiledLayer[HardeningForward[], HardeningBackward[]]
 SoftBits[size_] := NetGraph[
   <|
     "Weights" -> NetArrayLayer["Output" -> size],
-    "Harden" -> HardeningLayer[]
+    "Clip" -> ElementwiseLayer[HardClip]
   |>,
   {
-    "Weights" -> "Harden"
+    "Weights" -> "Clip"
   }
 ]
 
@@ -166,8 +166,8 @@ RandomUniformSoftBits[aWeights_List, bWeights_List] := NetGraph[
   <|
     "A" -> NetArrayLayer["Array" -> aWeights, "Output" -> Length[aWeights]],
     "B" -> NetArrayLayer["Array" -> aWeights, "Output" -> Length[aWeights]],
-    "ClipA" -> ElementwiseLayer[Clip[#, {0, 1}] &],
-    "ClipB" -> ElementwiseLayer[Clip[#, {0, 1}] &],
+    "ClipA" -> ElementwiseLayer[HardClip],
+    "ClipB" -> ElementwiseLayer[HardClip],
     "Distribution" -> RandomArrayLayer[UniformDistribution[{0, 1}], "Output" -> Length[aWeights]],
     "Variates" -> FunctionLayer[#A + (#B - #A) #Random &]
   |>,
@@ -188,7 +188,7 @@ RandomNormalSoftBits[muWeights_List, sigmaWeights_List] := NetGraph[
     "Sigma" -> NetArrayLayer["Array" -> sigmaWeights, "Output" -> Length[muWeights]],
     "Distribution" -> RandomArrayLayer[NormalDistribution[0, 1], "Output" -> Length[muWeights]],
     "Variates" -> FunctionLayer[#Mu + #Sigma * #Random &],
-    "ClipVariates" -> ElementwiseLayer[Clip[#, {0, 1}] &]
+    "ClipVariates" -> ElementwiseLayer[HardClip]
   |>,
   {
     "Distribution" -> NetPort["Variates", "Random"],
@@ -200,6 +200,7 @@ RandomNormalSoftBits[muWeights_List, sigmaWeights_List] := NetGraph[
 
 RandomNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 0.5}], size], Table[RandomReal[{0, 0.1}], size]]
 RandomBalancedNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 1}], size], Table[RandomReal[{0, 0.1}], size]]
+RandomBalancedNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 1}], size], Table[0.2, size]]
 
 (* ------------------------------------------------------------------ *)
 (* Hard NOT *)
@@ -227,10 +228,12 @@ HardNeuralNOT[inputSize_, weights_Function:BalancedSoftBits] := {
   NetGraph[
     <|
       "Weights" -> weights[inputSize],
-      "Not" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1]
+      "Not" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1],
+      "Harden" -> HardeningLayer[]
     |>,
     {
-      "Weights" -> NetPort["Not", "Weights"]
+      "Weights" -> NetPort["Not", "Weights"],
+      "Not" -> "Harden"
     } 
   ],
   HardNOT
@@ -268,12 +271,14 @@ HardNeuralAND[inputSize_, layerSize_, weights_Function:NearZeroSoftBits] := {
       "Weights" -> weights[layerSize * inputSize],
       "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
       "HardInclude" -> ThreadingLayer[DifferentiableHardAND[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-      "And" -> AggregationLayer[Min]
+      "And" -> AggregationLayer[Min],
+      "Harden" -> HardeningLayer[]
     |>,
     {
       "Weights" -> "Reshape",
       "Reshape" -> NetPort["HardInclude", "Weights"],
-      "HardInclude" -> "And"
+      "HardInclude" -> "And",
+      "And" -> "Harden"
     }
   ],
   HardAND[layerSize]
@@ -328,12 +333,14 @@ HardNeuralOR[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
       "Weights" -> weights[layerSize * inputSize],
       "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
       "HardInclude" -> ThreadingLayer[DifferentiableHardOR[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-      "Or" -> AggregationLayer[Max]
+      "Or" -> AggregationLayer[Max],
+      "Harden" -> HardeningLayer[]
     |>,
     {
       "Weights" -> "Reshape",
       "Reshape" -> NetPort["HardInclude", "Weights"],
-      "HardInclude" -> "Or"
+      "HardInclude" -> "Or",
+      "Or" -> "Harden"
     }
   ],
   HardOR[layerSize]
@@ -406,7 +413,7 @@ HardNeuralCount[numArrays_, arraySize_] := {
   NetGraph[
     <|
       "Sort" -> FunctionLayer[
-        Sort /@ # &
+        NumericalSort /@ # &
       ],
       "DropLast" -> FunctionLayer[
         Part[#, 1 ;; arraySize - 1] & /@ # &
@@ -675,7 +682,7 @@ HardNetClassifyEvaluation[hardNetClassify_] := Module[
   totalCorrect = Total[correctResults];
   totalResults = Total[results];
   accuracy = N[totalCorrect / totalResults];
-  <|"Accuracy" -> accuracy, "Results" -> Reverse[Sort[results]]|>
+  <|"Accuracy" -> accuracy, "Results" -> Reverse[NumericalSort[results]]|>
 ]
 
 (* ------------------------------------------------------------------ *)
