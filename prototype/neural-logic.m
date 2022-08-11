@@ -44,7 +44,7 @@ HardNetFunction::usage = "Hard net function.";
 HardNetTransformWeights::usage = "Hard net transform weights.";
 HardNetBooleanExpression::usage = "Hard net boolean expression.";
 HardNetBooleanFunction::usage = "Hard net boolean function.";
-HardNet::usage = "Hard net.";
+HardenNet::usage = "Hard net.";
 HardClassificationLoss::usage = "Hard classification loss.";
 InitializeNearToZero::usage = "Initialize bias to zero.";
 InitializeNearToOne::usage = "Initialize bias to one.";
@@ -145,15 +145,22 @@ HardeningLayer[] := CompiledLayer[HardeningForward[], HardeningBackward[]]
 (* Learnable soft-bit deterministic variables *)
 (* ------------------------------------------------------------------ *)
 
-SoftBits[size_] := NetGraph[
+SoftBits[array_NetArrayLayer] := NetGraph[
   <|
-    "Weights" -> NetArrayLayer["Output" -> size],
-    "Clip" -> ElementwiseLayer[HardClip]
+    "SoftBits" -> NetGraph[
+      <|
+        "Weights" -> array,
+        "Clip" -> ElementwiseLayer[HardClip]
+      |>,
+      {
+        "Weights" -> "Clip"
+      }
+    ]
   |>,
-  {
-    "Weights" -> "Clip"
-  }
+  {}
 ]
+
+SoftBits[size_] := SoftBits[NetArrayLayer["Output" -> size]]
 
 BalancedSoftBits[size_] := InitializeBalanced[SoftBits[size]]
 NearZeroSoftBits[size_] := InitializeNearToZero[SoftBits[size]]
@@ -164,42 +171,53 @@ NearZeroSoftBits[size_] := InitializeNearToZero[SoftBits[size]]
 
 RandomUniformSoftBits[aWeights_List, bWeights_List] := NetGraph[
   <|
-    "A" -> NetArrayLayer["Array" -> aWeights, "Output" -> Length[aWeights]],
-    "B" -> NetArrayLayer["Array" -> aWeights, "Output" -> Length[aWeights]],
-    "ClipA" -> ElementwiseLayer[HardClip],
-    "ClipB" -> ElementwiseLayer[HardClip],
-    "Distribution" -> RandomArrayLayer[UniformDistribution[{0, 1}], "Output" -> Length[aWeights]],
-    "Variates" -> FunctionLayer[#A + (#B - #A) #Random &]
+    "RandomUniformSoftBits" -> NetGraph[
+      <|
+        "A" -> NetArrayLayer["Array" -> aWeights, "Output" -> Length[aWeights]],
+        "B" -> NetArrayLayer["Array" -> aWeights, "Output" -> Length[aWeights]],
+        "ClipA" -> ElementwiseLayer[HardClip],
+        "ClipB" -> ElementwiseLayer[HardClip],
+        "Distribution" -> RandomArrayLayer[UniformDistribution[{0, 1}], "Output" -> Length[aWeights]],
+        "Variates" -> FunctionLayer[#A + (#B - #A) #Random &]
+      |>,
+      {
+        "Distribution" -> NetPort["Variates", "Random"],
+        "A" -> "ClipA",
+        "B" -> "ClipB",
+        "ClipA" -> NetPort["Variates", "A"],
+        "ClipB" -> NetPort["Variates", "B"]
+      }
+    ]
   |>,
-  {
-    "Distribution" -> NetPort["Variates", "Random"],
-    "A" -> "ClipA",
-    "B" -> "ClipB",
-    "ClipA" -> NetPort["Variates", "A"],
-    "ClipB" -> NetPort["Variates", "B"]
-  }
+  {}
 ]
 
 RandomUniformSoftBits[size_] := RandomUniformSoftBits[Table[RandomReal[{0.0, 1.0}], size], Table[RandomReal[{0.0, 1.0}, size]]]
 
 RandomNormalSoftBits[muWeights_List, sigmaWeights_List] := NetGraph[
   <|
-    "Mu" -> NetArrayLayer["Array" -> muWeights, "Output" -> Length[muWeights]],
-    "Sigma" -> NetArrayLayer["Array" -> sigmaWeights, "Output" -> Length[muWeights]],
-    "Distribution" -> RandomArrayLayer[NormalDistribution[0, 1], "Output" -> Length[muWeights]],
-    "Variates" -> FunctionLayer[#Mu + #Sigma * #Random &],
-    "ClipVariates" -> ElementwiseLayer[HardClip]
+    "RandomNormalSoftBits" -> NetGraph[
+      <|
+        "Mu" -> NetArrayLayer["Array" -> muWeights, "Output" -> Length[muWeights]],
+        "Sigma" -> NetArrayLayer["Array" -> sigmaWeights, "Output" -> Length[muWeights]],
+        "Distribution" -> RandomArrayLayer[NormalDistribution[0, 1], "Output" -> Length[muWeights]],
+        "Variates" -> FunctionLayer[#Mu + #Sigma * #Random &],
+        "ClipVariates" -> ElementwiseLayer[HardClip]
+      |>,
+      {
+        "Distribution" -> NetPort["Variates", "Random"],
+        "Mu" -> NetPort["Variates", "Mu"],
+        "Sigma" -> NetPort["Variates", "Sigma"],
+        "Variates" -> "ClipVariates"
+      }
+    ]
   |>,
-  {
-    "Distribution" -> NetPort["Variates", "Random"],
-    "Mu" -> NetPort["Variates", "Mu"],
-    "Sigma" -> NetPort["Variates", "Sigma"],
-    "Variates" -> "ClipVariates"
-  }
+  {}
 ]
 
 RandomNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 0.5}], size], Table[RandomReal[{0, 0.1}], size]]
 RandomBalancedNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 1}], size], Table[RandomReal[{0, 0.1}], size]]
+(* XXXX *)
 RandomBalancedNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 1}], size], Table[0.2, size]]
 
 (* ------------------------------------------------------------------ *)
@@ -582,7 +600,88 @@ HardClassificationLoss[] := NetGraph[
 (* Network hardening *)
 (* ------------------------------------------------------------------ *)
 
-(* TODO: support non-deterministic weights *)
+MakeArrayPath[netArrayName_] := Map[
+  If[NumberQ[ToExpression[#]], ToExpression[#], #] &, 
+  StringSplit[Normal[netArrayName]["Name"], "/"]
+]
+
+UnknownSoftBitType[arrays_List] := Nothing
+
+HardenSoftBits[arrays_List] := Map[
+  Block[{arrayName = First[#], array = Normal[Last[#]]},
+    MakeArrayPath[arrayName] -> NumericArray[Boole[Harden[array]], "UnsignedInteger8"]
+  ] &, 
+  arrays
+]
+
+HardenRandomSoftBits[randomVariate_, p1_, p2_] := Block[
+  {
+    p1ArrayName = MakeArrayPath[First[p1]],
+    p1Array = Normal[Last[p1]],
+    p2ArrayName = MakeArrayPath[First[p2]],
+    p2Array = Normal[Last[p2]],
+    parameters,
+    realisedSoftBits,
+    realisedHardBits,
+    replacementWeights
+  },
+  parameters = Partition[Riffle[p1Array, p2Array], 2];
+  realisedSoftBits = Map[randomVariate[#] &, parameters];
+  realisedHardBits = NumericArray[Boole[Harden[realisedSoftBits]], "UnsignedInteger8"];
+  replacementWeights = SoftBits[NetArrayLayer["Array" -> realisedHardBits]];
+  Take[p1ArrayName, First[FirstPosition[p1ArrayName, "Weights"]]] -> replacementWeights
+]
+
+HardenRandomSoftBits[hardener_, arrays_List] := Block[
+  {paramPairs},
+  (* Assume arrays are correctly ordered *)
+  paramPairs = Partition[arrays, 2];
+  Map[Block[{p1, p2},
+      {p1, p2} = #;
+      hardener[p1, p2]
+    ] &,
+    paramPairs
+  ]
+]
+
+HardenRandomNormalSoftBits[mus_, sigmas_] := HardenRandomSoftBits[
+  With[{mu = #[[1]], sigma = #[[2]]},
+    mu + sigma RandomVariate[NormalDistribution[0, 1]]
+  ] &,
+  mus,
+  sigmas
+]
+HardenRandomNormalSoftBits[arrays_List] := HardenRandomSoftBits[HardenRandomNormalSoftBits, arrays]
+
+HardenRandomUniformSoftBits[as_, bs_] := HardenRandomSoftBits[
+  With[{a = #[[1]], b = #[[2]]},
+    a + (b - a) RandomVariate[UniformDistribution[{0, 1}]]
+  ] &, 
+  as, 
+  bs
+]
+HardenRandomUniformSoftBits[arrays_List] := HardenRandomSoftBits[HardenRandomUniformSoftBits, arrays]
+
+HardenNet[net_] := Module[
+  {
+    weights = NetExtract[NetInsertSharedArrays[net], NetArray[All]],
+    hardenings,
+    replacements
+  },
+  hardenings = GroupBy[
+    Normal[weights],
+    With[{key = MakeArrayPath[First[#]]},
+      If[MemberQ[key, "SoftBits"], HardenSoftBits,
+        If[MemberQ[key, "RandomUniformSoftBits"], HardenRandomUniformSoftBits,
+          If[MemberQ[key, "RandomNormalSoftBits"], HardenRandomNormalSoftBits, UnknownSoftBitType]
+        ]
+      ]
+    ] &
+  ];
+  replacements = Flatten[KeyValueMap[#1[#2] &, hardenings]];
+  NetReplacePart[net, replacements]
+]
+
 GetNetArrays[net_] := Select[Normal[NetFlatten[net]], MatchQ[#, _NetArrayLayer] &]
 
 GetWeights[net_] := NetExtract[#, "Arrays"]["Array"] & /@ Values[GetNetArrays[net]]
@@ -597,21 +696,6 @@ HardNetFunction[hardNet_, trainedSoftNet_] := Module[{softWeights},
     ]
   ]
 ]
-
-HardNetTransformWeights[net_, f_Function] := Module[
-  {
-    arrayNames = Keys[GetNetArrays[net]],
-    transformedWeights = f /@ # & /@ ExtractWeights[net], 
-    transformedArrays
-  },
-  transformedArrays = MapIndexed[
-    arrayNames[[#2[[1]]]] -> NetArrayLayer["Array" -> #1, "Output" -> Length[#1]] &,
-    transformedWeights
-  ];
-  NetReplacePart[NetFlatten[net], transformedArrays]
-]
-
-HardNet[net_] := HardNetTransformWeights[net, Boole[Harden[#]] &]
 
 HardNetBooleanExpression[hardNetFunction_Function, inputSize_] := Module[
   {
