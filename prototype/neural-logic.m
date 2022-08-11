@@ -679,7 +679,7 @@ HardenRandomSoftBits[hardener_, arrays_List] := Block[
 ]
 
 HardenRandomNormalSoftBits[mus_, sigmas_] := HardenRandomSoftBits[
-  With[{mu = #[[1]], sigma = #[[2]]},
+  With[{mu = HardClip[#[[1]]], sigma = Clip[#[[2]], {0.0, Infinity}]},
     mu + sigma RandomVariate[NormalDistribution[0, 1]]
   ] &,
   mus,
@@ -688,7 +688,7 @@ HardenRandomNormalSoftBits[mus_, sigmas_] := HardenRandomSoftBits[
 HardenRandomNormalSoftBits[arrays_List] := HardenRandomSoftBits[HardenRandomNormalSoftBits, arrays]
 
 HardenRandomUniformSoftBits[as_, bs_] := HardenRandomSoftBits[
-  With[{a = #[[1]], b = #[[2]]},
+  With[{a = HardClip[#[[1]]], b = HardClip[#[[2]]]},
     a + (b - a) RandomVariate[UniformDistribution[{0, 1}]]
   ] &, 
   as, 
