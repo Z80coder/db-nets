@@ -200,14 +200,18 @@ RandomNormalSoftBits[muWeights_List, sigmaWeights_List] := NetGraph[
       <|
         "Mu" -> NetArrayLayer["Array" -> muWeights, "Output" -> Length[muWeights]],
         "Sigma" -> NetArrayLayer["Array" -> sigmaWeights, "Output" -> Length[muWeights]],
+        "ClipMu" -> ElementwiseLayer[HardClip],
+        "ClipSigma" -> ElementwiseLayer[Clip[#, {0.0, Infinity}] &],
         "Distribution" -> RandomArrayLayer[NormalDistribution[0, 1], "Output" -> Length[muWeights]],
         "Variates" -> FunctionLayer[#Mu + #Sigma * #Random &],
         "ClipVariates" -> ElementwiseLayer[HardClip]
       |>,
       {
         "Distribution" -> NetPort["Variates", "Random"],
-        "Mu" -> NetPort["Variates", "Mu"],
-        "Sigma" -> NetPort["Variates", "Sigma"],
+        "Mu" -> "ClipMu",
+        "ClipMu" -> NetPort["Variates", "Mu"],
+        "Sigma" -> "ClipSigma",
+        "ClipSigma" -> NetPort["Variates", "Sigma"],
         "Variates" -> "ClipVariates"
       }
     ]
@@ -217,8 +221,6 @@ RandomNormalSoftBits[muWeights_List, sigmaWeights_List] := NetGraph[
 
 RandomNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 0.5}], size], Table[RandomReal[{0, 0.1}], size]]
 RandomBalancedNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 1}], size], Table[RandomReal[{0, 0.1}], size]]
-(* XXXX *)
-RandomBalancedNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 1}], size], Table[0.2, size]]
 
 (* ------------------------------------------------------------------ *)
 (* Hard NOT *)
@@ -401,6 +403,12 @@ HardMajority[layerSize_] := Function[{inputs},
   ]
 ]
 
+(* 
+  TODO: determine which version of Majority is superior once we move away from Wolfram prototype.
+  Some evidence that Sort-based approach is superior because it minimises the quantity of requested
+  bit changes, which is smoother allowing for better gradient descent.
+*)
+
 (* TODO: remove NOT from basic Majority *)
 HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
   NetGraph[
@@ -408,15 +416,41 @@ HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] :=
       "Weights" -> weights[layerSize * inputSize],
       "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
       "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
+      "Harden1" -> HardeningLayer[],
       "Mean" -> AggregationLayer[Mean],
-      "Harden" -> HardeningLayer[]
+      "Harden2" -> HardeningLayer[]
     |>,
     {
       "Weights" -> "Reshape",
       "Reshape" -> NetPort["HardInclude", "Weights"],
-      "HardInclude" -> "Mean",
-      "Mean" -> "Harden"
+      "HardInclude" -> "Harden1",
+      "Harden1" -> "Mean",
+      "Mean" -> "Harden2"
     }
+  ],
+  HardMajority[layerSize]
+}
+
+(* TODO: remove NOT from basic Majority *)
+HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
+  With[{medianIndex = Ceiling[(inputSize + 1)/2]},
+    NetGraph[
+      <|
+        "Weights" -> weights[layerSize * inputSize],
+        "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
+        "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
+        "Sort" -> FunctionLayer[Sort /@ # &],
+        "Medians" -> PartLayer[{All, medianIndex}],
+        "Harden" -> HardeningLayer[]
+      |>,
+      {
+        "Weights" -> "Reshape",
+        "Reshape" -> NetPort["HardInclude", "Weights"],
+        "HardInclude" -> "Sort",
+        "Sort" -> "Medians",
+        "Medians" -> "Harden"
+      }
+    ]
   ],
   HardMajority[layerSize]
 }
