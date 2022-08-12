@@ -757,7 +757,7 @@ HardNetBooleanFunction[hardNetBooleanExpression_, inputSize_] := Block[
 (* Classifier querying and evaluation *)
 (* ------------------------------------------------------------------ *)
 
-HardNetClassBits[hardNet_Function, featureLayer_NetGraph, data_] := Normal[hardNet[Harden[Normal[featureLayer[#]]]] & /@ data]
+HardNetClassBits[hardNet_Function, featureLayer_, data_] := Normal[hardNet[Harden[Normal[featureLayer[#]]]] & /@ data]
 
 HardNetClassScores[classBits_] := (Total /@ Boole[#]) & /@ classBits
 
@@ -765,7 +765,7 @@ HardNetClassProbabilities[classScores_] := N[Exp[#]/Total[Exp[#]]] & /@ classSco
 
 HardNetClassPrediction[classProbabilities_, decoder_NetDecoder] := First[decoder @ classProbabilities]
 
-HardNetClassify[hardNet_Function, featureLayer_NetGraph, decoder_, data_, targetName_String] := 
+HardNetClassify[hardNet_Function, data_, decoder_:(# &), featureLayer_:(#["Input"] &), targetName_String:"Target"] := 
   ResourceFunction[ResourceObject[
       <|
         "Name" -> "DynamicMap",
