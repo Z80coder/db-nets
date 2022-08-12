@@ -1,0 +1,3996 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.1' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[    177386,       3988]
+NotebookOptionsPosition[    173596,       3917]
+NotebookOutlinePosition[    173992,       3933]
+CellTagsIndexPosition[    173949,       3930]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["Learning MNIST", "Title",
+ CellChangeTimes->{{3.864793590384657*^9, 3.864793591864854*^9}, {
+  3.86842606656143*^9, 3.8684260746987667`*^9}, {3.869278884416973*^9, 
+  3.869278885792972*^9}, {3.869285218430039*^9, 
+  3.869285219111341*^9}},ExpressionUUID->"acd08364-cd8b-4a85-adf4-\
+8914b460b7e5"],
+
+Cell[BoxData[
+ RowBox[{"Get", "[", 
+  RowBox[{"\"\<neural-logic.m\>\"", ",", 
+   RowBox[{"Path", "->", 
+    RowBox[{"SetDirectory", "[", 
+     RowBox[{
+      RowBox[{"ParentDirectory", "[", 
+       RowBox[{"NotebookDirectory", "[", "]"}], "]"}], "<>", 
+      "\"\</prototype\>\""}], "]"}]}]}], "]"}]], "Input",
+ CellChangeTimes->{
+  3.868007248648005*^9, {3.8680967888160133`*^9, 3.868096789366823*^9}, {
+   3.8683400413446283`*^9, 3.86834004226679*^9}, {3.868341129383319*^9, 
+   3.868341129948553*^9}, {3.868434777777341*^9, 3.868434779191018*^9}, {
+   3.868604559041458*^9, 3.868604559653843*^9}, {3.868937073460001*^9, 
+   3.868937074141531*^9}, {3.869042727278556*^9, 3.869042728153739*^9}},
+ CellLabel->
+  "In[216]:=",ExpressionUUID->"1bd64055-6db8-4c91-8ea2-0b94dae987b5"],
+
+Cell[CellGroupData[{
+
+Cell["Get data", "Chapter",
+ CellChangeTimes->{{3.8647936427675457`*^9, 3.864793644095471*^9}, {
+  3.868426121194284*^9, 
+  3.868426122274289*^9}},ExpressionUUID->"7e565853-a9a0-424d-932b-\
+970da2f902af"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"data", "=", 
+   RowBox[{"ResourceData", "[", "\"\<MNIST\>\"", "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"examples", "=", 
+   RowBox[{
+    InterpretationBox[
+     TagBox[
+      DynamicModuleBox[{Typeset`open = False}, 
+       FrameBox[
+        PaneSelectorBox[{False->GridBox[{
+           {
+            PaneBox[GridBox[{
+               {
+                StyleBox[
+                 StyleBox[
+                  AdjustmentBox["\<\"[\[FilledSmallSquare]]\"\>",
+                   BoxBaselineShift->-0.25,
+                   BoxMargins->{{0, 0}, {-1, -1}}], "ResourceFunctionIcon",
+                  
+                  FontColor->RGBColor[
+                   0.8745098039215686, 0.2784313725490196, 
+                    0.03137254901960784]],
+                 ShowStringCharacters->False,
+                 FontFamily->"Source Sans Pro Black",
+                 FontSize->0.6538461538461539 Inherited,
+                 FontWeight->"Heavy",
+                 PrivateFontOptions->{"OperatorSubstitution"->False}], 
+                StyleBox[
+                 RowBox[{
+                  StyleBox["DynamicMap", "ResourceFunctionLabel"], " "}],
+                 ShowAutoStyles->False,
+                 ShowStringCharacters->False,
+                 FontSize->Rational[12, 13] Inherited,
+                 FontColor->GrayLevel[0.1]]}
+              },
+              GridBoxSpacings->{"Columns" -> {{0.25}}}],
+             Alignment->Left,
+             BaseStyle->{LineSpacing -> {0, 0}, LineBreakWithin -> False},
+             BaselinePosition->Baseline,
+             FrameMargins->{{3, 0}, {0, 0}}], 
+            ItemBox[
+             PaneBox[
+              TogglerBox[Dynamic[Typeset`open], {True->
+               
+               DynamicBox[FEPrivate`FrontEndResource[
+                "FEBitmaps", "IconizeCloser"],
+                ImageSizeCache->{11., {1., 10.}}], False->
+               
+               DynamicBox[FEPrivate`FrontEndResource[
+                "FEBitmaps", "IconizeOpener"],
+                ImageSizeCache->{11., {1., 10.}}]},
+               Appearance->None,
+               BaselinePosition->Baseline,
+               ContentPadding->False,
+               FrameMargins->0],
+              Alignment->Left,
+              BaselinePosition->Baseline,
+              FrameMargins->{{1, 1}, {0, 0}}],
+             Frame->{{
+                RGBColor[
+                0.8313725490196079, 0.8470588235294118, 0.8509803921568627, 
+                 0.5], False}, {False, False}}]}
+          },
+          BaselinePosition->{1, 1},
+          GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+          
+          GridBoxItemSize->{
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+          GridBoxSpacings->{"Columns" -> {{0}}, "Rows" -> {{0}}}], True->
+         GridBox[{
+           {GridBox[{
+              {
+               PaneBox[GridBox[{
+                  {
+                   StyleBox[
+                    StyleBox[
+                    AdjustmentBox["\<\"[\[FilledSmallSquare]]\"\>",
+                    BoxBaselineShift->-0.25,
+                    BoxMargins->{{0, 0}, {-1, -1}}], "ResourceFunctionIcon",
+                    
+                    FontColor->RGBColor[
+                    0.8745098039215686, 0.2784313725490196, 
+                    0.03137254901960784]],
+                    ShowStringCharacters->False,
+                    FontFamily->"Source Sans Pro Black",
+                    FontSize->0.6538461538461539 Inherited,
+                    FontWeight->"Heavy",
+                    PrivateFontOptions->{"OperatorSubstitution"->False}], 
+                   StyleBox[
+                    RowBox[{
+                    StyleBox["DynamicMap", "ResourceFunctionLabel"], " "}],
+                    ShowAutoStyles->False,
+                    ShowStringCharacters->False,
+                    FontSize->Rational[12, 13] Inherited,
+                    FontColor->GrayLevel[0.1]]}
+                 },
+                 GridBoxSpacings->{"Columns" -> {{0.25}}}],
+                Alignment->Left,
+                BaseStyle->{LineSpacing -> {0, 0}, LineBreakWithin -> False},
+                BaselinePosition->Baseline,
+                FrameMargins->{{3, 0}, {0, 0}}], 
+               ItemBox[
+                PaneBox[
+                 TogglerBox[Dynamic[Typeset`open], {True->
+                  
+                  DynamicBox[FEPrivate`FrontEndResource[
+                   "FEBitmaps", "IconizeCloser"]], False->
+                  
+                  DynamicBox[FEPrivate`FrontEndResource[
+                   "FEBitmaps", "IconizeOpener"]]},
+                  Appearance->None,
+                  BaselinePosition->Baseline,
+                  ContentPadding->False,
+                  FrameMargins->0],
+                 Alignment->Left,
+                 BaselinePosition->Baseline,
+                 FrameMargins->{{1, 1}, {0, 0}}],
+                Frame->{{
+                   RGBColor[
+                   0.8313725490196079, 0.8470588235294118, 0.8509803921568627,
+                     0.5], False}, {False, False}}]}
+             },
+             BaselinePosition->{1, 1},
+             GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+             
+             GridBoxItemSize->{
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+             GridBoxSpacings->{"Columns" -> {{0}}, "Rows" -> {{0}}}]},
+           {
+            StyleBox[
+             PaneBox[GridBox[{
+                {
+                 RowBox[{
+                  TagBox["\<\"Version (latest): \"\>",
+                   "IconizedLabel"], " ", 
+                  TagBox["\<\"4.0.0\"\>",
+                   "IconizedItem"]}]},
+                {
+                 TagBox[
+                  
+                  TemplateBox[{
+                   "\"Documentation \[RightGuillemet]\"", 
+                    "https://www.wolframcloud.com/obj/resourcesystem/\
+published/FunctionRepository/resources/DynamicMap"},
+                   "HyperlinkURL"],
+                  "IconizedItem"]}
+               },
+               DefaultBaseStyle->"Column",
+               GridBoxAlignment->{"Columns" -> {{Left}}},
+               
+               GridBoxItemSize->{
+                "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+              Alignment->Left,
+              BaselinePosition->Baseline,
+              FrameMargins->{{5, 4}, {0, 4}}], "DialogStyle",
+             FontFamily->"Roboto",
+             FontSize->11]}
+          },
+          BaselinePosition->{1, 1},
+          GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+          GridBoxDividers->{"Columns" -> {{None}}, "Rows" -> {False, {
+               GrayLevel[0.8]}, False}},
+          
+          GridBoxItemSize->{
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}]}, Dynamic[
+         Typeset`open],
+         BaselinePosition->Baseline,
+         ImageSize->Automatic],
+        Background->RGBColor[
+         0.9686274509803922, 0.9764705882352941, 0.984313725490196],
+        BaselinePosition->Baseline,
+        DefaultBaseStyle->{},
+        FrameMargins->{{0, 0}, {1, 0}},
+        FrameStyle->RGBColor[
+         0.8313725490196079, 0.8470588235294118, 0.8509803921568627],
+        RoundingRadius->4]],
+      {"FunctionResourceBox", 
+       RGBColor[0.8745098039215686, 0.2784313725490196, 0.03137254901960784], 
+       "DynamicMap"},
+      TagBoxNote->"FunctionResourceBox"],
+     ResourceFunction[
+      ResourceObject[<|
+       "Name" -> "DynamicMap", "ShortName" -> "DynamicMap", "UUID" -> 
+        "962b5001-b624-4bc4-9b1e-401e550f4f2b", "ResourceType" -> "Function", 
+        "Version" -> "4.0.0", "Description" -> 
+        "Map functions over lists while showing dynamic progress", 
+        "RepositoryLocation" -> 
+        URL["https://www.wolframcloud.com/objects/resourcesystem/api/1.0"], 
+        "SymbolName" -> 
+        "FunctionRepository`$f51668a7ac6041a9b46390842a7243d8`DynamicMap", 
+        "FunctionLocation" -> 
+        CloudObject[
+         "https://www.wolframcloud.com/obj/9d55b90e-e3c6-4d27-bdcf-\
+8c3ebb4fe19a"]|>, ResourceSystemBase -> Automatic]],
+     Selectable->False], "[", 
+    RowBox[{
+     RowBox[{
+      RowBox[{
+       RowBox[{"Binarize", "[", 
+        RowBox[{"First", "[", "#", "]"}], "]"}], "->", 
+       RowBox[{"Last", "[", "#", "]"}]}], "&"}], ",", "data"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"effectiveExamples", "=", "examples"}], ";"}]}], "Input",
+ CellChangeTimes->{{3.869285349602785*^9, 3.869285365979568*^9}, {
+   3.869285430698969*^9, 3.869285444648439*^9}, 3.869285893273967*^9, {
+   3.869286511687875*^9, 3.869286512124441*^9}, {3.86929006007563*^9, 
+   3.86929006302652*^9}},ExpressionUUID->"42da4201-e6f1-44bd-98ad-\
+43911e83f28b"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"smallExamples", "=", 
+   RowBox[{
+    InterpretationBox[
+     TagBox[
+      DynamicModuleBox[{Typeset`open = False}, 
+       FrameBox[
+        PaneSelectorBox[{False->GridBox[{
+           {
+            PaneBox[GridBox[{
+               {
+                StyleBox[
+                 StyleBox[
+                  AdjustmentBox["\<\"[\[FilledSmallSquare]]\"\>",
+                   BoxBaselineShift->-0.25,
+                   BoxMargins->{{0, 0}, {-1, -1}}], "ResourceFunctionIcon",
+                  
+                  FontColor->RGBColor[
+                   0.8745098039215686, 0.2784313725490196, 
+                    0.03137254901960784]],
+                 ShowStringCharacters->False,
+                 FontFamily->"Source Sans Pro Black",
+                 FontSize->0.6538461538461539 Inherited,
+                 FontWeight->"Heavy",
+                 PrivateFontOptions->{"OperatorSubstitution"->False}], 
+                StyleBox[
+                 RowBox[{
+                  StyleBox["DynamicMap", "ResourceFunctionLabel"], " "}],
+                 ShowAutoStyles->False,
+                 ShowStringCharacters->False,
+                 FontSize->Rational[12, 13] Inherited,
+                 FontColor->GrayLevel[0.1]]}
+              },
+              GridBoxSpacings->{"Columns" -> {{0.25}}}],
+             Alignment->Left,
+             BaseStyle->{LineSpacing -> {0, 0}, LineBreakWithin -> False},
+             BaselinePosition->Baseline,
+             FrameMargins->{{3, 0}, {0, 0}}], 
+            ItemBox[
+             PaneBox[
+              TogglerBox[Dynamic[Typeset`open], {True->
+               
+               DynamicBox[FEPrivate`FrontEndResource[
+                "FEBitmaps", "IconizeCloser"],
+                ImageSizeCache->{11., {1., 10.}}], False->
+               
+               DynamicBox[FEPrivate`FrontEndResource[
+                "FEBitmaps", "IconizeOpener"],
+                ImageSizeCache->{11., {1., 10.}}]},
+               Appearance->None,
+               BaselinePosition->Baseline,
+               ContentPadding->False,
+               FrameMargins->0],
+              Alignment->Left,
+              BaselinePosition->Baseline,
+              FrameMargins->{{1, 1}, {0, 0}}],
+             Frame->{{
+                RGBColor[
+                0.8313725490196079, 0.8470588235294118, 0.8509803921568627, 
+                 0.5], False}, {False, False}}]}
+          },
+          BaselinePosition->{1, 1},
+          GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+          
+          GridBoxItemSize->{
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+          GridBoxSpacings->{"Columns" -> {{0}}, "Rows" -> {{0}}}], True->
+         GridBox[{
+           {GridBox[{
+              {
+               PaneBox[GridBox[{
+                  {
+                   StyleBox[
+                    StyleBox[
+                    AdjustmentBox["\<\"[\[FilledSmallSquare]]\"\>",
+                    BoxBaselineShift->-0.25,
+                    BoxMargins->{{0, 0}, {-1, -1}}], "ResourceFunctionIcon",
+                    
+                    FontColor->RGBColor[
+                    0.8745098039215686, 0.2784313725490196, 
+                    0.03137254901960784]],
+                    ShowStringCharacters->False,
+                    FontFamily->"Source Sans Pro Black",
+                    FontSize->0.6538461538461539 Inherited,
+                    FontWeight->"Heavy",
+                    PrivateFontOptions->{"OperatorSubstitution"->False}], 
+                   StyleBox[
+                    RowBox[{
+                    StyleBox["DynamicMap", "ResourceFunctionLabel"], " "}],
+                    ShowAutoStyles->False,
+                    ShowStringCharacters->False,
+                    FontSize->Rational[12, 13] Inherited,
+                    FontColor->GrayLevel[0.1]]}
+                 },
+                 GridBoxSpacings->{"Columns" -> {{0.25}}}],
+                Alignment->Left,
+                BaseStyle->{LineSpacing -> {0, 0}, LineBreakWithin -> False},
+                BaselinePosition->Baseline,
+                FrameMargins->{{3, 0}, {0, 0}}], 
+               ItemBox[
+                PaneBox[
+                 TogglerBox[Dynamic[Typeset`open], {True->
+                  
+                  DynamicBox[FEPrivate`FrontEndResource[
+                   "FEBitmaps", "IconizeCloser"]], False->
+                  
+                  DynamicBox[FEPrivate`FrontEndResource[
+                   "FEBitmaps", "IconizeOpener"]]},
+                  Appearance->None,
+                  BaselinePosition->Baseline,
+                  ContentPadding->False,
+                  FrameMargins->0],
+                 Alignment->Left,
+                 BaselinePosition->Baseline,
+                 FrameMargins->{{1, 1}, {0, 0}}],
+                Frame->{{
+                   RGBColor[
+                   0.8313725490196079, 0.8470588235294118, 0.8509803921568627,
+                     0.5], False}, {False, False}}]}
+             },
+             BaselinePosition->{1, 1},
+             GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+             
+             GridBoxItemSize->{
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+             GridBoxSpacings->{"Columns" -> {{0}}, "Rows" -> {{0}}}]},
+           {
+            StyleBox[
+             PaneBox[GridBox[{
+                {
+                 RowBox[{
+                  TagBox["\<\"Version (latest): \"\>",
+                   "IconizedLabel"], " ", 
+                  TagBox["\<\"4.0.0\"\>",
+                   "IconizedItem"]}]},
+                {
+                 TagBox[
+                  
+                  TemplateBox[{
+                   "\"Documentation \[RightGuillemet]\"", 
+                    "https://www.wolframcloud.com/obj/resourcesystem/\
+published/FunctionRepository/resources/DynamicMap"},
+                   "HyperlinkURL"],
+                  "IconizedItem"]}
+               },
+               DefaultBaseStyle->"Column",
+               GridBoxAlignment->{"Columns" -> {{Left}}},
+               
+               GridBoxItemSize->{
+                "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+              Alignment->Left,
+              BaselinePosition->Baseline,
+              FrameMargins->{{5, 4}, {0, 4}}], "DialogStyle",
+             FontFamily->"Roboto",
+             FontSize->11]}
+          },
+          BaselinePosition->{1, 1},
+          GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+          GridBoxDividers->{"Columns" -> {{None}}, "Rows" -> {False, {
+               GrayLevel[0.8]}, False}},
+          
+          GridBoxItemSize->{
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}]}, Dynamic[
+         Typeset`open],
+         BaselinePosition->Baseline,
+         ImageSize->Automatic],
+        Background->RGBColor[
+         0.9686274509803922, 0.9764705882352941, 0.984313725490196],
+        BaselinePosition->Baseline,
+        DefaultBaseStyle->{},
+        FrameMargins->{{0, 0}, {1, 0}},
+        FrameStyle->RGBColor[
+         0.8313725490196079, 0.8470588235294118, 0.8509803921568627],
+        RoundingRadius->4]],
+      {"FunctionResourceBox", 
+       RGBColor[0.8745098039215686, 0.2784313725490196, 0.03137254901960784], 
+       "DynamicMap"},
+      TagBoxNote->"FunctionResourceBox"],
+     ResourceFunction[
+      ResourceObject[<|
+       "Name" -> "DynamicMap", "ShortName" -> "DynamicMap", "UUID" -> 
+        "962b5001-b624-4bc4-9b1e-401e550f4f2b", "ResourceType" -> "Function", 
+        "Version" -> "4.0.0", "Description" -> 
+        "Map functions over lists while showing dynamic progress", 
+        "RepositoryLocation" -> 
+        URL["https://www.wolframcloud.com/objects/resourcesystem/api/1.0"], 
+        "SymbolName" -> 
+        "FunctionRepository`$f51668a7ac6041a9b46390842a7243d8`DynamicMap", 
+        "FunctionLocation" -> 
+        CloudObject[
+         "https://www.wolframcloud.com/obj/9d55b90e-e3c6-4d27-bdcf-\
+8c3ebb4fe19a"]|>, ResourceSystemBase -> Automatic]],
+     Selectable->False], "[", 
+    RowBox[{
+     RowBox[{
+      RowBox[{
+       RowBox[{"ImageResize", "[", 
+        RowBox[{
+         RowBox[{"First", "[", "#", "]"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"8", ",", "8"}], "}"}]}], "]"}], "->", 
+       RowBox[{"Last", "[", "#", "]"}]}], "&"}], ",", "examples"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"first4Digits", "=", "24754"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"effectiveExamples", "=", 
+   RowBox[{"Take", "[", 
+    RowBox[{"smallExamples", ",", "first4Digits"}], "]"}]}], ";"}]}], "Input",\
+
+ CellChangeTimes->{{3.869289864825179*^9, 3.869289929875944*^9}, {
+  3.869290001569297*^9, 3.869290002413022*^9}, {3.869290041769906*^9, 
+  3.869290058308249*^9}, {3.8692902531875763`*^9, 3.869290267322669*^9}},
+ CellLabel->
+  "In[298]:=",ExpressionUUID->"ab9febca-388c-4bba-abdd-791483d3c9ea"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"inputSize", "=", 
+   RowBox[{"Fold", "[", 
+    RowBox[{"Times", ",", "1", ",", 
+     RowBox[{"ImageDimensions", "[", 
+      RowBox[{"First", "[", 
+       RowBox[{"First", "[", "effectiveExamples", "]"}], "]"}], "]"}]}], 
+    "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"classes", "=", 
+   RowBox[{"DeleteDuplicates", "[", 
+    RowBox[{"Last", "/@", "effectiveExamples"}], "]"}]}], ";"}]}], "Input",
+ CellChangeTimes->{{3.869286190545236*^9, 3.869286250895474*^9}, {
+  3.869286286145854*^9, 3.869286295361557*^9}, {3.8692864446374607`*^9, 
+  3.869286477497593*^9}, {3.869289951011242*^9, 3.869289957785617*^9}},
+ CellLabel->
+  "In[301]:=",ExpressionUUID->"12676e6f-53bb-409f-9bae-23f6ccfc71ef"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"trainData", ",", "testData"}], "}"}], "=", 
+   RowBox[{
+    InterpretationBox[
+     TagBox[
+      DynamicModuleBox[{Typeset`open = False}, 
+       FrameBox[
+        PaneSelectorBox[{False->GridBox[{
+           {
+            PaneBox[GridBox[{
+               {
+                StyleBox[
+                 StyleBox[
+                  AdjustmentBox["\<\"[\[FilledSmallSquare]]\"\>",
+                   BoxBaselineShift->-0.25,
+                   BoxMargins->{{0, 0}, {-1, -1}}], "ResourceFunctionIcon",
+                  
+                  FontColor->RGBColor[
+                   0.8745098039215686, 0.2784313725490196, 
+                    0.03137254901960784]],
+                 ShowStringCharacters->False,
+                 FontFamily->"Source Sans Pro Black",
+                 FontSize->0.6538461538461539 Inherited,
+                 FontWeight->"Heavy",
+                 PrivateFontOptions->{"OperatorSubstitution"->False}], 
+                StyleBox[
+                 RowBox[{
+                  StyleBox["TrainTestSplit", "ResourceFunctionLabel"], " "}],
+                 ShowAutoStyles->False,
+                 ShowStringCharacters->False,
+                 FontSize->Rational[12, 13] Inherited,
+                 FontColor->GrayLevel[0.1]]}
+              },
+              GridBoxSpacings->{"Columns" -> {{0.25}}}],
+             Alignment->Left,
+             BaseStyle->{LineSpacing -> {0, 0}, LineBreakWithin -> False},
+             BaselinePosition->Baseline,
+             FrameMargins->{{3, 0}, {0, 0}}], 
+            ItemBox[
+             PaneBox[
+              TogglerBox[Dynamic[Typeset`open], {True->
+               
+               DynamicBox[FEPrivate`FrontEndResource[
+                "FEBitmaps", "IconizeCloser"],
+                ImageSizeCache->{11., {1., 10.}}], False->
+               
+               DynamicBox[FEPrivate`FrontEndResource[
+                "FEBitmaps", "IconizeOpener"],
+                ImageSizeCache->{11., {1., 10.}}]},
+               Appearance->None,
+               BaselinePosition->Baseline,
+               ContentPadding->False,
+               FrameMargins->0],
+              Alignment->Left,
+              BaselinePosition->Baseline,
+              FrameMargins->{{1, 1}, {0, 0}}],
+             Frame->{{
+                RGBColor[
+                0.8313725490196079, 0.8470588235294118, 0.8509803921568627, 
+                 0.5], False}, {False, False}}]}
+          },
+          BaselinePosition->{1, 1},
+          GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+          
+          GridBoxItemSize->{
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+          GridBoxSpacings->{"Columns" -> {{0}}, "Rows" -> {{0}}}], True->
+         GridBox[{
+           {GridBox[{
+              {
+               PaneBox[GridBox[{
+                  {
+                   StyleBox[
+                    StyleBox[
+                    AdjustmentBox["\<\"[\[FilledSmallSquare]]\"\>",
+                    BoxBaselineShift->-0.25,
+                    BoxMargins->{{0, 0}, {-1, -1}}], "ResourceFunctionIcon",
+                    
+                    FontColor->RGBColor[
+                    0.8745098039215686, 0.2784313725490196, 
+                    0.03137254901960784]],
+                    ShowStringCharacters->False,
+                    FontFamily->"Source Sans Pro Black",
+                    FontSize->0.6538461538461539 Inherited,
+                    FontWeight->"Heavy",
+                    PrivateFontOptions->{"OperatorSubstitution"->False}], 
+                   StyleBox[
+                    RowBox[{
+                    StyleBox["TrainTestSplit", "ResourceFunctionLabel"], " "}],
+                    ShowAutoStyles->False,
+                    ShowStringCharacters->False,
+                    FontSize->Rational[12, 13] Inherited,
+                    FontColor->GrayLevel[0.1]]}
+                 },
+                 GridBoxSpacings->{"Columns" -> {{0.25}}}],
+                Alignment->Left,
+                BaseStyle->{LineSpacing -> {0, 0}, LineBreakWithin -> False},
+                BaselinePosition->Baseline,
+                FrameMargins->{{3, 0}, {0, 0}}], 
+               ItemBox[
+                PaneBox[
+                 TogglerBox[Dynamic[Typeset`open], {True->
+                  
+                  DynamicBox[FEPrivate`FrontEndResource[
+                   "FEBitmaps", "IconizeCloser"]], False->
+                  
+                  DynamicBox[FEPrivate`FrontEndResource[
+                   "FEBitmaps", "IconizeOpener"]]},
+                  Appearance->None,
+                  BaselinePosition->Baseline,
+                  ContentPadding->False,
+                  FrameMargins->0],
+                 Alignment->Left,
+                 BaselinePosition->Baseline,
+                 FrameMargins->{{1, 1}, {0, 0}}],
+                Frame->{{
+                   RGBColor[
+                   0.8313725490196079, 0.8470588235294118, 0.8509803921568627,
+                     0.5], False}, {False, False}}]}
+             },
+             BaselinePosition->{1, 1},
+             GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+             
+             GridBoxItemSize->{
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+             GridBoxSpacings->{"Columns" -> {{0}}, "Rows" -> {{0}}}]},
+           {
+            StyleBox[
+             PaneBox[GridBox[{
+                {
+                 RowBox[{
+                  TagBox["\<\"Version (latest): \"\>",
+                   "IconizedLabel"], " ", 
+                  TagBox["\<\"1.0.0\"\>",
+                   "IconizedItem"]}]},
+                {
+                 TagBox[
+                  
+                  TemplateBox[{
+                   "\"Documentation \[RightGuillemet]\"", 
+                    "https://resources.wolframcloud.com/FunctionRepository/\
+resources/a34a1447-6c23-486c-b454-6e05993a545e/"},
+                   "HyperlinkURL"],
+                  "IconizedItem"]}
+               },
+               DefaultBaseStyle->"Column",
+               GridBoxAlignment->{"Columns" -> {{Left}}},
+               
+               GridBoxItemSize->{
+                "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+              Alignment->Left,
+              BaselinePosition->Baseline,
+              FrameMargins->{{5, 4}, {0, 4}}], "DialogStyle",
+             FontFamily->"Roboto",
+             FontSize->11]}
+          },
+          BaselinePosition->{1, 1},
+          GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+          GridBoxDividers->{"Columns" -> {{None}}, "Rows" -> {False, {
+               GrayLevel[0.8]}, False}},
+          
+          GridBoxItemSize->{
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}]}, Dynamic[
+         Typeset`open],
+         BaselinePosition->Baseline,
+         ImageSize->Automatic],
+        Background->RGBColor[
+         0.9686274509803922, 0.9764705882352941, 0.984313725490196],
+        BaselinePosition->Baseline,
+        DefaultBaseStyle->{},
+        FrameMargins->{{0, 0}, {1, 0}},
+        FrameStyle->RGBColor[
+         0.8313725490196079, 0.8470588235294118, 0.8509803921568627],
+        RoundingRadius->4]],
+      {"FunctionResourceBox", 
+       RGBColor[0.8745098039215686, 0.2784313725490196, 0.03137254901960784], 
+       "TrainTestSplit"},
+      TagBoxNote->"FunctionResourceBox"],
+     ResourceFunction[
+      ResourceObject[<|
+       "Name" -> "TrainTestSplit", "ShortName" -> "TrainTestSplit", "UUID" -> 
+        "a34a1447-6c23-486c-b454-6e05993a545e", "ResourceType" -> "Function", 
+        "Version" -> "1.0.0", "Description" -> 
+        "Split data into training and testing sets", "RepositoryLocation" -> 
+        URL["https://www.wolframcloud.com/obj/resourcesystem/api/1.0"], 
+        "SymbolName" -> 
+        "FunctionRepository`$b9ece19f331b48bdb8cc57c2aceeaede`TrainTestSplit",
+         "FunctionLocation" -> 
+        CloudObject[
+         "https://www.wolframcloud.com/obj/f537c689-a756-4eaf-b897-\
+cf34330f7f7b"]|>, {
+       ResourceSystemBase -> 
+        "https://www.wolframcloud.com/obj/resourcesystem/api/1.0"}]],
+     Selectable->False], "[", 
+    RowBox[{"effectiveExamples", ",", 
+     RowBox[{"\"\<TestSetSize\>\"", "->", 
+      RowBox[{"Scaled", "[", "0.2", "]"}]}], ",", 
+     RowBox[{"\"\<Shuffle\>\"", "->", "True"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Take", "[", 
+  RowBox[{"trainData", ",", "20"}], "]"}]}], "Input",
+ CellChangeTimes->{{3.8650715619235697`*^9, 3.865071567650784*^9}, {
+  3.8650716393413363`*^9, 3.865071641123829*^9}, {3.865075763152564*^9, 
+  3.865075763445953*^9}, {3.869285992066514*^9, 3.869285993080689*^9}, {
+  3.869286524374271*^9, 3.869286524682275*^9}, {3.8692894863740053`*^9, 
+  3.869289486546883*^9}, {3.86929003238102*^9, 3.869290034370997*^9}},
+ CellLabel->
+  "In[303]:=",ExpressionUUID->"f9f3d279-26e2-49ee-a2d3-03ed10aae018"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 0, 0, 0, 1, 
+        1, 1, 1}, {1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 
+        1, 0, 0, 1, 1, 1}, {1, 0, 0, 0, 1, 1, 0, 1}, {1, 1, 1, 1, 1, 1, 0, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "2"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 1, 
+        0, 1, 1}, {1, 1, 1, 1, 0, 0, 1, 1}, {1, 1, 1, 0, 1, 0, 1, 1}, {1, 1, 
+        0, 1, 1, 0, 1, 1}, {1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 0, 0, 0, 1, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "0"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 1, 
+        0, 1, 1}, {1, 1, 1, 1, 1, 0, 1, 1}, {1, 1, 1, 1, 0, 1, 1, 1}, {1, 1, 
+        1, 1, 0, 1, 1, 1}, {1, 1, 1, 0, 1, 1, 1, 1}, {1, 1, 1, 1, 1, 1, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "1"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 0, 0, 
+        1, 1, 1}, {1, 1, 1, 0, 1, 1, 1, 1}, {1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 
+        1, 1, 1, 0, 1, 1}, {1, 1, 1, 0, 0, 0, 1, 1}, {1, 1, 1, 0, 0, 1, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "2"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 0, 
+        0, 1, 1}, {1, 1, 1, 0, 0, 0, 1, 1}, {1, 1, 1, 0, 0, 1, 1, 1}, {1, 1, 
+        1, 0, 1, 1, 1, 1}, {1, 1, 0, 0, 0, 0, 1, 1}, {1, 1, 1, 0, 0, 1, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "2"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 0, 0, 
+        0, 1, 1}, {1, 1, 0, 1, 1, 0, 0, 1}, {1, 1, 0, 1, 1, 1, 0, 1}, {1, 0, 
+        0, 1, 1, 1, 0, 1}, {1, 0, 0, 1, 1, 0, 0, 1}, {1, 1, 0, 0, 0, 1, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "0"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 0, 
+        1, 1, 1}, {1, 1, 1, 0, 0, 0, 0, 1}, {1, 1, 0, 1, 1, 1, 0, 1}, {1, 1, 
+        0, 1, 1, 1, 0, 1}, {1, 0, 1, 1, 1, 0, 1, 1}, {1, 1, 0, 0, 1, 1, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "0"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 0, 0, 0, 
+        1, 1, 1}, {1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 0, 1, 1, 1}, {1, 1, 
+        1, 0, 1, 1, 1, 1}, {1, 1, 0, 0, 1, 1, 1, 1}, {1, 1, 1, 1, 1, 0, 0, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "2"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 1, 
+        1, 1, 1}, {1, 1, 1, 1, 0, 1, 1, 1}, {1, 1, 1, 1, 0, 1, 1, 1}, {1, 1, 
+        1, 1, 0, 1, 1, 1}, {1, 1, 1, 0, 1, 1, 1, 1}, {1, 1, 1, 1, 1, 1, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "1"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 0, 0, 
+        1, 1, 1}, {1, 1, 1, 0, 0, 0, 1, 1}, {1, 1, 0, 1, 1, 1, 0, 1}, {1, 0, 
+        1, 1, 1, 1, 0, 1}, {1, 1, 0, 1, 1, 1, 0, 1}, {1, 1, 1, 0, 0, 0, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "0"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 0, 0, 
+        0, 1, 1}, {1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 0, 1, 1, 1, 1}, {1, 1, 
+        1, 1, 0, 1, 1, 1}, {1, 1, 1, 1, 1, 0, 1, 1}, {1, 1, 0, 0, 1, 1, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "3"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 0, 
+        1, 1, 1}, {1, 1, 1, 1, 0, 1, 1, 1}, {1, 1, 1, 0, 0, 1, 1, 1}, {1, 1, 
+        1, 1, 1, 0, 1, 1}, {1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 0, 1, 1, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "3"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 0, 0, 
+        0, 1, 1}, {1, 1, 0, 0, 0, 0, 0, 1}, {1, 1, 0, 1, 1, 1, 0, 1}, {1, 1, 
+        0, 1, 1, 1, 0, 1}, {1, 1, 0, 1, 1, 0, 1, 1}, {1, 1, 0, 0, 0, 0, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "0"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 0, 0, 
+        1, 1, 1}, {1, 1, 0, 0, 0, 0, 1, 1}, {1, 1, 0, 1, 1, 1, 0, 1}, {1, 1, 
+        0, 1, 1, 0, 0, 1}, {1, 1, 0, 1, 1, 0, 1, 1}, {1, 1, 0, 0, 0, 1, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "0"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 0, 
+        0, 1, 1}, {1, 1, 1, 0, 0, 0, 1, 1}, {1, 1, 1, 1, 0, 1, 1, 1}, {1, 1, 
+        1, 0, 1, 0, 1, 1}, {1, 0, 0, 1, 1, 0, 1, 1}, {1, 1, 0, 0, 0, 1, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "3"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 1, 
+        1, 1, 1}, {1, 1, 1, 1, 0, 1, 1, 1}, {1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 
+        1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 1, 1, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "1"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 1, 
+        0, 1, 1}, {1, 1, 1, 1, 0, 1, 1, 1}, {1, 1, 1, 1, 0, 1, 1, 1}, {1, 1, 
+        1, 0, 1, 1, 1, 1}, {1, 1, 1, 0, 1, 1, 1, 1}, {1, 1, 1, 0, 1, 1, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "1"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 0, 
+        1, 1, 1}, {1, 1, 1, 0, 0, 0, 1, 1}, {1, 1, 1, 0, 0, 0, 1, 1}, {1, 1, 
+        1, 0, 1, 0, 1, 1}, {1, 1, 0, 1, 1, 0, 1, 1}, {1, 1, 0, 0, 0, 1, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "3"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 0, 
+        1, 1, 1}, {1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 1, 0, 1, 1, 1}, {1, 1, 
+        1, 0, 0, 1, 1, 1}, {1, 1, 0, 0, 1, 1, 1, 1}, {1, 1, 1, 1, 1, 1, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "2"}], ",", 
+   RowBox[{
+    GraphicsBox[
+     TagBox[
+      RasterBox[
+       RawArray["UnsignedInteger8",{{1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 0, 0, 
+        0, 1, 1}, {1, 1, 1, 0, 1, 0, 1, 1}, {1, 1, 1, 0, 0, 0, 1, 1}, {1, 1, 
+        0, 1, 0, 0, 0, 1}, {1, 0, 0, 0, 0, 1, 0, 1}, {1, 1, 0, 1, 1, 1, 1, 
+        1}, {1, 1, 1, 1, 1, 1, 1, 1}}], {{0, 8.}, {8., 0}}, {0, 1},
+       ColorFunction->GrayLevel],
+      BoxForm`ImageTag["Bit", ColorSpace -> Automatic, Interleaving -> None],
+      Selectable->False],
+     DefaultBaseStyle->"ImageGraphics",
+     ImageSizeRaw->{8., 8.},
+     PlotRange->{{0, 8.}, {0, 8.}}], "\[Rule]", "2"}]}], "}"}]], "Output",
+ CellChangeTimes->{
+  3.869286525006853*^9, 3.869289487802339*^9, 3.8692899598223257`*^9, {
+   3.869290020217888*^9, 3.869290034980047*^9}, 3.8692900714698877`*^9, 
+   3.8692903345491657`*^9},
+ CellLabel->
+  "Out[304]=",ExpressionUUID->"6e4f0a82-61e5-4540-9279-cfa418b10e3e"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Create feature encoders", "Chapter",
+ CellChangeTimes->{{3.8647936427675457`*^9, 3.864793644095471*^9}, {
+  3.868426121194284*^9, 3.868426122274289*^9}, {3.8684262976181192`*^9, 
+  3.868426322530819*^9}, {3.8684339851586647`*^9, 
+  3.86843398679764*^9}},ExpressionUUID->"5f608b69-693a-4ffa-8f1c-\
+2d895f6061f0"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"inputEncoder", "=", 
+   RowBox[{"NetEncoder", "[", 
+    RowBox[{"{", 
+     RowBox[{"\"\<Function\>\"", ",", 
+      RowBox[{
+       RowBox[{"Flatten", "[", 
+        RowBox[{"ImageData", "[", "#", "]"}], "]"}], "&"}], ",", 
+      RowBox[{"{", "inputSize", "}"}]}], "}"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"targetEncoder", "=", 
+   RowBox[{"NetEncoder", "[", 
+    RowBox[{"{", 
+     RowBox[{
+     "\"\<Class\>\"", ",", "classes", ",", "\"\<IndicatorVector\>\""}], "}"}],
+     "]"}]}], ";"}]}], "Input",
+ CellChangeTimes->{{3.8692861049708157`*^9, 3.869286108287773*^9}, {
+  3.86928615549645*^9, 3.869286165215686*^9}, {3.869286277617655*^9, 
+  3.869286281896118*^9}, {3.869286373105734*^9, 3.869286404151874*^9}, {
+  3.869286480352489*^9, 3.8692864951456337`*^9}, {3.869287156084455*^9, 
+  3.869287166041239*^9}, {3.869287462830858*^9, 3.8692874683406754`*^9}},
+ CellLabel->
+  "In[305]:=",ExpressionUUID->"f7ba25cb-a6af-43e7-a6bf-8ef14de40659"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Create net", "Chapter",
+ CellChangeTimes->{{3.8647936427675457`*^9, 3.864793644095471*^9}, {
+  3.868426121194284*^9, 3.868426122274289*^9}, {3.8684262976181192`*^9, 
+  3.868426322530819*^9}, {3.8684339851586647`*^9, 3.868433996669791*^9}, {
+  3.8684393240537577`*^9, 
+  3.86843932450987*^9}},ExpressionUUID->"a582b100-83f7-4eca-9df8-\
+d2c98fa7da6c"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"net", ",", "hardNet"}], "}"}], "=", 
+   RowBox[{"With", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"classificationLayerSize", "=", 
+       RowBox[{"32", "*", 
+        RowBox[{"Length", "[", "classes", "]"}]}]}], "}"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"HardNeuralChain", "[", 
+      RowBox[{"{", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"HardNeuralNAND", "[", 
+         RowBox[{"inputSize", ",", "128"}], "]"}], ",", "\[IndentingNewLine]", 
+        RowBox[{"HardNeuralAND", "[", 
+         RowBox[{"128", ",", "classificationLayerSize"}], "]"}], ",", 
+        "\[IndentingNewLine]", 
+        RowBox[{"HardNeuralReshapeLayer", "[", 
+         RowBox[{"classificationLayerSize", ",", 
+          RowBox[{"Length", "[", "classes", "]"}]}], "]"}]}], 
+       "\[IndentingNewLine]", "}"}], "]"}]}], "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.866512854091155*^9, 3.8665128815568047`*^9}, {
+   3.866513103300004*^9, 3.866513116326098*^9}, {3.8665133340990458`*^9, 
+   3.8665133419773703`*^9}, {3.86651391128594*^9, 3.866513915466413*^9}, {
+   3.866514318655335*^9, 3.866514323501399*^9}, {3.866514602855854*^9, 
+   3.866514605749691*^9}, {3.86651468027989*^9, 3.8665147385101433`*^9}, {
+   3.8665168378259563`*^9, 3.866516840683816*^9}, {3.866516968713831*^9, 
+   3.866516971903157*^9}, {3.8665173610656767`*^9, 3.866517372695388*^9}, 
+   3.866517444884035*^9, {3.86651878744969*^9, 3.8665188117507257`*^9}, {
+   3.866518954624714*^9, 3.866518969573318*^9}, {3.866520101802957*^9, 
+   3.866520108575643*^9}, {3.866520188881999*^9, 3.8665202157280684`*^9}, {
+   3.866520364293333*^9, 3.866520392296053*^9}, {3.86652044871375*^9, 
+   3.8665204631835423`*^9}, {3.8665219880508347`*^9, 3.866522005928316*^9}, {
+   3.8665272161026173`*^9, 3.8665272312695007`*^9}, {3.866527801201952*^9, 
+   3.866527883631137*^9}, {3.866528045329198*^9, 3.8665280486071043`*^9}, {
+   3.866528154113455*^9, 3.8665281741152687`*^9}, {3.866528447153947*^9, 
+   3.866528447260316*^9}, {3.866528670002123*^9, 3.86652867583491*^9}, {
+   3.86652876246611*^9, 3.86652876256351*^9}, {3.866528813858374*^9, 
+   3.866528848079921*^9}, {3.866530033731058*^9, 3.866530050034823*^9}, {
+   3.866532603007605*^9, 3.8665326199562283`*^9}, {3.8665328331522837`*^9, 
+   3.866532845529175*^9}, {3.866532894976413*^9, 3.866532895812646*^9}, {
+   3.8665329705120907`*^9, 3.866532996865466*^9}, {3.866533798129952*^9, 
+   3.866533798585582*^9}, {3.866542948856092*^9, 3.866542956003662*^9}, {
+   3.866543312214932*^9, 3.8665433126315613`*^9}, {3.866545711295557*^9, 
+   3.866545711720436*^9}, {3.866546071686404*^9, 3.866546081040039*^9}, {
+   3.866547900239717*^9, 3.8665479093644657`*^9}, {3.866549693552167*^9, 
+   3.866549704088811*^9}, {3.866550126984569*^9, 3.8665501393456163`*^9}, {
+   3.866551310563048*^9, 3.866551316716016*^9}, {3.866552552251585*^9, 
+   3.866552552469812*^9}, {3.866552612077286*^9, 3.866552621902178*^9}, {
+   3.86655297295109*^9, 3.8665530085584908`*^9}, {3.866553815227034*^9, 
+   3.866553831744128*^9}, {3.866554274483659*^9, 3.8665542884172983`*^9}, {
+   3.866554409228067*^9, 3.866554412577661*^9}, {3.866554466780363*^9, 
+   3.866554467185257*^9}, {3.866554546724543*^9, 3.866554547081894*^9}, {
+   3.866554637927086*^9, 3.866554643213908*^9}, {3.8665551202789803`*^9, 
+   3.866555125450521*^9}, {3.866555219318622*^9, 3.8665552411393957`*^9}, {
+   3.866555370545534*^9, 3.866555374243248*^9}, {3.866600476190877*^9, 
+   3.866600520811289*^9}, {3.866600851629229*^9, 3.8666008545843487`*^9}, {
+   3.866601173213505*^9, 3.866601184697352*^9}, {3.866602823213896*^9, 
+   3.866602823651602*^9}, {3.866624063636963*^9, 3.866624070070056*^9}, {
+   3.866864848820673*^9, 3.8668649018442097`*^9}, 3.8668649498986273`*^9, {
+   3.866870158165018*^9, 3.8668701585199003`*^9}, {3.866870313913095*^9, 
+   3.866870347432589*^9}, {3.86687070668148*^9, 3.866870709305764*^9}, {
+   3.866874324915924*^9, 3.866874327763575*^9}, {3.866874459504965*^9, 
+   3.866874459651349*^9}, {3.86688629545262*^9, 3.8668862958798847`*^9}, {
+   3.866886781155374*^9, 3.8668867817674427`*^9}, {3.866887024065243*^9, 
+   3.866887024335256*^9}, {3.866887176651325*^9, 3.866887183367484*^9}, {
+   3.8668872857079782`*^9, 3.866887288446698*^9}, {3.8672933502433777`*^9, 
+   3.867293351194455*^9}, {3.8672943201526012`*^9, 3.867294320574452*^9}, {
+   3.8673072679566917`*^9, 3.86730727548538*^9}, {3.8673117146946087`*^9, 
+   3.86731171694258*^9}, {3.867312640857286*^9, 3.8673126485630198`*^9}, {
+   3.867483132216476*^9, 3.867483137068089*^9}, {3.867484558937159*^9, 
+   3.867484565125327*^9}, {3.867484885034177*^9, 3.8674848960292263`*^9}, {
+   3.8674857810280046`*^9, 3.867485785790262*^9}, {3.867485972308717*^9, 
+   3.8674859777590923`*^9}, {3.867575634248128*^9, 3.867575669182214*^9}, 
+   3.867592743700955*^9, {3.867593550197529*^9, 3.8675935538692703`*^9}, {
+   3.867593719866111*^9, 3.8675937252614183`*^9}, {3.867593837857523*^9, 
+   3.867593838180921*^9}, {3.867593997313245*^9, 3.867594007445169*^9}, {
+   3.867594183313306*^9, 3.867594191053112*^9}, {3.867594279329269*^9, 
+   3.867594279525052*^9}, {3.867594436544726*^9, 3.867594441717057*^9}, {
+   3.867594539418096*^9, 3.8675945421729393`*^9}, {3.8675946505292997`*^9, 
+   3.8675946515410852`*^9}, {3.867594823818615*^9, 3.867594825101057*^9}, {
+   3.867595056465706*^9, 3.867595057069421*^9}, {3.8675951255616198`*^9, 
+   3.86759515143506*^9}, {3.867595560572082*^9, 3.867595574085411*^9}, {
+   3.867595795195505*^9, 3.867595804189353*^9}, {3.867820900250691*^9, 
+   3.8678209054083347`*^9}, {3.8678213948752117`*^9, 
+   3.8678213953528347`*^9}, {3.8678241310875*^9, 3.867824155627552*^9}, {
+   3.8678359011608477`*^9, 3.867835906741913*^9}, {3.867835991351974*^9, 
+   3.867835993033587*^9}, {3.867836130935794*^9, 3.8678361328821583`*^9}, {
+   3.8678362401794147`*^9, 3.867836242602487*^9}, {3.867836307448196*^9, 
+   3.867836313353601*^9}, {3.86783647125273*^9, 3.867836473650206*^9}, {
+   3.867836534947302*^9, 3.86783654330317*^9}, {3.867836648129442*^9, 
+   3.8678366544118233`*^9}, {3.867836897818256*^9, 3.8678369025722857`*^9}, {
+   3.867837022233658*^9, 3.867837033901739*^9}, {3.867837623887574*^9, 
+   3.867837627813425*^9}, {3.86783787807589*^9, 3.867837896261313*^9}, {
+   3.8678382960747147`*^9, 3.8678383098582077`*^9}, {3.867838463835903*^9, 
+   3.867838469455121*^9}, {3.868011185484955*^9, 3.868011190180541*^9}, 
+   3.8680115251975403`*^9, {3.868011599662116*^9, 3.868011610099432*^9}, {
+   3.868012021342428*^9, 3.868012021777741*^9}, {3.8680123171105328`*^9, 
+   3.868012319851869*^9}, {3.8680133115507507`*^9, 3.86801331266679*^9}, {
+   3.868013582390593*^9, 3.868013590170991*^9}, {3.868013764086578*^9, 
+   3.8680137687149076`*^9}, {3.868013879870481*^9, 3.868013880403047*^9}, {
+   3.868014050630856*^9, 3.8680140534113092`*^9}, {3.868015313257505*^9, 
+   3.8680153133813334`*^9}, {3.8680156735935507`*^9, 3.868015674173932*^9}, {
+   3.868025979305698*^9, 3.868025989889565*^9}, {3.868026149720632*^9, 
+   3.868026153818652*^9}, {3.8680275880620193`*^9, 3.868027599458037*^9}, 
+   3.8680728381858788`*^9, {3.868073101365309*^9, 3.868073120896317*^9}, {
+   3.868096581385182*^9, 3.868096588849518*^9}, {3.86809724967476*^9, 
+   3.868097260664975*^9}, {3.868097366454175*^9, 3.868097372193758*^9}, {
+   3.86809744514721*^9, 3.868097454051366*^9}, {3.868106266015449*^9, 
+   3.8681062786390047`*^9}, {3.86817188904335*^9, 3.8681718917227983`*^9}, {
+   3.8681720442854147`*^9, 3.868172048282813*^9}, {3.868173162117033*^9, 
+   3.868173171017057*^9}, {3.868342003158853*^9, 3.8683420042415037`*^9}, {
+   3.869286602728978*^9, 3.869286606065151*^9}, {3.869286989253613*^9, 
+   3.8692870016891317`*^9}, {3.869289507098134*^9, 3.869289524242503*^9}},
+ CellLabel->
+  "In[307]:=",ExpressionUUID->"feba2f53-f4f5-43e6-a86d-fb7cc5e96658"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"trainableNet", "=", 
+   RowBox[{"NetGraph", "[", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"\[LeftAssociation]", 
+      RowBox[{
+       RowBox[{"\"\<Net\>\"", "->", "net"}], ",", 
+       RowBox[{"\"\<Loss\>\"", "->", 
+        RowBox[{"HardClassificationLoss", "[", "]"}]}]}], 
+      "\[RightAssociation]"}], ",", "\[IndentingNewLine]", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Net\>\"", "->", "\"\<Loss\>\""}], "}"}], ",", 
+     RowBox[{"\"\<Input\>\"", "->", "inputEncoder"}], ",", 
+     RowBox[{"\"\<Target\>\"", "->", "targetEncoder"}]}], 
+    "\[IndentingNewLine]", "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.8692869364249783`*^9, 3.869286954816927*^9}, {
+  3.8692870413545437`*^9, 3.8692870468496437`*^9}, {3.869287475373581*^9, 
+  3.869287481881135*^9}},
+ CellLabel->
+  "In[308]:=",ExpressionUUID->"4687f74b-3c59-4d3b-9c63-98cd78ee7152"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Train net", "Chapter",
+ CellChangeTimes->{{3.8647936427675457`*^9, 3.864793644095471*^9}, {
+  3.868426121194284*^9, 3.868426122274289*^9}, {3.8684262976181192`*^9, 
+  3.868426322530819*^9}, {3.8684339851586647`*^9, 3.868433996669791*^9}, {
+  3.8684393240537577`*^9, 
+  3.868439333949903*^9}},ExpressionUUID->"595794db-34ce-4be6-b833-\
+1fd8c8670c56"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"result", "=", 
+   RowBox[{"NetTrain", "[", 
+    RowBox[{
+    "trainableNet", ",", "trainData", ",", "All", ",", "\[IndentingNewLine]", 
+     
+     RowBox[{"ValidationSet", "\[Rule]", "testData"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"LossFunction", "->", "\"\<Loss\>\""}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"Method", "->", 
+      RowBox[{"{", "\"\<ADAM\>\"", "}"}]}], ",", "\[IndentingNewLine]", 
+     RowBox[{"TargetDevice", "->", "\"\<GPU\>\""}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"MaxTrainingRounds", "\[Rule]", "20000"}]}], "]"}]}], 
+  ";"}]], "Input",
+ CellChangeTimes->{
+  3.8684393523282022`*^9, {3.868440869499402*^9, 3.86844087371313*^9}, {
+   3.8684411260993*^9, 3.868441126210587*^9}, {3.868442499709556*^9, 
+   3.8684425018843727`*^9}, {3.868446172833139*^9, 3.868446186731524*^9}, {
+   3.8685364797630873`*^9, 3.868536496883217*^9}, {3.868600076169417*^9, 
+   3.868600076637474*^9}, {3.868600134889481*^9, 3.868600135284954*^9}, {
+   3.868601255470386*^9, 3.8686012558943872`*^9}, {3.868602902814464*^9, 
+   3.868602903232891*^9}, {3.868943377521962*^9, 3.868943381357031*^9}, {
+   3.8689434141572866`*^9, 3.868943425164989*^9}, {3.868943586951866*^9, 
+   3.8689436089616327`*^9}, {3.868944023717293*^9, 3.8689440271979637`*^9}, {
+   3.868944083020088*^9, 3.868944086825481*^9}, {3.868947817163151*^9, 
+   3.8689478172894077`*^9}, {3.868949946458611*^9, 3.868949960076432*^9}, {
+   3.868977243682851*^9, 3.868977248732733*^9}, {3.868977291844462*^9, 
+   3.8689773017254*^9}, {3.868977346389843*^9, 3.868977377673813*^9}, {
+   3.868977408389917*^9, 3.868977427933148*^9}, {3.868977539952648*^9, 
+   3.868977554029306*^9}, {3.868977819969697*^9, 3.8689778435338573`*^9}, {
+   3.869023762591353*^9, 3.8690237633179893`*^9}, {3.869023837158021*^9, 
+   3.869023876685935*^9}, {3.869110793308095*^9, 3.86911082542246*^9}, {
+   3.869110910640922*^9, 3.869110910806432*^9}, {3.86912172241117*^9, 
+   3.8691217224768143`*^9}},
+ CellLabel->
+  "In[309]:=",ExpressionUUID->"f9c7af47-6ab5-4fb9-919c-d8e99881ce18"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Evaluate soft net", "Chapter",
+ CellChangeTimes->{{3.8647936427675457`*^9, 3.864793644095471*^9}, {
+  3.868426121194284*^9, 3.868426122274289*^9}, {3.8684262976181192`*^9, 
+  3.868426322530819*^9}, {3.8684339851586647`*^9, 3.868433996669791*^9}, {
+  3.8684393240537577`*^9, 3.868439333949903*^9}, {3.868446283613234*^9, 
+  3.8684462871734*^9}, {3.868447036013533*^9, 
+  3.868447037389845*^9}},ExpressionUUID->"9011cd51-87ac-4725-a74d-\
+96d4ca227904"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"trainedSoftNet", ",", "trainedHardNet"}], "}"}], "=", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"NetGraph", "[", "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"\[LeftAssociation]", 
+        RowBox[{"\"\<TrainedNet\>\"", "->", 
+         RowBox[{"NetDelete", "[", 
+          RowBox[{
+           RowBox[{"NetFlatten", "[", "#", "]"}], ",", "\"\<Loss/Error\>\""}],
+           "]"}]}], "\[RightAssociation]"}], ",", "\[IndentingNewLine]", 
+       RowBox[{"{", "}"}], ",", 
+       RowBox[{"\"\<Output\>\"", "->", 
+        RowBox[{"NetDecoder", "[", "targetEncoder", "]"}]}]}], 
+      "\[IndentingNewLine]", "]"}], "&"}], "/@", 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"result", "[", "\"\<TrainedNet\>\"", "]"}], ",", 
+      RowBox[{"HardenNet", "[", 
+       RowBox[{"result", "[", "\"\<TrainedNet\>\"", "]"}], "]"}]}], "}"}]}]}],
+   ";"}]], "Input",
+ CellChangeTimes->{{3.868441715962099*^9, 3.868441726772949*^9}, {
+   3.868442062468679*^9, 3.868442075018716*^9}, {3.868442527005735*^9, 
+   3.86844256484381*^9}, {3.868442825916274*^9, 3.868442879501833*^9}, {
+   3.868442927862575*^9, 3.868442930140501*^9}, {3.868442994108386*^9, 
+   3.868442997385559*^9}, {3.868443171305544*^9, 3.868443172008521*^9}, {
+   3.868443210207801*^9, 3.86844327444496*^9}, {3.868443832176667*^9, 
+   3.868443841549613*^9}, {3.868443968480337*^9, 3.86844397610231*^9}, {
+   3.868445156069516*^9, 3.868445169542899*^9}, {3.86844548965233*^9, 
+   3.8684454911676607`*^9}, {3.868445524601853*^9, 3.868445525318458*^9}, {
+   3.8684457755379953`*^9, 3.8684457785428762`*^9}, {3.868445841953512*^9, 
+   3.868445843190568*^9}, {3.868446029551764*^9, 3.8684460319907627`*^9}, {
+   3.868446204633617*^9, 3.8684462159667997`*^9}, {3.868446498761023*^9, 
+   3.868446502318582*^9}, 3.868446990300243*^9, {3.868447023781098*^9, 
+   3.868447024311913*^9}, {3.86912103176339*^9, 3.869121111451393*^9}, 
+   3.8691211481142063`*^9, {3.8692874136742887`*^9, 3.869287421249147*^9}, {
+   3.869287490868132*^9, 3.869287496690946*^9}},
+ CellLabel->
+  "In[310]:=",ExpressionUUID->"66a9d786-e4e6-4a12-ad0b-d552520d5f31"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClassifierMeasurements", "[", 
+    RowBox[{"#", ",", "testData"}], "]"}], "&"}], "/@", 
+  RowBox[{"{", 
+   RowBox[{"trainedSoftNet", ",", "trainedHardNet"}], "}"}]}]], "Input",
+ CellChangeTimes->{{3.868441761355565*^9, 3.86844176541033*^9}, {
+   3.868442023100346*^9, 3.8684420354226837`*^9}, {3.868444107190956*^9, 
+   3.868444110989802*^9}, {3.868444188263138*^9, 3.868444188997357*^9}, {
+   3.8684443072021*^9, 3.868444343231183*^9}, {3.86844438017598*^9, 
+   3.868444387605728*^9}, {3.868444533736438*^9, 3.868444535818205*^9}, {
+   3.868444625239705*^9, 3.868444635677659*^9}, {3.8684447356698933`*^9, 
+   3.8684447565897284`*^9}, 3.86844479804601*^9, {3.868445054584428*^9, 
+   3.868445061735847*^9}, {3.868447028248465*^9, 3.868447028907001*^9}, {
+   3.868964207787449*^9, 3.868964270803673*^9}, {3.869042816860148*^9, 
+   3.869042853385454*^9}, {3.8691211223288383`*^9, 3.869121124951189*^9}, 
+   3.869287502560712*^9},
+ CellLabel->
+  "In[311]:=",ExpressionUUID->"fa548393-dc26-4c1e-b548-9879d2ca37fb"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   TagBox[
+    StyleBox[
+     FrameBox[GridBox[{
+        {
+         ItemBox[
+          FrameBox[
+           StyleBox["\<\"Classifier Measurements\"\>", "SuggestionsBarText",
+            StripOnInput->False,
+            FontSize->12],
+           FrameMargins->{{10, 5}, {-4, 2}},
+           FrameStyle->None,
+           StripOnInput->False],
+          Alignment->{Left, Bottom},
+          Background->RGBColor[0.96, 0.96, 0.96],
+          Frame->{{False, False}, {True, False}},
+          FrameStyle->Opacity[0.1],
+          ItemSize->{Automatic, 1},
+          StripOnInput->False]},
+        {
+         ItemBox[
+          TagBox[
+           FrameBox[
+            TagBox[GridBox[{
+               {
+                TemplateBox[{
+                  TemplateBox[{5}, "Spacer1"], 
+                  StyleBox[
+                   InterpretationBox[
+                    Cell["Classifier method"], 
+                    TextCell["Classifier method"]], 
+                   GrayLevel[0.4], StripOnInput -> False]},
+                 "RowDefault"], 
+                
+                InterpretationBox[Cell[
+                 "Net",ExpressionUUID->"9dfa37ac-1094-4089-b415-f438ac44762f"],
+                 TextCell["Net"]]},
+               {
+                TemplateBox[{
+                  TemplateBox[{5}, "Spacer1"], 
+                  StyleBox[
+                   InterpretationBox[
+                    Cell["Number of test examples"], 
+                    TextCell["Number of test examples"]], 
+                   GrayLevel[0.4], StripOnInput -> False]},
+                 "RowDefault"], "4951"},
+               {
+                TemplateBox[{
+                  TemplateBox[{5}, "Spacer1"], 
+                  StyleBox[
+                   InterpretationBox[
+                    Cell["Accuracy"], 
+                    TextCell["Accuracy"]], 
+                   GrayLevel[0.4], StripOnInput -> False]},
+                 "RowDefault"], 
+                TemplateBox[{
+                  RowBox[{"(", 
+                    InterpretationBox[
+                    
+                    TemplateBox[{"91.6", "0.4"}, "Around", SyntaxForm -> 
+                    PlusMinus], 
+                    Around[
+                    91.5774590991718611122`3., 0.3947419294680463708`3.]], 
+                    ")"}], "\"%\"", "percent", "\"Percent\""},
+                 "QuantityPostfix"]},
+               {
+                TemplateBox[{
+                  TemplateBox[{5}, "Spacer1"], 
+                  StyleBox[
+                   TagBox[
+                    TooltipBox[
+                    InterpretationBox[
+                    Cell["Accuracy baseline"], 
+                    TextCell["Accuracy baseline"]], 
+                    "\"Accuracy if predicting the commonest class\"", 
+                    LabelStyle -> "TextStyling"], 
+                    Annotation[#, 
+                    "Accuracy if predicting the commonest class", 
+                    "Tooltip"]& ], 
+                   GrayLevel[0.4], StripOnInput -> False]},
+                 "RowDefault"], 
+                TemplateBox[{
+                  RowBox[{"(", 
+                    InterpretationBox[
+                    
+                    TemplateBox[{"25.9", "0.6"}, "Around", SyntaxForm -> 
+                    PlusMinus], 
+                    Around[
+                    25.8533629569783833801`3., 0.6223026512883647055`3.]], 
+                    ")"}], "\"%\"", "percent", "\"Percent\""},
+                 "QuantityPostfix"]},
+               {
+                TemplateBox[{
+                  TemplateBox[{5}, "Spacer1"], 
+                  StyleBox[
+                   InterpretationBox[
+                    Cell["Geometric mean of probabilities"], 
+                    TextCell["Geometric mean of probabilities"]], 
+                   GrayLevel[0.4], StripOnInput -> False]},
+                 "RowDefault"], 
+                TagBox[
+                 TooltipBox[
+                  TemplateBox[{"0.7766860964374654452`3.", 
+                    StyleBox[
+                    
+                    TemplateBox[{
+                    "\" \[PlusMinus] \"", "0.0090727077170630888`2."}, 
+                    "RowDefault"], {10, 
+                    Opacity[0.5]}, StripOnInput -> False]},
+                   "RowDefault"],
+                  
+                  TemplateBox[{
+                   "\"95% confidence interval: [\"", 
+                    "0.7585406810033392677`3.", "\", \"", 
+                    "0.7948315118715916228`3.", "\"]\""}, "RowDefault"],
+                  TooltipStyle->{}],
+                 Annotation[#, 
+                  
+                  Row[{"95% confidence interval: [", 0.7585406810033392677`3.,
+                     ", ", 0.7948315118715916228`3., "]"}], "Tooltip"]& ]},
+               {
+                TemplateBox[{
+                  TemplateBox[{5}, "Spacer1"], 
+                  StyleBox[
+                   InterpretationBox[
+                    Cell["Mean cross entropy"], 
+                    TextCell["Mean cross entropy"]], 
+                   GrayLevel[0.4], StripOnInput -> False]},
+                 "RowDefault"], 
+                TagBox[
+                 TooltipBox[
+                  TemplateBox[{"0.2527190045311441535`3.", 
+                    StyleBox[
+                    
+                    TemplateBox[{
+                    "\" \[PlusMinus] \"", "0.0116810400475327314`2."}, 
+                    "RowDefault"], {10, 
+                    Opacity[0.5]}, StripOnInput -> False]},
+                   "RowDefault"],
+                  
+                  TemplateBox[{
+                   "\"95% confidence interval: [\"", 
+                    "0.2293569244360786907`3.", "\", \"", 
+                    "0.2760810846262096163`3.", "\"]\""}, "RowDefault"],
+                  TooltipStyle->{}],
+                 Annotation[#, 
+                  
+                  Row[{"95% confidence interval: [", 0.2293569244360786907`3.,
+                     ", ", 0.2760810846262096163`3., "]"}], "Tooltip"]& ]},
+               {
+                TemplateBox[{
+                  TemplateBox[{5}, "Spacer1"], 
+                  StyleBox[
+                   InterpretationBox[
+                    Cell["Single evaluation time"], 
+                    TextCell["Single evaluation time"]], 
+                   GrayLevel[0.4], StripOnInput -> False]},
+                 "RowDefault"], 
+                TemplateBox[{"4.44`", 
+                  
+                  RowBox[{
+                   "\"ms\"", "\[InvisibleSpace]", "\"/\"", 
+                    "\[InvisibleSpace]", "\"example\""}], 
+                  "milliseconds per example", 
+                  FractionBox["\"Milliseconds\"", "\"Examples\""]},
+                 "Quantity"]},
+               {
+                TemplateBox[{
+                  TemplateBox[{5}, "Spacer1"], 
+                  StyleBox[
+                   InterpretationBox[
+                    Cell["Batch evaluation speed"], 
+                    TextCell["Batch evaluation speed"]], 
+                   GrayLevel[0.4], StripOnInput -> False]},
+                 "RowDefault"], 
+                TemplateBox[{"3.84`", 
+                  
+                  RowBox[{
+                   "\"examples\"", "\[InvisibleSpace]", "\"/\"", 
+                    "\[InvisibleSpace]", "\"ms\""}], 
+                  "examples per millisecond", 
+                  FractionBox["\"Examples\"", "\"Milliseconds\""]},
+                 "Quantity"]},
+               {
+                ItemBox[
+                 GraphicsBox[RasterBox[CompressedData["
+1:eJxTTMoPSmVmYGBggWIQe6vsZCfufW/t2xN90iOdXtvPe+c5f/3zx/bt22c9
+nOn+1v7DX6NtJ5pe2l9z5uni337PfknssS83BN7aX/rNd+3s7Bf2z3k3S/o8
+u2Wf2Wi34VPpO/uliqqtmh/u2t84yaudNi/Znr317lRujnf2M/u+KP2OfGMv
+4vrVg2P/M3ueV28luGe+tf/vVdHZse2VfYpziRdzzSN7v2qD5p7et/Z2R/mr
+H+69b+/bvnhmkUG+/dEZ6yLNr7+x3+TGV3Fs/nN7ph86Dpzs1+3j/2a/5Kl7
+Z+/3wSHzifg7e4d8htOP3F7bM4DBB/uHVSLr3B/egvIZGO7GTmGy0X9n373u
+pJjguzf232WehZk7vLCPC7TI4X781l6wQsFV69xr+1sz5b9EBz+1Dxfdu3gX
+53v7qY9jPvedumO/REDDbUtrhP2D2zGb5kS8s39yfb5CTtdb+zrFT7Ivr73E
+6d8u0+SJvwre2nurcx5Qln9lX6Im1GP56YE9AH/buu0=
+                   "], {{0, 0}, {4, 4}}, {0, 1}],
+                  Epilog->{{
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["1143", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {0.5, 3.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1143", "\" examples of \"", "0", 
+                    "\" correctly classified\""}, "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Precision = \"", "0.957286432160804`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Recall = \"", "0.9461920529801324`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"FScore = \"", "0.9517069109075768`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1143, " examples of ", 0, " correctly classified"}], 
+                    
+                    Row[{"Precision = ", 0.957286432160804}], 
+                    Row[{"Recall = ", 0.9461920529801324}], 
+                    Row[{"FScore = ", 0.9517069109075768}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["1", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {0.5, 2.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1", "\" example of \"", "1", "\" misclassified as \"", 
+                    "0"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.0008375209380234506`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Row fraction = \"", "0.00078125`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1, " example of ", 1, " misclassified as ", 0}], 
+                    Row[{"Column fraction = ", 0.0008375209380234506}], 
+                    Row[{"Row fraction = ", 0.00078125}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["23", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {0.5, 1.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "23", "\" examples of \"", "2", "\" misclassified as \"", 
+                    "0"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.019262981574539362`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.019327731092436976`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{23, " examples of ", 2, " misclassified as ", 0}], 
+                    Row[{"Column fraction = ", 0.019262981574539362`}], 
+                    Row[{"Row fraction = ", 0.019327731092436976`}]}], 
+                    "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["27", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {0.5, 0.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "27", "\" examples of \"", "3", "\" misclassified as \"", 
+                    "0"}, "RowDefault"]}, {
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.022613065326633167`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.021209740769835034`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{27, " examples of ", 3, " misclassified as ", 0}], 
+                    Row[{"Column fraction = ", 0.022613065326633167`}], 
+                    Row[{"Row fraction = ", 0.021209740769835034`}]}], 
+                    "Tooltip"]& ]}, {
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["4", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {1.5, 3.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "4", "\" examples of \"", "0", "\" misclassified as \"", 
+                    "1"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.003028009084027252`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.0033112582781456954`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{4, " examples of ", 0, " misclassified as ", 1}], 
+                    Row[{"Column fraction = ", 0.003028009084027252}], 
+                    Row[{"Row fraction = ", 0.0033112582781456954`}]}], 
+                    "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["1238", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {1.5, 2.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1238", "\" examples of \"", "1", 
+                    "\" correctly classified\""}, "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Precision = \"", "0.9371688115064345`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Recall = \"", "0.9671875`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"FScore = \"", "0.9519415609381008`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1238, " examples of ", 1, " correctly classified"}], 
+                    
+                    Row[{"Precision = ", 0.9371688115064345}], 
+                    Row[{"Recall = ", 0.9671875}], 
+                    Row[{"FScore = ", 0.9519415609381008}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["29", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {1.5, 1.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "29", "\" examples of \"", "2", "\" misclassified as \"", 
+                    "1"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.02195306585919758`"}, 
+                    "RowDefault"]}, {
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.024369747899159664`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{29, " examples of ", 2, " misclassified as ", 1}], 
+                    Row[{"Column fraction = ", 0.02195306585919758}], 
+                    Row[{"Row fraction = ", 0.024369747899159664`}]}], 
+                    "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["50", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {1.5, 0.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "50", "\" examples of \"", "3", "\" misclassified as \"", 
+                    "1"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.03785011355034065`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.03927729772191673`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{50, " examples of ", 3, " misclassified as ", 1}], 
+                    Row[{"Column fraction = ", 0.03785011355034065}], 
+                    Row[{"Row fraction = ", 0.03927729772191673}]}], 
+                    "Tooltip"]& ]}, {
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["23", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {2.5, 3.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "23", "\" examples of \"", "0", "\" misclassified as \"", 
+                    "2"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Column fraction = \"", "0.02`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.01903973509933775`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{23, " examples of ", 0, " misclassified as ", 2}], 
+                    Row[{"Column fraction = ", 0.02}], 
+                    Row[{"Row fraction = ", 0.01903973509933775}]}], 
+                    "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["16", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {2.5, 2.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "16", "\" examples of \"", "1", "\" misclassified as \"", 
+                    "2"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.01391304347826087`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Row fraction = \"", "0.0125`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{16, " examples of ", 1, " misclassified as ", 2}], 
+                    Row[{"Column fraction = ", 0.01391304347826087}], 
+                    Row[{"Row fraction = ", 0.0125}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["1034", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {2.5, 1.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1034", "\" examples of \"", "2", 
+                    "\" correctly classified\""}, "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Precision = \"", "0.8991304347826087`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Recall = \"", "0.8689075630252101`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"FScore = \"", "0.8837606837606838`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1034, " examples of ", 2, " correctly classified"}], 
+                    
+                    Row[{"Precision = ", 0.8991304347826087}], 
+                    Row[{"Recall = ", 0.8689075630252101}], 
+                    Row[{"FScore = ", 0.8837606837606838}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["77", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {2.5, 0.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "77", "\" examples of \"", "3", "\" misclassified as \"", 
+                    "2"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.06695652173913043`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.060487038491751764`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{77, " examples of ", 3, " misclassified as ", 2}], 
+                    Row[{"Column fraction = ", 0.06695652173913043}], 
+                    Row[{"Row fraction = ", 0.060487038491751764`}]}], 
+                    "Tooltip"]& ]}, {
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["38", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {3.5, 3.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "38", "\" examples of \"", "0", "\" misclassified as \"", 
+                    "3"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.029548989113530325`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.03145695364238411`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{38, " examples of ", 0, " misclassified as ", 3}], 
+                    Row[{"Column fraction = ", 0.029548989113530325`}], 
+                    Row[{"Row fraction = ", 0.03145695364238411}]}], 
+                    "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["25", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {3.5, 2.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "25", "\" examples of \"", "1", "\" misclassified as \"", 
+                    "3"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.019440124416796267`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Row fraction = \"", "0.01953125`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{25, " examples of ", 1, " misclassified as ", 3}], 
+                    Row[{"Column fraction = ", 0.019440124416796267`}], 
+                    Row[{"Row fraction = ", 0.01953125}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["104", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {3.5, 1.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "104", "\" examples of \"", "2", "\" misclassified as \"",
+                     "3"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.08087091757387248`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.08739495798319327`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{104, " examples of ", 2, " misclassified as ", 3}], 
+                    Row[{"Column fraction = ", 0.08087091757387248}], 
+                    Row[{"Row fraction = ", 0.08739495798319327}]}], 
+                    "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["1119", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {3.5, 0.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1119", "\" examples of \"", "3", 
+                    "\" correctly classified\""}, "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Precision = \"", "0.8701399688958009`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Recall = \"", "0.8790259230164965`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"FScore = \"", "0.8745603751465415`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1119, " examples of ", 3, " correctly classified"}], 
+                    
+                    Row[{"Precision = ", 0.8701399688958009}], 
+                    Row[{"Recall = ", 0.8790259230164965}], 
+                    Row[{"FScore = ", 0.8745603751465415}]}], "Tooltip"]& ]}, 
+                    
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {4.5, 3.5}, Automatic, {
+                    10., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1208", "\" example\"", "\"s\"", "\" of class \"", "0"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Recall = \"", "0.9461920529801324`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1208, " example", "s", " of class ", 0}], 
+                    Row[{"Recall = ", 0.9461920529801324}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {4.5, 2.5}, Automatic, {
+                    10., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1280", "\" example\"", "\"s\"", "\" of class \"", "1"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Recall = \"", "0.9671875`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1280, " example", "s", " of class ", 1}], 
+                    Row[{"Recall = ", 0.9671875}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {4.5, 1.5}, Automatic, {
+                    10., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1190", "\" example\"", "\"s\"", "\" of class \"", "2"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Recall = \"", "0.8689075630252101`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1190, " example", "s", " of class ", 2}], 
+                    Row[{"Recall = ", 0.8689075630252101}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {4.5, 0.5}, Automatic, {
+                    10., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1273", "\" example\"", "\"s\"", "\" of class \"", "3"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Recall = \"", "0.8790259230164965`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1273, " example", "s", " of class ", 3}], 
+                    Row[{"Recall = ", 0.8790259230164965}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {0.5, -0.5}, Automatic, {
+                    1., 10.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1194", "\" example\"", "\"s\"", "\" classified as \"", 
+                    "0"}, "RowDefault"]}, {
+                    TemplateBox[{"\"Precision = \"", "0.957286432160804`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1194, " example", "s", " classified as ", 0}], 
+                    Row[{"Precision = ", 0.957286432160804}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {1.5, -0.5}, Automatic, {
+                    1., 10.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1321", "\" example\"", "\"s\"", "\" classified as \"", 
+                    "1"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Precision = \"", "0.9371688115064345`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1321, " example", "s", " classified as ", 1}], 
+                    Row[{"Precision = ", 0.9371688115064345}]}], 
+                    "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {2.5, -0.5}, Automatic, {
+                    1., 10.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1150", "\" example\"", "\"s\"", "\" classified as \"", 
+                    "2"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Precision = \"", "0.8991304347826087`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1150, " example", "s", " classified as ", 2}], 
+                    Row[{"Precision = ", 0.8991304347826087}]}], 
+                    "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {3.5, -0.5}, Automatic, {
+                    1., 10.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1286", "\" example\"", "\"s\"", "\" classified as \"", 
+                    "3"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Precision = \"", "0.8701399688958009`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1286, " example", "s", " classified as ", 3}], 
+                    Row[{"Precision = ", 0.8701399688958009}]}], 
+                    "Tooltip"]& ]},
+                  Frame->True,
+                  FrameLabel->{
+                    FormBox["\"predicted class\"", TraditionalForm], 
+                    FormBox["\"actual class\"", TraditionalForm]},
+                  FrameTicks->{{{{3.5, 
+                    FormBox[
+                    RotationBox["0", BoxRotation -> 0.], TraditionalForm]}, {
+                    2.5, 
+                    FormBox[
+                    RotationBox["1", BoxRotation -> 0.], TraditionalForm]}, {
+                    1.5, 
+                    FormBox[
+                    RotationBox["2", BoxRotation -> 0.], TraditionalForm]}, {
+                    0.5, 
+                    FormBox[
+                    RotationBox["3", BoxRotation -> 0.], 
+                    TraditionalForm]}}, {{3.5, 
+                    FormBox["1208", TraditionalForm]}, {2.5, 
+                    FormBox["1280", TraditionalForm]}, {1.5, 
+                    FormBox["1190", TraditionalForm]}, {0.5, 
+                    FormBox["1273", TraditionalForm]}}}, {{{0.5, 
+                    FormBox[
+                    RotationBox["1194", BoxRotation -> 1.5707963267948966`], 
+                    TraditionalForm]}, {1.5, 
+                    FormBox[
+                    RotationBox["1321", BoxRotation -> 1.5707963267948966`], 
+                    TraditionalForm]}, {2.5, 
+                    FormBox[
+                    RotationBox["1150", BoxRotation -> 1.5707963267948966`], 
+                    TraditionalForm]}, {3.5, 
+                    FormBox[
+                    RotationBox["1286", BoxRotation -> 1.5707963267948966`], 
+                    TraditionalForm]}}, {{0.5, 
+                    FormBox[
+                    RotationBox["0", BoxRotation -> 1.5707963267948966`], 
+                    TraditionalForm]}, {1.5, 
+                    FormBox[
+                    RotationBox["1", BoxRotation -> 1.5707963267948966`], 
+                    TraditionalForm]}, {2.5, 
+                    FormBox[
+                    RotationBox["2", BoxRotation -> 1.5707963267948966`], 
+                    TraditionalForm]}, {3.5, 
+                    FormBox[
+                    RotationBox["3", BoxRotation -> 1.5707963267948966`], 
+                    TraditionalForm]}}}},
+                  FrameTicksStyle->13,
+                  GridLinesStyle->Directive[
+                    GrayLevel[0.5, 0.4]],
+                  ImageSize->212.4,
+                  
+                  Method->{
+                   "AxisPadding" -> Scaled[0.02], "DefaultBoundaryStyle" -> 
+                    Automatic, 
+                    "DefaultGraphicsInteraction" -> {
+                    "Version" -> 1.2, "TrackMousePosition" -> {True, False}, 
+                    "Effects" -> {
+                    "Highlight" -> {"ratio" -> 2}, 
+                    "HighlightPoint" -> {"ratio" -> 2}, 
+                    "Droplines" -> {
+                    "freeformCursorMode" -> True, 
+                    "placement" -> {"x" -> "All", "y" -> "None"}}}}, 
+                    "DefaultPlotStyle" -> Automatic, "DomainPadding" -> 
+                    Scaled[0.02], "RangePadding" -> Scaled[0.05]},
+                  PlotRangePadding->None],
+                 Alignment->Center,
+                 StripOnInput->False], "\[SpanFromLeft]"}
+              },
+              AutoDelete->False,
+              ColumnsEqual->False,
+              
+              GridBoxAlignment->{
+               "Columns" -> {Right, {Left}}, "Rows" -> {{Baseline}}},
+              GridBoxDividers->{"Columns" -> {False, {
+                   Opacity[0.15]}, False}},
+              
+              GridBoxItemSize->{
+               "Columns" -> {Automatic, {Automatic}}, "Rows" -> {{1.}}},
+              GridBoxSpacings->{"Columns" -> {
+                  Offset[0.27999999999999997`], 
+                  Offset[1.1199999999999999`], {
+                   Offset[1.75]}, 
+                  Offset[0.27999999999999997`]}, "Rows" -> {
+                  Offset[0.2], {
+                   Offset[0.8]}, 
+                  Offset[0.2]}}],
+             "Grid"],
+            FrameMargins->{{10, 10}, {10, 5}},
+            FrameStyle->None,
+            StripOnInput->False],
+           Deploy,
+           DefaultBaseStyle->"Deploy"],
+          Alignment->Center,
+          
+          BaseStyle->{
+           FontWeight -> "Light", FontSize -> 11, FontFamily -> "DejaVu Sans",
+             NumberMarks -> False, Deployed -> False},
+          StripOnInput->False]}
+       },
+       DefaultBaseStyle->"Column",
+       GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+       GridBoxDividers->{"Columns" -> {{False}}, "Rows" -> {{False}}},
+       GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{1.}}},
+       GridBoxSpacings->{"Columns" -> {
+           Offset[0.27999999999999997`], {
+            Offset[0.5599999999999999]}, 
+           Offset[0.27999999999999997`]}, "Rows" -> {
+           Offset[0.2], 
+           Offset[0.8], {
+            Offset[0.4]}, 
+           Offset[0.2]}}],
+      Background->GrayLevel[1],
+      FrameMargins->{{0, 0}, {0, 0}},
+      FrameStyle->GrayLevel[0.85],
+      RoundingRadius->5,
+      StripOnInput->False],
+     StripOnInput->False,
+     LineBreakWithin->False],
+    Deploy,
+    DefaultBaseStyle->"Deploy"], ",", 
+   TagBox[
+    StyleBox[
+     FrameBox[GridBox[{
+        {
+         ItemBox[
+          FrameBox[
+           StyleBox["\<\"Classifier Measurements\"\>", "SuggestionsBarText",
+            StripOnInput->False,
+            FontSize->12],
+           FrameMargins->{{10, 5}, {-4, 2}},
+           FrameStyle->None,
+           StripOnInput->False],
+          Alignment->{Left, Bottom},
+          Background->RGBColor[0.96, 0.96, 0.96],
+          Frame->{{False, False}, {True, False}},
+          FrameStyle->Opacity[0.1],
+          ItemSize->{Automatic, 1},
+          StripOnInput->False]},
+        {
+         ItemBox[
+          TagBox[
+           FrameBox[
+            TagBox[GridBox[{
+               {
+                TemplateBox[{
+                  TemplateBox[{5}, "Spacer1"], 
+                  StyleBox[
+                   InterpretationBox[
+                    Cell["Classifier method"], 
+                    TextCell["Classifier method"]], 
+                   GrayLevel[0.4], StripOnInput -> False]},
+                 "RowDefault"], 
+                
+                InterpretationBox[Cell[
+                 "Net",ExpressionUUID->"67aab44c-419c-463b-8cbe-f861caa63b3e"],
+                 TextCell["Net"]]},
+               {
+                TemplateBox[{
+                  TemplateBox[{5}, "Spacer1"], 
+                  StyleBox[
+                   InterpretationBox[
+                    Cell["Number of test examples"], 
+                    TextCell["Number of test examples"]], 
+                   GrayLevel[0.4], StripOnInput -> False]},
+                 "RowDefault"], "4951"},
+               {
+                TemplateBox[{
+                  TemplateBox[{5}, "Spacer1"], 
+                  StyleBox[
+                   InterpretationBox[
+                    Cell["Accuracy"], 
+                    TextCell["Accuracy"]], 
+                   GrayLevel[0.4], StripOnInput -> False]},
+                 "RowDefault"], 
+                TemplateBox[{
+                  RowBox[{"(", 
+                    InterpretationBox[
+                    
+                    TemplateBox[{"91.6", "0.4"}, "Around", SyntaxForm -> 
+                    PlusMinus], 
+                    Around[
+                    91.5774590991718611122`3., 0.3947419294680463708`3.]], 
+                    ")"}], "\"%\"", "percent", "\"Percent\""},
+                 "QuantityPostfix"]},
+               {
+                TemplateBox[{
+                  TemplateBox[{5}, "Spacer1"], 
+                  StyleBox[
+                   TagBox[
+                    TooltipBox[
+                    InterpretationBox[
+                    Cell["Accuracy baseline"], 
+                    TextCell["Accuracy baseline"]], 
+                    "\"Accuracy if predicting the commonest class\"", 
+                    LabelStyle -> "TextStyling"], 
+                    Annotation[#, 
+                    "Accuracy if predicting the commonest class", 
+                    "Tooltip"]& ], 
+                   GrayLevel[0.4], StripOnInput -> False]},
+                 "RowDefault"], 
+                TemplateBox[{
+                  RowBox[{"(", 
+                    InterpretationBox[
+                    
+                    TemplateBox[{"25.9", "0.6"}, "Around", SyntaxForm -> 
+                    PlusMinus], 
+                    Around[
+                    25.8533629569783833801`3., 0.6223026512883647055`3.]], 
+                    ")"}], "\"%\"", "percent", "\"Percent\""},
+                 "QuantityPostfix"]},
+               {
+                TemplateBox[{
+                  TemplateBox[{5}, "Spacer1"], 
+                  StyleBox[
+                   InterpretationBox[
+                    Cell["Geometric mean of probabilities"], 
+                    TextCell["Geometric mean of probabilities"]], 
+                   GrayLevel[0.4], StripOnInput -> False]},
+                 "RowDefault"], 
+                TagBox[
+                 TooltipBox[
+                  TemplateBox[{"0.7766860964374654452`3.", 
+                    StyleBox[
+                    
+                    TemplateBox[{
+                    "\" \[PlusMinus] \"", "0.0090727077170630888`2."}, 
+                    "RowDefault"], {10, 
+                    Opacity[0.5]}, StripOnInput -> False]},
+                   "RowDefault"],
+                  
+                  TemplateBox[{
+                   "\"95% confidence interval: [\"", 
+                    "0.7585406810033392677`3.", "\", \"", 
+                    "0.7948315118715916228`3.", "\"]\""}, "RowDefault"],
+                  TooltipStyle->{}],
+                 Annotation[#, 
+                  
+                  Row[{"95% confidence interval: [", 0.7585406810033392677`3.,
+                     ", ", 0.7948315118715916228`3., "]"}], "Tooltip"]& ]},
+               {
+                TemplateBox[{
+                  TemplateBox[{5}, "Spacer1"], 
+                  StyleBox[
+                   InterpretationBox[
+                    Cell["Mean cross entropy"], 
+                    TextCell["Mean cross entropy"]], 
+                   GrayLevel[0.4], StripOnInput -> False]},
+                 "RowDefault"], 
+                TagBox[
+                 TooltipBox[
+                  TemplateBox[{"0.2527190045311441535`3.", 
+                    StyleBox[
+                    
+                    TemplateBox[{
+                    "\" \[PlusMinus] \"", "0.0116810400475327314`2."}, 
+                    "RowDefault"], {10, 
+                    Opacity[0.5]}, StripOnInput -> False]},
+                   "RowDefault"],
+                  
+                  TemplateBox[{
+                   "\"95% confidence interval: [\"", 
+                    "0.2293569244360786907`3.", "\", \"", 
+                    "0.2760810846262096163`3.", "\"]\""}, "RowDefault"],
+                  TooltipStyle->{}],
+                 Annotation[#, 
+                  
+                  Row[{"95% confidence interval: [", 0.2293569244360786907`3.,
+                     ", ", 0.2760810846262096163`3., "]"}], "Tooltip"]& ]},
+               {
+                TemplateBox[{
+                  TemplateBox[{5}, "Spacer1"], 
+                  StyleBox[
+                   InterpretationBox[
+                    Cell["Single evaluation time"], 
+                    TextCell["Single evaluation time"]], 
+                   GrayLevel[0.4], StripOnInput -> False]},
+                 "RowDefault"], 
+                TemplateBox[{"4.63`", 
+                  
+                  RowBox[{
+                   "\"ms\"", "\[InvisibleSpace]", "\"/\"", 
+                    "\[InvisibleSpace]", "\"example\""}], 
+                  "milliseconds per example", 
+                  FractionBox["\"Milliseconds\"", "\"Examples\""]},
+                 "Quantity"]},
+               {
+                TemplateBox[{
+                  TemplateBox[{5}, "Spacer1"], 
+                  StyleBox[
+                   InterpretationBox[
+                    Cell["Batch evaluation speed"], 
+                    TextCell["Batch evaluation speed"]], 
+                   GrayLevel[0.4], StripOnInput -> False]},
+                 "RowDefault"], 
+                TemplateBox[{"3.75`", 
+                  
+                  RowBox[{
+                   "\"examples\"", "\[InvisibleSpace]", "\"/\"", 
+                    "\[InvisibleSpace]", "\"ms\""}], 
+                  "examples per millisecond", 
+                  FractionBox["\"Examples\"", "\"Milliseconds\""]},
+                 "Quantity"]},
+               {
+                ItemBox[
+                 GraphicsBox[RasterBox[CompressedData["
+1:eJxTTMoPSmVmYGBggWIQe6vsZCfufW/t2xN90iOdXtvPe+c5f/3zx/bt22c9
+nOn+1v7DX6NtJ5pe2l9z5uni337PfknssS83BN7aX/rNd+3s7Bf2z3k3S/o8
+u2Wf2Wi34VPpO/uliqqtmh/u2t84yaudNi/Znr317lRujnf2M/u+KP2OfGMv
+4vrVg2P/M3ueV28luGe+tf/vVdHZse2VfYpziRdzzSN7v2qD5p7et/Z2R/mr
+H+69b+/bvnhmkUG+/dEZ6yLNr7+x3+TGV3Fs/nN7ph86Dpzs1+3j/2a/5Kl7
+Z+/3wSHzifg7e4d8htOP3F7bM4DBB/uHVSLr3B/egvIZGO7GTmGy0X9n373u
+pJjguzf232WehZk7vLCPC7TI4X781l6wQsFV69xr+1sz5b9EBz+1Dxfdu3gX
+53v7qY9jPvedumO/REDDbUtrhP2D2zGb5kS8s39yfb5CTtdb+zrFT7Ivr73E
+6d8u0+SJvwre2nurcx5Qln9lX6Im1GP56YE9AH/buu0=
+                   "], {{0, 0}, {4, 4}}, {0, 1}],
+                  Epilog->{{
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["1143", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {0.5, 3.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1143", "\" examples of \"", "0", 
+                    "\" correctly classified\""}, "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Precision = \"", "0.957286432160804`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Recall = \"", "0.9461920529801324`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"FScore = \"", "0.9517069109075768`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1143, " examples of ", 0, " correctly classified"}], 
+                    
+                    Row[{"Precision = ", 0.957286432160804}], 
+                    Row[{"Recall = ", 0.9461920529801324}], 
+                    Row[{"FScore = ", 0.9517069109075768}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["1", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {0.5, 2.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1", "\" example of \"", "1", "\" misclassified as \"", 
+                    "0"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.0008375209380234506`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Row fraction = \"", "0.00078125`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1, " example of ", 1, " misclassified as ", 0}], 
+                    Row[{"Column fraction = ", 0.0008375209380234506}], 
+                    Row[{"Row fraction = ", 0.00078125}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["23", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {0.5, 1.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "23", "\" examples of \"", "2", "\" misclassified as \"", 
+                    "0"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.019262981574539362`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.019327731092436976`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{23, " examples of ", 2, " misclassified as ", 0}], 
+                    Row[{"Column fraction = ", 0.019262981574539362`}], 
+                    Row[{"Row fraction = ", 0.019327731092436976`}]}], 
+                    "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["27", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {0.5, 0.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "27", "\" examples of \"", "3", "\" misclassified as \"", 
+                    "0"}, "RowDefault"]}, {
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.022613065326633167`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.021209740769835034`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{27, " examples of ", 3, " misclassified as ", 0}], 
+                    Row[{"Column fraction = ", 0.022613065326633167`}], 
+                    Row[{"Row fraction = ", 0.021209740769835034`}]}], 
+                    "Tooltip"]& ]}, {
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["4", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {1.5, 3.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "4", "\" examples of \"", "0", "\" misclassified as \"", 
+                    "1"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.003028009084027252`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.0033112582781456954`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{4, " examples of ", 0, " misclassified as ", 1}], 
+                    Row[{"Column fraction = ", 0.003028009084027252}], 
+                    Row[{"Row fraction = ", 0.0033112582781456954`}]}], 
+                    "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["1238", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {1.5, 2.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1238", "\" examples of \"", "1", 
+                    "\" correctly classified\""}, "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Precision = \"", "0.9371688115064345`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Recall = \"", "0.9671875`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"FScore = \"", "0.9519415609381008`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1238, " examples of ", 1, " correctly classified"}], 
+                    
+                    Row[{"Precision = ", 0.9371688115064345}], 
+                    Row[{"Recall = ", 0.9671875}], 
+                    Row[{"FScore = ", 0.9519415609381008}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["29", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {1.5, 1.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "29", "\" examples of \"", "2", "\" misclassified as \"", 
+                    "1"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.02195306585919758`"}, 
+                    "RowDefault"]}, {
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.024369747899159664`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{29, " examples of ", 2, " misclassified as ", 1}], 
+                    Row[{"Column fraction = ", 0.02195306585919758}], 
+                    Row[{"Row fraction = ", 0.024369747899159664`}]}], 
+                    "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["50", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {1.5, 0.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "50", "\" examples of \"", "3", "\" misclassified as \"", 
+                    "1"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.03785011355034065`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.03927729772191673`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{50, " examples of ", 3, " misclassified as ", 1}], 
+                    Row[{"Column fraction = ", 0.03785011355034065}], 
+                    Row[{"Row fraction = ", 0.03927729772191673}]}], 
+                    "Tooltip"]& ]}, {
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["23", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {2.5, 3.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "23", "\" examples of \"", "0", "\" misclassified as \"", 
+                    "2"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Column fraction = \"", "0.02`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.01903973509933775`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{23, " examples of ", 0, " misclassified as ", 2}], 
+                    Row[{"Column fraction = ", 0.02}], 
+                    Row[{"Row fraction = ", 0.01903973509933775}]}], 
+                    "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["16", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {2.5, 2.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "16", "\" examples of \"", "1", "\" misclassified as \"", 
+                    "2"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.01391304347826087`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Row fraction = \"", "0.0125`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{16, " examples of ", 1, " misclassified as ", 2}], 
+                    Row[{"Column fraction = ", 0.01391304347826087}], 
+                    Row[{"Row fraction = ", 0.0125}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["1034", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {2.5, 1.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1034", "\" examples of \"", "2", 
+                    "\" correctly classified\""}, "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Precision = \"", "0.8991304347826087`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Recall = \"", "0.8689075630252101`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"FScore = \"", "0.8837606837606838`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1034, " examples of ", 2, " correctly classified"}], 
+                    
+                    Row[{"Precision = ", 0.8991304347826087}], 
+                    Row[{"Recall = ", 0.8689075630252101}], 
+                    Row[{"FScore = ", 0.8837606837606838}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["77", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {2.5, 0.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "77", "\" examples of \"", "3", "\" misclassified as \"", 
+                    "2"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.06695652173913043`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.060487038491751764`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{77, " examples of ", 3, " misclassified as ", 2}], 
+                    Row[{"Column fraction = ", 0.06695652173913043}], 
+                    Row[{"Row fraction = ", 0.060487038491751764`}]}], 
+                    "Tooltip"]& ]}, {
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["38", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {3.5, 3.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "38", "\" examples of \"", "0", "\" misclassified as \"", 
+                    "3"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.029548989113530325`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.03145695364238411`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{38, " examples of ", 0, " misclassified as ", 3}], 
+                    Row[{"Column fraction = ", 0.029548989113530325`}], 
+                    Row[{"Row fraction = ", 0.03145695364238411}]}], 
+                    "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["25", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {3.5, 2.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "25", "\" examples of \"", "1", "\" misclassified as \"", 
+                    "3"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.019440124416796267`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Row fraction = \"", "0.01953125`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{25, " examples of ", 1, " misclassified as ", 3}], 
+                    Row[{"Column fraction = ", 0.019440124416796267`}], 
+                    Row[{"Row fraction = ", 0.01953125}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["104", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {3.5, 1.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "104", "\" examples of \"", "2", "\" misclassified as \"",
+                     "3"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Column fraction = \"", "0.08087091757387248`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{
+                    "\"Row fraction = \"", "0.08739495798319327`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{104, " examples of ", 2, " misclassified as ", 3}], 
+                    Row[{"Column fraction = ", 0.08087091757387248}], 
+                    Row[{"Row fraction = ", 0.08739495798319327}]}], 
+                    "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[1.], 
+                    InsetBox[
+                    FormBox["1119", TraditionalForm], {0.5, 0.5}, BaseStyle -> 
+                    10], 
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {3.5, 0.5}, Automatic, {
+                    1., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1119", "\" examples of \"", "3", 
+                    "\" correctly classified\""}, "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Precision = \"", "0.8701399688958009`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Recall = \"", "0.8790259230164965`"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"FScore = \"", "0.8745603751465415`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1119, " examples of ", 3, " correctly classified"}], 
+                    
+                    Row[{"Precision = ", 0.8701399688958009}], 
+                    Row[{"Recall = ", 0.8790259230164965}], 
+                    Row[{"FScore = ", 0.8745603751465415}]}], "Tooltip"]& ]}, 
+                    
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {4.5, 3.5}, Automatic, {
+                    10., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1208", "\" example\"", "\"s\"", "\" of class \"", "0"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Recall = \"", "0.9461920529801324`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1208, " example", "s", " of class ", 0}], 
+                    Row[{"Recall = ", 0.9461920529801324}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {4.5, 2.5}, Automatic, {
+                    10., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1280", "\" example\"", "\"s\"", "\" of class \"", "1"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Recall = \"", "0.9671875`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1280, " example", "s", " of class ", 1}], 
+                    Row[{"Recall = ", 0.9671875}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {4.5, 1.5}, Automatic, {
+                    10., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1190", "\" example\"", "\"s\"", "\" of class \"", "2"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Recall = \"", "0.8689075630252101`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1190, " example", "s", " of class ", 2}], 
+                    Row[{"Recall = ", 0.8689075630252101}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {4.5, 0.5}, Automatic, {
+                    10., 1.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1273", "\" example\"", "\"s\"", "\" of class \"", "3"}, 
+                    "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Recall = \"", "0.8790259230164965`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1273, " example", "s", " of class ", 3}], 
+                    Row[{"Recall = ", 0.8790259230164965}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {0.5, -0.5}, Automatic, {
+                    1., 10.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1194", "\" example\"", "\"s\"", "\" classified as \"", 
+                    "0"}, "RowDefault"]}, {
+                    TemplateBox[{"\"Precision = \"", "0.957286432160804`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1194, " example", "s", " classified as ", 0}], 
+                    Row[{"Precision = ", 0.957286432160804}]}], "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {1.5, -0.5}, Automatic, {
+                    1., 10.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1321", "\" example\"", "\"s\"", "\" classified as \"", 
+                    "1"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Precision = \"", "0.9371688115064345`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1321, " example", "s", " classified as ", 1}], 
+                    Row[{"Precision = ", 0.9371688115064345}]}], 
+                    "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {2.5, -0.5}, Automatic, {
+                    1., 10.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1150", "\" example\"", "\"s\"", "\" classified as \"", 
+                    "2"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Precision = \"", "0.8991304347826087`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1150, " example", "s", " classified as ", 2}], 
+                    Row[{"Precision = ", 0.8991304347826087}]}], 
+                    "Tooltip"]& ], 
+                    TagBox[
+                    TooltipBox[
+                    InsetBox[
+                    GraphicsBox[{
+                    Opacity[0.], 
+                    RectangleBox[{0, 0}, {1, 1}]}], {3.5, -0.5}, Automatic, {
+                    1., 10.}], 
+                    TagBox[
+                    GridBox[{{
+                    
+                    TemplateBox[{
+                    "1286", "\" example\"", "\"s\"", "\" classified as \"", 
+                    "3"}, "RowDefault"]}, {
+                    
+                    TemplateBox[{"\"Precision = \"", "0.8701399688958009`"}, 
+                    "RowDefault"]}}, 
+                    GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                    DefaultBaseStyle -> "Column", 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                    "Column"]], Annotation[#, 
+                    Column[{
+                    Row[{1286, " example", "s", " classified as ", 3}], 
+                    Row[{"Precision = ", 0.8701399688958009}]}], 
+                    "Tooltip"]& ]},
+                  Frame->True,
+                  FrameLabel->{
+                    FormBox["\"predicted class\"", TraditionalForm], 
+                    FormBox["\"actual class\"", TraditionalForm]},
+                  FrameTicks->{{{{3.5, 
+                    FormBox[
+                    RotationBox["0", BoxRotation -> 0.], TraditionalForm]}, {
+                    2.5, 
+                    FormBox[
+                    RotationBox["1", BoxRotation -> 0.], TraditionalForm]}, {
+                    1.5, 
+                    FormBox[
+                    RotationBox["2", BoxRotation -> 0.], TraditionalForm]}, {
+                    0.5, 
+                    FormBox[
+                    RotationBox["3", BoxRotation -> 0.], 
+                    TraditionalForm]}}, {{3.5, 
+                    FormBox["1208", TraditionalForm]}, {2.5, 
+                    FormBox["1280", TraditionalForm]}, {1.5, 
+                    FormBox["1190", TraditionalForm]}, {0.5, 
+                    FormBox["1273", TraditionalForm]}}}, {{{0.5, 
+                    FormBox[
+                    RotationBox["1194", BoxRotation -> 1.5707963267948966`], 
+                    TraditionalForm]}, {1.5, 
+                    FormBox[
+                    RotationBox["1321", BoxRotation -> 1.5707963267948966`], 
+                    TraditionalForm]}, {2.5, 
+                    FormBox[
+                    RotationBox["1150", BoxRotation -> 1.5707963267948966`], 
+                    TraditionalForm]}, {3.5, 
+                    FormBox[
+                    RotationBox["1286", BoxRotation -> 1.5707963267948966`], 
+                    TraditionalForm]}}, {{0.5, 
+                    FormBox[
+                    RotationBox["0", BoxRotation -> 1.5707963267948966`], 
+                    TraditionalForm]}, {1.5, 
+                    FormBox[
+                    RotationBox["1", BoxRotation -> 1.5707963267948966`], 
+                    TraditionalForm]}, {2.5, 
+                    FormBox[
+                    RotationBox["2", BoxRotation -> 1.5707963267948966`], 
+                    TraditionalForm]}, {3.5, 
+                    FormBox[
+                    RotationBox["3", BoxRotation -> 1.5707963267948966`], 
+                    TraditionalForm]}}}},
+                  FrameTicksStyle->13,
+                  GridLinesStyle->Directive[
+                    GrayLevel[0.5, 0.4]],
+                  ImageSize->212.4,
+                  
+                  Method->{
+                   "AxisPadding" -> Scaled[0.02], "DefaultBoundaryStyle" -> 
+                    Automatic, 
+                    "DefaultGraphicsInteraction" -> {
+                    "Version" -> 1.2, "TrackMousePosition" -> {True, False}, 
+                    "Effects" -> {
+                    "Highlight" -> {"ratio" -> 2}, 
+                    "HighlightPoint" -> {"ratio" -> 2}, 
+                    "Droplines" -> {
+                    "freeformCursorMode" -> True, 
+                    "placement" -> {"x" -> "All", "y" -> "None"}}}}, 
+                    "DefaultPlotStyle" -> Automatic, "DomainPadding" -> 
+                    Scaled[0.02], "RangePadding" -> Scaled[0.05]},
+                  PlotRangePadding->None],
+                 Alignment->Center,
+                 StripOnInput->False], "\[SpanFromLeft]"}
+              },
+              AutoDelete->False,
+              ColumnsEqual->False,
+              
+              GridBoxAlignment->{
+               "Columns" -> {Right, {Left}}, "Rows" -> {{Baseline}}},
+              GridBoxDividers->{"Columns" -> {False, {
+                   Opacity[0.15]}, False}},
+              
+              GridBoxItemSize->{
+               "Columns" -> {Automatic, {Automatic}}, "Rows" -> {{1.}}},
+              GridBoxSpacings->{"Columns" -> {
+                  Offset[0.27999999999999997`], 
+                  Offset[1.1199999999999999`], {
+                   Offset[1.75]}, 
+                  Offset[0.27999999999999997`]}, "Rows" -> {
+                  Offset[0.2], {
+                   Offset[0.8]}, 
+                  Offset[0.2]}}],
+             "Grid"],
+            FrameMargins->{{10, 10}, {10, 5}},
+            FrameStyle->None,
+            StripOnInput->False],
+           Deploy,
+           DefaultBaseStyle->"Deploy"],
+          Alignment->Center,
+          
+          BaseStyle->{
+           FontWeight -> "Light", FontSize -> 11, FontFamily -> "DejaVu Sans",
+             NumberMarks -> False, Deployed -> False},
+          StripOnInput->False]}
+       },
+       DefaultBaseStyle->"Column",
+       GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+       GridBoxDividers->{"Columns" -> {{False}}, "Rows" -> {{False}}},
+       GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{1.}}},
+       GridBoxSpacings->{"Columns" -> {
+           Offset[0.27999999999999997`], {
+            Offset[0.5599999999999999]}, 
+           Offset[0.27999999999999997`]}, "Rows" -> {
+           Offset[0.2], 
+           Offset[0.8], {
+            Offset[0.4]}, 
+           Offset[0.2]}}],
+      Background->GrayLevel[1],
+      FrameMargins->{{0, 0}, {0, 0}},
+      FrameStyle->GrayLevel[0.85],
+      RoundingRadius->5,
+      StripOnInput->False],
+     StripOnInput->False,
+     LineBreakWithin->False],
+    Deploy,
+    DefaultBaseStyle->"Deploy"]}], "}"}]], "Output",
+ CellChangeTimes->{3.869287570901987*^9, 3.869289674829157*^9, 
+  3.869290526842145*^9},
+ CellLabel->
+  "Out[311]=",ExpressionUUID->"6c4ec45b-46c2-4495-a745-864e026c5602"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Evaluate hard net", "Chapter",
+ CellChangeTimes->{{3.8647936427675457`*^9, 3.864793644095471*^9}, {
+  3.868426121194284*^9, 3.868426122274289*^9}, {3.8684262976181192`*^9, 
+  3.868426322530819*^9}, {3.8684339851586647`*^9, 3.868433996669791*^9}, {
+  3.8684393240537577`*^9, 3.868439333949903*^9}, {3.868446283613234*^9, 
+  3.8684462871734*^9}, {3.868447036013533*^9, 3.868447049013842*^9}, {
+  3.8684475100383997`*^9, 
+  3.868447512030362*^9}},ExpressionUUID->"075f8f83-f479-4705-a989-\
+ef22b481fc23"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"hnf", "=", 
+   RowBox[{"HardNetFunction", "[", 
+    RowBox[{"hardNet", ",", "trainedHardNet"}], "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.8684476109990253`*^9, 3.868447614967239*^9}, {
+   3.8684988741865396`*^9, 3.868498874592616*^9}, {3.868499185605513*^9, 
+   3.8684992093586597`*^9}, 3.868501716401897*^9, {3.868514975845937*^9, 
+   3.868514978733061*^9}, {3.868533857047714*^9, 3.8685338619606743`*^9}, {
+   3.868592161602441*^9, 3.8685921624093037`*^9}, {3.868937316229151*^9, 
+   3.8689373167579613`*^9}, {3.868937496012*^9, 3.86893752144172*^9}, {
+   3.868937596537734*^9, 3.868937603616037*^9}, 3.868937747599498*^9, 
+   3.868938118528597*^9, {3.868939027026972*^9, 3.8689390465517597`*^9}, {
+   3.868976302381322*^9, 3.868976307139587*^9}, {3.869121279126927*^9, 
+   3.869121279479135*^9}},
+ CellLabel->
+  "In[312]:=",ExpressionUUID->"39556cdd-7dc0-48ba-8098-598d586ebfa2"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"hncwt", "=", 
+   RowBox[{"HardNetClassify", "[", 
+    RowBox[{"hnf", ",", "testData", ",", 
+     RowBox[{"NetDecoder", "[", "targetEncoder", "]"}], ",", 
+     RowBox[{
+      RowBox[{"inputEncoder", "[", 
+       RowBox[{"First", "[", "#", "]"}], "]"}], "&"}], ",", 
+     RowBox[{
+      RowBox[{"Last", "[", "#", "]"}], "&"}]}], "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{
+  3.869287633676036*^9, {3.86928766504218*^9, 3.86928772444868*^9}, {
+   3.869287887371719*^9, 3.8692879337845697`*^9}, {3.869288097068387*^9, 
+   3.8692880992486*^9}, {3.8692881651789722`*^9, 3.869288209894887*^9}, {
+   3.869288306610417*^9, 3.869288308104454*^9}, {3.86928853547467*^9, 
+   3.869288554714604*^9}},
+ CellLabel->
+  "In[313]:=",ExpressionUUID->"b8766b18-d2d8-43e0-8ea5-1182b83b1032"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"eval", "=", 
+   RowBox[{"HardNetClassifyEvaluation", "[", "hncwt", "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"eval", "[", "\"\<Accuracy\>\"", "]"}]}], "Input",
+ CellChangeTimes->{{3.868518101019845*^9, 3.8685181135715637`*^9}, {
+   3.868530047989657*^9, 3.868530063111247*^9}, {3.868530190826717*^9, 
+   3.868530196600292*^9}, {3.86853144384466*^9, 3.868531451560924*^9}, {
+   3.868532766824644*^9, 3.8685327949413958`*^9}, 3.868532945602283*^9, {
+   3.868533874444491*^9, 3.8685338747929583`*^9}, {3.868604441984084*^9, 
+   3.8686044511364*^9}, {3.8689602387396393`*^9, 3.8689602481032057`*^9}, {
+   3.868960681250607*^9, 3.8689606824317408`*^9}, {3.868963143100669*^9, 
+   3.868963145210929*^9}, 3.86896321844506*^9, {3.868976255892177*^9, 
+   3.868976256410039*^9}, 3.8689764091880903`*^9, {3.869034393625832*^9, 
+   3.86903439400725*^9}, {3.869043275878063*^9, 3.8690432774187603`*^9}, {
+   3.86921972941183*^9, 3.869219743506506*^9}, {3.869281678616239*^9, 
+   3.8692816957755537`*^9}, {3.869287615677465*^9, 3.8692876323043613`*^9}},
+ CellLabel->
+  "In[314]:=",ExpressionUUID->"5d09839b-7315-430e-9847-6154196e31ab"],
+
+Cell[BoxData["0.9127449000201979`"], "Output",
+ CellChangeTimes->{
+  3.8690345877152042`*^9, 3.869035626521063*^9, 3.869036152783195*^9, 
+   3.8690363341385193`*^9, 3.869036436421172*^9, 3.869040357729239*^9, 
+   3.869040576634907*^9, 3.869041433742779*^9, 3.8690415722677*^9, 
+   3.8690416867128763`*^9, 3.86904220858243*^9, 3.8690432824600554`*^9, 
+   3.869043562445753*^9, 3.869043754721044*^9, {3.869047065454893*^9, 
+   3.869047090738934*^9}, 3.8690471518063593`*^9, 3.869047184930591*^9, 
+   3.8690472207124777`*^9, 3.8690472595671577`*^9, 3.8690473069192467`*^9, 
+   3.869047356173808*^9, 3.869104541974283*^9, 3.8691049803090754`*^9, 
+   3.869105042273468*^9, 3.869105162486998*^9, 3.8691054315005198`*^9, 
+   3.8691056671929417`*^9, 3.869105994037698*^9, 3.869107195753681*^9, 
+   3.8691117585270443`*^9, 3.8691119669156637`*^9, 3.869121285329372*^9, 
+   3.869208833562628*^9, 3.869209098161392*^9, 3.8692095035118723`*^9, 
+   3.869210954522581*^9, 3.869211920142223*^9, 3.869213356256194*^9, 
+   3.869214236948101*^9, 3.869215471853537*^9, 3.869216022517696*^9, 
+   3.86921666275205*^9, 3.869217020007245*^9, 3.8692173416096373`*^9, 
+   3.869217703374105*^9, 3.869218056194668*^9, 3.8692194468167562`*^9, {
+   3.869219736012184*^9, 3.869219746378594*^9}, 3.869281699345985*^9, 
+   3.86928762865257*^9, 3.869288607327236*^9, 3.869290585524274*^9},
+ CellLabel->
+  "Out[315]=",ExpressionUUID->"c3ca27e6-a5e5-4cc0-8de2-6cedd28f50d5"]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"hncwt2", "=", 
+   RowBox[{
+    InterpretationBox[
+     TagBox[
+      DynamicModuleBox[{Typeset`open = False}, 
+       FrameBox[
+        PaneSelectorBox[{False->GridBox[{
+           {
+            PaneBox[GridBox[{
+               {
+                StyleBox[
+                 StyleBox[
+                  AdjustmentBox["\<\"[\[FilledSmallSquare]]\"\>",
+                   BoxBaselineShift->-0.25,
+                   BoxMargins->{{0, 0}, {-1, -1}}], "ResourceFunctionIcon",
+                  
+                  FontColor->RGBColor[
+                   0.8745098039215686, 0.2784313725490196, 
+                    0.03137254901960784]],
+                 ShowStringCharacters->False,
+                 FontFamily->"Source Sans Pro Black",
+                 FontSize->0.6538461538461539 Inherited,
+                 FontWeight->"Heavy",
+                 PrivateFontOptions->{"OperatorSubstitution"->False}], 
+                StyleBox[
+                 RowBox[{
+                  StyleBox["DynamicMap", "ResourceFunctionLabel"], " "}],
+                 ShowAutoStyles->False,
+                 ShowStringCharacters->False,
+                 FontSize->Rational[12, 13] Inherited,
+                 FontColor->GrayLevel[0.1]]}
+              },
+              GridBoxSpacings->{"Columns" -> {{0.25}}}],
+             Alignment->Left,
+             BaseStyle->{LineSpacing -> {0, 0}, LineBreakWithin -> False},
+             BaselinePosition->Baseline,
+             FrameMargins->{{3, 0}, {0, 0}}], 
+            ItemBox[
+             PaneBox[
+              TogglerBox[Dynamic[Typeset`open], {True->
+               
+               DynamicBox[FEPrivate`FrontEndResource[
+                "FEBitmaps", "IconizeCloser"],
+                ImageSizeCache->{11., {1., 10.}}], False->
+               
+               DynamicBox[FEPrivate`FrontEndResource[
+                "FEBitmaps", "IconizeOpener"],
+                ImageSizeCache->{11., {1., 10.}}]},
+               Appearance->None,
+               BaselinePosition->Baseline,
+               ContentPadding->False,
+               FrameMargins->0],
+              Alignment->Left,
+              BaselinePosition->Baseline,
+              FrameMargins->{{1, 1}, {0, 0}}],
+             Frame->{{
+                RGBColor[
+                0.8313725490196079, 0.8470588235294118, 0.8509803921568627, 
+                 0.5], False}, {False, False}}]}
+          },
+          BaselinePosition->{1, 1},
+          GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+          
+          GridBoxItemSize->{
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+          GridBoxSpacings->{"Columns" -> {{0}}, "Rows" -> {{0}}}], True->
+         GridBox[{
+           {GridBox[{
+              {
+               PaneBox[GridBox[{
+                  {
+                   StyleBox[
+                    StyleBox[
+                    AdjustmentBox["\<\"[\[FilledSmallSquare]]\"\>",
+                    BoxBaselineShift->-0.25,
+                    BoxMargins->{{0, 0}, {-1, -1}}], "ResourceFunctionIcon",
+                    
+                    FontColor->RGBColor[
+                    0.8745098039215686, 0.2784313725490196, 
+                    0.03137254901960784]],
+                    ShowStringCharacters->False,
+                    FontFamily->"Source Sans Pro Black",
+                    FontSize->0.6538461538461539 Inherited,
+                    FontWeight->"Heavy",
+                    PrivateFontOptions->{"OperatorSubstitution"->False}], 
+                   StyleBox[
+                    RowBox[{
+                    StyleBox["DynamicMap", "ResourceFunctionLabel"], " "}],
+                    ShowAutoStyles->False,
+                    ShowStringCharacters->False,
+                    FontSize->Rational[12, 13] Inherited,
+                    FontColor->GrayLevel[0.1]]}
+                 },
+                 GridBoxSpacings->{"Columns" -> {{0.25}}}],
+                Alignment->Left,
+                BaseStyle->{LineSpacing -> {0, 0}, LineBreakWithin -> False},
+                BaselinePosition->Baseline,
+                FrameMargins->{{3, 0}, {0, 0}}], 
+               ItemBox[
+                PaneBox[
+                 TogglerBox[Dynamic[Typeset`open], {True->
+                  
+                  DynamicBox[FEPrivate`FrontEndResource[
+                   "FEBitmaps", "IconizeCloser"]], False->
+                  
+                  DynamicBox[FEPrivate`FrontEndResource[
+                   "FEBitmaps", "IconizeOpener"]]},
+                  Appearance->None,
+                  BaselinePosition->Baseline,
+                  ContentPadding->False,
+                  FrameMargins->0],
+                 Alignment->Left,
+                 BaselinePosition->Baseline,
+                 FrameMargins->{{1, 1}, {0, 0}}],
+                Frame->{{
+                   RGBColor[
+                   0.8313725490196079, 0.8470588235294118, 0.8509803921568627,
+                     0.5], False}, {False, False}}]}
+             },
+             BaselinePosition->{1, 1},
+             GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+             
+             GridBoxItemSize->{
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+             GridBoxSpacings->{"Columns" -> {{0}}, "Rows" -> {{0}}}]},
+           {
+            StyleBox[
+             PaneBox[GridBox[{
+                {
+                 RowBox[{
+                  TagBox["\<\"Version (latest): \"\>",
+                   "IconizedLabel"], " ", 
+                  TagBox["\<\"4.0.0\"\>",
+                   "IconizedItem"]}]},
+                {
+                 TagBox[
+                  
+                  TemplateBox[{
+                   "\"Documentation \[RightGuillemet]\"", 
+                    "https://www.wolframcloud.com/obj/resourcesystem/\
+published/FunctionRepository/resources/DynamicMap"},
+                   "HyperlinkURL"],
+                  "IconizedItem"]}
+               },
+               DefaultBaseStyle->"Column",
+               GridBoxAlignment->{"Columns" -> {{Left}}},
+               
+               GridBoxItemSize->{
+                "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+              Alignment->Left,
+              BaselinePosition->Baseline,
+              FrameMargins->{{5, 4}, {0, 4}}], "DialogStyle",
+             FontFamily->"Roboto",
+             FontSize->11]}
+          },
+          BaselinePosition->{1, 1},
+          GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+          GridBoxDividers->{"Columns" -> {{None}}, "Rows" -> {False, {
+               GrayLevel[0.8]}, False}},
+          
+          GridBoxItemSize->{
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}]}, Dynamic[
+         Typeset`open],
+         BaselinePosition->Baseline,
+         ImageSize->Automatic],
+        Background->RGBColor[
+         0.9686274509803922, 0.9764705882352941, 0.984313725490196],
+        BaselinePosition->Baseline,
+        DefaultBaseStyle->{},
+        FrameMargins->{{0, 0}, {1, 0}},
+        FrameStyle->RGBColor[
+         0.8313725490196079, 0.8470588235294118, 0.8509803921568627],
+        RoundingRadius->4]],
+      {"FunctionResourceBox", 
+       RGBColor[0.8745098039215686, 0.2784313725490196, 0.03137254901960784], 
+       "DynamicMap"},
+      TagBoxNote->"FunctionResourceBox"],
+     ResourceFunction[
+      ResourceObject[<|
+       "Name" -> "DynamicMap", "ShortName" -> "DynamicMap", "UUID" -> 
+        "962b5001-b624-4bc4-9b1e-401e550f4f2b", "ResourceType" -> "Function", 
+        "Version" -> "4.0.0", "Description" -> 
+        "Map functions over lists while showing dynamic progress", 
+        "RepositoryLocation" -> 
+        URL["https://www.wolframcloud.com/objects/resourcesystem/api/1.0"], 
+        "SymbolName" -> 
+        "FunctionRepository`$f51668a7ac6041a9b46390842a7243d8`DynamicMap", 
+        "FunctionLocation" -> 
+        CloudObject[
+         "https://www.wolframcloud.com/obj/9d55b90e-e3c6-4d27-bdcf-\
+8c3ebb4fe19a"]|>, ResourceSystemBase -> Automatic]],
+     Selectable->False], "[", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"Association", "[", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"\"\<Prediction\>\"", "->", 
+          RowBox[{"trainedHardNet", "[", 
+           RowBox[{"First", "[", "#", "]"}], "]"}]}], ",", 
+         RowBox[{"\"\<Target\>\"", "->", 
+          RowBox[{"Last", "[", "#", "]"}]}]}], "}"}], "]"}], "&"}], ",", 
+     "testData"}], "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{
+  3.869288678464946*^9, {3.869288759066907*^9, 3.8692887731213083`*^9}, {
+   3.869289274523347*^9, 3.869289342458605*^9}},
+ CellLabel->
+  "In[316]:=",ExpressionUUID->"52a21862-88e7-4907-be97-638ea14ffd86"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"eval2", "=", 
+   RowBox[{"HardNetClassifyEvaluation", "[", "hncwt2", "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"eval2", "[", "\"\<Accuracy\>\"", "]"}]}], "Input",
+ CellChangeTimes->{{3.868975856473425*^9, 3.868975907241156*^9}, {
+  3.8689759541160727`*^9, 3.868975992561887*^9}, {3.86897610020459*^9, 
+  3.8689762477878838`*^9}, {3.86897641471817*^9, 3.8689764578527117`*^9}, {
+  3.8690344006348124`*^9, 3.869034400937387*^9}, {3.86904291870931*^9, 
+  3.8690429575864353`*^9}, {3.869121310826304*^9, 3.869121313255774*^9}, {
+  3.869219749034794*^9, 3.869219752143724*^9}, {3.869288633282258*^9, 
+  3.869288675280702*^9}},
+ CellLabel->
+  "In[317]:=",ExpressionUUID->"a9dd1e74-1d17-49dc-a380-76176cceb85f"],
+
+Cell[BoxData["0.9127449000201979`"], "Output",
+ CellChangeTimes->{
+  3.869034589981593*^9, 3.869035628358029*^9, 3.869036154844352*^9, 
+   3.869036336039586*^9, 3.8690364370454893`*^9, 3.869040359402629*^9, 
+   3.869040578854313*^9, 3.869041436196286*^9, 3.8690415773217983`*^9, 
+   3.869041690219269*^9, 3.86904221419751*^9, {3.869042932618347*^9, 
+   3.869042959198248*^9}, 3.869043287868927*^9, 3.869043565179612*^9, 
+   3.8690437567886467`*^9, 3.869104986359107*^9, 3.8691051668148937`*^9, 
+   3.869105434085964*^9, 3.869105669300963*^9, 3.869105996859831*^9, 
+   3.869107199042075*^9, 3.869111759364867*^9, 3.869111970506278*^9, {
+   3.869121299804845*^9, 3.869121316611709*^9}, 3.8692088360902042`*^9, 
+   3.86920910005622*^9, 3.869209505631686*^9, 3.869210957184381*^9, 
+   3.869211922653748*^9, 3.869213358735955*^9, 3.869214238649056*^9, 
+   3.8692154737290087`*^9, 3.869216025505147*^9, 3.8692166649342213`*^9, 
+   3.8692170219382353`*^9, 3.869217343847763*^9, 3.8692177067848663`*^9, 
+   3.869218058215096*^9, 3.869219448602796*^9, 3.869219753147689*^9, 
+   3.8692817014660397`*^9, 3.869289457917637*^9, 3.8692905982586317`*^9},
+ CellLabel->
+  "Out[318]=",ExpressionUUID->"972833e2-9d96-4602-b0a8-09afa7b822a2"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Quantity", "[", 
+  RowBox[{
+   RowBox[{
+    RowBox[{
+     RowBox[{
+      RowBox[{"Length", "[", 
+       RowBox[{"Flatten", "[", 
+        RowBox[{"ExtractWeights", "[", "trainedSoftNet", "]"}], "]"}], "]"}], 
+      "/", "8"}], "/", "1024"}], "//", "N"}], ",", "\"\<Kilobytes\>\""}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.868965930761516*^9, 3.868965950743415*^9}, {
+  3.8689659831088343`*^9, 3.868965987890936*^9}, {3.868966862559198*^9, 
+  3.868966873437675*^9}},
+ CellLabel->
+  "In[319]:=",ExpressionUUID->"961616e8-80db-46e2-8dd0-d13ef36a7032"],
+
+Cell[BoxData[
+ TemplateBox[{"3.015625`", "\"kB\"", "kilobytes", "\"Kilobytes\""},
+  "Quantity"]], "Output",
+ CellChangeTimes->{{3.868965937053772*^9, 3.868965951415412*^9}, {
+   3.86896598435365*^9, 3.868965988537725*^9}, 3.8689668742972393`*^9, 
+   3.868975214076693*^9, 3.8690319344803658`*^9, 3.869042968544685*^9, 
+   3.869105674742872*^9, 3.8692091039680862`*^9, 3.869210963050486*^9, 
+   3.8692119248338833`*^9, 3.869213361375114*^9, 3.869215475324996*^9, 
+   3.869219517507464*^9, 3.869219756735735*^9, 3.869281703543564*^9, 
+   3.869289460050152*^9, 3.8692905997569523`*^9},
+ CellLabel->
+  "Out[319]=",ExpressionUUID->"3d33f989-9209-4ee2-9bc0-6352f840a060"]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"HardNetBooleanExpression", "[", 
+   RowBox[{"hnf", ",", "inputSize"}], "]"}], ";"}]], "Input",
+ CellChangeTimes->{{3.868966922827866*^9, 3.8689669876550913`*^9}, {
+   3.869031937904567*^9, 3.869031943129614*^9}, {3.869121341559927*^9, 
+   3.869121348104578*^9}, {3.869210965421191*^9, 3.869210971914925*^9}, 
+   3.869219529425714*^9, 3.869219571948317*^9},
+ CellLabel->
+  "In[279]:=",ExpressionUUID->"7dc9a1f2-6b08-4d55-9e14-69e0c83e5755"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Standard net", "Chapter",
+ CellChangeTimes->{{3.8647936427675457`*^9, 3.864793644095471*^9}, {
+  3.868426121194284*^9, 3.868426122274289*^9}, {3.8684262976181192`*^9, 
+  3.868426322530819*^9}, {3.8684339851586647`*^9, 3.868433996669791*^9}, {
+  3.8684393240537577`*^9, 3.868439333949903*^9}, {3.868446283613234*^9, 
+  3.8684462871734*^9}, {3.868447036013533*^9, 3.868447049013842*^9}, {
+  3.8684475100383997`*^9, 3.868447512030362*^9}, {3.869289757053322*^9, 
+  3.8692897585259542`*^9}},ExpressionUUID->"3043a79a-b4fa-49cb-b8ef-\
+93659045dfa1"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"net", "=", 
+   RowBox[{"With", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"classificationLayerSize", "=", "numClasses"}], "}"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"NetChain", "[", 
+      RowBox[{
+       RowBox[{"{", "\[IndentingNewLine]", 
+        RowBox[{
+        "300", ",", "LogisticSigmoid", ",", "\[IndentingNewLine]", 
+         "classificationLayerSize", ",", "LogisticSigmoid", ",", 
+         "\[IndentingNewLine]", 
+         RowBox[{"SoftmaxLayer", "[", "]"}]}], "\[IndentingNewLine]", "}"}], 
+       ",", "\[IndentingNewLine]", 
+       RowBox[{"\"\<Output\>\"", "->", 
+        RowBox[{"NetDecoder", "[", 
+         RowBox[{"{", 
+          RowBox[{"\"\<Class\>\"", ",", 
+           RowBox[{"{", 
+            RowBox[{
+            "\"\<0\>\"", ",", "\"\<1\>\"", ",", "\"\<2\>\"", ",", 
+             "\"\<3\>\""}], "}"}]}], "}"}], "]"}]}]}], "\[IndentingNewLine]", 
+      "]"}]}], "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.8668677843113413`*^9, 3.866867810879756*^9}, {
+  3.866867866054343*^9, 3.866867918755149*^9}, {3.866867993454722*^9, 
+  3.86686799965574*^9}, {3.8668681258788567`*^9, 3.86686812619947*^9}, {
+  3.8668689240969467`*^9, 3.866868981929222*^9}, {3.866869073179029*^9, 
+  3.8668690742445583`*^9}, {3.866869111667173*^9, 3.8668691123403177`*^9}, {
+  3.8681067169717073`*^9, 3.868106719016634*^9}, {3.868106756819168*^9, 
+  3.868106759120493*^9}, {3.868106855684023*^9, 3.868106879388144*^9}},
+ CellLabel->"In[46]:=",ExpressionUUID->"08940c83-5e1a-473d-a7c9-34384acf6d18"]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{1440., 782.25},
+WindowMargins->{{1440, Automatic}, {0, Automatic}},
+FrontEndVersion->"13.1 for Linux x86 (64-bit) (June 16, 2022)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"d269a4d0-f69c-4122-926a-e4338dc993b6"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 302, 5, 98, "Title",ExpressionUUID->"acd08364-cd8b-4a85-adf4-8914b460b7e5"],
+Cell[885, 29, 779, 16, 29, "Input",ExpressionUUID->"1bd64055-6db8-4c91-8ea2-0b94dae987b5"],
+Cell[CellGroupData[{
+Cell[1689, 49, 204, 4, 69, "Chapter",ExpressionUUID->"7e565853-a9a0-424d-932b-970da2f902af"],
+Cell[1896, 55, 8788, 211, 78, "Input",ExpressionUUID->"42da4201-e6f1-44bd-98ad-43911e83f28b"],
+Cell[10687, 268, 8925, 215, 78, "Input",ExpressionUUID->"ab9febca-388c-4bba-abdd-791483d3c9ea"],
+Cell[19615, 485, 745, 17, 51, "Input",ExpressionUUID->"12676e6f-53bb-409f-9bae-23f6ccfc71ef"],
+Cell[CellGroupData[{
+Cell[20385, 506, 8923, 210, 58, "Input",ExpressionUUID->"f9f3d279-26e2-49ee-a2d3-03ed10aae018"],
+Cell[29311, 718, 12889, 288, 91, "Output",ExpressionUUID->"6e4f0a82-61e5-4540-9279-cfa418b10e3e"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[42249, 1012, 317, 5, 69, "Chapter",ExpressionUUID->"5f608b69-693a-4ffa-8f1c-2d895f6061f0"],
+Cell[42569, 1019, 1007, 24, 51, "Input",ExpressionUUID->"f7ba25cb-a6af-43e7-a6bf-8ef14de40659"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[43613, 1048, 355, 6, 69, "Chapter",ExpressionUUID->"a582b100-83f7-4eca-9df8-d2c98fa7da6c"],
+Cell[43971, 1056, 7872, 118, 133, "Input",ExpressionUUID->"feba2f53-f4f5-43e6-a86d-fb7cc5e96658"],
+Cell[51846, 1176, 889, 20, 97, "Input",ExpressionUUID->"4687f74b-3c59-4d3b-9c63-98cd78ee7152"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[52772, 1201, 355, 6, 69, "Chapter",ExpressionUUID->"595794db-34ce-4be6-b833-1fd8c8670c56"],
+Cell[53130, 1209, 2088, 38, 133, "Input",ExpressionUUID->"f9c7af47-6ab5-4fb9-919c-d8e99881ce18"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[55255, 1252, 456, 7, 69, "Chapter",ExpressionUUID->"9011cd51-87ac-4725-a74d-96d4ca227904"],
+Cell[55714, 1261, 2147, 42, 97, "Input",ExpressionUUID->"66a9d786-e4e6-4a12-ad0b-d552520d5f31"],
+Cell[CellGroupData[{
+Cell[57886, 1307, 1057, 19, 29, "Input",ExpressionUUID->"fa548393-dc26-4c1e-b548-9879d2ca37fb"],
+Cell[58946, 1328, 95083, 2144, 503, "Output",ExpressionUUID->"6c4ec45b-46c2-4495-a745-864e026c5602"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[154078, 3478, 507, 8, 69, "Chapter",ExpressionUUID->"075f8f83-f479-4705-a989-ef22b481fc23"],
+Cell[154588, 3488, 923, 16, 29, "Input",ExpressionUUID->"39556cdd-7dc0-48ba-8098-598d586ebfa2"],
+Cell[155514, 3506, 806, 18, 29, "Input",ExpressionUUID->"b8766b18-d2d8-43e0-8ea5-1182b83b1032"],
+Cell[CellGroupData[{
+Cell[156345, 3528, 1168, 19, 51, "Input",ExpressionUUID->"5d09839b-7315-430e-9847-6154196e31ab"],
+Cell[157516, 3549, 1439, 21, 33, "Output",ExpressionUUID->"c3ca27e6-a5e5-4cc0-8de2-6cedd28f50d5"]
+}, Open  ]],
+Cell[158970, 3573, 8685, 209, 37, "Input",ExpressionUUID->"52a21862-88e7-4907-be97-638ea14ffd86"],
+Cell[CellGroupData[{
+Cell[167680, 3786, 750, 14, 51, "Input",ExpressionUUID->"a9dd1e74-1d17-49dc-a380-76176cceb85f"],
+Cell[168433, 3802, 1222, 18, 33, "Output",ExpressionUUID->"972833e2-9d96-4602-b0a8-09afa7b822a2"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[169692, 3825, 574, 15, 32, "Input",ExpressionUUID->"961616e8-80db-46e2-8dd0-d13ef36a7032"],
+Cell[170269, 3842, 665, 11, 44, "Output",ExpressionUUID->"3d33f989-9209-4ee2-9bc0-6352f840a060"]
+}, Open  ]],
+Cell[170949, 3856, 474, 9, 29, "Input",ExpressionUUID->"7dc9a1f2-6b08-4d55-9e14-69e0c83e5755"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[171460, 3870, 550, 8, 69, "Chapter",ExpressionUUID->"3043a79a-b4fa-49cb-b8ef-93659045dfa1"],
+Cell[172013, 3880, 1555, 33, 174, "Input",ExpressionUUID->"08940c83-5e1a-473d-a7c9-34384acf6d18"]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+

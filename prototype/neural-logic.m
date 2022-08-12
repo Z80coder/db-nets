@@ -666,8 +666,7 @@ HardenRandomSoftBits[randomVariate_, p1_, p2_] := Block[
   Take[p1ArrayName, First[FirstPosition[p1ArrayName, "Weights"]]] -> replacementWeights
 ]
 
-HardenRandomSoftBits[hardener_, arrays_List] := Block[
-  {paramPairs},
+HardenRandomSoftBits[hardener_, arrays_List] := Block[{paramPairs},
   (* Assume arrays are correctly ordered *)
   paramPairs = Partition[arrays, 2];
   Map[Block[{p1, p2},
@@ -757,7 +756,7 @@ HardNetBooleanFunction[hardNetBooleanExpression_, inputSize_] := Block[
 (* Classifier querying and evaluation *)
 (* ------------------------------------------------------------------ *)
 
-HardNetClassBits[hardNet_Function, featureLayer_, data_] := Normal[hardNet[Harden[Normal[featureLayer[#]]]] & /@ data]
+HardNetClassBits[hardNet_Function, extractInput_, data_] := Normal[hardNet[Harden[Normal[extractInput[#]]]] & /@ data]
 
 HardNetClassScores[classBits_] := (Total /@ Boole[#]) & /@ classBits
 
@@ -765,7 +764,7 @@ HardNetClassProbabilities[classScores_] := N[Exp[#]/Total[Exp[#]]] & /@ classSco
 
 HardNetClassPrediction[classProbabilities_, decoder_NetDecoder] := First[decoder @ classProbabilities]
 
-HardNetClassify[hardNet_Function, data_, decoder_:(# &), featureLayer_:(#["Input"] &), targetName_String:"Target"] := 
+HardNetClassify[hardNet_Function, data_, decoder_:(# &), extractInput_:(#["Input"] &), extractTarget_:(#["Target"] &)] := 
   ResourceFunction[ResourceObject[
       <|
         "Name" -> "DynamicMap",
@@ -784,12 +783,12 @@ HardNetClassify[hardNet_Function, data_, decoder_:(# &), featureLayer_:(#["Input
       "Prediction" -> HardNetClassPrediction[
           HardNetClassProbabilities[
             HardNetClassScores[
-              HardNetClassBits[hardNet, featureLayer, {KeyDrop[{targetName}] @ #}]
+              HardNetClassBits[hardNet, extractInput, {#}]
             ]
           ],
           decoder
         ],
-      "Target" -> #[targetName]
+      "Target" -> extractTarget[#]
     |> &,
     data
   ]
