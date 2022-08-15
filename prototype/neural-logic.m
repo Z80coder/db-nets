@@ -16,7 +16,6 @@ BeginPackage["neurallogic`"]
 
 Harden::usage = "Hards soft bits.";
 Soften::usage = "Soften hard bits.";
-HardNeuralNOT::usage = "Neural NOT.";
 HardNeuralAND::usage = "Hard neural AND.";
 HardNeuralNAND::usage = "Hard neural NAND.";
 HardNeuralOR::usage = "Hard neural OR.";
@@ -26,12 +25,10 @@ NeuralOR::usage = "Neural OR.";
 NeuralAND::usage = "Neural AND.";
 DifferentiableHardAND::usage = "Differentiable hard AND.";
 DifferentiableHardOR::usage = "Differentiable hard OR.";
-DifferentiableHardNOT::usage = "Differentiable hard NOT.";
 HardClip::usage = "Hard clip.";
 LogisticClip::usage = "Logistic clip.";
 HardNeuralMajority::usage = "Hard neural majority.";
 HardNeuralChain::usage = "Hard neural chain.";
-HardNOT::usage = "Hard NOT.";
 HardNAND::usage = "Hard NAND.";
 HardNOR::usage = "Hard NOR.";
 HardAND::usage = "Hard AND.";
@@ -68,7 +65,8 @@ HardNetClassProbabilities::usage = "Hard net class probabilities.";
 HardNetClassPrediction::usage = "Hard net class prediction.";
 HardNetClassify::usage = "Hard net classify.";
 HardNetClassifyEvaluation::usage = "Hard net classify evaluation.";
-HardNOTImpl::usage = "Hard NOT implementation.";  
+DifferentiableHardNOT::usage = "Differentiable hard NOT.";
+HardNeuralNOT::usage = "Neural NOT.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -237,46 +235,43 @@ RandomBalancedNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0,
 *)
 DifferentiableHardNOT[input_, weights_] := 1 - weights + input (2 weights - 1)
 
-(* Assumes: one input vector to NOT with multiple weight vectors (that correspond to multiple NOT neurons). *)
-(*
-HardNOTImpl[inputs_List, weightList_List] := Map[
-  With[{weights = #},
-    MapIndexed[
-      With[{input = #1, index = #2[[1]]},
-        Not[Xor[input, weights[[index]]]]
-      ] &,
-      inputs
-    ]
-  ] &,
-  weightList
+(* input and weights must be the same length *)
+HardNOT[input_List, weights_List] := Block[{},
+  ConfirmAssert[Length[input] == Length[weights], Null, "Hard semantics check"];
+  MapIndexed[Not[Xor[input[[#2[[1]]]], #1]] &, weights]
 ]
-*)
 
-(* Assumes: multiple input vectors to NOT with multiple weight vectors. *)
-HardNOTImpl[inputs_List, weights_List] := Not /@ Thread[f[inputs, weights]]
+(* input must be a single list *)
+HardNOT[layerSize_] := Function[{inputs},
+  Block[{input, weights, layerWeights, reshapedWeights},
+    {input, weights} = inputs;
+    ConfirmAssert[Length[Dimensions[input]] == 1, Null, "Hard semantics check"];
+    {
+      (* Output *)
+      layerWeights = First[weights];
+      reshapedWeights = Partition[layerWeights, Length[layerWeights] / layerSize];
+      Map[HardNOT[input, #] &, reshapedWeights],
+      (* Consume weights *)
+      Drop[weights, 1]
+    }
+  ]
+]
 
-HardNOT[{input_List, weights_List}] := 
-  {
-    (* Output *)
-    HardNOTImpl[input, First[weights]],
-    (* Consume weights *)
-    Drop[weights, 1]
-  }
-
-(* TODO: generalise to support a NOT layer. *)
-HardNeuralNOT[inputSize_, weights_Function:BalancedSoftBits] := {
+HardNeuralNOT[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
   NetGraph[
     <|
-      "Weights" -> weights[inputSize],
-      "Not" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1],
-      "Harden" -> HardeningLayer[]
+      "Weights" -> weights[layerSize * inputSize],
+      "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
+      "Not" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}](*,
+      "Harden" -> HardeningLayer[]*)
     |>,
     {
-      "Weights" -> NetPort["Not", "Weights"],
-      "Not" -> "Harden"
+      "Weights" -> "Reshape",
+      "Reshape" -> NetPort["Not", "Weights"](*,
+      "Not" -> "Harden"*)
     } 
   ],
-  HardNOT
+  HardNOT[layerSize]
 }
 
 (* ------------------------------------------------------------------ *)
@@ -332,14 +327,14 @@ HardNeuralAND[inputSize_, layerSize_, weights_Function:NearZeroSoftBits] := {
 (* ------------------------------------------------------------------ *)
 
 HardNAND[layerSize_] := Function[{inputs},
-  HardNOT[HardAND[layerSize][inputs]]
+  HardNOT[1][HardAND[layerSize][inputs]]
 ]
 
 HardNeuralNAND[inputSize_, layerSize_, andWeights_Function:NearZeroSoftBits, notWeights_Function:BalancedSoftBits] := {
   NetChain[
     {
       First[HardNeuralAND[inputSize, layerSize, andWeights[#]&]],
-      First[HardNeuralNOT[layerSize, notWeights[#]&]]
+      First[HardNeuralNOT[layerSize, 1, notWeights[#]&]]
     }
   ],
   HardNAND[layerSize]
@@ -394,14 +389,14 @@ HardNeuralOR[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
 (* ------------------------------------------------------------------ *)
 
 HardNOR[layerSize_] := Function[{inputs},
-  HardNOT[HardOR[layerSize][inputs]]
+  HardNOT[1][HardOR[layerSize][inputs]]
 ]
 
 HardNeuralNOR[inputSize_, layerSize_, orWeights_Function:NearZeroSoftBits, notWeights_Function:BalancedSoftBits] := {
   NetChain[
     {
       First[HardNeuralOR[inputSize, layerSize, orWeights[#]&]],
-      First[HardNeuralNOT[layerSize, notWeights[#]&]]
+      First[HardNeuralNOT[layerSize, 1, notWeights[#]&]]
     }
   ],
   HardNOR[layerSize]
@@ -411,17 +406,20 @@ HardNeuralNOR[inputSize_, layerSize_, orWeights_Function:NearZeroSoftBits, notWe
 (* Hard MAJORITY *)
 (* ------------------------------------------------------------------ *)
 
-HardMajority[layerSize_] := Function[{inputs},
-  Block[{input, weights, layerWeights, reshapedWeights, notInputs},
-    {input, weights} = inputs;
+HardMajority[] := Function[{inputsAndWeights},
+  Block[{inputs, weights},
+    {inputs, weights} = inputsAndWeights;
     {
       (* Output *)
-      layerWeights = First[weights];
-      reshapedWeights = Partition[layerWeights, Length[layerWeights] / layerSize];
-      notInputs = HardNOTImpl[Table[input, layerSize], reshapedWeights];
-      Majority @@ # & /@ notInputs,
-      (* Consume weights *)
-      Drop[weights, 1]
+      Map[
+        Block[{input = #},
+          ConfirmAssert[ListQ[input], Null, "Hard semantics check"];
+          Majority @@ input
+        ] &,
+        inputs
+      ],
+      (* Don't consume weights *)
+      weights
     }
   ]
 ]
@@ -432,7 +430,7 @@ HardMajority[layerSize_] := Function[{inputs},
   bit changes, which is smoother allowing for better gradient descent.
 *)
 
-(* TODO: remove NOT from basic Majority *)
+(*
 HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
   NetGraph[
     <|
@@ -453,29 +451,24 @@ HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] :=
   ],
   HardMajority[layerSize]
 }
+*)
 
-(* TODO: remove NOT from basic Majority *)
-HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
-  With[{medianIndex = Ceiling[(inputSize + 1)/2]},
+(* TODO: remove need to specify inputSize *)
+HardNeuralMajority[numInputs_, inputSize_] := {
+  With[{medianIndex = Floor[(inputSize + 1)/2]},
     NetGraph[
       <|
-        "Weights" -> weights[layerSize * inputSize],
-        "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
-        "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
         "Sort" -> FunctionLayer[Sort /@ # &],
-        "Medians" -> PartLayer[{All, medianIndex}],
+        "Medians" -> PartLayer[{All, medianIndex}, "Output" -> numInputs],
         "Harden" -> HardeningLayer[]
       |>,
       {
-        "Weights" -> "Reshape",
-        "Reshape" -> NetPort["HardInclude", "Weights"],
-        "HardInclude" -> "Sort",
         "Sort" -> "Medians",
         "Medians" -> "Harden"
       }
     ]
   ],
-  HardMajority[layerSize]
+  HardMajority[]
 }
 
 (* ------------------------------------------------------------------ *)
@@ -594,6 +587,7 @@ HardDropoutLayer[p_] := {
 HardReshapeLayer[numPorts_] := Function[{inputs},
   Block[{input, weights},
     {input, weights} = inputs;
+    input = Flatten[input];
     {
       Partition[input, Length[input] / numPorts], 
       weights
