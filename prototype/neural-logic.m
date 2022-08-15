@@ -51,6 +51,8 @@ InitializeNearToOne::usage = "Initialize bias to one.";
 InitializeBalanced::usage = "Initialize balanced.";
 InitializeToConstant::usage = "Initialize to constant.";
 HardeningLayer::usage = "Hardening layer.";
+HardeningForward::usage = "Hardening forward.";
+HardeningBackward::usage = "Hardening backward.";
 HardNeuralCount::usage = "Hard neural count.";
 HardNeuralExactlyK::usage = "Hard neural exactly k.";
 HardNeuralLTEK::usage = "Hard neural less than or equal to k.";
@@ -66,6 +68,7 @@ HardNetClassProbabilities::usage = "Hard net class probabilities.";
 HardNetClassPrediction::usage = "Hard net class prediction.";
 HardNetClassify::usage = "Hard net classify.";
 HardNetClassifyEvaluation::usage = "Hard net classify evaluation.";
+HardNOTImpl::usage = "Hard NOT implementation.";  
 
 (* ------------------------------------------------------------------ *)
 
@@ -200,14 +203,18 @@ RandomNormalSoftBits[muWeights_List, sigmaWeights_List] := NetGraph[
       <|
         "Mu" -> NetArrayLayer["Array" -> muWeights, "Output" -> Length[muWeights]],
         "Sigma" -> NetArrayLayer["Array" -> sigmaWeights, "Output" -> Length[muWeights]],
+        "ClipMu" -> ElementwiseLayer[HardClip],
+        "ClipSigma" -> ElementwiseLayer[Clip[#, {0.0, Infinity}] &],
         "Distribution" -> RandomArrayLayer[NormalDistribution[0, 1], "Output" -> Length[muWeights]],
         "Variates" -> FunctionLayer[#Mu + #Sigma * #Random &],
         "ClipVariates" -> ElementwiseLayer[HardClip]
       |>,
       {
         "Distribution" -> NetPort["Variates", "Random"],
-        "Mu" -> NetPort["Variates", "Mu"],
-        "Sigma" -> NetPort["Variates", "Sigma"],
+        "Mu" -> "ClipMu",
+        "ClipMu" -> NetPort["Variates", "Mu"],
+        "Sigma" -> "ClipSigma",
+        "ClipSigma" -> NetPort["Variates", "Sigma"],
         "Variates" -> "ClipVariates"
       }
     ]
@@ -217,8 +224,6 @@ RandomNormalSoftBits[muWeights_List, sigmaWeights_List] := NetGraph[
 
 RandomNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 0.5}], size], Table[RandomReal[{0, 0.1}], size]]
 RandomBalancedNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 1}], size], Table[RandomReal[{0, 0.1}], size]]
-(* XXXX *)
-RandomBalancedNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0, 1}], size], Table[0.2, size]]
 
 (* ------------------------------------------------------------------ *)
 (* Hard NOT *)
@@ -232,16 +237,33 @@ RandomBalancedNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0,
 *)
 DifferentiableHardNOT[input_, weights_] := 1 - weights + input (2 weights - 1)
 
-HardNOT[input_List, weights_List] := Not /@ Thread[Xor[input, weights]]
+(* Assumes: one input vector to NOT with multiple weight vectors (that correspond to multiple NOT neurons). *)
+(*
+HardNOTImpl[inputs_List, weightList_List] := Map[
+  With[{weights = #},
+    MapIndexed[
+      With[{input = #1, index = #2[[1]]},
+        Not[Xor[input, weights[[index]]]]
+      ] &,
+      inputs
+    ]
+  ] &,
+  weightList
+]
+*)
+
+(* Assumes: multiple input vectors to NOT with multiple weight vectors. *)
+HardNOTImpl[inputs_List, weights_List] := Not /@ Thread[f[inputs, weights]]
 
 HardNOT[{input_List, weights_List}] := 
   {
     (* Output *)
-    HardNOT[input, First[weights]],
+    HardNOTImpl[input, First[weights]],
     (* Consume weights *)
     Drop[weights, 1]
   }
 
+(* TODO: generalise to support a NOT layer. *)
 HardNeuralNOT[inputSize_, weights_Function:BalancedSoftBits] := {
   NetGraph[
     <|
@@ -276,7 +298,10 @@ HardAND[layerSize_] := Function[{inputs},
       layerWeights = First[weights];
       reshapedWeights = Partition[layerWeights, Length[layerWeights] / layerSize];
       notWeights = (Not /@ #) & /@ reshapedWeights;
-      MapApply[And, Map[Thread[Or[input, #]] &, notWeights]],
+      MapApply[
+        And,
+        Map[Thread[Or[input, #]] &, notWeights]
+      ],
       (* Consume weights *)
       Drop[weights, 1]
     }
@@ -393,13 +418,19 @@ HardMajority[layerSize_] := Function[{inputs},
       (* Output *)
       layerWeights = First[weights];
       reshapedWeights = Partition[layerWeights, Length[layerWeights] / layerSize];
-      notInputs = Map[HardNOT[input, #] &, reshapedWeights];
+      notInputs = HardNOTImpl[Table[input, layerSize], reshapedWeights];
       Majority @@ # & /@ notInputs,
       (* Consume weights *)
       Drop[weights, 1]
     }
   ]
 ]
+
+(* 
+  TODO: determine which version of Majority is superior once we move away from Wolfram prototype.
+  Some evidence that Sort-based approach is superior because it minimises the quantity of requested
+  bit changes, which is smoother allowing for better gradient descent.
+*)
 
 (* TODO: remove NOT from basic Majority *)
 HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
@@ -408,15 +439,41 @@ HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] :=
       "Weights" -> weights[layerSize * inputSize],
       "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
       "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
+      "Harden1" -> HardeningLayer[],
       "Mean" -> AggregationLayer[Mean],
-      "Harden" -> HardeningLayer[]
+      "Harden2" -> HardeningLayer[]
     |>,
     {
       "Weights" -> "Reshape",
       "Reshape" -> NetPort["HardInclude", "Weights"],
-      "HardInclude" -> "Mean",
-      "Mean" -> "Harden"
+      "HardInclude" -> "Harden1",
+      "Harden1" -> "Mean",
+      "Mean" -> "Harden2"
     }
+  ],
+  HardMajority[layerSize]
+}
+
+(* TODO: remove NOT from basic Majority *)
+HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
+  With[{medianIndex = Ceiling[(inputSize + 1)/2]},
+    NetGraph[
+      <|
+        "Weights" -> weights[layerSize * inputSize],
+        "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
+        "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
+        "Sort" -> FunctionLayer[Sort /@ # &],
+        "Medians" -> PartLayer[{All, medianIndex}],
+        "Harden" -> HardeningLayer[]
+      |>,
+      {
+        "Weights" -> "Reshape",
+        "Reshape" -> NetPort["HardInclude", "Weights"],
+        "HardInclude" -> "Sort",
+        "Sort" -> "Medians",
+        "Medians" -> "Harden"
+      }
+    ]
   ],
   HardMajority[layerSize]
 }
@@ -632,8 +689,7 @@ HardenRandomSoftBits[randomVariate_, p1_, p2_] := Block[
   Take[p1ArrayName, First[FirstPosition[p1ArrayName, "Weights"]]] -> replacementWeights
 ]
 
-HardenRandomSoftBits[hardener_, arrays_List] := Block[
-  {paramPairs},
+HardenRandomSoftBits[hardener_, arrays_List] := Block[{paramPairs},
   (* Assume arrays are correctly ordered *)
   paramPairs = Partition[arrays, 2];
   Map[Block[{p1, p2},
@@ -645,7 +701,7 @@ HardenRandomSoftBits[hardener_, arrays_List] := Block[
 ]
 
 HardenRandomNormalSoftBits[mus_, sigmas_] := HardenRandomSoftBits[
-  With[{mu = #[[1]], sigma = #[[2]]},
+  With[{mu = HardClip[#[[1]]], sigma = Clip[#[[2]], {0.0, Infinity}]},
     mu + sigma RandomVariate[NormalDistribution[0, 1]]
   ] &,
   mus,
@@ -654,7 +710,7 @@ HardenRandomNormalSoftBits[mus_, sigmas_] := HardenRandomSoftBits[
 HardenRandomNormalSoftBits[arrays_List] := HardenRandomSoftBits[HardenRandomNormalSoftBits, arrays]
 
 HardenRandomUniformSoftBits[as_, bs_] := HardenRandomSoftBits[
-  With[{a = #[[1]], b = #[[2]]},
+  With[{a = HardClip[#[[1]]], b = HardClip[#[[2]]]},
     a + (b - a) RandomVariate[UniformDistribution[{0, 1}]]
   ] &, 
   as, 
@@ -723,15 +779,15 @@ HardNetBooleanFunction[hardNetBooleanExpression_, inputSize_] := Block[
 (* Classifier querying and evaluation *)
 (* ------------------------------------------------------------------ *)
 
-HardNetClassBits[hardNet_Function, featureLayer_NetGraph, data_] := Normal[hardNet[Harden[Normal[featureLayer[#]]]] & /@ data]
+HardNetClassBits[hardNet_Function, extractInput_, data_] := Normal[hardNet[Harden[Normal[extractInput[#]]]] & /@ data]
 
 HardNetClassScores[classBits_] := (Total /@ Boole[#]) & /@ classBits
 
 HardNetClassProbabilities[classScores_] := N[Exp[#]/Total[Exp[#]]] & /@ classScores
 
-HardNetClassPrediction[classProbabilities_, decoder_NetDecoder] := First[decoder @ classProbabilities]
+HardNetClassPrediction[classProbabilities_, decoder_] := First[decoder @ classProbabilities]
 
-HardNetClassify[hardNet_Function, featureLayer_NetGraph, decoder_, data_, targetName_String] := 
+HardNetClassify[hardNet_Function, data_, decoder_:(# &), extractInput_:(#["Input"] &), extractTarget_:(#["Target"] &)] := 
   ResourceFunction[ResourceObject[
       <|
         "Name" -> "DynamicMap",
@@ -750,12 +806,12 @@ HardNetClassify[hardNet_Function, featureLayer_NetGraph, decoder_, data_, target
       "Prediction" -> HardNetClassPrediction[
           HardNetClassProbabilities[
             HardNetClassScores[
-              HardNetClassBits[hardNet, featureLayer, {KeyDrop[{targetName}] @ #}]
+              HardNetClassBits[hardNet, extractInput, {#}]
             ]
           ],
           decoder
         ],
-      "Target" -> #[targetName]
+      "Target" -> extractTarget[#]
     |> &,
     data
   ]

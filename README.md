@@ -15,5 +15,6 @@ Questions? Ask @Z80coder
 - [The differentiable Hard-AND operator](https://drive.google.com/file/d/1cdfMkO0xg-IUYK3avHqfarLJRXGtWcRf/view?usp=sharing)
 - [The differentiable Hard-OR operator](https://drive.google.com/file/d/1v1WMfOWx4PQbjyoPJo82QNh2DGBhM4uH/view?usp=sharing)
 - [The differentiable Hard-MAJORITY operator](https://drive.google.com/file/d/1qVTAFAVZ3Qlk_mYh2wd83uME89RsBzri/view?usp=sharing)
+- [The hardening layer](https://drive.google.com/file/d/1ZEd34UMyFY52_0U2-j58hKJ5uvJBYREn/view?usp=sharing)
 
 More to come!
