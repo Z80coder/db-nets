@@ -51,6 +51,8 @@ InitializeNearToOne::usage = "Initialize bias to one.";
 InitializeBalanced::usage = "Initialize balanced.";
 InitializeToConstant::usage = "Initialize to constant.";
 HardeningLayer::usage = "Hardening layer.";
+HardeningForward::usage = "Hardening forward.";
+HardeningBackward::usage = "Hardening backward.";
 HardNeuralCount::usage = "Hard neural count.";
 HardNeuralExactlyK::usage = "Hard neural exactly k.";
 HardNeuralLTEK::usage = "Hard neural less than or equal to k.";
@@ -66,6 +68,7 @@ HardNetClassProbabilities::usage = "Hard net class probabilities.";
 HardNetClassPrediction::usage = "Hard net class prediction.";
 HardNetClassify::usage = "Hard net classify.";
 HardNetClassifyEvaluation::usage = "Hard net classify evaluation.";
+HardNOTImpl::usage = "Hard NOT implementation.";  
 
 (* ------------------------------------------------------------------ *)
 
@@ -234,16 +237,33 @@ RandomBalancedNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0,
 *)
 DifferentiableHardNOT[input_, weights_] := 1 - weights + input (2 weights - 1)
 
-HardNOT[input_List, weights_List] := Not /@ Thread[Xor[input, weights]]
+(* Assumes: one input vector to NOT with multiple weight vectors (that correspond to multiple NOT neurons). *)
+(*
+HardNOTImpl[inputs_List, weightList_List] := Map[
+  With[{weights = #},
+    MapIndexed[
+      With[{input = #1, index = #2[[1]]},
+        Not[Xor[input, weights[[index]]]]
+      ] &,
+      inputs
+    ]
+  ] &,
+  weightList
+]
+*)
+
+(* Assumes: multiple input vectors to NOT with multiple weight vectors. *)
+HardNOTImpl[inputs_List, weights_List] := Not /@ Thread[f[inputs, weights]]
 
 HardNOT[{input_List, weights_List}] := 
   {
     (* Output *)
-    HardNOT[input, First[weights]],
+    HardNOTImpl[input, First[weights]],
     (* Consume weights *)
     Drop[weights, 1]
   }
 
+(* TODO: generalise to support a NOT layer. *)
 HardNeuralNOT[inputSize_, weights_Function:BalancedSoftBits] := {
   NetGraph[
     <|
@@ -278,7 +298,10 @@ HardAND[layerSize_] := Function[{inputs},
       layerWeights = First[weights];
       reshapedWeights = Partition[layerWeights, Length[layerWeights] / layerSize];
       notWeights = (Not /@ #) & /@ reshapedWeights;
-      MapApply[And, Map[Thread[Or[input, #]] &, notWeights]],
+      MapApply[
+        And,
+        Map[Thread[Or[input, #]] &, notWeights]
+      ],
       (* Consume weights *)
       Drop[weights, 1]
     }
@@ -395,7 +418,7 @@ HardMajority[layerSize_] := Function[{inputs},
       (* Output *)
       layerWeights = First[weights];
       reshapedWeights = Partition[layerWeights, Length[layerWeights] / layerSize];
-      notInputs = Map[HardNOT[input, #] &, reshapedWeights];
+      notInputs = HardNOTImpl[Table[input, layerSize], reshapedWeights];
       Majority @@ # & /@ notInputs,
       (* Consume weights *)
       Drop[weights, 1]
@@ -762,7 +785,7 @@ HardNetClassScores[classBits_] := (Total /@ Boole[#]) & /@ classBits
 
 HardNetClassProbabilities[classScores_] := N[Exp[#]/Total[Exp[#]]] & /@ classScores
 
-HardNetClassPrediction[classProbabilities_, decoder_NetDecoder] := First[decoder @ classProbabilities]
+HardNetClassPrediction[classProbabilities_, decoder_] := First[decoder @ classProbabilities]
 
 HardNetClassify[hardNet_Function, data_, decoder_:(# &), extractInput_:(#["Input"] &), extractTarget_:(#["Target"] &)] := 
   ResourceFunction[ResourceObject[
