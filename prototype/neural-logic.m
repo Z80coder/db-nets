@@ -2,6 +2,7 @@
 
 (* 
   TODO:
+  - 0.5 causes a numerical error hardening problem. Can we fix?
   - Generalise COUNT to BooleanCountingFunction and specialise to XOR etc. Also consider
     explicit XOR neuron (and possibility of extending idea to create a more efficient Majority neuron)
   - Initialisation policies
@@ -16,7 +17,6 @@ BeginPackage["neurallogic`"]
 
 Harden::usage = "Hards soft bits.";
 Soften::usage = "Soften hard bits.";
-HardNeuralNOT::usage = "Neural NOT.";
 HardNeuralAND::usage = "Hard neural AND.";
 HardNeuralNAND::usage = "Hard neural NAND.";
 HardNeuralOR::usage = "Hard neural OR.";
@@ -26,12 +26,10 @@ NeuralOR::usage = "Neural OR.";
 NeuralAND::usage = "Neural AND.";
 DifferentiableHardAND::usage = "Differentiable hard AND.";
 DifferentiableHardOR::usage = "Differentiable hard OR.";
-DifferentiableHardNOT::usage = "Differentiable hard NOT.";
 HardClip::usage = "Hard clip.";
 LogisticClip::usage = "Logistic clip.";
 HardNeuralMajority::usage = "Hard neural majority.";
 HardNeuralChain::usage = "Hard neural chain.";
-HardNOT::usage = "Hard NOT.";
 HardNAND::usage = "Hard NAND.";
 HardNOR::usage = "Hard NOR.";
 HardAND::usage = "Hard AND.";
@@ -68,7 +66,8 @@ HardNetClassProbabilities::usage = "Hard net class probabilities.";
 HardNetClassPrediction::usage = "Hard net class prediction.";
 HardNetClassify::usage = "Hard net classify.";
 HardNetClassifyEvaluation::usage = "Hard net classify evaluation.";
-HardNOTImpl::usage = "Hard NOT implementation.";  
+DifferentiableHardNOT::usage = "Differentiable hard NOT.";
+HardNeuralNOT::usage = "Neural NOT.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -237,46 +236,70 @@ RandomBalancedNormalSoftBits[size_] := RandomNormalSoftBits[Table[RandomReal[{0,
 *)
 DifferentiableHardNOT[input_, weights_] := 1 - weights + input (2 weights - 1)
 
-(* Assumes: one input vector to NOT with multiple weight vectors (that correspond to multiple NOT neurons). *)
-(*
-HardNOTImpl[inputs_List, weightList_List] := Map[
-  With[{weights = #},
-    MapIndexed[
-      With[{input = #1, index = #2[[1]]},
-        Not[Xor[input, weights[[index]]]]
-      ] &,
-      inputs
-    ]
-  ] &,
-  weightList
+HardNOT[input_, weight_] := Not[Xor[input, weight]]
+
+HardNOT[input_/;VectorQ[input], weights_/;VectorQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardNOT[input_/;VectorQ[input], weights_/;VectorQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardNOT[input_/;VectorQ[input], weights_/;VectorQ[weights]] weight dimensions"];*)
+  ConfirmAssert[Length[input] == Length[weights], Null, "HardNOT[input_/;VectorQ[input], weights_/;VectorQ[weights]] semantics check"];
+  Map[HardNOT[#[[1]], #[[2]]] &, Partition[Riffle[input, weights], 2]]
 ]
-*)
 
-(* Assumes: multiple input vectors to NOT with multiple weight vectors. *)
-HardNOTImpl[inputs_List, weights_List] := Not /@ Thread[f[inputs, weights]]
+HardNOT[input_/;MatrixQ[input], weights_/;VectorQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardNOT[input_/;MatrixQ[input], weights_/;VectorQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardNOT[input_/;MatrixQ[input], weights_/;VectorQ[weights]] weight dimensions"];*)
+  HardNOT[#, weights] & /@ input
+]
 
-HardNOT[{input_List, weights_List}] := 
-  {
-    (* Output *)
-    HardNOTImpl[input, First[weights]],
-    (* Consume weights *)
-    Drop[weights, 1]
-  }
+HardNOT[input_/;VectorQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardNOT[input_/;VectorQ[input], weights_/;MatrixQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardNOT[input_/;VectorQ[input], weights_/;MatrixQ[weights]] weight dimensions"];*)
+  HardNOT[input, #] & /@ weights
+]
 
-(* TODO: generalise to support a NOT layer. *)
-HardNeuralNOT[inputSize_, weights_Function:BalancedSoftBits] := {
+HardNOT[{input_}/;VectorQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardNOT[{input_}/;VectorQ[input], weights_/;MatrixQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardNOT[{input_}/;VectorQ[input], weights_/;MatrixQ[weights]] weight dimensions"];*)
+  HardNOT[input, weights]
+]
+
+HardNOT[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardNOT[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardNOT[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] weight dimensions"];*)
+  ConfirmAssert[Length[input] == Length[weights], Null, "HardNOT[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] semantics check"];
+  Map[HardNOT[#[[1]], #[[2]]] &, Partition[Riffle[input, weights], 2]]
+]
+
+HardNOT[layerSize_] := Function[{inputs},
+  Block[{input, weights, layerWeights, reshapedWeights, output},
+    {input, weights} = inputs;
+    (*Echo[Dimensions[input],"HardNOT[layerSize_] input dimensions"];*)
+    {
+      (* Output *)
+      layerWeights = First[weights];
+      reshapedWeights = Partition[layerWeights, Length[layerWeights] / layerSize];
+      output = HardNOT[input, reshapedWeights];
+      (*Echo[Dimensions[input],"HardNOT[layerSize_] output dimensions"];*)
+      output,
+      (* Consume weights *)
+      Drop[weights, 1]
+    }
+  ]
+]
+
+HardNeuralNOT[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
   NetGraph[
     <|
-      "Weights" -> weights[inputSize],
-      "Not" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1],
-      "Harden" -> HardeningLayer[]
+      "Weights" -> weights[layerSize * inputSize],
+      "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
+      "Not" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}]
     |>,
     {
-      "Weights" -> NetPort["Not", "Weights"],
-      "Not" -> "Harden"
+      "Weights" -> "Reshape",
+      "Reshape" -> NetPort["Not", "Weights"]
     } 
   ],
-  HardNOT
+  HardNOT[layerSize]
 }
 
 (* ------------------------------------------------------------------ *)
@@ -290,18 +313,52 @@ HardNeuralNOT[inputSize_, weights_Function:BalancedSoftBits] := {
 *)
 DifferentiableHardAND[b_, w_] := Max[b, 1 - w]
 
+HardAND[input_, weight_] := Or[input, Not[weight]]
+
+HardAND[input_/;VectorQ[input], weights_/;VectorQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardAND[input_/;VectorQ[input], weights_/;VectorQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardAND[input_/;VectorQ[input], weights_/;VectorQ[weights]] weight dimensions"];*)
+  ConfirmAssert[Length[input] == Length[weights], Null, "HardAND[input_/;VectorQ[input], weights_/;VectorQ[weights]] semantics check"];
+  (* This is a reduce operation *)
+  And @@ Map[HardAND[#[[1]], #[[2]]] &, Partition[Riffle[input, weights], 2]]
+]
+
+HardAND[input_/;MatrixQ[input], weights_/;VectorQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardAND[input_/;MatrixQ[input], weights_/;VectorQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardAND[input_/;MatrixQ[input], weights_/;VectorQ[weights]] weight dimensions"];*)
+  HardAND[#, weights] & /@ input
+]
+
+HardAND[input_/;VectorQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardAND[input_/;VectorQ[input], weights_/;MatrixQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardAND[input_/;VectorQ[input], weights_/;MatrixQ[weights]] weight dimensions"];*)
+  HardAND[input, #] & /@ weights  
+]
+
+HardAND[{input_}/;VectorQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardAND[{input_}/;VectorQ[input], weights_/;MatrixQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardAND[{input_}/;VectorQ[input], weights_/;MatrixQ[weights]] weight dimensions"];*)
+  HardAND[input, weights]
+]
+
+HardAND[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardAND[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardAND[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] weight dimensions"];*)
+  ConfirmAssert[Length[input] == Length[weights], Null, "HardAND[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] semantics check"];
+  Map[HardAND[#[[1]], #[[2]]] &, Partition[Riffle[input, weights], 2]]
+]
+
 HardAND[layerSize_] := Function[{inputs},
-  Block[{input, weights, layerWeights, reshapedWeights, notWeights},
+  Block[{input, weights, layerWeights, reshapedWeights, output},
     {input, weights} = inputs;
+    (*Echo[Dimensions[input],"HardAND[layerSize_] input dimensions"];*)
     {
       (* Output *)
       layerWeights = First[weights];
       reshapedWeights = Partition[layerWeights, Length[layerWeights] / layerSize];
-      notWeights = (Not /@ #) & /@ reshapedWeights;
-      MapApply[
-        And,
-        Map[Thread[Or[input, #]] &, notWeights]
-      ],
+      output = HardAND[input, reshapedWeights];
+      (*Echo[Dimensions[input],"HardAND[layerSize_] output dimensions"];*)
+      output,
       (* Consume weights *)
       Drop[weights, 1]
     }
@@ -314,14 +371,12 @@ HardNeuralAND[inputSize_, layerSize_, weights_Function:NearZeroSoftBits] := {
       "Weights" -> weights[layerSize * inputSize],
       "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
       "HardInclude" -> ThreadingLayer[DifferentiableHardAND[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-      "And" -> AggregationLayer[Min],
-      "Harden" -> HardeningLayer[]
+      "And" -> AggregationLayer[Min]
     |>,
     {
       "Weights" -> "Reshape",
       "Reshape" -> NetPort["HardInclude", "Weights"],
-      "HardInclude" -> "And",
-      "And" -> "Harden"
+      "HardInclude" -> "And"
     }
   ],
   HardAND[layerSize]
@@ -332,14 +387,14 @@ HardNeuralAND[inputSize_, layerSize_, weights_Function:NearZeroSoftBits] := {
 (* ------------------------------------------------------------------ *)
 
 HardNAND[layerSize_] := Function[{inputs},
-  HardNOT[HardAND[layerSize][inputs]]
+  HardNOT[1][HardAND[layerSize][inputs]]
 ]
 
 HardNeuralNAND[inputSize_, layerSize_, andWeights_Function:NearZeroSoftBits, notWeights_Function:BalancedSoftBits] := {
   NetChain[
     {
       First[HardNeuralAND[inputSize, layerSize, andWeights[#]&]],
-      First[HardNeuralNOT[layerSize, notWeights[#]&]]
+      First[HardNeuralNOT[layerSize, 1, notWeights[#]&]]
     }
   ],
   HardNAND[layerSize]
@@ -356,14 +411,52 @@ HardNeuralNAND[inputSize_, layerSize_, andWeights_Function:NearZeroSoftBits, not
 *)
 DifferentiableHardOR[b_, w_] := 1 - DifferentiableHardAND[1-b, w]
 
+HardOR[input_, weight_] := And[input, weight]
+
+HardOR[input_/;VectorQ[input], weights_/;VectorQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardOR[input_/;VectorQ[input], weights_/;VectorQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardOR[input_/;VectorQ[input], weights_/;VectorQ[weights]] weight dimensions"];*)
+  ConfirmAssert[Length[input] == Length[weights], Null, "HardOR[input_/;VectorQ[input], weights_/;VectorQ[weights]] semantics check"];
+  (* This is a reduce operation *)
+  Or @@ Map[HardOR[#[[1]], #[[2]]] &, Partition[Riffle[input, weights], 2]]
+]
+
+HardOR[input_/;MatrixQ[input], weights_/;VectorQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardOR[input_/;MatrixQ[input], weights_/;VectorQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardOR[input_/;MatrixQ[input], weights_/;VectorQ[weights]] weight dimensions"];*)
+  HardOR[#, weights] & /@ input
+]
+
+HardOR[input_/;VectorQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardOR[input_/;VectorQ[input], weights_/;MatrixQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardOR[input_/;VectorQ[input], weights_/;MatrixQ[weights]] weight dimensions"];*)
+  HardOR[input, #] & /@ weights  
+]
+
+HardOR[{input_}/;VectorQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardOR[{input_}/;VectorQ[input], weights_/;MatrixQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardOR[{input_}/;VectorQ[input], weights_/;MatrixQ[weights]] weight dimensions"];*)
+  HardOR[input, weights]
+]
+
+HardOR[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardOR[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardOR[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] weight dimensions"];*)
+  ConfirmAssert[Length[input] == Length[weights], Null, "HardOR[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] semantics check"];
+  Map[HardOR[#[[1]], #[[2]]] &, Partition[Riffle[input, weights], 2]]
+]
+
 HardOR[layerSize_] := Function[{inputs},
-  Block[{input, weights, layerWeights, reshapedWeights},
+  Block[{input, weights, layerWeights, reshapedWeights, output},
     {input, weights} = inputs;
+    (*Echo[Dimensions[input],"HardOR[layerSize_] input dimensions"];*)
     {
       (* Output *)
       layerWeights = First[weights];
       reshapedWeights = Partition[layerWeights, Length[layerWeights] / layerSize];
-      MapApply[Or, Map[Thread[And[input, #]] &, reshapedWeights]],
+      output = HardOR[input, reshapedWeights];
+      (*Echo[Dimensions[input],"HardOR[layerSize_] output dimensions"];*)
+      output,
       (* Consume weights *)
       Drop[weights, 1]
     }
@@ -376,14 +469,12 @@ HardNeuralOR[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
       "Weights" -> weights[layerSize * inputSize],
       "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
       "HardInclude" -> ThreadingLayer[DifferentiableHardOR[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-      "Or" -> AggregationLayer[Max],
-      "Harden" -> HardeningLayer[]
+      "Or" -> AggregationLayer[Max]
     |>,
     {
       "Weights" -> "Reshape",
       "Reshape" -> NetPort["HardInclude", "Weights"],
-      "HardInclude" -> "Or",
-      "Or" -> "Harden"
+      "HardInclude" -> "Or"
     }
   ],
   HardOR[layerSize]
@@ -394,14 +485,14 @@ HardNeuralOR[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
 (* ------------------------------------------------------------------ *)
 
 HardNOR[layerSize_] := Function[{inputs},
-  HardNOT[HardOR[layerSize][inputs]]
+  HardNOT[1][HardOR[layerSize][inputs]]
 ]
 
 HardNeuralNOR[inputSize_, layerSize_, orWeights_Function:NearZeroSoftBits, notWeights_Function:BalancedSoftBits] := {
   NetChain[
     {
       First[HardNeuralOR[inputSize, layerSize, orWeights[#]&]],
-      First[HardNeuralNOT[layerSize, notWeights[#]&]]
+      First[HardNeuralNOT[layerSize, 1, notWeights[#]&]]
     }
   ],
   HardNOR[layerSize]
@@ -411,71 +502,38 @@ HardNeuralNOR[inputSize_, layerSize_, orWeights_Function:NearZeroSoftBits, notWe
 (* Hard MAJORITY *)
 (* ------------------------------------------------------------------ *)
 
-HardMajority[layerSize_] := Function[{inputs},
-  Block[{input, weights, layerWeights, reshapedWeights, notInputs},
-    {input, weights} = inputs;
+HardMajority[] := Function[{inputsAndWeights},
+  Block[{inputs, weights, output},
+    {inputs, weights} = inputsAndWeights;
     {
       (* Output *)
-      layerWeights = First[weights];
-      reshapedWeights = Partition[layerWeights, Length[layerWeights] / layerSize];
-      notInputs = HardNOTImpl[Table[input, layerSize], reshapedWeights];
-      Majority @@ # & /@ notInputs,
-      (* Consume weights *)
-      Drop[weights, 1]
+      Map[
+        Block[{input = #},
+          ConfirmAssert[ListQ[input], Null, "HardMajority semantics check"];
+          Majority @@ input
+        ] &,
+        inputs
+      ],
+      (* Don't consume weights *)
+      weights
     }
   ]
 ]
 
-(* 
-  TODO: determine which version of Majority is superior once we move away from Wolfram prototype.
-  Some evidence that Sort-based approach is superior because it minimises the quantity of requested
-  bit changes, which is smoother allowing for better gradient descent.
-*)
-
-(* TODO: remove NOT from basic Majority *)
-HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
-  NetGraph[
-    <|
-      "Weights" -> weights[layerSize * inputSize],
-      "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
-      "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-      "Harden1" -> HardeningLayer[],
-      "Mean" -> AggregationLayer[Mean],
-      "Harden2" -> HardeningLayer[]
-    |>,
-    {
-      "Weights" -> "Reshape",
-      "Reshape" -> NetPort["HardInclude", "Weights"],
-      "HardInclude" -> "Harden1",
-      "Harden1" -> "Mean",
-      "Mean" -> "Harden2"
-    }
-  ],
-  HardMajority[layerSize]
-}
-
-(* TODO: remove NOT from basic Majority *)
-HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
-  With[{medianIndex = Ceiling[(inputSize + 1)/2]},
+(* TODO: remove need to specify inputSize *)
+HardNeuralMajority[numInputs_, inputSize_] := {
+  With[{medianIndex = Floor[(inputSize + 1)/2]},
     NetGraph[
       <|
-        "Weights" -> weights[layerSize * inputSize],
-        "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
-        "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
         "Sort" -> FunctionLayer[Sort /@ # &],
-        "Medians" -> PartLayer[{All, medianIndex}],
-        "Harden" -> HardeningLayer[]
+        "Medians" -> PartLayer[{All, medianIndex}, "Output" -> numInputs]
       |>,
       {
-        "Weights" -> "Reshape",
-        "Reshape" -> NetPort["HardInclude", "Weights"],
-        "HardInclude" -> "Sort",
-        "Sort" -> "Medians",
-        "Medians" -> "Harden"
+        "Sort" -> "Medians"
       }
     ]
   ],
-  HardMajority[layerSize]
+  HardMajority[]
 }
 
 (* ------------------------------------------------------------------ *)
@@ -594,6 +652,7 @@ HardDropoutLayer[p_] := {
 HardReshapeLayer[numPorts_] := Function[{inputs},
   Block[{input, weights},
     {input, weights} = inputs;
+    input = Flatten[input];
     {
       Partition[input, Length[input] / numPorts], 
       weights
@@ -633,21 +692,25 @@ HardNeuralChain[layers_List] := Module[{chain = Transpose[layers]},
 *)
 HardClassificationLoss[] := NetGraph[
   <|
+    "Harden" -> HardeningLayer[],
     "Mean" -> AggregationLayer[Mean, 2],
     "Error" -> MeanSquaredLossLayer[]
   |>,
   {
+    "Harden" -> "Mean",
     "Mean" -> NetPort["Error", "Input"]
   } 
 ]
 
 HardClassificationLoss[] := NetGraph[
   <|
+    "Harden" -> HardeningLayer[],
     "SoftProbs" -> AggregationLayer[Total, 2],
     "SoftmaxLayer" -> SoftmaxLayer[],
     "Error" -> CrossEntropyLossLayer["Probabilities"]
   |>,
   {
+    "Harden" -> "SoftProbs",
     "SoftProbs" -> "SoftmaxLayer",
     "SoftmaxLayer" -> NetPort["Error", "Input"]
   } 
@@ -740,9 +803,9 @@ HardenNet[net_] := Module[
 
 GetNetArrays[net_] := Select[Normal[NetFlatten[net]], MatchQ[#, _NetArrayLayer] &]
 
-GetWeights[net_] := NetExtract[#, "Arrays"]["Array"] & /@ Values[GetNetArrays[net]]
+GetWeights[net_] := NetExtract[#, "Arrays"]["Array"] & /@ GetNetArrays[net]
  
-ExtractWeights[net_] := Normal[GetWeights[net]]
+ExtractWeights[net_] := Normal[Values[GetWeights[net]]]
 
 HardNetFunction[hardNet_, trainedSoftNet_] := Module[{softWeights},
   softWeights = ExtractWeights[trainedSoftNet];
@@ -788,21 +851,8 @@ HardNetClassProbabilities[classScores_] := N[Exp[#]/Total[Exp[#]]] & /@ classSco
 HardNetClassPrediction[classProbabilities_, decoder_] := First[decoder @ classProbabilities]
 
 HardNetClassify[hardNet_Function, data_, decoder_:(# &), extractInput_:(#["Input"] &), extractTarget_:(#["Target"] &)] := 
-  ResourceFunction[ResourceObject[
-      <|
-        "Name" -> "DynamicMap",
-        "ShortName" -> "DynamicMap", 
-        "UUID" -> "962b5001-b624-4bc4-9b1e-401e550f4f2b", 
-        "ResourceType" -> "Function",
-        "Version" -> "4.0.0", 
-        "Description" -> "Map functions over lists while showing dynamic progress", 
-        "RepositoryLocation" -> URL["https://www.wolframcloud.com/objects/resourcesystem/api/1.0"], 
-        "SymbolName" -> "FunctionRepository`$f51668a7ac6041a9b46390842a7243d8`DynamicMap", 
-        "FunctionLocation" -> CloudObject["https://www.wolframcloud.com/obj/9d55b90e-e3c6-4d27-bdcf-8c3ebb4fe19a"]
-      |>, 
-      ResourceSystemBase -> Automatic
-  ]][
-    <|
+  Association /@ ResourceFunction["DynamicMap"][
+    {
       "Prediction" -> HardNetClassPrediction[
           HardNetClassProbabilities[
             HardNetClassScores[
@@ -812,7 +862,7 @@ HardNetClassify[hardNet_Function, data_, decoder_:(# &), extractInput_:(#["Input
           decoder
         ],
       "Target" -> extractTarget[#]
-    |> &,
+    } &,
     data
   ]
 
