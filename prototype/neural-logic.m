@@ -411,15 +411,51 @@ HardNeuralNAND[inputSize_, layerSize_, andWeights_Function:NearZeroSoftBits, not
 *)
 DifferentiableHardOR[b_, w_] := 1 - DifferentiableHardAND[1-b, w]
 
+HardOR[input_, weight_] := And[input, weight]
+
+HardOR[input_/;VectorQ[input], weights_/;VectorQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardOR[input_/;VectorQ[input], weights_/;VectorQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardOR[input_/;VectorQ[input], weights_/;VectorQ[weights]] weight dimensions"];*)
+  ConfirmAssert[Length[input] == Length[weights], Null, "HardOR[input_/;VectorQ[input], weights_/;VectorQ[weights]] semantics check"];
+  (* This is a reduce operation *)
+  Or @@ Map[HardOR[#[[1]], #[[2]]] &, Partition[Riffle[input, weights], 2]]
+]
+
+HardOR[input_/;MatrixQ[input], weights_/;VectorQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardOR[input_/;MatrixQ[input], weights_/;VectorQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardOR[input_/;MatrixQ[input], weights_/;VectorQ[weights]] weight dimensions"];*)
+  HardOR[#, weights] & /@ input
+]
+
+HardOR[input_/;VectorQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardOR[input_/;VectorQ[input], weights_/;MatrixQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardOR[input_/;VectorQ[input], weights_/;MatrixQ[weights]] weight dimensions"];*)
+  HardOR[input, #] & /@ weights  
+]
+
+HardOR[{input_}/;VectorQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardOR[{input_}/;VectorQ[input], weights_/;MatrixQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardOR[{input_}/;VectorQ[input], weights_/;MatrixQ[weights]] weight dimensions"];*)
+  HardOR[input, weights]
+]
+
+HardOR[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  (*Echo[Dimensions[input],"HardOR[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] input dimensions"];*)
+  (*Echo[Dimensions[weights],"HardOR[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] weight dimensions"];*)
+  ConfirmAssert[Length[input] == Length[weights], Null, "HardOR[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] semantics check"];
+  Map[HardOR[#[[1]], #[[2]]] &, Partition[Riffle[input, weights], 2]]
+]
+
 HardOR[layerSize_] := Function[{inputs},
   Block[{input, weights, layerWeights, reshapedWeights, output},
     {input, weights} = inputs;
+    (*Echo[Dimensions[input],"HardOR[layerSize_] input dimensions"];*)
     {
       (* Output *)
       layerWeights = First[weights];
       reshapedWeights = Partition[layerWeights, Length[layerWeights] / layerSize];
-      output = MapApply[Or, Map[Thread[And[input, #]] &, reshapedWeights]];
-      ConfirmAssert[Length[output] == layerSize, Null, "HardOR semantics check"];
+      output = HardOR[input, reshapedWeights];
+      (*Echo[Dimensions[input],"HardOR[layerSize_] output dimensions"];*)
       output,
       (* Consume weights *)
       Drop[weights, 1]
@@ -483,35 +519,6 @@ HardMajority[] := Function[{inputsAndWeights},
     }
   ]
 ]
-
-(* 
-  TODO: determine which version of Majority is superior once we move away from Wolfram prototype.
-  Some evidence that Sort-based approach is superior because it minimises the quantity of requested
-  bit changes, which is smoother allowing for better gradient descent.
-*)
-
-(*
-HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
-  NetGraph[
-    <|
-      "Weights" -> weights[layerSize * inputSize],
-      "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
-      "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-      "Harden1" -> HardeningLayer[],
-      "Mean" -> AggregationLayer[Mean],
-      "Harden2" -> HardeningLayer[]
-    |>,
-    {
-      "Weights" -> "Reshape",
-      "Reshape" -> NetPort["HardInclude", "Weights"],
-      "HardInclude" -> "Harden1",
-      "Harden1" -> "Mean",
-      "Mean" -> "Harden2"
-    }
-  ],
-  HardMajority[layerSize]
-}
-*)
 
 (* TODO: remove need to specify inputSize *)
 HardNeuralMajority[numInputs_, inputSize_] := {
@@ -844,8 +851,8 @@ HardNetClassProbabilities[classScores_] := N[Exp[#]/Total[Exp[#]]] & /@ classSco
 HardNetClassPrediction[classProbabilities_, decoder_] := First[decoder @ classProbabilities]
 
 HardNetClassify[hardNet_Function, data_, decoder_:(# &), extractInput_:(#["Input"] &), extractTarget_:(#["Target"] &)] := 
-  ParallelMap[
-    <|
+  Association /@ ResourceFunction["DynamicMap"][
+    {
       "Prediction" -> HardNetClassPrediction[
           HardNetClassProbabilities[
             HardNetClassScores[
@@ -855,8 +862,9 @@ HardNetClassify[hardNet_Function, data_, decoder_:(# &), extractInput_:(#["Input
           decoder
         ],
       "Target" -> extractTarget[#]
-    |> &,
-    data
+    } &,
+    data(*,
+    Method -> "CoarsestGrained"*)
   ]
 
 HardNetClassifyEvaluation[hardNetClassify_] := Module[
