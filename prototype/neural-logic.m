@@ -863,8 +863,7 @@ HardNetClassify[hardNet_Function, data_, decoder_:(# &), extractInput_:(#["Input
         ],
       "Target" -> extractTarget[#]
     } &,
-    data(*,
-    Method -> "CoarsestGrained"*)
+    data
   ]
 
 HardNetClassifyEvaluation[hardNetClassify_] := Module[
