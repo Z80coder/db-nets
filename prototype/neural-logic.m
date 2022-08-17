@@ -805,7 +805,7 @@ GetNetArrays[net_] := Select[Normal[NetFlatten[net]], MatchQ[#, _NetArrayLayer] 
 
 GetWeights[net_] := NetExtract[#, "Arrays"]["Array"] & /@ GetNetArrays[net]
  
-ExtractWeights[net_] := Normal[Values[GetWeights[net]]]
+ExtractWeights[net_] := Normal[GetWeights[net]]
 
 HardNetFunction[hardNet_, trainedSoftNet_] := Module[{softWeights},
   softWeights = ExtractWeights[trainedSoftNet];
@@ -863,7 +863,7 @@ HardNetClassify[hardNet_Function, data_, decoder_:(# &), extractInput_:(#["Input
         ],
       "Target" -> extractTarget[#]
     } &,
-    data
+    data  
   ]
 
 HardNetClassifyEvaluation[hardNetClassify_] := Module[
