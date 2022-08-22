@@ -17,5 +17,6 @@ Questions? Ask @Z80coder
 - [The differentiable Hard-MAJORITY operator](https://drive.google.com/file/d/1qVTAFAVZ3Qlk_mYh2wd83uME89RsBzri/view?usp=sharing)
 - [The hardening layer](https://drive.google.com/file/d/1ZEd34UMyFY52_0U2-j58hKJ5uvJBYREn/view?usp=sharing)
 - [The hardening operation](https://drive.google.com/file/d/1M11ovLCbqAfjplFioKpMmX1hOvpwSHXv/view?usp=sharing)
+- [A classifier architecture](https://drive.google.com/file/d/1sQHyo4OjapEj3a0JLhnSYEsLMBMUZMT8/view?usp=sharing)
 
 More to come!
