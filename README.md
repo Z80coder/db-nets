@@ -8,6 +8,10 @@ Questions? Ask @Z80coder
 <img width="500" src="https://user-images.githubusercontent.com/55286208/180952306-c993c99d-abf9-48b2-adc7-6146ff5961bd.gif">
 </p>
 
+## Demos
+
+- [Neural logic nets](https://drive.google.com/file/d/1P25OxM7Af8ppUGOUhKd6psGHI0OVXIzw/view?usp=sharing)
+
 ## Development videos
 
 - [The Soft-NOT operator](https://drive.google.com/file/d/1C9egUO9SWSXba7VEqqUPfECYXeLFf5g0/view?usp=sharing)
