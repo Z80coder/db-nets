@@ -22,6 +22,7 @@ HardNeuralNAND::usage = "Hard neural NAND.";
 HardNeuralOR::usage = "Hard neural OR.";
 HardNeuralNOR::usage = "Hard neural NOR.";
 HardNeuralReshapeLayer::usage = "Port layer.";
+HardNeuralCatenateLayer::usage = "Catenate layer.";
 NeuralOR::usage = "Neural OR.";
 NeuralAND::usage = "Neural AND.";
 DifferentiableHardAND::usage = "Differentiable hard AND.";
@@ -51,10 +52,6 @@ InitializeToConstant::usage = "Initialize to constant.";
 HardeningLayer::usage = "Hardening layer.";
 HardeningForward::usage = "Hardening forward.";
 HardeningBackward::usage = "Hardening backward.";
-HardNeuralCount::usage = "Hard neural count.";
-HardNeuralExactlyK::usage = "Hard neural exactly k.";
-HardNeuralLTEK::usage = "Hard neural less than or equal to k.";
-Require::usage = "Require.";
 HardDropoutLayer::usage = "Hard dropout layer.";
 RandomUniformSoftBits::usage = "Random soft bit layer.";
 RandomNormalSoftBits::usage = "Random soft bit layer.";
@@ -68,6 +65,10 @@ HardNetClassify::usage = "Hard net classify.";
 HardNetClassifyEvaluation::usage = "Hard net classify evaluation.";
 DifferentiableHardNOT::usage = "Differentiable hard NOT.";
 HardNeuralNOT::usage = "Neural NOT.";
+HardNeuralCount::usage = "Hard neural count.";
+HardNeuralExactlyK::usage = "Hard neural exactly k.";
+HardNeuralLTEK::usage = "Hard neural less than or equal to k.";
+Require::usage = "Require.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -666,6 +667,26 @@ HardNeuralReshapeLayer[inputSize_, numPorts_] := {
 }
 
 (* ------------------------------------------------------------------ *)
+(* Hard catenate layer *)
+(* ------------------------------------------------------------------ *)
+
+HardCatenateLayer[] := Function[{inputs},
+  Block[{input, weights},
+    {input, weights} = inputs;
+    input = Flatten[input];
+    {
+      input, 
+      weights
+    }
+  ]
+]
+
+HardNeuralCatenateLayer[] := {
+  CatenateLayer[],
+  HardCatenateLayer[]
+}
+
+(* ------------------------------------------------------------------ *)
 (* Hard neural chain *)
 (* ------------------------------------------------------------------ *)
 
@@ -801,11 +822,15 @@ HardenNet[net_] := Module[
   NetReplacePart[net, replacements]
 ]
 
-GetNetArrays[net_] := Select[Normal[NetFlatten[net]], MatchQ[#, _NetArrayLayer] &]
+GetNetArrays[normalNet_List] := Select[normalNet, MatchQ[#, _NetArrayLayer] &]
+
+GetNetArrays[normalNet_Association] := GetNetArrays[Values[normalNet]]
+
+GetNetArrays[net_] := GetNetArrays[Normal[NetFlatten[net]]]
 
 GetWeights[net_] := NetExtract[#, "Arrays"]["Array"] & /@ GetNetArrays[net]
  
-ExtractWeights[net_] := Normal[GetWeights[net]]
+ExtractWeights[net_] := Normal[GetWeights[net]] 
 
 HardNetFunction[hardNet_, trainedSoftNet_] := Module[{softWeights},
   softWeights = ExtractWeights[trainedSoftNet];
