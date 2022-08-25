@@ -5,7 +5,7 @@ Prototyping neural logic architectures.
 Questions? Ask @Z80coder
 
 <p align="left">
-<img width="500" src="https://user-images.githubusercontent.com/55286208/186415016-ffdbaee9-4f1a-4304-a900-ed43456656ea.jpg">
+<img width="350" src="https://user-images.githubusercontent.com/55286208/186415016-ffdbaee9-4f1a-4304-a900-ed43456656ea.jpg">
 </p>
 
 ## Demos
