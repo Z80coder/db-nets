@@ -57,6 +57,7 @@ RandomUniformSoftBits::usage = "Random soft bit layer.";
 RandomNormalSoftBits::usage = "Random soft bit layer.";
 RandomBalancedNormalSoftBits::usage = "Random balanced normal soft bit layer.";
 SoftBits::usage = "Create some soft bits.";
+BalancedSoftBits::usage = "Create some balanced soft bits.";
 HardNetClassBits::usage = "Hard net class bits.";
 HardNetClassScores::usage = "Hard net class scores.";
 HardNetClassProbabilities::usage = "Hard net class probabilities.";
