@@ -851,17 +851,26 @@ HardNetBooleanExpression[hardNetFunction_Function, inputSize_] := Module[
 
 HardNetBooleanFunction[hardNetBooleanExpression_, inputSize_] := Block[
   {
-    signature = Typed[Symbol["input"], TypeSpecifier["NumericArray"]["MachineInteger", 1]],
+    signature = Typed[Symbol["input"], TypeSpecifier["ListVector"]["MachineInteger", 1]],
     replacements = Quiet[Table[
-      Symbol["b" <> ToString[i]] -> With[{b = Symbol["input"][[i]]}, 
-          If[b == 1, True, False]
+      Symbol["b" <> ToString[i]] -> With[{b = Symbol["b"][[i]]}, 
+          (*If[b == 1, True, False]*)
+          b
         ],
       {i, inputSize}]
     ],
     indexExpression
   },
   indexExpression = hardNetBooleanExpression //. replacements;
-  Function[Evaluate[signature], Evaluate[indexExpression]]
+  With[{expr = indexExpression},
+    Function[
+      Evaluate[signature],
+      Block[{b},
+        b = If[# == 1, True, False] & /@ input;
+        expr
+      ]
+    ]
+  ]
 ]
 
 (* ------------------------------------------------------------------ *)
