@@ -50,6 +50,7 @@ InitializeNearToOne::usage = "Initialize bias to one.";
 InitializeBalanced::usage = "Initialize balanced.";
 InitializeToConstant::usage = "Initialize to constant.";
 HardeningLayer::usage = "Hardening layer.";
+NeuralHardeningLayer::usage = "Neural hardening layer.";
 HardeningForward::usage = "Hardening forward.";
 HardeningBackward::usage = "Hardening backward.";
 HardDropoutLayer::usage = "Hard dropout layer.";
@@ -149,6 +150,10 @@ HardeningBackward[] := Function[
 ]
 
 HardeningLayer[] := CompiledLayer[HardeningForward[], HardeningBackward[]]
+
+HardeningLayer[size_] := CompiledLayer[HardeningForward[], HardeningBackward[], "Input" -> size]
+
+NeuralHardeningLayer[] := {HardeningLayer[], # &}
 
 (* ------------------------------------------------------------------ *)
 (* Learnable soft-bit deterministic variables *)
@@ -795,7 +800,7 @@ SoftBitVectorToReal[x_List, {min_, max_}] := Module[{y, numBits},
 
 RealEncoderDecoder[realValues_, maxBits_:Infinity] := Module[{min, max, numBits},
   {min, max} = MinMax[realValues];
-  numBits = Min[Ceiling[Log[Length[realValues]] / Log[2]], maxBits];
+  numBits = Min[Ceiling[1.0 * Log[Length[realValues]] / Log[2]], maxBits];
   With[{a = min, b = max, n = numBits},
   Association[{
     "NumBits" -> n,
