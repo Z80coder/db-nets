@@ -70,6 +70,11 @@ HardNeuralCount::usage = "Hard neural count.";
 HardNeuralExactlyK::usage = "Hard neural exactly k.";
 HardNeuralLTEK::usage = "Hard neural less than or equal to k.";
 Require::usage = "Require.";
+RealToSoftBitVector::usage = "Real to soft-bit vector.";
+SoftBitVectorToReal::usage = "Soft-bit vector to real.";
+RealEncoderDecoder::usage = "Construct a real {encoder, decoder} pair.";
+BinaryToReal::usage = "Binary to real.";
+SoftBitVectorToRealLayer::usage = "Soft-bit vector to real layer.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -705,7 +710,7 @@ HardNeuralChain[layers_List] := Module[{chain = Transpose[layers]},
 ]
 
 (* ------------------------------------------------------------------ *)
-(* Hard classification loss *)
+(* Classification utilities *)
 (* ------------------------------------------------------------------ *)
 
 (*
@@ -736,6 +741,70 @@ HardClassificationLoss[] := NetGraph[
     "SoftProbs" -> "SoftmaxLayer",
     "SoftmaxLayer" -> NetPort["Error", "Input"]
   } 
+]
+
+(* ------------------------------------------------------------------ *)
+(* Regression utilities *)
+(* ------------------------------------------------------------------ *)
+
+BinaryToReal[numBits_, {min_, max_}] := Function[
+  {Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 1]]},
+  Block[{y},
+    y = Total[input Table[2^i, {i, numBits - 1, 0, -1}]];
+    (*
+    check=FromDigits[x,2];
+    Echo[check,"check"];
+    Echo[y,"y"];
+    *)
+    y = 1.0*y;
+    y = y/2^(numBits - 1);
+    y = (max - min) y + min;
+    {Clip[y, {min, max}]}
+  ]
+]
+
+SoftBitVectorToRealLayer[numBits_, {min_, max_}] := Block[
+  {btrFunction = BinaryToReal[numBits, {min*1.0, max*1.0}]},
+  NetGraph[
+    <|
+      "HardeningLayer" -> HardeningLayer[],
+      "BinaryToReal" -> CompiledLayer[btrFunction],
+      "Reshape" -> ReshapeLayer[{}]
+    |>,
+    {
+      "HardeningLayer" -> "BinaryToReal",
+      "BinaryToReal" -> "Reshape"
+    }
+  ]
+]
+
+RealToSoftBitVector[x_, {min_, max_}, numBits_] := Module[{y},
+  y = Clip[x, {min, max}];
+  y = (y - min)/(max - min);
+  y = Round[y*2^(numBits - 1)];
+  IntegerDigits[y, 2, numBits]
+]
+
+SoftBitVectorToReal[x_List, {min_, max_}] := Module[{y, numBits},
+  numBits = Length[x];
+  y = FromDigits[x, 2];
+  y = y/2^(numBits - 1);
+  y = (max - min) y + min;
+  Clip[y, {min, max}]
+]
+
+RealEncoderDecoder[realValues_, maxBits_:Infinity] := Module[{min, max, numBits},
+  {min, max} = MinMax[realValues];
+  numBits = Min[Ceiling[Log[Length[realValues]] / Log[2]], maxBits];
+  With[{a = min, b = max, n = numBits},
+  Association[{
+    "NumBits" -> n,
+    "MinMax" -> {a, b},
+    "EncoderFunction" -> (RealToSoftBitVector[#, {a, b}, n] &),
+    "NetEncoder" -> NetEncoder[{"Function", RealToSoftBitVector[#, {a, b}, n] &, {n}}],
+    "DecoderFunction" -> (SoftBitVectorToReal[Normal[#], {a, b}] &),
+    "NetDecoder" -> NetDecoder[{"Function", SoftBitVectorToReal[Normal[#], {a, b}] &}]
+  }]]
 ]
 
 (* ------------------------------------------------------------------ *)
