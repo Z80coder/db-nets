@@ -23,6 +23,7 @@ HardNeuralOR::usage = "Hard neural OR.";
 HardNeuralNOR::usage = "Hard neural NOR.";
 HardNeuralReshapeLayer::usage = "Port layer.";
 HardNeuralCatenateLayer::usage = "Catenate layer.";
+HardNeuralFlattenLayer::usage = "Flatten layer.";
 NeuralOR::usage = "Neural OR.";
 NeuralAND::usage = "Neural AND.";
 DifferentiableHardAND::usage = "Differentiable hard AND.";
@@ -71,11 +72,10 @@ HardNeuralCount::usage = "Hard neural count.";
 HardNeuralExactlyK::usage = "Hard neural exactly k.";
 HardNeuralLTEK::usage = "Hard neural less than or equal to k.";
 Require::usage = "Require.";
-RealToSoftBitVector::usage = "Real to soft-bit vector.";
-SoftBitVectorToReal::usage = "Soft-bit vector to real.";
-RealEncoderDecoder::usage = "Construct a real {encoder, decoder} pair.";
-BinaryToReal::usage = "Binary to real.";
-SoftBitVectorToRealLayer::usage = "Soft-bit vector to real layer.";
+BinaryCountToReal::usage = "Binary count to real.";
+RealEncoderDecoder::usage = "Real encoder decoder.";
+BinaryToRealLayer::usage = "Binary to real layer.";
+BinaryCountToRealLayer::usage = "Binary count to real layer.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -151,9 +151,13 @@ HardeningBackward[] := Function[
 
 HardeningLayer[] := CompiledLayer[HardeningForward[], HardeningBackward[]]
 
+(* Specify size to operate faster at batch level *)
 HardeningLayer[size_] := CompiledLayer[HardeningForward[], HardeningBackward[], "Input" -> size]
 
 NeuralHardeningLayer[] := {HardeningLayer[], # &}
+
+(* Specify size to operate faster at batch level *)
+NeuralHardeningLayer[size_] := {HardeningLayer[size], # &}
 
 (* ------------------------------------------------------------------ *)
 (* Learnable soft-bit deterministic variables *)
@@ -698,6 +702,16 @@ HardNeuralCatenateLayer[] := {
 }
 
 (* ------------------------------------------------------------------ *)
+(* Hard flatten layer *)
+(* ------------------------------------------------------------------ *)
+
+HardNeuralFlattenLayer[] := {
+  FlattenLayer[],
+  (* N.B. Same as Catenate in hard case *)
+  HardCatenateLayer[]
+}
+
+(* ------------------------------------------------------------------ *)
 (* Hard neural chain *)
 (* ------------------------------------------------------------------ *)
 
@@ -752,6 +766,18 @@ HardClassificationLoss[] := NetGraph[
 (* Regression utilities *)
 (* ------------------------------------------------------------------ *)
 
+(* TODO: remove *)
+(*
+SoftBitVectorToReal[x_List, {min_, max_}] := Module[{y, numBits},
+  numBits = Length[x];
+  y = FromDigits[x, 2];
+  y = y/2^(numBits - 1);
+  y = (max - min) y + min;
+  Clip[y, {min, max}]
+]
+*)
+
+(* Binary decoding *)
 BinaryToReal[numBits_, {min_, max_}] := Function[
   {Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 1]]},
   Block[{y},
@@ -768,34 +794,22 @@ BinaryToReal[numBits_, {min_, max_}] := Function[
   ]
 ]
 
-SoftBitVectorToRealLayer[numBits_, {min_, max_}] := Block[
-  {btrFunction = BinaryToReal[numBits, {min*1.0, max*1.0}]},
-  NetGraph[
-    <|
-      "HardeningLayer" -> HardeningLayer[],
-      "BinaryToReal" -> CompiledLayer[btrFunction],
-      "Reshape" -> ReshapeLayer[{}]
-    |>,
-    {
-      "HardeningLayer" -> "BinaryToReal",
-      "BinaryToReal" -> "Reshape"
-    }
-  ]
-]
-
-RealToSoftBitVector[x_, {min_, max_}, numBits_] := Module[{y},
+(* Binary encoding *)
+RealToBinary[x_, {min_, max_}, numBits_] := Module[{y},
   y = Clip[x, {min, max}];
   y = (y - min)/(max - min);
   y = Round[y*2^(numBits - 1)];
   IntegerDigits[y, 2, numBits]
 ]
 
-SoftBitVectorToReal[x_List, {min_, max_}] := Module[{y, numBits},
-  numBits = Length[x];
-  y = FromDigits[x, 2];
-  y = y/2^(numBits - 1);
-  y = (max - min) y + min;
-  Clip[y, {min, max}]
+(* Binary count decoding *)
+BinaryCountToReal[{min_, max_}] := Function[
+  {Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 1]]},
+  Block[{y},
+    y = (Total[input] * 1.0) / Length[input];
+    y = (max - min) y + min;
+    {Clip[y, {min, max}]}
+  ]
 ]
 
 RealEncoderDecoder[realValues_, maxBits_:Infinity] := Module[{min, max, numBits},
@@ -805,12 +819,28 @@ RealEncoderDecoder[realValues_, maxBits_:Infinity] := Module[{min, max, numBits}
   Association[{
     "NumBits" -> n,
     "MinMax" -> {a, b},
-    "EncoderFunction" -> (RealToSoftBitVector[#, {a, b}, n] &),
-    "NetEncoder" -> NetEncoder[{"Function", RealToSoftBitVector[#, {a, b}, n] &, {n}}],
-    "DecoderFunction" -> (SoftBitVectorToReal[Normal[#], {a, b}] &),
-    "NetDecoder" -> NetDecoder[{"Function", SoftBitVectorToReal[Normal[#], {a, b}] &}]
+    "EncoderFunction" -> (RealToBinary[#, {a, b}, n] &),
+    "NetEncoder" -> NetEncoder[{"Function", RealToBinary[#, {a, b}, n] &, {n}}],
+    "DecoderFunction" -> (BinaryToReal[Normal[#], {a, b}] &),
+    "NetDecoder" -> NetDecoder[{"Function", BinaryToReal[Normal[#], {a, b}] &}]
   }]]
 ]
+
+RealLayer[numBits_, converter_Function] := NetGraph[
+  <|
+    "HardeningLayer" -> HardeningLayer[],
+    "BinaryToReal" -> CompiledLayer[converter, "Input" -> numBits],
+    "Reshape" -> ReshapeLayer[{}]
+  |>,
+  {
+    "HardeningLayer" -> "BinaryToReal",
+    "BinaryToReal" -> "Reshape"
+  }
+]
+
+BinaryToRealLayer[numBits_, {min_, max_}] := RealLayer[numBits, BinaryToReal[numBits, {min*1.0, max*1.0}]]
+
+BinaryCountToRealLayer[numBits_, {min_, max_}] := RealLayer[numBits, BinaryCountToReal[{min*1.0, max*1.0}]]
 
 (* ------------------------------------------------------------------ *)
 (* Network hardening *)
