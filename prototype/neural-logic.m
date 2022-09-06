@@ -21,6 +21,7 @@ HardNeuralAND::usage = "Hard neural AND.";
 HardNeuralNAND::usage = "Hard neural NAND.";
 HardNeuralOR::usage = "Hard neural OR.";
 HardNeuralNOR::usage = "Hard neural NOR.";
+HardNeuralXOR::usage = "Hard neural XOR.";
 HardNeuralReshapeLayer::usage = "Port layer.";
 HardNeuralCatenateLayer::usage = "Catenate layer.";
 HardNeuralFlattenLayer::usage = "Flatten layer.";
@@ -28,6 +29,7 @@ NeuralOR::usage = "Neural OR.";
 NeuralAND::usage = "Neural AND.";
 DifferentiableHardAND::usage = "Differentiable hard AND.";
 DifferentiableHardOR::usage = "Differentiable hard OR.";
+DifferentiableHardXOR::usage = "Differentiable hard XOR.";
 HardClip::usage = "Hard clip.";
 LogisticClip::usage = "Logistic clip.";
 HardNeuralMajority::usage = "Hard neural majority.";
@@ -60,6 +62,7 @@ RandomNormalSoftBits::usage = "Random soft bit layer.";
 RandomBalancedNormalSoftBits::usage = "Random balanced normal soft bit layer.";
 SoftBits::usage = "Create some soft bits.";
 BalancedSoftBits::usage = "Create some balanced soft bits.";
+NearZeroSoftBits::usage = "Create some near zero soft bits.";
 HardNetClassBits::usage = "Hard net class bits.";
 HardNetClassScores::usage = "Hard net class scores.";
 HardNetClassProbabilities::usage = "Hard net class probabilities.";
@@ -327,6 +330,7 @@ HardNeuralNOT[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
   w = 1 => AND is fully active
   Hence, corresponding hard logic is: b || !w
 *)
+(* TODO: rename to Include *)
 DifferentiableHardAND[b_, w_] := Max[b, 1 - w]
 
 HardAND[input_, weight_] := Or[input, Not[weight]]
@@ -425,6 +429,7 @@ HardNeuralNAND[inputSize_, layerSize_, andWeights_Function:NearZeroSoftBits, not
   w = 1 => OR is fully active
   Hence, corresponding hard logic is: b && w
 *)
+(* TODO: rename to Include *)
 DifferentiableHardOR[b_, w_] := 1 - DifferentiableHardAND[1-b, w]
 
 HardOR[input_, weight_] := And[input, weight]
@@ -512,6 +517,53 @@ HardNeuralNOR[inputSize_, layerSize_, orWeights_Function:NearZeroSoftBits, notWe
     }
   ],
   HardNOR[layerSize]
+}
+
+(* ------------------------------------------------------------------ *)
+(* Hard XOR *)
+(* ------------------------------------------------------------------ *)
+
+(*
+  w = 0 => OR is fully inactive
+  w = 1 => OR is fully active
+  Hence, corresponding hard logic is: b && w
+*)
+IncludeXOR[b_, w_] := 1 - DifferentiableHardAND[1-b, w]
+
+(*
+DifferentiableHardXOR[b_List] := Fold[HardXOR[#1, #2] &, 0.0, b]
+*)
+
+(*
+  XOR is equivalent to: (! a || ! b) && (a || b)
+*)
+DifferentiableHardXOR[b1_, b2_] := Min[Max[1 - b1, 1 - b2], Max[b1, b2]]
+
+HardNeuralXOR[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
+  NetGraph[
+    <|
+      "Weights" -> weights[layerSize * inputSize],
+      "Reshape" -> ReshapeLayer[{inputSize, layerSize}],
+      "Include" -> ThreadingLayer[IncludeXOR[#Input, #Weights] &, 2, "Output" -> {inputSize, layerSize}],
+      "Xor1" -> NetFoldOperator[FunctionLayer[DifferentiableHardXOR[#Input, #State] &], "Output" -> {inputSize, layerSize}],
+      "Xor2" -> SequenceLastLayer[]
+      (* Method 2 *)
+      (*
+      "Transpose" -> TransposeLayer[],
+      "Xor1" -> NetFoldOperator[FunctionLayer[DifferentiableHardXOR[#Input, #State] &], "Output" -> {inputSize, layerSize}],
+      "Xor2" -> SequenceLastLayer[]
+      *)
+      (* Method 1 *)
+      (*"Xor1" -> FunctionLayer[Fold[DifferentiableHardXOR[#1, #2] &, 0.0, Transpose[#]] &]*)
+    |>,
+    {
+      "Weights" -> "Reshape",
+      "Reshape" -> NetPort["Include", "Weights"],
+      "Include" -> "Xor1",
+      "Xor1" -> "Xor2"
+    }
+  ],
+  HardXOR[layerSize]
 }
 
 (* ------------------------------------------------------------------ *)
