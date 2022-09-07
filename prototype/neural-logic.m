@@ -75,8 +75,11 @@ HardNeuralCount::usage = "Hard neural count.";
 HardNeuralExactlyK::usage = "Hard neural exactly k.";
 HardNeuralLTEK::usage = "Hard neural less than or equal to k.";
 Require::usage = "Require.";
-BinaryCountToReal::usage = "Binary count to real.";
 RealEncoderDecoder::usage = "Real encoder decoder.";
+RealToBinary::usage = "Real to binary.";
+RealToOneHot::usage = "Real to one hot.";
+BinaryToReal::usage = "Binary to real.";
+BinaryCountToReal::usage = "Binary count to real.";
 BinaryToRealLayer::usage = "Binary to real layer.";
 BinaryCountToRealLayer::usage = "Binary count to real layer.";
 
@@ -818,45 +821,37 @@ HardClassificationLoss[] := NetGraph[
 (* Regression utilities *)
 (* ------------------------------------------------------------------ *)
 
-(* TODO: remove *)
-(*
-SoftBitVectorToReal[x_List, {min_, max_}] := Module[{y, numBits},
-  numBits = Length[x];
-  y = FromDigits[x, 2];
-  y = y/2^(numBits - 1);
-  y = (max - min) y + min;
-  Clip[y, {min, max}]
-]
-*)
-
-(* Binary decoding *)
-BinaryToReal[numBits_, {min_, max_}] := Function[
-  {Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 1]]},
-  Block[{y},
-    y = Total[input Table[2^i, {i, numBits - 1, 0, -1}]];
-    (*
-    check=FromDigits[x,2];
-    Echo[check,"check"];
-    Echo[y,"y"];
-    *)
-    y = 1.0*y;
-    y = y/2^(numBits - 1);
-    y = (max - min) y + min;
-    {Clip[y, {min, max}]}
-  ]
-]
+(* 1-hot encoding *)
+RealToOneHot[x_, {min_, max_}, numBits_] := Module[{y},
+  y = Clip[x, {min, max}];
+  y = (y - min)/(max - min);
+  y = Round[y * numBits];
+  Table[If[i == y, 1, 0], {i, 1, numBits}]
+] 
 
 (* Binary encoding *)
 RealToBinary[x_, {min_, max_}, numBits_] := Module[{y},
   y = Clip[x, {min, max}];
   y = (y - min)/(max - min);
-  y = Round[y*2^(numBits - 1)];
+  y = Round[y*(2^numBits)];
   IntegerDigits[y, 2, numBits]
 ]
 
+(* Binary encoding *)
+BinaryToReal[size_, {min_, max_}] := With[{coefficients = Table[2^i, {i, size - 1, 0, -1}]},
+  Function[{input},
+    Block[{y},
+      y = 1.0 * input coefficients;
+      y = Total[y];
+      y = y/2^size;
+      y = (max - min) y + min;
+      {Clip[y, {min, max}]}
+    ]
+  ]
+]
+
 (* Binary count decoding *)
-BinaryCountToReal[{min_, max_}] := Function[
-  {Typed[input, TypeSpecifier["PackedArray"]["MachineReal", 1]]},
+BinaryCountToReal[{min_, max_}] := Function[{input},
   Block[{y},
     y = (Total[input] * 1.0) / Length[input];
     y = (max - min) y + min;
@@ -864,35 +859,41 @@ BinaryCountToReal[{min_, max_}] := Function[
   ]
 ]
 
+(* TODO: simplify *)
 RealEncoderDecoder[realValues_, maxBits_:Infinity] := Module[{min, max, numBits},
   {min, max} = MinMax[realValues];
   numBits = Min[Ceiling[1.0 * Log[Length[realValues]] / Log[2]], maxBits];
+  (* TODO: for RealToOneHot encoder the numBits should be a function of unique values *)
+  (*numBits = numBits * 12;*)
+  numBits = numBits * 18;
   With[{a = min, b = max, n = numBits},
   Association[{
     "NumBits" -> n,
     "MinMax" -> {a, b},
-    "EncoderFunction" -> (RealToBinary[#, {a, b}, n] &),
-    "NetEncoder" -> NetEncoder[{"Function", RealToBinary[#, {a, b}, n] &, {n}}],
-    "DecoderFunction" -> (BinaryToReal[Normal[#], {a, b}] &),
-    "NetDecoder" -> NetDecoder[{"Function", BinaryToReal[Normal[#], {a, b}] &}]
+    "DecoderFunction" -> BinaryCountToReal[{a, b}],
+    "NetEncoder" -> NetEncoder[{"Function", RealToOneHot[#, {a, b}, n] &, {n}}]
   }]]
 ]
 
-RealLayer[numBits_, converter_Function] := NetGraph[
+BinaryToRealLayer[size_, {min_, max_}] := NetGraph[
   <|
     "HardeningLayer" -> HardeningLayer[],
-    "BinaryToReal" -> CompiledLayer[converter, "Input" -> numBits],
-    "Reshape" -> ReshapeLayer[{}]
+    "BinaryToReal" -> FunctionLayer[BinaryToReal[size, {min, max}]]
   |>,
   {
-    "HardeningLayer" -> "BinaryToReal",
-    "BinaryToReal" -> "Reshape"
+    "HardeningLayer" -> "BinaryToReal"
   }
 ]
 
-BinaryToRealLayer[numBits_, {min_, max_}] := RealLayer[numBits, BinaryToReal[numBits, {min*1.0, max*1.0}]]
-
-BinaryCountToRealLayer[numBits_, {min_, max_}] := RealLayer[numBits, BinaryCountToReal[{min*1.0, max*1.0}]]
+BinaryCountToRealLayer[{min_, max_}] := NetGraph[
+  <|
+    "HardeningLayer" -> HardeningLayer[],
+    "BinaryCountToReal" -> FunctionLayer[BinaryCountToReal[{min, max}]]
+  |>,
+  {
+    "HardeningLayer" -> "BinaryCountToReal"
+  }
+]
 
 (* ------------------------------------------------------------------ *)
 (* Network hardening *)
