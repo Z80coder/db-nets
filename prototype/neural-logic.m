@@ -78,6 +78,7 @@ Require::usage = "Require.";
 RealEncoderDecoder::usage = "Real encoder decoder.";
 RealToBinary::usage = "Real to binary.";
 RealToOneHot::usage = "Real to one hot.";
+RealToGray::usage = "Real to gray.";
 BinaryToReal::usage = "Binary to real.";
 BinaryCountToReal::usage = "Binary count to real.";
 BinaryToRealLayer::usage = "Binary to real layer.";
@@ -569,6 +570,29 @@ HardNeuralXOR[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
   HardXOR[layerSize]
 }
 
+HardNeuralXOR[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
+  NetGraph[
+    <|
+      "Weights" -> weights[layerSize * inputSize],
+      "Reshape" -> ReshapeLayer[{inputSize, layerSize}],
+      "Include" -> ThreadingLayer[IncludeXOR[#Input, #Weights] &, 2, "Output" -> {inputSize, layerSize}],
+      "Xor1" -> NetFoldOperator[
+        FunctionLayer[DifferentiableHardXOR[#Input, #State] &],
+        "Input" -> {inputSize, layerSize},
+        "Output" -> {inputSize, layerSize}
+      ],
+      "Xor2" -> SequenceLastLayer[]
+    |>,
+    {
+      "Weights" -> "Reshape",
+      "Reshape" -> NetPort["Include", "Weights"],
+      "Include" -> "Xor1",
+      "Xor1" -> "Xor2"
+    }
+  ],
+  HardXOR[layerSize]
+}
+
 (* ------------------------------------------------------------------ *)
 (* Hard MAJORITY *)
 (* ------------------------------------------------------------------ *)
@@ -821,14 +845,6 @@ HardClassificationLoss[] := NetGraph[
 (* Regression utilities *)
 (* ------------------------------------------------------------------ *)
 
-(* 1-hot encoding *)
-RealToOneHot[x_, {min_, max_}, numBits_] := Module[{y},
-  y = Clip[x, {min, max}];
-  y = (y - min)/(max - min);
-  y = Round[y * numBits];
-  Table[If[i == y, 1, 0], {i, 1, numBits}]
-] 
-
 (* Binary encoding *)
 RealToBinary[x_, {min_, max_}, numBits_] := Module[{y},
   y = Clip[x, {min, max}];
@@ -837,7 +853,7 @@ RealToBinary[x_, {min_, max_}, numBits_] := Module[{y},
   IntegerDigits[y, 2, numBits]
 ]
 
-(* Binary encoding *)
+(* Binary decoding *)
 BinaryToReal[size_, {min_, max_}] := With[{coefficients = Table[2^i, {i, size - 1, 0, -1}]},
   Function[{input},
     Block[{y},
@@ -850,6 +866,24 @@ BinaryToReal[size_, {min_, max_}] := With[{coefficients = Table[2^i, {i, size - 
   ]
 ]
 
+(* Binary decoding *)
+BinaryToRealLayer[{min_, max_}] := NetGraph[
+  <|
+    "HardeningLayer" -> HardeningLayer[],
+    "BinaryToReal" -> FunctionLayer[BinaryToReal[32, {min, max}]]
+  |>,
+  {
+    "HardeningLayer" -> "BinaryToReal"
+  }
+]
+
+RealToGray[x_, {min_, max_}, numBits_] := Module[{y},
+  y = Clip[x, {min, max}];
+  y = (y - min)/(max - min);
+  y = Round[y * (2^numBits - 1)];
+  PadLeft[ResourceFunction["GrayCode"][y], numBits]
+] 
+
 (* Binary count decoding *)
 BinaryCountToReal[{min_, max_}] := Function[{input},
   Block[{y},
@@ -859,30 +893,25 @@ BinaryCountToReal[{min_, max_}] := Function[{input},
   ]
 ]
 
-(* TODO: simplify *)
-RealEncoderDecoder[realValues_, maxBits_:Infinity] := Module[{min, max, numBits},
-  {min, max} = MinMax[realValues];
-  numBits = Min[Ceiling[1.0 * Log[Length[realValues]] / Log[2]], maxBits];
-  (* TODO: for RealToOneHot encoder the numBits should be a function of unique values *)
-  (*numBits = numBits * 12;*)
-  numBits = numBits * 18;
-  With[{a = min, b = max, n = numBits},
-  Association[{
-    "NumBits" -> n,
-    "MinMax" -> {a, b},
-    "DecoderFunction" -> BinaryCountToReal[{a, b}],
-    "NetEncoder" -> NetEncoder[{"Function", RealToOneHot[#, {a, b}, n] &, {n}}]
-  }]]
-]
+(* 1-hot encoding *)
+RealToOneHot[x_, {min_, max_}, numBits_] := Module[{y},
+  y = Clip[x, {min, max}];
+  y = (y - min)/(max - min);
+  y = Round[y * numBits];
+  Table[If[i == y, 1, 0], {i, 1, numBits}]
+] 
 
-BinaryToRealLayer[size_, {min_, max_}] := NetGraph[
-  <|
-    "HardeningLayer" -> HardeningLayer[],
-    "BinaryToReal" -> FunctionLayer[BinaryToReal[size, {min, max}]]
-  |>,
-  {
-    "HardeningLayer" -> "BinaryToReal"
-  }
+RealEncoderDecoder[realValues_, bitsPerUnitInterval_] := Module[{min, max, numBits},
+  {min, max} = MinMax[realValues];
+  numBits = Ceiling[(max - min) * bitsPerUnitInterval];
+  Association[{
+    "NumBits" -> numBits,
+    "MinMax" -> {min, max},
+    (* Output reals are count encoded *)
+    "DecoderFunction" -> BinaryCountToReal[{min, max}],
+    (* Input reals are 1-hot encoded*)
+    "NetEncoder" -> NetEncoder[{"Function", RealToOneHot[#, {min, max}, numBits] &, {numBits}}]
+  }]
 ]
 
 BinaryCountToRealLayer[{min_, max_}] := NetGraph[
