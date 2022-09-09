@@ -78,6 +78,7 @@ Require::usage = "Require.";
 RealEncoderDecoder::usage = "Real encoder decoder.";
 RealToBinary::usage = "Real to binary.";
 RealToOneHot::usage = "Real to one hot.";
+RealToNonlinearOneHot::usage = "Real to nonlinear one hot.";
 RealToGray::usage = "Real to gray.";
 RealsToBinaryThresholds::usage = "Reals to binary thresholds.";
 BinaryToReal::usage = "Binary to real.";
@@ -902,6 +903,35 @@ RealToOneHot[x_, {min_, max_}, numBits_] := Module[{y},
   Table[If[i == y, 1, 0], {i, 1, numBits}]
 ] 
 
+RealToNonlinearOneHot[realValues_List, sampleRate_] := Module[{uniqueValues, min, max},
+  uniqueValues = DeleteDuplicates[realValues];
+  {min, max} = MinMax[uniqueValues];
+  uniqueValues = RandomSample[uniqueValues, Round[Length[uniqueValues] * sampleRate]];
+  uniqueValues = DeleteDuplicates[Join[{min}, uniqueValues, {max}]];
+  uniqueValues = Sort[uniqueValues];
+  With[{v = uniqueValues, len = Length[uniqueValues]},
+    { 
+      Function[{x},
+        Block[{dists, minPosition},
+          dists = Map[Abs[x - #] &, v];
+          minPosition = First[Ordering[dists, 1]];
+          Table[If[i == minPosition, 1, 0], {i, 1, len}]
+        ]
+      ],
+      Function[{b},
+        Block[{position},
+          position = First[FirstPosition[b, 1]];
+          If[MissingQ[position],
+            Last[v],
+            v[[position]]
+          ]
+        ]
+      ],
+      v
+    }
+  ]
+] 
+
 (* Threshold encoding *)
 RealsToBinaryThresholds[realValues_List, sampleRate_] := Module[{uniqueValues},
   uniqueValues = DeleteDuplicates[realValues];
@@ -933,7 +963,8 @@ RealsToBinaryThresholds[realValues_List, sampleRate_] := Module[{uniqueValues},
 
 RealEncoderDecoder[realValues_, sampleRate_] := Module[{min, max, encoder, decoder, numBits},
   {min, max} = MinMax[realValues];
-  {encoder, decoder, uniqueValues} = RealsToBinaryThresholds[realValues, sampleRate];
+  (*{encoder, decoder, uniqueValues} = RealsToBinaryThresholds[realValues, sampleRate];*)
+  {encoder, decoder, uniqueValues} = RealToNonlinearOneHot[realValues, sampleRate];
   numBits = Length[uniqueValues];
   Association[{ 
     "NumBits" -> numBits,
