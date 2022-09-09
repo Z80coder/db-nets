@@ -79,6 +79,7 @@ RealEncoderDecoder::usage = "Real encoder decoder.";
 RealToBinary::usage = "Real to binary.";
 RealToOneHot::usage = "Real to one hot.";
 RealToGray::usage = "Real to gray.";
+RealsToBinaryThresholds::usage = "Reals to binary thresholds.";
 BinaryToReal::usage = "Binary to real.";
 BinaryCountToReal::usage = "Binary count to real.";
 BinaryToRealLayer::usage = "Binary to real layer.";
@@ -901,7 +902,49 @@ RealToOneHot[x_, {min_, max_}, numBits_] := Module[{y},
   Table[If[i == y, 1, 0], {i, 1, numBits}]
 ] 
 
-RealEncoderDecoder[realValues_, bitsPerUnitInterval_] := Module[{min, max, numBits},
+(* Threshold encoding *)
+RealsToBinaryThresholds[realValues_List, sampleRate_] := Module[{uniqueValues},
+  uniqueValues = DeleteDuplicates[realValues];
+  uniqueValues = RandomSample[uniqueValues, Round[Length[uniqueValues] * sampleRate]];
+  uniqueValues = Sort[uniqueValues];
+  With[{v = uniqueValues},
+    { 
+      Function[{x},
+        Map[If[x <= #, 1, 0] &, v]
+      ],
+      Function[{b},
+        Block[{lessThanEqualsPosition, lessThanEquals, greaterThan},
+          lessThanEqualsPosition = First[FirstPosition[b, 1]];
+          If[MissingQ[lessThanPosition],
+            v[[1]],
+            If[lessThanEqualsPosition - 1 < 1,
+              v[[1]],
+              lessThanEquals = v[[lessThanEqualsPosition]];
+              greaterThan = v[[lessThanEqualsPosition - 1]];
+              greaterThan + (lessThanEquals - greaterThan) * 0.5
+            ]
+          ]
+        ]
+      ],
+      v
+    }
+  ]
+]
+
+RealEncoderDecoder[realValues_, sampleRate_] := Module[{min, max, encoder, decoder, numBits},
+  {min, max} = MinMax[realValues];
+  {encoder, decoder, uniqueValues} = RealsToBinaryThresholds[realValues, sampleRate];
+  numBits = Length[uniqueValues];
+  Association[{ 
+    "NumBits" -> numBits,
+    "MinMax" -> {min, max},
+    "DecoderFunction" -> decoder,
+    "NetEncoder" -> NetEncoder[{"Function", encoder, {numBits}}]
+  }]
+]
+
+(*
+  RealEncoderDecoder[realValues_, bitsPerUnitInterval_] := Module[{min, max, numBits},
   {min, max} = MinMax[realValues];
   numBits = Ceiling[(max - min) * bitsPerUnitInterval];
   Association[{
@@ -913,6 +956,7 @@ RealEncoderDecoder[realValues_, bitsPerUnitInterval_] := Module[{min, max, numBi
     "NetEncoder" -> NetEncoder[{"Function", RealToOneHot[#, {min, max}, numBits] &, {numBits}}]
   }]
 ]
+*)
 
 BinaryCountToRealLayer[{min_, max_}] := NetGraph[
   <|
