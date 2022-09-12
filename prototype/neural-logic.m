@@ -1,14 +1,12 @@
 (* ::Package:: *)
 
 (* 
-  TODO:
-  - 0.5 causes a numerical error hardening problem. Can we fix?
-  - Generalise COUNT to BooleanCountingFunction and specialise to XOR etc. Also consider
-    explicit XOR neuron (and possibility of extending idea to create a more efficient Majority neuron)
-  - Initialisation policies
-  - Work out the policy for the sizes that ensure all possible DNF expressions
-    can be learned. Then change parameter to [0, 1] from 0 capacity to full capacity to represent
-    all possible DNF expressions. Ignoring NOTs then andSize does not need to be larger than 2^(inputSize - 1)
+  Notes:
+  - Even with perfect soft-hard translation semantics that hard boundary at 0.5, plus numerical error in floating point
+  representation, means that hardening can introduce deviations between soft and hard performance. The simplest fix is
+  to train the soft-net with 64, rather than 32, bit precision.
+  - BooleanCountingFunction and XOR neurons not yet fully implemented.
+  - Determine the all-purpose logic layer that will work for most problems (e.g. DNF, CNF, etc.)
 *)
 
 (* ------------------------------------------------------------------ *)
@@ -76,14 +74,8 @@ HardNeuralExactlyK::usage = "Hard neural exactly k.";
 HardNeuralLTEK::usage = "Hard neural less than or equal to k.";
 Require::usage = "Require.";
 RealEncoderDecoder::usage = "Real encoder decoder.";
-RealToBinary::usage = "Real to binary.";
-RealToOneHot::usage = "Real to one hot.";
-RealToNonlinearOneHot::usage = "Real to nonlinear one hot.";
-RealToGray::usage = "Real to gray.";
-RealsToBinaryThresholds::usage = "Reals to binary thresholds.";
-BinaryToReal::usage = "Binary to real.";
+RealTo1Hot::usage = "Real to nonlinear one hot.";
 BinaryCountToReal::usage = "Binary count to real.";
-BinaryToRealLayer::usage = "Binary to real layer.";
 BinaryCountToRealLayer::usage = "Binary count to real layer.";
 
 (* ------------------------------------------------------------------ *)
@@ -336,7 +328,7 @@ HardNeuralNOT[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
   w = 1 => AND is fully active
   Hence, corresponding hard logic is: b || !w
 *)
-(* TODO: rename to Include *)
+(* TODO: rename to Mask *)
 DifferentiableHardAND[b_, w_] := Max[b, 1 - w]
 
 HardAND[input_, weight_] := Or[input, Not[weight]]
@@ -435,7 +427,7 @@ HardNeuralNAND[inputSize_, layerSize_, andWeights_Function:NearZeroSoftBits, not
   w = 1 => OR is fully active
   Hence, corresponding hard logic is: b && w
 *)
-(* TODO: rename to Include *)
+(* TODO: rename to Mask *)
 DifferentiableHardOR[b_, w_] := 1 - DifferentiableHardAND[1-b, w]
 
 HardOR[input_, weight_] := And[input, weight]
@@ -526,79 +518,11 @@ HardNeuralNOR[inputSize_, layerSize_, orWeights_Function:NearZeroSoftBits, notWe
 }
 
 (* ------------------------------------------------------------------ *)
-(* Hard XOR *)
-(* ------------------------------------------------------------------ *)
-
-(*
-  w = 0 => OR is fully inactive
-  w = 1 => OR is fully active
-  Hence, corresponding hard logic is: b && w
-*)
-IncludeXOR[b_, w_] := 1 - DifferentiableHardAND[1-b, w]
-
-(*
-DifferentiableHardXOR[b_List] := Fold[HardXOR[#1, #2] &, 0.0, b]
-*)
-
-(*
-  XOR is equivalent to: (! a || ! b) && (a || b)
-*)
-DifferentiableHardXOR[b1_, b2_] := Min[Max[1 - b1, 1 - b2], Max[b1, b2]]
-
-HardNeuralXOR[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
-  NetGraph[
-    <|
-      "Weights" -> weights[layerSize * inputSize],
-      "Reshape" -> ReshapeLayer[{inputSize, layerSize}],
-      "Include" -> ThreadingLayer[IncludeXOR[#Input, #Weights] &, 2, "Output" -> {inputSize, layerSize}],
-      "Xor1" -> NetFoldOperator[FunctionLayer[DifferentiableHardXOR[#Input, #State] &], "Output" -> {inputSize, layerSize}],
-      "Xor2" -> SequenceLastLayer[]
-      (* Method 2 *)
-      (*
-      "Transpose" -> TransposeLayer[],
-      "Xor1" -> NetFoldOperator[FunctionLayer[DifferentiableHardXOR[#Input, #State] &], "Output" -> {inputSize, layerSize}],
-      "Xor2" -> SequenceLastLayer[]
-      *)
-      (* Method 1 *)
-      (*"Xor1" -> FunctionLayer[Fold[DifferentiableHardXOR[#1, #2] &, 0.0, Transpose[#]] &]*)
-    |>,
-    {
-      "Weights" -> "Reshape",
-      "Reshape" -> NetPort["Include", "Weights"],
-      "Include" -> "Xor1",
-      "Xor1" -> "Xor2"
-    }
-  ],
-  HardXOR[layerSize]
-}
-
-HardNeuralXOR[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
-  NetGraph[
-    <|
-      "Weights" -> weights[layerSize * inputSize],
-      "Reshape" -> ReshapeLayer[{inputSize, layerSize}],
-      "Include" -> ThreadingLayer[IncludeXOR[#Input, #Weights] &, 2, "Output" -> {inputSize, layerSize}],
-      "Xor1" -> NetFoldOperator[
-        FunctionLayer[DifferentiableHardXOR[#Input, #State] &],
-        "Input" -> {inputSize, layerSize},
-        "Output" -> {inputSize, layerSize}
-      ],
-      "Xor2" -> SequenceLastLayer[]
-    |>,
-    {
-      "Weights" -> "Reshape",
-      "Reshape" -> NetPort["Include", "Weights"],
-      "Include" -> "Xor1",
-      "Xor1" -> "Xor2"
-    }
-  ],
-  HardXOR[layerSize]
-}
-
-(* ------------------------------------------------------------------ *)
 (* Hard MAJORITY *)
 (* ------------------------------------------------------------------ *)
 
+(* TODO *)
+(*
 HardMajority[] := Function[{inputsAndWeights},
   Block[{inputs, weights, output},
     {inputs, weights} = inputsAndWeights;
@@ -616,109 +540,27 @@ HardMajority[] := Function[{inputsAndWeights},
     }
   ]
 ]
+*)
 
-(* TODO: remove need to specify inputSize *)
-HardNeuralMajority[numInputs_, inputSize_] := {
+HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
   With[{medianIndex = Floor[(inputSize + 1)/2]},
     NetGraph[
       <|
+        "Weights" -> weights[layerSize * inputSize],
+        "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
+        "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
         "Sort" -> FunctionLayer[Sort /@ # &],
-        "Medians" -> PartLayer[{All, medianIndex}, "Output" -> numInputs]
+        "Medians" -> PartLayer[{All, medianIndex}, "Output" -> layerSize]
       |>,
       {
+        "Weights" -> "Reshape",
+        "Reshape" -> NetPort["HardInclude", "Weights"],
+        "HardInclude" -> "Sort",
         "Sort" -> "Medians"
       }
     ]
   ],
   HardMajority[]
-}
-
-(* ------------------------------------------------------------------ *)
-(* Hard COUNT *)
-(* Experimental *)
-(* ------------------------------------------------------------------ *)
-
-(* TODO: Simplify with Ordering layer *)
-HardNeuralCount[numArrays_, arraySize_] := {
-  NetGraph[
-    <|
-      "Sort" -> FunctionLayer[
-        NumericalSort /@ # &
-      ],
-      "DropLast" -> FunctionLayer[
-        Part[#, 1 ;; arraySize - 1] & /@ # &
-      ],
-      "PadFalse" -> FunctionLayer[
-        ArrayPad[#, {{1, 0}}] & /@ # &,
-        "Output" -> {numArrays, arraySize}
-      ],
-      "CountBooleans" -> FunctionLayer[
-        (* !a && b *)
-        MapThread[Min[DifferentiableHardNOT[#1, 0], #2] &, {#Input2, #Input1}, 2] &
-      ](*,
-      "OutputClip" -> ElementwiseLayer[LogisticClip]*)
-    |>,
-    {
-      "Sort" -> NetPort["CountBooleans", "Input1"],
-      "Sort" -> "DropLast",
-      "DropLast" -> "PadFalse",
-      "PadFalse" -> NetPort["CountBooleans", "Input2"](*,
-      "CountBooleans" -> "OutputClip"*)
-    }
-  ],
-  (* TODO: implement this *)
-  HardCount
-}
-
-HardNeuralExactlyK[numArrays_, arraySize_, k_] := {
-  NetGraph[
-    <|
-      "Count" -> HardNeuralCount[numArrays, arraySize][[1]],
-      "SelectK" -> FunctionLayer[
-        Part[#, arraySize - k + 1] & /@ # &
-      ]
-    |>,
-    {
-      "Count" -> "SelectK"
-    }
-  ],
-  (* TODO: implement this *)
-  HardExactlyK
-}
-
-HardNeuralLTEK[numArrays_, arraySize_, k_] := {
-  NetGraph[
-    <|
-      "Count" -> HardNeuralCount[numArrays, arraySize][[1]],
-      "CountsLTEK" -> FunctionLayer[
-        Part[#, arraySize - k + 1 ;; arraySize] & /@ # &
-      ],
-      "LTEK" -> AggregationLayer[Max]
-    |>,
-    {
-      "Count" -> "CountsLTEK",
-      "CountsLTEK" -> "LTEK"
-    }
-  ],
-  (* TODO: implement this *)
-  LTEK
-}
-
-Require[requirement_] := {
-  NetGraph[
-    <|
-      "Requirement" -> requirement,
-      "Require" -> ThreadingLayer[
-        Min[#K, #Input] &,
-        2
-      ]
-    |>,
-    {
-      "Requirement" -> NetPort["Require", "K"]
-    }
-  ],
-  (* TODO: implement this *)
-  Require
 }
 
 (* ------------------------------------------------------------------ *)
@@ -847,45 +689,6 @@ HardClassificationLoss[] := NetGraph[
 (* Regression utilities *)
 (* ------------------------------------------------------------------ *)
 
-(* Binary encoding *)
-RealToBinary[x_, {min_, max_}, numBits_] := Module[{y},
-  y = Clip[x, {min, max}];
-  y = (y - min)/(max - min);
-  y = Round[y*(2^numBits)];
-  IntegerDigits[y, 2, numBits]
-]
-
-(* Binary decoding *)
-BinaryToReal[size_, {min_, max_}] := With[{coefficients = Table[2^i, {i, size - 1, 0, -1}]},
-  Function[{input},
-    Block[{y},
-      y = 1.0 * input coefficients;
-      y = Total[y];
-      y = y/2^size;
-      y = (max - min) y + min;
-      {Clip[y, {min, max}]}
-    ]
-  ]
-]
-
-(* Binary decoding *)
-BinaryToRealLayer[{min_, max_}] := NetGraph[
-  <|
-    "HardeningLayer" -> HardeningLayer[],
-    "BinaryToReal" -> FunctionLayer[BinaryToReal[32, {min, max}]]
-  |>,
-  {
-    "HardeningLayer" -> "BinaryToReal"
-  }
-]
-
-RealToGray[x_, {min_, max_}, numBits_] := Module[{y},
-  y = Clip[x, {min, max}];
-  y = (y - min)/(max - min);
-  y = Round[y * (2^numBits - 1)];
-  PadLeft[ResourceFunction["GrayCode"][y], numBits]
-] 
-
 (* Binary count decoding *)
 BinaryCountToReal[{min_, max_}] := Function[{input},
   Block[{y},
@@ -895,15 +698,7 @@ BinaryCountToReal[{min_, max_}] := Function[{input},
   ]
 ]
 
-(* 1-hot encoding *)
-RealToOneHot[x_, {min_, max_}, numBits_] := Module[{y},
-  y = Clip[x, {min, max}];
-  y = (y - min)/(max - min);
-  y = Round[y * numBits];
-  Table[If[i == y, 1, 0], {i, 1, numBits}]
-] 
-
-RealToNonlinearOneHot[realValues_List, sampleRate_] := Module[{uniqueValues, min, max},
+RealTo1Hot[realValues_List, sampleRate_] := Module[{uniqueValues, min, max},
   uniqueValues = DeleteDuplicates[realValues];
   {min, max} = MinMax[uniqueValues];
   uniqueValues = RandomSample[uniqueValues, Round[Length[uniqueValues] * sampleRate]];
@@ -932,39 +727,9 @@ RealToNonlinearOneHot[realValues_List, sampleRate_] := Module[{uniqueValues, min
   ]
 ] 
 
-(* Threshold encoding *)
-RealsToBinaryThresholds[realValues_List, sampleRate_] := Module[{uniqueValues},
-  uniqueValues = DeleteDuplicates[realValues];
-  uniqueValues = RandomSample[uniqueValues, Round[Length[uniqueValues] * sampleRate]];
-  uniqueValues = Sort[uniqueValues];
-  With[{v = uniqueValues},
-    { 
-      Function[{x},
-        Map[If[x <= #, 1, 0] &, v]
-      ],
-      Function[{b},
-        Block[{lessThanEqualsPosition, lessThanEquals, greaterThan},
-          lessThanEqualsPosition = First[FirstPosition[b, 1]];
-          If[MissingQ[lessThanPosition],
-            v[[1]],
-            If[lessThanEqualsPosition - 1 < 1,
-              v[[1]],
-              lessThanEquals = v[[lessThanEqualsPosition]];
-              greaterThan = v[[lessThanEqualsPosition - 1]];
-              greaterThan + (lessThanEquals - greaterThan) * 0.5
-            ]
-          ]
-        ]
-      ],
-      v
-    }
-  ]
-]
-
 RealEncoderDecoder[realValues_, sampleRate_] := Module[{min, max, encoder, decoder, numBits},
   {min, max} = MinMax[realValues];
-  (*{encoder, decoder, uniqueValues} = RealsToBinaryThresholds[realValues, sampleRate];*)
-  {encoder, decoder, uniqueValues} = RealToNonlinearOneHot[realValues, sampleRate];
+  {encoder, decoder, uniqueValues} = RealTo1Hot[realValues, sampleRate];
   numBits = Length[uniqueValues];
   Association[{ 
     "NumBits" -> numBits,
@@ -973,21 +738,6 @@ RealEncoderDecoder[realValues_, sampleRate_] := Module[{min, max, encoder, decod
     "NetEncoder" -> NetEncoder[{"Function", encoder, {numBits}}]
   }]
 ]
-
-(*
-  RealEncoderDecoder[realValues_, bitsPerUnitInterval_] := Module[{min, max, numBits},
-  {min, max} = MinMax[realValues];
-  numBits = Ceiling[(max - min) * bitsPerUnitInterval];
-  Association[{
-    "NumBits" -> numBits,
-    "MinMax" -> {min, max},
-    (* Output reals are count encoded *)
-    "DecoderFunction" -> BinaryCountToReal[{min, max}],
-    (* Input reals are 1-hot encoded*)
-    "NetEncoder" -> NetEncoder[{"Function", RealToOneHot[#, {min, max}, numBits] &, {numBits}}]
-  }]
-]
-*)
 
 BinaryCountToRealLayer[{min_, max_}] := NetGraph[
   <|
@@ -1218,6 +968,144 @@ NeuralOR[inputSize_, layerSize_] := NetGraph[
     "Or4" -> "OutputClip"
   }
 ]
+
+(* ------------------------------------------------------------------ *)
+(* Experimental *)
+(* ------------------------------------------------------------------ *)
+
+(* ------------------------------------------------------------------ *)
+(* Hard XOR *)
+(* ------------------------------------------------------------------ *)
+
+(*
+  w = 0 => OR is fully inactive
+  w = 1 => OR is fully active
+  Hence, corresponding hard logic is: b && w
+*)
+IncludeXOR[b_, w_] := 1 - DifferentiableHardAND[1-b, w]
+
+(*
+DifferentiableHardXOR[b_List] := Fold[HardXOR[#1, #2] &, 0.0, b]
+*)
+
+(*
+  XOR is equivalent to: (! a || ! b) && (a || b)
+*)
+DifferentiableHardXOR[b1_, b2_] := Min[Max[1 - b1, 1 - b2], Max[b1, b2]]
+
+HardNeuralXOR[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
+  NetGraph[
+    <|
+      "Weights" -> weights[layerSize * inputSize],
+      "Reshape" -> ReshapeLayer[{inputSize, layerSize}],
+      "Include" -> ThreadingLayer[IncludeXOR[#Input, #Weights] &, 2, "Output" -> {inputSize, layerSize}],
+      "Xor1" -> NetFoldOperator[FunctionLayer[DifferentiableHardXOR[#Input, #State] &], "Output" -> {inputSize, layerSize}],
+      "Xor2" -> SequenceLastLayer[]
+      (* Method 2 *)
+      (*
+      "Transpose" -> TransposeLayer[],
+      "Xor1" -> NetFoldOperator[FunctionLayer[DifferentiableHardXOR[#Input, #State] &], "Output" -> {inputSize, layerSize}],
+      "Xor2" -> SequenceLastLayer[]
+      *)
+      (* Method 1 *)
+      (*"Xor1" -> FunctionLayer[Fold[DifferentiableHardXOR[#1, #2] &, 0.0, Transpose[#]] &]*)
+    |>,
+    {
+      "Weights" -> "Reshape",
+      "Reshape" -> NetPort["Include", "Weights"],
+      "Include" -> "Xor1",
+      "Xor1" -> "Xor2"
+    }
+  ],
+  HardXOR[layerSize]
+}
+
+(* ------------------------------------------------------------------ *)
+(* Hard COUNT *)
+(* ------------------------------------------------------------------ *)
+
+(* TODO: Simplify with Ordering layer *)
+HardNeuralCount[numArrays_, arraySize_] := {
+  NetGraph[
+    <|
+      "Sort" -> FunctionLayer[
+        NumericalSort /@ # &
+      ],
+      "DropLast" -> FunctionLayer[
+        Part[#, 1 ;; arraySize - 1] & /@ # &
+      ],
+      "PadFalse" -> FunctionLayer[
+        ArrayPad[#, {{1, 0}}] & /@ # &,
+        "Output" -> {numArrays, arraySize}
+      ],
+      "CountBooleans" -> FunctionLayer[
+        (* !a && b *)
+        MapThread[Min[DifferentiableHardNOT[#1, 0], #2] &, {#Input2, #Input1}, 2] &
+      ](*,
+      "OutputClip" -> ElementwiseLayer[LogisticClip]*)
+    |>,
+    {
+      "Sort" -> NetPort["CountBooleans", "Input1"],
+      "Sort" -> "DropLast",
+      "DropLast" -> "PadFalse",
+      "PadFalse" -> NetPort["CountBooleans", "Input2"](*,
+      "CountBooleans" -> "OutputClip"*)
+    }
+  ],
+  (* TODO: implement this *)
+  HardCount
+}
+
+HardNeuralExactlyK[numArrays_, arraySize_, k_] := {
+  NetGraph[
+    <|
+      "Count" -> HardNeuralCount[numArrays, arraySize][[1]],
+      "SelectK" -> FunctionLayer[
+        Part[#, arraySize - k + 1] & /@ # &
+      ]
+    |>,
+    {
+      "Count" -> "SelectK"
+    }
+  ],
+  (* TODO: implement this *)
+  HardExactlyK
+}
+
+HardNeuralLTEK[numArrays_, arraySize_, k_] := {
+  NetGraph[
+    <|
+      "Count" -> HardNeuralCount[numArrays, arraySize][[1]],
+      "CountsLTEK" -> FunctionLayer[
+        Part[#, arraySize - k + 1 ;; arraySize] & /@ # &
+      ],
+      "LTEK" -> AggregationLayer[Max]
+    |>,
+    {
+      "Count" -> "CountsLTEK",
+      "CountsLTEK" -> "LTEK"
+    }
+  ],
+  (* TODO: implement this *)
+  LTEK
+}
+
+Require[requirement_] := {
+  NetGraph[
+    <|
+      "Requirement" -> requirement,
+      "Require" -> ThreadingLayer[
+        Min[#K, #Input] &,
+        2
+      ]
+    |>,
+    {
+      "Requirement" -> NetPort["Require", "K"]
+    }
+  ],
+  (* TODO: implement this *)
+  Require
+}
 
 End[]
 
