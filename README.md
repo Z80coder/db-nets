@@ -24,5 +24,6 @@ Questions? Ask @Z80coder
 - [A classifier architecture](https://drive.google.com/file/d/1sQHyo4OjapEj3a0JLhnSYEsLMBMUZMT8/view?usp=sharing) (20m)
 - [Neural logic nets](https://drive.google.com/file/d/1P25OxM7Af8ppUGOUhKd6psGHI0OVXIzw/view?usp=sharing) (15m)
 - [Learning XOR (parity)](https://drive.google.com/file/d/1kBxJCkuEzbisWhUGJZ42o-m6xYOZ56pB/view?usp=sharing) (10m)
+- [Numerical regression](https://drive.google.com/file/d/1cwz1VqD3yz_dwgasp_D77Qf8AJWRQ1eE/view?usp=sharing) (21m)
 
 More to come!
