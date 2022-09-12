@@ -76,7 +76,7 @@ Require::usage = "Require.";
 RealEncoderDecoder::usage = "Real encoder decoder.";
 RealTo1Hot::usage = "Real to nonlinear one hot.";
 BinaryCountToReal::usage = "Binary count to real.";
-BinaryCountToRealLayer::usage = "Binary count to real layer.";
+HardNeuralRealLayer::usage = "Binary count to real layer.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -698,6 +698,21 @@ BinaryCountToReal[{min_, max_}] := Function[{input},
   ]
 ]
 
+HardBinaryCountToReal[{min_, max_}] := Function[{inputs},
+  Block[{input, weights, output},
+    {input, weights} = inputs;
+    input = Flatten[input];
+    output = (Total[Boole[input]] * 1.0) / Length[input];
+    output = (max - min) output + min;
+    output = {Clip[output, {min, max}]};
+    {
+      output,
+      (* Don't consume weights *)
+      weights
+    }
+  ]
+]
+
 RealTo1Hot[realValues_List, sampleRate_] := Module[{uniqueValues, min, max},
   uniqueValues = DeleteDuplicates[realValues];
   {min, max} = MinMax[uniqueValues];
@@ -739,15 +754,18 @@ RealEncoderDecoder[realValues_, sampleRate_] := Module[{min, max, encoder, decod
   }]
 ]
 
-BinaryCountToRealLayer[{min_, max_}] := NetGraph[
-  <|
-    "HardeningLayer" -> HardeningLayer[],
-    "BinaryCountToReal" -> FunctionLayer[BinaryCountToReal[{min, max}]]
-  |>,
-  {
-    "HardeningLayer" -> "BinaryCountToReal"
-  }
-]
+HardNeuralRealLayer[{min_, max_}] := {
+  NetGraph[
+    <|
+      "HardeningLayer" -> HardeningLayer[],
+      "BinaryCountToReal" -> FunctionLayer[BinaryCountToReal[{min, max}]]
+    |>,
+    {
+      "HardeningLayer" -> "BinaryCountToReal"
+    }
+  ],
+  HardBinaryCountToReal[{min, max}]
+}
 
 (* ------------------------------------------------------------------ *)
 (* Network hardening *)
