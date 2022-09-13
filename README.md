@@ -12,7 +12,7 @@ Questions? Ask @Z80coder
 
 - [Neural logic nets](https://drive.google.com/file/d/1P25OxM7Af8ppUGOUhKd6psGHI0OVXIzw/view?usp=sharing) (15m)
 
-## Development videos
+## Development videos   
 
 - [The Soft-NOT operator](https://drive.google.com/file/d/1C9egUO9SWSXba7VEqqUPfECYXeLFf5g0/view?usp=sharing) (10m)
 - [The Soft-AND operator](https://drive.google.com/file/d/133U60sUh4qzjrieZyMfEzULsZJF27lov/view?usp=sharing) (10m)
@@ -24,6 +24,6 @@ Questions? Ask @Z80coder
 - [A classifier architecture](https://drive.google.com/file/d/1sQHyo4OjapEj3a0JLhnSYEsLMBMUZMT8/view?usp=sharing) (20m)
 - [Neural logic nets](https://drive.google.com/file/d/1P25OxM7Af8ppUGOUhKd6psGHI0OVXIzw/view?usp=sharing) (15m)
 - [Learning XOR (parity)](https://drive.google.com/file/d/1kBxJCkuEzbisWhUGJZ42o-m6xYOZ56pB/view?usp=sharing) (10m)
-- [Numerical regression](https://drive.google.com/file/d/1cwz1VqD3yz_dwgasp_D77Qf8AJWRQ1eE/view?usp=sharing) (21m)
+- [Numerical regression](https://drive.google.com/file/d/1k2wQIjTN0omKuaFYQHrusMRIdDxPlSAf/view?usp=sharing) (23m)
 
 More to come!
