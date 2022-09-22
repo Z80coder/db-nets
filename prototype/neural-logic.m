@@ -77,6 +77,11 @@ RealEncoderDecoder::usage = "Real encoder decoder.";
 RealTo1Hot::usage = "Real to nonlinear one hot.";
 BinaryCountToReal::usage = "Binary count to real.";
 HardNeuralRealLayer::usage = "Binary count to real layer.";
+HardNeuralANDorOR::usage = "Hard neural AND or OR.";
+DifferentiableHardIfThenElse::usage = "Differentiable hard if then else.";
+IfThenElseLayer::usage = "If then else layer.";
+HardNeuralDecisionStump::usage = "Hard neural decision stump.";
+HardNeuralDecisionList::usage = "Hard neural decision list.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -330,6 +335,12 @@ HardNeuralNOT[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
 *)
 (* TODO: rename to Mask *)
 DifferentiableHardAND[b_, w_] := Max[b, 1 - w]
+
+(*
+  This version slower.
+  TODO: compare to above
+  DifferentiableHardAND[b_, w_] := If[w > 1/2, If[b > 1/2, b, (2w -1)b + 1 - w], If[b > 1/2, -2w(1 - b) + 1, 1 - w]]
+*)
 
 HardAND[input_, weight_] := Or[input, Not[weight]]
 
@@ -992,6 +1003,275 @@ NeuralOR[inputSize_, layerSize_] := NetGraph[
 (* ------------------------------------------------------------------ *)
 
 (* ------------------------------------------------------------------ *)
+(* If-Then-Else *)
+(* ------------------------------------------------------------------ *)
+
+(* This seems worse. Why? *)
+(*DifferentiableHardIfThenElse[w_, b1_, b2_] := DifferentiableHardOR[DifferentiableHardAND[b1, w], DifferentiableHardAND[b2, 1 - w]]*)
+
+(* 
+  Generalisation is better with this version.
+  Do we have to minimise the regions with flat gradients?
+*)
+DifferentiableHardIfThenElse[w_, b1_, b2_] := If[
+  (b1 > 1/2 && b2 > 1/2) || (b1 <= 1/2 && b2 <= 1/2),
+    If[(b1 > 1/2 && b2 > 1/2),
+      If[b1 > b2,
+        If[w > 1/2,
+          2 (b1 - b2) w + 2 b2 - b1,
+          b2
+        ], 
+        If[w > 1/2,
+          b1,
+          2 (b1 - b2) w + b2
+        ]
+      ],
+      If[b1 > b2,
+        If[w > 1/2,
+          b1,
+          2 (b1 - b2) w + b2
+        ], 
+        If[w > 1/2,
+          2 (b1 - b2) w + 2 b2 - b1,
+          b2
+        ]
+      ]
+    ],
+    If[w > 1/2,
+      (2 b1 - 1) w + 1 - b1,
+      (1 - 2 b2) w + b2
+    ]
+  ]
+
+IfThenElseLayer[] := NetGraph[
+  <|
+    "IfThenElse" -> FunctionLayer[DifferentiableHardIfThenElse[#Condition, #IfTrue, #IfFalse] &]
+  |>,
+  {
+  }
+]
+
+HardNeuralDecisionStump[inputSize_, layerSize_] := Block[{a = 4}, 
+  {
+    NetGraph[
+      <|
+        "Condition" -> HardNeuralNOR[inputSize, layerSize/a][[1]],
+        "ReshapeCondition" -> ReshapeLayer[{layerSize/a}],
+        "IfTrue" -> HardNeuralOR[inputSize, layerSize][[1]],
+        "ReshapeTrue" -> ReshapeLayer[{layerSize/a, a}],
+        "IfFalse" -> HardNeuralOR[inputSize, layerSize][[1]],
+        "ReshapeFalse" -> ReshapeLayer[{layerSize/a, a}],
+        "IfThenElse" -> IfThenElseLayer[]
+      |>,
+      {
+        "Condition" -> "ReshapeCondition",
+        "ReshapeCondition" -> NetPort["IfThenElse", "Condition"],
+        "IfTrue" -> "ReshapeTrue",
+        "IfFalse" -> "ReshapeFalse",
+        "ReshapeTrue" -> NetPort["IfThenElse", "IfTrue"],
+        "ReshapeFalse" -> NetPort["IfThenElse", "IfFalse"]
+      }
+    ], 
+    # &
+  }
+]
+
+HardNeuralDecisionList[inputSize_, layerSize_] := {
+  NetGraph[
+    <|
+      "Condition1" -> HardNeuralOR[inputSize, layerSize][[1]],
+      "Condition2" -> HardNeuralOR[inputSize, layerSize][[1]],
+      "IfTrue1" -> BalancedSoftBits[layerSize][[1]],
+      "IfTrue2" -> BalancedSoftBits[layerSize][[1]],
+      "IfFalse2" -> BalancedSoftBits[layerSize][[1]],
+      "IfThenElse1" -> IfThenElseLayer[],
+      "IfThenElse2" -> IfThenElseLayer[]
+    |>,
+    {
+      "Condition1" -> NetPort["IfThenElse1", "Condition"],
+      "Condition2" -> NetPort["IfThenElse2", "Condition"],
+      "IfTrue1" -> NetPort["IfThenElse1", "IfTrue"],
+      "IfTrue2" -> NetPort["IfThenElse2", "IfTrue"],
+      "IfFalse2" -> NetPort["IfThenElse2", "IfFalse"],
+      "IfThenElse2" -> NetPort["IfThenElse1", "IfFalse"]
+    }
+  ]
+}
+
+(* ------------------------------------------------------------------ *)
+(* Hard decision list *)
+(* ------------------------------------------------------------------ *)
+
+(*
+FirstTrue[] := NetFoldOperator[
+  NetGraph[
+    {
+      FunctionLayer[If[#Input > 0.5, (1 - #State) #Input, 0] &, "Output" -> {}],
+      FunctionLayer[If[(1 - #State) #Input > 0.5, 1, #State] &, "Output" -> {}]
+    },
+    {1 -> NetPort["SoftBits"]}
+  ]
+]
+*)
+
+(*
+HardNeuralDecisionList[inputSize_, layerSize_, outputSize_, weights_Function:BalancedSoftBits] := {
+  NetDelete[NetGraph[
+    <|
+      "Antecedents" -> HardNeuralNOR[inputSize, layerSize, weights[#]&, weights[#]&][[1]],
+      "Flatten" -> HardNeuralFlattenLayer[][[1]],
+      "FirstTrue" -> FirstTrue[],
+      "Consequents" -> weights[layerSize * outputSize],
+      "Reshape" -> ReshapeLayer[{layerSize, outputSize}],
+      "Consequent" -> ThreadingLayer[Min[#FirstTrue, #Consequents] &, 2, "Output" -> {layerSize, outputSize}],
+      "Reduce" -> AggregationLayer[Total, 1]
+    |>,
+    {
+      "Antecedents" -> "Flatten",
+      "Flatten" -> "FirstTrue",
+      "Consequents" -> "Reshape",
+      NetPort["FirstTrue", "SoftBits"] -> NetPort["Consequent", "FirstTrue"],
+      "Reshape" -> NetPort["Consequent", "Consequents"],
+      NetPort["FirstTrue", "Output"] -> NetPort["Ignore"],
+      "Consequent" -> "Reduce"
+    }
+  ], NetPort["Ignore"]],
+  HardDecisionList[]
+}
+*)
+
+(*"Consequent" -> DotLayer[InputPorts -> {{outputSize, layerSize}, {layerSize}}]*)
+
+(*
+IfThenElse[] := NetGraph[
+  {
+    (* Soft bits *)
+    FunctionLayer[
+      If[#State > 0.5,
+        If[#Input > 0.5, 1 - #Input, #Input],
+        #Input
+      ] &, 
+      "Output" -> {}
+    ],
+    (* State *)
+    FunctionLayer[
+      If[#State > 0.5,
+        If[#Input > 0.5, #Input, 1 - #Input],
+        #Input
+      ] &, "Output" -> {}
+    ]
+  },
+  {
+    1 -> NetPort["SoftBits"]
+  }
+]
+*)
+
+(*
+IfThenElse[] := NetGraph[
+  {
+    (* Soft bits *)
+    FunctionLayer[
+      If[#State > 0.5,
+        If[#Input > 0.5, 1 - (#State + #Input) / 2, (1 - #State + #Input) / 2],
+        If[#Input > 0.5, (#State + #Input) / 2, (1 - #State + 1 - #Input) / 2]
+      ] &, 
+      "Output" -> {}
+    ],
+    (* State *)
+    FunctionLayer[
+      If[#State > 0.5,
+        #State,
+        #Input
+      ] &, "Output" -> {}
+    ]
+  },
+  {
+    1 -> NetPort["SoftBits"]
+  }
+]
+*)
+
+(* Problem: Not continuous *)
+(*
+IfThenElse[] := NetGraph[
+  {
+    (* Soft bits *)
+    FunctionLayer[
+      If[#State > 0.5,
+        If[#Input > 0.5, 1 - #State, #Input],
+        #Input
+      ] &, 
+      "Output" -> {}
+    ],
+    (* State *)
+    FunctionLayer[
+      If[#State > 0.5, #State, #Input] &,
+      "Output" -> {}
+    ]
+  },
+  {
+    1 -> NetPort["SoftBits"]
+  }
+]
+*)
+
+(*IfThenElseLayer[] := NetFoldOperator[IfThenElse[]]*)
+
+(*
+HardNeuralDecisionList[inputSize_, layerSize_, outputSize_, weights_Function:BalancedSoftBits] := {
+  NetDelete[NetGraph[
+    <|
+      "IfThenElse" -> IfThenElseLayer[],
+      "Weights" -> weights[layerSize * outputSize],
+      "Decisions" -> ReshapeLayer[{layerSize, outputSize}],
+      "ConditionalDecisions" -> ThreadingLayer[Min[#IfThenElse, #Decisions] &, 2, "Output" -> {layerSize, outputSize}],
+      "Reduce" -> AggregationLayer[Max, 1]
+    |>,
+    {
+      NetPort["IfThenElse", "Output"] -> NetPort["Ignore"],
+      "Weights" -> "Decisions",
+      NetPort["IfThenElse", "SoftBits"] -> NetPort["ConditionalDecisions", "IfThenElse"],
+      "Decisions" -> NetPort["ConditionalDecisions", "Decisions"],
+      "ConditionalDecisions" -> "Reduce"
+    }
+  ], NetPort["Ignore"]],
+  HardDecisionList[]
+}
+*)
+
+(* ------------------------------------------------------------------ *)
+(* Hard AND-or-OR *)
+(* ------------------------------------------------------------------ *)
+
+HardNeuralANDorOR[inputSize_, layerSize_, weights_Function : BalancedSoftBits] := {
+  NetGraph[
+    <|
+      "MaskWeights" -> weights[layerSize*inputSize],
+      "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
+      "HardInclude1" -> ThreadingLayer[DifferentiableHardAND[#Input, #MaskWeights] &, 1, "Output" -> {layerSize, inputSize}],
+      "And" -> AggregationLayer[Min],
+      "HardInclude2" -> ThreadingLayer[DifferentiableHardOR[#Input, #MaskWeights] &, 1, "Output" -> {layerSize, inputSize}],
+      "Or" -> AggregationLayer[Max],
+      "CombineWeights" -> weights[layerSize],
+      (* Multiplication doesn't preserve hard semantics *)
+      "Combine" -> FunctionLayer[#CombineWeights #And + (1 - #CombineWeights) #Or &]
+    |>,
+    {
+      "MaskWeights" -> "Reshape",
+      "Reshape" -> NetPort["HardInclude1", "MaskWeights"],
+      "HardInclude1" -> "And",
+      "Reshape" -> NetPort["HardInclude2", "MaskWeights"],
+      "HardInclude2" -> "Or",
+      "CombineWeights" -> NetPort["Combine", "CombineWeights"],
+      "And" -> NetPort["Combine", "And"],
+      "Or" -> NetPort["Combine", "Or"]
+    }
+  ],
+  HardANDOR[layerSize]
+}
+
+(* ------------------------------------------------------------------ *)
 (* Hard XOR *)
 (* ------------------------------------------------------------------ *)
 
@@ -1007,9 +1287,12 @@ DifferentiableHardXOR[b_List] := Fold[HardXOR[#1, #2] &, 0.0, b]
 *)
 
 (*
-  XOR is equivalent to: (! a || ! b) && (a || b)
+  XOR is equivalent to: 
+    (! a || ! b) && (a || b)
+    ! (! a || b) || ! (a || ! b)
 *)
 DifferentiableHardXOR[b1_, b2_] := Min[Max[1 - b1, 1 - b2], Max[b1, b2]]
+DifferentiableHardXOR[b1_, b2_] := 1 - Max[Max[1 - b1, b2], Max[b1, 1 - b2]]
 
 HardNeuralXOR[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
   NetGraph[
