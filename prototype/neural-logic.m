@@ -2,6 +2,7 @@
 
 (* 
   Notes:
+  - Indication that removing flat regimes in gradient improves performance. Revisit all the piecewise functions.
   - Even with perfect soft-hard translation semantics that hard boundary at 0.5, plus numerical error in floating point
   representation, means that hardening can introduce deviations between soft and hard performance. The simplest fix is
   to train the soft-net with 64, rather than 32, bit precision.
@@ -82,6 +83,8 @@ DifferentiableHardIfThenElse::usage = "Differentiable hard if then else.";
 IfThenElseLayer::usage = "If then else layer.";
 HardNeuralDecisionStump::usage = "Hard neural decision stump.";
 HardNeuralDecisionList::usage = "Hard neural decision list.";
+HardNeuralDecisions::usage = "Hard neural decisions.";
+ConditionActionLayers::usage = "Condition action layers.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -1006,9 +1009,6 @@ NeuralOR[inputSize_, layerSize_] := NetGraph[
 (* If-Then-Else *)
 (* ------------------------------------------------------------------ *)
 
-(* This seems worse. Why? *)
-(*DifferentiableHardIfThenElse[w_, b1_, b2_] := DifferentiableHardOR[DifferentiableHardAND[b1, w], DifferentiableHardAND[b2, 1 - w]]*)
-
 (* 
   Generalisation is better with this version.
   Do we have to minimise the regions with flat gradients?
@@ -1042,6 +1042,12 @@ DifferentiableHardIfThenElse[w_, b1_, b2_] := If[
       (1 - 2 b2) w + b2
     ]
   ]
+
+(* 
+  This seems worse. Why? 
+  On the other hand, is more stable and well-behaved.
+*)
+(*DifferentiableHardIfThenElse[w_, b1_, b2_] := DifferentiableHardOR[DifferentiableHardAND[b1, w], DifferentiableHardAND[b2, 1 - w]]*)
 
 IfThenElseLayer[] := NetGraph[
   <|
@@ -1097,6 +1103,52 @@ HardNeuralDecisionList[inputSize_, layerSize_] := {
     }
   ]
 }
+
+ConditionAction[condition_, action_] := Module[{conditionOutputSize, actionOutputSize},
+  conditionOutputSize = NetExtract[condition, "Output"];
+  actionOutputSize = NetExtract[action, "Output"];
+  ConfirmAssert[actionOutputSize >= conditionOutputSize, Null, "The size of the action must be greater than equal to the size of the condition"];
+  ConfirmAssert[IntegerQ[actionOutputSize/conditionOutputSize], Null, "The size of action must be a multiple of the size of the condition"];
+  {condition, NetChain[{action, ReshapeLayer[{conditionOutputSize, actionOutputSize / conditionOutputSize}]}]}
+]
+
+ConditionActionLayers[conditionActions_List, defaultAction_] := Module[
+  {layers, lastCondition, reshapedDefaultAction},
+  layers = Reverse[
+    Map[
+      Block[{condition = #[[1]], action = #[[2]]},
+        {condition, action} = ConditionAction[condition, action];
+        NetGraph[
+          <|
+            "Condition" -> condition,
+            "IfTrue" -> action,
+            "IfThenElse" -> IfThenElseLayer[]
+          |>,
+          {
+            "Condition" -> NetPort["IfThenElse", "Condition"],
+            "IfTrue" -> NetPort["IfThenElse", "IfTrue"]
+          }
+        ]
+      ] &, 
+    conditionActions
+    ]
+  ];
+  lastCondition = First[Last[conditionActions]];
+  reshapedDefaultAction = Last[ConditionAction[lastCondition, defaultAction]];
+  {reshapedDefaultAction, layers} 
+]
+
+HardNeuralDecisions[conditionActions_List, defaultAction_] := Module[{layers, reshapedDefaultAction},
+  {reshapedDefaultAction, layers} = ConditionActionLayers[conditionActions, defaultAction];
+  Fold[
+    NetGraph[
+      {#1, #2},
+      {NetPort[1, "Output"] -> NetPort[2, "IfFalse"]}
+    ] &, 
+    reshapedDefaultAction, 
+    layers
+  ]
+]
 
 (* ------------------------------------------------------------------ *)
 (* Hard decision list *)
