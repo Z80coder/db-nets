@@ -81,9 +81,7 @@ HardNeuralRealLayer::usage = "Binary count to real layer.";
 HardNeuralANDorOR::usage = "Hard neural AND or OR.";
 DifferentiableHardIfThenElse::usage = "Differentiable hard if then else.";
 IfThenElseLayer::usage = "If then else layer.";
-HardNeuralDecisionStump::usage = "Hard neural decision stump.";
 HardNeuralDecisionList::usage = "Hard neural decision list.";
-HardNeuralDecisions::usage = "Hard neural decisions.";
 ConditionActionLayers::usage = "Condition action layers.";
 
 (* ------------------------------------------------------------------ *)
@@ -703,6 +701,13 @@ HardClassificationLoss[] := NetGraph[
 (* Regression utilities *)
 (* ------------------------------------------------------------------ *)
 
+(* TODO:
+A problem with binary count decoding is that extreme values are under-represented (in terms of
+number of bit vectors that map to them). E.g. there's only 1 way to have max bits, but n
+ways to have 1 bit. This is a problem for regression, where we want to be able to represent
+the full range of values. One solution is to use a different encoding, e.g. Gray code.
+*)
+
 (* Binary count decoding *)
 BinaryCountToReal[{min_, max_}] := Function[{input},
   Block[{y},
@@ -1057,53 +1062,6 @@ IfThenElseLayer[] := NetGraph[
   }
 ]
 
-HardNeuralDecisionStump[inputSize_, layerSize_] := Block[{a = 4}, 
-  {
-    NetGraph[
-      <|
-        "Condition" -> HardNeuralNOR[inputSize, layerSize/a][[1]],
-        "ReshapeCondition" -> ReshapeLayer[{layerSize/a}],
-        "IfTrue" -> HardNeuralOR[inputSize, layerSize][[1]],
-        "ReshapeTrue" -> ReshapeLayer[{layerSize/a, a}],
-        "IfFalse" -> HardNeuralOR[inputSize, layerSize][[1]],
-        "ReshapeFalse" -> ReshapeLayer[{layerSize/a, a}],
-        "IfThenElse" -> IfThenElseLayer[]
-      |>,
-      {
-        "Condition" -> "ReshapeCondition",
-        "ReshapeCondition" -> NetPort["IfThenElse", "Condition"],
-        "IfTrue" -> "ReshapeTrue",
-        "IfFalse" -> "ReshapeFalse",
-        "ReshapeTrue" -> NetPort["IfThenElse", "IfTrue"],
-        "ReshapeFalse" -> NetPort["IfThenElse", "IfFalse"]
-      }
-    ], 
-    # &
-  }
-]
-
-HardNeuralDecisionList[inputSize_, layerSize_] := {
-  NetGraph[
-    <|
-      "Condition1" -> HardNeuralOR[inputSize, layerSize][[1]],
-      "Condition2" -> HardNeuralOR[inputSize, layerSize][[1]],
-      "IfTrue1" -> BalancedSoftBits[layerSize][[1]],
-      "IfTrue2" -> BalancedSoftBits[layerSize][[1]],
-      "IfFalse2" -> BalancedSoftBits[layerSize][[1]],
-      "IfThenElse1" -> IfThenElseLayer[],
-      "IfThenElse2" -> IfThenElseLayer[]
-    |>,
-    {
-      "Condition1" -> NetPort["IfThenElse1", "Condition"],
-      "Condition2" -> NetPort["IfThenElse2", "Condition"],
-      "IfTrue1" -> NetPort["IfThenElse1", "IfTrue"],
-      "IfTrue2" -> NetPort["IfThenElse2", "IfTrue"],
-      "IfFalse2" -> NetPort["IfThenElse2", "IfFalse"],
-      "IfThenElse2" -> NetPort["IfThenElse1", "IfFalse"]
-    }
-  ]
-}
-
 ConditionAction[condition_, action_] := Module[{conditionOutputSize, actionOutputSize},
   conditionOutputSize = NetExtract[condition, "Output"];
   actionOutputSize = NetExtract[action, "Output"];
@@ -1138,8 +1096,8 @@ ConditionActionLayers[conditionActions_List, defaultAction_] := Module[
   {reshapedDefaultAction, layers} 
 ]
 
-HardNeuralDecisions[conditionActions_List, defaultAction_] := Module[{layers, reshapedDefaultAction},
-  {reshapedDefaultAction, layers} = ConditionActionLayers[conditionActions, defaultAction];
+HardNeuralDecisionList[conditionActionLayers_] := Module[{layers, reshapedDefaultAction},
+  {reshapedDefaultAction, layers} = conditionActionLayers;
   Fold[
     NetGraph[
       {#1, #2},
