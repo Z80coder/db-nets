@@ -80,7 +80,11 @@ BinaryCountToReal::usage = "Binary count to real.";
 HardNeuralRealLayer::usage = "Binary count to real layer.";
 HardNeuralANDorOR::usage = "Hard neural AND or OR.";
 DifferentiableHardIfThenElse::usage = "Differentiable hard if then else.";
+DifferentiableHardIfThenElse2::usage = "Differentiable hard if then else version 2.";
+DifferentiableHardIfThenElse3::usage = "Differentiable hard if then else version 3.";
+HardIfThenElse::usage = "Hard if then else.";
 IfThenElseLayer::usage = "If then else layer.";
+BlendFactor::usage = "Blend factor.";
 HardNeuralDecisionList::usage = "Hard neural decision list.";
 ConditionActionLayers::usage = "Condition action layers.";
 
@@ -179,7 +183,7 @@ SoftBits[array_NetArrayLayer] := NetGraph[
       |>,
       {
         "Weights" -> "Clip"
-      }
+      } 
     ]
   |>,
   {}
@@ -1049,10 +1053,15 @@ DifferentiableHardIfThenElse[w_, b1_, b2_] := If[
   ]
 
 (* 
-  This seems worse. Why? 
+  This seems worse. Why? Not always monotonic.
   On the other hand, is more stable and well-behaved.
 *)
-(*DifferentiableHardIfThenElse[w_, b1_, b2_] := DifferentiableHardOR[DifferentiableHardAND[b1, w], DifferentiableHardAND[b2, 1 - w]]*)
+(* N.B. This definition is simply wrong *)
+DifferentiableHardIfThenElse2[w_, b1_, b2_] := DifferentiableHardOR[DifferentiableHardAND[b1, w], DifferentiableHardAND[b2, 1 - w]]
+(* This definition is correct *)
+DifferentiableHardIfThenElse3[w_, b1_, b2_] := Min[Max[b1, w], Max[b2, 1 - w]]
+
+HardIfThenElse[w_, b1_, b2_] := If[w, b1, b2]
 
 IfThenElseLayer[] := NetGraph[
   <|
