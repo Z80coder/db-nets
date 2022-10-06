@@ -1022,6 +1022,7 @@ NeuralOR[inputSize_, layerSize_] := NetGraph[
   Generalisation is better with this version.
   Do we have to minimise the regions with flat gradients?
 *)
+(* Version 1 *)
 DifferentiableHardIfThenElse[w_, b1_, b2_] := If[
   (b1 > 1/2 && b2 > 1/2) || (b1 <= 1/2 && b2 <= 1/2),
     If[(b1 > 1/2 && b2 > 1/2),
@@ -1052,14 +1053,51 @@ DifferentiableHardIfThenElse[w_, b1_, b2_] := If[
     ]
   ]
 
-(* 
-  This seems worse. Why? Not always monotonic.
-  On the other hand, is more stable and well-behaved.
-*)
-(* N.B. This definition is simply wrong *)
-DifferentiableHardIfThenElse2[w_, b1_, b2_] := DifferentiableHardOR[DifferentiableHardAND[b1, w], DifferentiableHardAND[b2, 1 - w]]
-(* This definition is correct *)
-DifferentiableHardIfThenElse3[w_, b1_, b2_] := Min[Max[b1, w], Max[b2, 1 - w]]
+(* Version 2 *)
+DifferentiableHardIfThenElse2[w_, b1_, b2_] := Max[Min[b1, w], Min[b2, 1 - w]]
+
+(* Version 3 *)
+DifferentiableHardIfThenElse3[w_, b1_, b2_] := If[
+  b1 <= 1/2 && b2 <= 1/2,
+    If[w > 1/2,
+      If[b2 > b1, 2 (b1 - b2) w + 2 b2 - b1, b1],
+      If[b2 > b1, b2, 2 (b1 - b2) w + b2]
+    ],
+    If[b1 > 1/2 && b2 > 1/2,
+      If[w > 1/2,
+        If[b2 <= b1, 2 (b1 - b2) w + 2 b2 - b1, b1],
+        If[b2 <= b1, b2, 2 (b1 - b2) w + b2]
+      ],
+      If[w > 1/2,
+        (2 b1 - 1) w + 1 - b1,
+        (1 - 2 b2) w + b2
+      ]
+    ]
+  ]
+
+(* Version 4 *)
+Type1[w_, b1_, b2_] := If[b1 <= 1/2 && b2 <= 1/2,
+  If[w > 1/2,
+   If[b2 > b1, 2 (b1 - b2) w + 2 b2 - b1, b1],
+   If[b2 > b1, b2, 2 (b1 - b2) w + b2]
+   ],
+  If[b1 > 1/2 && b2 > 1/2,
+   If[w > 1/2,
+    If[b2 <= b1, 2 (b1 - b2) w + 2 b2 - b1, b1],
+    If[b2 <= b1, b2, 2 (b1 - b2) w + b2]
+    ],
+   If[w > 1/2,
+    (2 b1 - 1) w + 1 - b1,
+    (1 - 2 b2) w + b2
+    ]
+   ]
+  ]
+Type2[w_, b1_, b2_] := (b1 - b2) w + b2
+
+DifferentiableHardIfThenElse4[w_, b1_, b2_] := With[
+  {d = If[(b1 > 1/2 && b2 > 1/2) || (b1 <= 1/2 && b2 <= 1/2), ((1 - 2 b1)^2 (1 - 2 b2)^2)^(1/2), 0]},
+  d Type2[w, b1, b2] + (1 - d) Type1[w, b1, b2]
+]
 
 HardIfThenElse[w_, b1_, b2_] := If[w, b1, b2]
 

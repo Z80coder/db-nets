@@ -10,22 +10,22 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     54872,       1255]
-NotebookOptionsPosition[     51103,       1183]
-NotebookOutlinePosition[     51621,       1201]
-CellTagsIndexPosition[     51578,       1198]
+NotebookDataLength[     66950,       1521]
+NotebookOptionsPosition[     63630,       1457]
+NotebookOutlinePosition[     64148,       1475]
+CellTagsIndexPosition[     64105,       1472]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
 Notebook[{
 
 Cell[CellGroupData[{
-Cell["Neural Logic Networks", "Title",
+Cell["If-Then-Else", "Title",
  CellChangeTimes->{{3.864793590384657*^9, 3.864793591864854*^9}, {
   3.86842606656143*^9, 3.8684260746987667`*^9}, {3.8702277849671593`*^9, 
   3.870227791549492*^9}, {3.8702278401258373`*^9, 3.870227857653405*^9}, {
-  3.870228612084*^9, 
-  3.870228616445198*^9}},ExpressionUUID->"f846cc42-aa02-4854-b58f-\
+  3.870228612084*^9, 3.870228616445198*^9}, {3.873860115081835*^9, 
+  3.873860119045125*^9}},ExpressionUUID->"f846cc42-aa02-4854-b58f-\
 d6a00f3f9f87"],
 
 Cell[CellGroupData[{
@@ -55,7 +55,7 @@ Cell[BoxData[
    3.868937074141531*^9}, {3.869042727278556*^9, 3.869042728153739*^9}, {
    3.871635460300529*^9, 3.871635461111586*^9}, {3.873446844303073*^9, 
    3.873446844878729*^9}},
- CellLabel->"In[14]:=",ExpressionUUID->"3d283193-d4ed-4662-9e0d-84eec54ddecd"],
+ CellLabel->"In[1]:=",ExpressionUUID->"3d283193-d4ed-4662-9e0d-84eec54ddecd"],
 
 Cell[BoxData[
  RowBox[{
@@ -88,238 +88,262 @@ Cell[BoxData[
        RowBox[{
         RowBox[{"{", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"GraphicsColumn", "[", "\[IndentingNewLine]", 
-           RowBox[{"{", 
-            RowBox[{
-             RowBox[{"Show", "[", 
+          RowBox[{"If", "[", 
+           RowBox[{"branch1", ",", 
+            RowBox[{"GraphicsColumn", "[", "\[IndentingNewLine]", 
+             RowBox[{"{", 
               RowBox[{
-               RowBox[{"Plot", "[", 
+               RowBox[{"Show", "[", 
                 RowBox[{
-                 RowBox[{"{", 
-                  RowBox[{"f", "[", 
-                   RowBox[{"w1", ",", "b", ",", "b2"}], "]"}], "}"}], ",", 
-                 RowBox[{"{", 
-                  RowBox[{"b", ",", "0", ",", "1"}], "}"}], ",", 
-                 RowBox[{"PlotRange", "->", 
-                  RowBox[{"{", 
-                   RowBox[{
+                 RowBox[{"Plot", "[", 
+                  RowBox[{
+                   RowBox[{"{", 
+                    RowBox[{"f", "[", 
+                    RowBox[{"w1", ",", "b", ",", "b2"}], "]"}], "}"}], ",", 
+                   RowBox[{"{", 
+                    RowBox[{"b", ",", "0", ",", "1"}], "}"}], ",", 
+                   RowBox[{"PlotRange", "->", 
+                    RowBox[{"{", 
+                    RowBox[{
                     RowBox[{"{", 
                     RowBox[{"0", ",", "1"}], "}"}], ",", 
                     RowBox[{"{", 
                     RowBox[{"0", ",", "1"}], "}"}]}], "}"}]}], ",", 
-                 RowBox[{"GridLines", "->", 
-                  RowBox[{"{", 
-                   RowBox[{
+                   RowBox[{"GridLines", "->", 
+                    RowBox[{"{", 
+                    RowBox[{
                     RowBox[{"{", 
                     RowBox[{
                     RowBox[{"1", "/", "2"}], ",", "1"}], "}"}], ",", 
                     RowBox[{"{", 
                     RowBox[{
                     RowBox[{"1", "/", "2"}], ",", "1"}], "}"}]}], "}"}]}], 
-                 ",", 
-                 RowBox[{"AxesLabel", "->", 
-                  RowBox[{"{", 
-                   RowBox[{"\"\<b1\>\"", ",", "\"\<output\>\""}], "}"}]}], 
-                 ",", 
-                 RowBox[{
-                 "PlotLabel", "->", 
-                  "\"\<FIRST BRANCH b1\\n(w and b2 fixed)\>\""}]}], "]"}], 
-               ",", "\[IndentingNewLine]", 
-               RowBox[{"DiscretePlot", "[", 
-                RowBox[{
-                 RowBox[{"Boole", "[", 
-                  RowBox[{"HardIfThenElse", "[", 
+                   ",", 
+                   RowBox[{"AxesLabel", "->", 
+                    RowBox[{"{", 
+                    RowBox[{"\"\<b1\>\"", ",", "\"\<output\>\""}], "}"}]}], 
+                   ",", 
                    RowBox[{
+                   "PlotLabel", "->", 
+                    "\"\<FIRST BRANCH b1\\n(w and b2 fixed)\>\""}]}], "]"}], 
+                 ",", "\[IndentingNewLine]", 
+                 RowBox[{"DiscretePlot", "[", 
+                  RowBox[{
+                   RowBox[{"Boole", "[", 
+                    RowBox[{"HardIfThenElse", "[", 
+                    RowBox[{
                     RowBox[{"Harden", "[", "w1", "]"}], ",", 
                     RowBox[{"Harden", "[", "b", "]"}], ",", 
                     RowBox[{"Harden", "[", "b2", "]"}]}], "]"}], "]"}], ",", 
-                 RowBox[{"{", 
-                  RowBox[{"b", ",", "0", ",", "1"}], "}"}], ",", 
-                 RowBox[{"PlotRange", "->", 
-                  RowBox[{"{", 
-                   RowBox[{
+                   RowBox[{"{", 
+                    RowBox[{"b", ",", "0", ",", "1"}], "}"}], ",", 
+                   RowBox[{"PlotRange", "->", 
+                    RowBox[{"{", 
+                    RowBox[{
                     RowBox[{"{", 
                     RowBox[{"0", ",", "1"}], "}"}], ",", 
                     RowBox[{"{", 
                     RowBox[{"0", ",", "1"}], "}"}]}], "}"}]}], ",", 
-                 RowBox[{"ExtentSize", "->", "Full"}], ",", 
-                 RowBox[{"Filling", "->", "Axis"}]}], "]"}]}], 
-              "\[IndentingNewLine]", "]"}], ",", "\[IndentingNewLine]", 
-             RowBox[{"Plot", "[", 
-              RowBox[{"d1", ",", 
-               RowBox[{"{", 
-                RowBox[{"b", ",", "0", ",", "1"}], "}"}], ",", 
-               RowBox[{"Frame", "->", "True"}], ",", 
-               RowBox[{"GridLines", "->", 
-                RowBox[{"{", 
-                 RowBox[{
-                  RowBox[{"{", 
-                   RowBox[{
-                    RowBox[{"-", "1"}], ",", "0", ",", "1"}], "}"}], ",", " ", 
-                  RowBox[{"{", 
-                   RowBox[{
-                    RowBox[{"-", "1"}], ",", "0", ",", "1"}], "}"}]}], 
-                 "}"}]}], ",", 
-               RowBox[{"ImageSize", "->", "Small"}]}], "]"}]}], 
-            "\[IndentingNewLine]", "}"}], "]"}], ",", "\[IndentingNewLine]", 
-          RowBox[{"GraphicsColumn", "[", "\[IndentingNewLine]", 
-           RowBox[{"{", 
-            RowBox[{
-             RowBox[{"Show", "[", 
-              RowBox[{
+                   RowBox[{"ExtentSize", "->", "Full"}], ",", 
+                   RowBox[{"Filling", "->", "Axis"}]}], "]"}]}], 
+                "\[IndentingNewLine]", "]"}], ",", "\[IndentingNewLine]", 
                RowBox[{"Plot", "[", 
-                RowBox[{
-                 RowBox[{"{", 
-                  RowBox[{"f", "[", 
-                   RowBox[{"w1", ",", "b1", ",", "b"}], "]"}], "}"}], ",", 
+                RowBox[{"d1", ",", 
                  RowBox[{"{", 
                   RowBox[{"b", ",", "0", ",", "1"}], "}"}], ",", 
-                 RowBox[{"PlotRange", "->", 
-                  RowBox[{"{", 
-                   RowBox[{
-                    RowBox[{"{", 
-                    RowBox[{"0", ",", "1"}], "}"}], ",", 
-                    RowBox[{"{", 
-                    RowBox[{"0", ",", "1"}], "}"}]}], "}"}]}], ",", 
+                 RowBox[{"Frame", "->", "True"}], ",", 
                  RowBox[{"GridLines", "->", 
                   RowBox[{"{", 
                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", "1"}], ",", "0", ",", "1"}], "}"}], ",", " ", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", "1"}], ",", "0", ",", "1"}], "}"}]}], 
+                   "}"}]}], ",", 
+                 RowBox[{"ImageSize", "->", "Small"}]}], "]"}]}], 
+              "\[IndentingNewLine]", "}"}], "]"}], ",", "Nothing"}], "]"}], 
+          ",", "\[IndentingNewLine]", 
+          RowBox[{"If", "[", 
+           RowBox[{"branch2", ",", 
+            RowBox[{"GraphicsColumn", "[", "\[IndentingNewLine]", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"Show", "[", 
+                RowBox[{
+                 RowBox[{"Plot", "[", 
+                  RowBox[{
+                   RowBox[{"{", 
+                    RowBox[{"f", "[", 
+                    RowBox[{"w1", ",", "b1", ",", "b"}], "]"}], "}"}], ",", 
+                   RowBox[{"{", 
+                    RowBox[{"b", ",", "0", ",", "1"}], "}"}], ",", 
+                   RowBox[{"PlotRange", "->", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "1"}], "}"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "1"}], "}"}]}], "}"}]}], ",", 
+                   RowBox[{"GridLines", "->", 
+                    RowBox[{"{", 
+                    RowBox[{
                     RowBox[{"{", 
                     RowBox[{
                     RowBox[{"1", "/", "2"}], ",", "1"}], "}"}], ",", 
                     RowBox[{"{", 
                     RowBox[{
                     RowBox[{"1", "/", "2"}], ",", "1"}], "}"}]}], "}"}]}], 
-                 ",", 
-                 RowBox[{"AxesLabel", "->", 
-                  RowBox[{"{", 
-                   RowBox[{"\"\<b2\>\"", ",", "\"\<output\>\""}], "}"}]}], 
-                 ",", 
-                 RowBox[{
-                 "PlotLabel", "->", 
-                  "\"\<SECOND BRANCH b2\\n(w and b1 fixed)\>\""}]}], "]"}], 
-               ",", "\[IndentingNewLine]", 
-               RowBox[{"DiscretePlot", "[", 
-                RowBox[{
-                 RowBox[{"Boole", "[", 
-                  RowBox[{"HardIfThenElse", "[", 
+                   ",", 
+                   RowBox[{"AxesLabel", "->", 
+                    RowBox[{"{", 
+                    RowBox[{"\"\<b2\>\"", ",", "\"\<output\>\""}], "}"}]}], 
+                   ",", 
                    RowBox[{
+                   "PlotLabel", "->", 
+                    "\"\<SECOND BRANCH b2\\n(w and b1 fixed)\>\""}]}], "]"}], 
+                 ",", "\[IndentingNewLine]", 
+                 RowBox[{"DiscretePlot", "[", 
+                  RowBox[{
+                   RowBox[{"Boole", "[", 
+                    RowBox[{"HardIfThenElse", "[", 
+                    RowBox[{
                     RowBox[{"Harden", "[", "w1", "]"}], ",", 
                     RowBox[{"Harden", "[", "b1", "]"}], ",", 
                     RowBox[{"Harden", "[", "b", "]"}]}], "]"}], "]"}], ",", 
+                   RowBox[{"{", 
+                    RowBox[{"b", ",", "0", ",", "1"}], "}"}], ",", 
+                   RowBox[{"PlotRange", "->", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "1"}], "}"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "1"}], "}"}]}], "}"}]}], ",", 
+                   RowBox[{"ExtentSize", "->", "Full"}], ",", 
+                   RowBox[{"Filling", "->", "Axis"}]}], "]"}]}], 
+                "\[IndentingNewLine]", "]"}], ",", "\[IndentingNewLine]", 
+               RowBox[{"Plot", "[", 
+                RowBox[{"d2", ",", 
                  RowBox[{"{", 
                   RowBox[{"b", ",", "0", ",", "1"}], "}"}], ",", 
-                 RowBox[{"PlotRange", "->", 
-                  RowBox[{"{", 
-                   RowBox[{
-                    RowBox[{"{", 
-                    RowBox[{"0", ",", "1"}], "}"}], ",", 
-                    RowBox[{"{", 
-                    RowBox[{"0", ",", "1"}], "}"}]}], "}"}]}], ",", 
-                 RowBox[{"ExtentSize", "->", "Full"}], ",", 
-                 RowBox[{"Filling", "->", "Axis"}]}], "]"}]}], 
-              "\[IndentingNewLine]", "]"}], ",", "\[IndentingNewLine]", 
-             RowBox[{"Plot", "[", 
-              RowBox[{"d2", ",", 
-               RowBox[{"{", 
-                RowBox[{"b", ",", "0", ",", "1"}], "}"}], ",", 
-               RowBox[{"Frame", "->", "True"}], ",", 
-               RowBox[{"GridLines", "->", 
-                RowBox[{"{", 
-                 RowBox[{
-                  RowBox[{"{", 
-                   RowBox[{
-                    RowBox[{"-", "1"}], ",", "0", ",", "1"}], "}"}], ",", " ", 
-                  RowBox[{"{", 
-                   RowBox[{
-                    RowBox[{"-", "1"}], ",", "0", ",", "1"}], "}"}]}], 
-                 "}"}]}], ",", 
-               RowBox[{"ImageSize", "->", "Small"}]}], "]"}]}], 
-            "\[IndentingNewLine]", "}"}], "]"}], ",", "\[IndentingNewLine]", 
-          RowBox[{"GraphicsColumn", "[", 
-           RowBox[{"{", 
-            RowBox[{
-             RowBox[{"Show", "[", 
-              RowBox[{
-               RowBox[{"Plot", "[", 
-                RowBox[{
-                 RowBox[{"{", 
-                  RowBox[{"f", "[", 
-                   RowBox[{"w", ",", "b1", ",", "b2"}], "]"}], "}"}], ",", 
-                 RowBox[{"{", 
-                  RowBox[{"w", ",", "0", ",", "1"}], "}"}], ",", 
-                 RowBox[{"PlotRange", "->", 
-                  RowBox[{"{", 
-                   RowBox[{
-                    RowBox[{"{", 
-                    RowBox[{"0", ",", "1"}], "}"}], ",", 
-                    RowBox[{"{", 
-                    RowBox[{"0", ",", "1"}], "}"}]}], "}"}]}], ",", 
+                 RowBox[{"Frame", "->", "True"}], ",", 
                  RowBox[{"GridLines", "->", 
                   RowBox[{"{", 
                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", "1"}], ",", "0", ",", "1"}], "}"}], ",", " ", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"-", "1"}], ",", "0", ",", "1"}], "}"}]}], 
+                   "}"}]}], ",", 
+                 RowBox[{"ImageSize", "->", "Small"}]}], "]"}]}], 
+              "\[IndentingNewLine]", "}"}], "]"}], ",", "Nothing"}], "]"}], 
+          ",", "\[IndentingNewLine]", 
+          RowBox[{"If", "[", 
+           RowBox[{"condition", ",", 
+            RowBox[{"GraphicsColumn", "[", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"Show", "[", 
+                RowBox[{
+                 RowBox[{"Plot", "[", 
+                  RowBox[{
+                   RowBox[{"{", 
+                    RowBox[{"f", "[", 
+                    RowBox[{"w", ",", "b1", ",", "b2"}], "]"}], "}"}], ",", 
+                   RowBox[{"{", 
+                    RowBox[{"w", ",", "0", ",", "1"}], "}"}], ",", 
+                   RowBox[{"PlotRange", "->", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "1"}], "}"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "1"}], "}"}]}], "}"}]}], ",", 
+                   RowBox[{"GridLines", "->", 
+                    RowBox[{"{", 
+                    RowBox[{
                     RowBox[{"{", 
                     RowBox[{
                     RowBox[{"1", "/", "2"}], ",", "1"}], "}"}], ",", 
                     RowBox[{"{", 
                     RowBox[{
                     RowBox[{"1", "/", "2"}], ",", "1"}], "}"}]}], "}"}]}], 
-                 ",", 
-                 RowBox[{"AxesLabel", "->", 
-                  RowBox[{"{", 
-                   RowBox[{"\"\<w\>\"", ",", "\"\<output\>\""}], "}"}]}], ",", 
-                 RowBox[{
-                 "PlotLabel", "->", 
-                  "\"\<CONDITION w\\n(b1 and b2 fixed)\>\""}]}], "]"}], ",", 
-               "\[IndentingNewLine]", 
-               RowBox[{"DiscretePlot", "[", 
-                RowBox[{
-                 RowBox[{"Boole", "[", 
-                  RowBox[{"HardIfThenElse", "[", 
+                   ",", 
+                   RowBox[{"AxesLabel", "->", 
+                    RowBox[{"{", 
+                    RowBox[{"\"\<w\>\"", ",", "\"\<output\>\""}], "}"}]}], 
+                   ",", 
                    RowBox[{
+                   "PlotLabel", "->", 
+                    "\"\<CONDITION w\\n(b1 and b2 fixed)\>\""}]}], "]"}], ",",
+                  "\[IndentingNewLine]", 
+                 RowBox[{"DiscretePlot", "[", 
+                  RowBox[{
+                   RowBox[{"Boole", "[", 
+                    RowBox[{"HardIfThenElse", "[", 
+                    RowBox[{
                     RowBox[{"Harden", "[", "w", "]"}], ",", 
                     RowBox[{"Harden", "[", "b1", "]"}], ",", 
                     RowBox[{"Harden", "[", "b2", "]"}]}], "]"}], "]"}], ",", 
-                 RowBox[{"{", 
-                  RowBox[{"w", ",", "0", ",", "1"}], "}"}], ",", 
-                 RowBox[{"PlotRange", "->", 
-                  RowBox[{"{", 
-                   RowBox[{
+                   RowBox[{"{", 
+                    RowBox[{"w", ",", "0", ",", "1"}], "}"}], ",", 
+                   RowBox[{"PlotRange", "->", 
+                    RowBox[{"{", 
+                    RowBox[{
                     RowBox[{"{", 
                     RowBox[{"0", ",", "1"}], "}"}], ",", 
                     RowBox[{"{", 
                     RowBox[{"0", ",", "1"}], "}"}]}], "}"}]}], ",", 
-                 RowBox[{"ExtentSize", "->", "Full"}], ",", 
-                 RowBox[{"Filling", "->", "Axis"}]}], "]"}]}], 
-              "\[IndentingNewLine]", "]"}], ",", "\[IndentingNewLine]", 
-             RowBox[{"Plot", "[", 
-              RowBox[{"d3", ",", 
-               RowBox[{"{", 
-                RowBox[{"w", ",", "0", ",", "1"}], "}"}], ",", 
-               RowBox[{"Frame", "->", "True"}], ",", 
-               RowBox[{"GridLines", "->", 
-                RowBox[{"{", 
-                 RowBox[{
+                   RowBox[{"ExtentSize", "->", "Full"}], ",", 
+                   RowBox[{"Filling", "->", "Axis"}]}], "]"}]}], 
+                "\[IndentingNewLine]", "]"}], ",", "\[IndentingNewLine]", 
+               RowBox[{"Plot", "[", 
+                RowBox[{"d3", ",", 
+                 RowBox[{"{", 
+                  RowBox[{"w", ",", "0", ",", "1"}], "}"}], ",", 
+                 RowBox[{"Frame", "->", "True"}], ",", 
+                 RowBox[{"GridLines", "->", 
                   RowBox[{"{", 
                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
                     RowBox[{"-", "1"}], ",", "0", ",", "1"}], "}"}], ",", " ", 
-                  RowBox[{"{", 
-                   RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{
                     RowBox[{"-", "1"}], ",", "0", ",", "1"}], "}"}]}], 
-                 "}"}]}], ",", 
-               RowBox[{"ImageSize", "->", "Small"}]}], "]"}]}], 
-            "\[IndentingNewLine]", "}"}], "]"}]}], "\[IndentingNewLine]", 
-         "}"}], ",", 
-        RowBox[{"ImageSize", "->", "Full"}]}], "]"}]}], "]"}], ",", 
-    "\[IndentingNewLine]", 
+                   "}"}]}], ",", 
+                 RowBox[{"ImageSize", "->", "Small"}]}], "]"}]}], 
+              "\[IndentingNewLine]", "}"}], "]"}], ",", "Nothing"}], "]"}]}], 
+         "\[IndentingNewLine]", "}"}], ",", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"condition", "&&", "branch1", "&&", "branch2"}], ",", 
+          RowBox[{"ImageSize", "->", "Full"}], ",", 
+          RowBox[{"ImageSize", "->", "Automatic"}]}], "]"}]}], "]"}]}], "]"}],
+     ",", "\[IndentingNewLine]", 
     RowBox[{"{", 
      RowBox[{"w1", ",", "0", ",", "1"}], "}"}], ",", 
     RowBox[{"{", 
      RowBox[{"b1", ",", "0", ",", "1"}], "}"}], ",", 
     RowBox[{"{", 
-     RowBox[{"b2", ",", "0", ",", "1"}], "}"}], ",", "\[IndentingNewLine]", 
-    RowBox[{"SynchronousUpdating", "->", "False"}]}], "\[IndentingNewLine]", 
-   "]"}]}]], "Input",
+     RowBox[{"b2", ",", "0", ",", "1"}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"condition", ",", 
+      RowBox[{"{", 
+       RowBox[{"True", ",", "False"}], "}"}]}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"branch1", ",", 
+      RowBox[{"{", 
+       RowBox[{"False", ",", "True"}], "}"}]}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"branch2", ",", 
+      RowBox[{"{", 
+       RowBox[{"False", ",", "True"}], "}"}]}], "}"}]}], 
+   "\[IndentingNewLine]", "]"}]}]], "Input",
  CellChangeTimes->{{3.8733438281027403`*^9, 3.873344006393202*^9}, {
    3.8733440578584423`*^9, 3.8733440959138603`*^9}, {3.873344135853153*^9, 
    3.8733441796992083`*^9}, {3.8733442316971903`*^9, 3.873344248690184*^9}, {
@@ -356,9 +380,39 @@ Cell[BoxData[
    3.8734340828950768`*^9, 3.873434095958096*^9}, {3.873434129214719*^9, 
    3.87343415280247*^9}, {3.873434197710655*^9, 3.873434210217636*^9}, {
    3.873436915001504*^9, 3.873436916013276*^9}, {3.873437368701234*^9, 
-   3.873437401811501*^9}, {3.8734531872909946`*^9, 3.873453192187248*^9}},
- CellLabel->"In[2]:=",ExpressionUUID->"7675dd75-a14a-4489-819b-3664dcd04742"]
-}, Closed]],
+   3.873437401811501*^9}, {3.8734531872909946`*^9, 3.873453192187248*^9}, {
+   3.8738619630441933`*^9, 3.873862169803858*^9}, 3.8738622234381027`*^9, {
+   3.873863161206451*^9, 3.8738631695882893`*^9}, {3.873881173490893*^9, 
+   3.873881197675436*^9}, {3.874035241787858*^9, 3.874035266663395*^9}, {
+   3.874035318428742*^9, 3.874035320026775*^9}, {3.874035703124475*^9, 
+   3.874035744459865*^9}},
+ CellLabel->"In[2]:=",ExpressionUUID->"7675dd75-a14a-4489-819b-3664dcd04742"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"lines", "=", 
+   RowBox[{"ParametricPlot3D", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"1", "/", "2"}], ",", 
+         RowBox[{"1", "/", "2"}], ",", "t"}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"t", ",", 
+         RowBox[{"1", "/", "2"}], ",", 
+         RowBox[{"1", "/", "2"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"1", "/", "2"}], ",", "t", ",", 
+         RowBox[{"1", "/", "2"}]}], "}"}]}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"t", ",", "0", ",", "1"}], "}"}]}], "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.873860617464772*^9, 3.873860711525631*^9}, {
+  3.873861152856473*^9, 3.873861165296238*^9}},
+ CellLabel->"In[3]:=",ExpressionUUID->"501c85bf-acb4-4cd6-a1f0-10185feac3aa"]
+}, Open  ]],
 
 Cell[CellGroupData[{
 
@@ -376,214 +430,680 @@ Cell[BoxData[
  RowBox[{"HardIfThenElse", "[", 
   RowBox[{"w", ",", "b1", ",", "b2"}], "]"}]], "Input",
  CellChangeTimes->{{3.873435193762431*^9, 3.873435197276123*^9}},
- CellLabel->"In[95]:=",ExpressionUUID->"a1ca5372-1b4c-4bd6-9674-071fde73de4f"],
+ CellLabel->"In[26]:=",ExpressionUUID->"a1ca5372-1b4c-4bd6-9674-071fde73de4f"],
 
 Cell[BoxData[
  RowBox[{"If", "[", 
   RowBox[{"w", ",", "b1", ",", "b2"}], "]"}]], "Output",
- CellChangeTimes->{3.873435197569872*^9},
- CellLabel->"Out[95]=",ExpressionUUID->"0a2d54f6-2455-4c45-86e7-8d96d2390e6f"]
+ CellChangeTimes->{3.873435197569872*^9, 3.873860194806192*^9, 
+  3.8738614741722803`*^9},
+ CellLabel->"Out[26]=",ExpressionUUID->"b8749617-64e6-436f-abde-d54015b6bd88"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"HardIfThenElse", "[", 
+  RowBox[{"True", ",", "b1", ",", "b2"}], "]"}]], "Input",
+ CellChangeTimes->{{3.873861488545156*^9, 3.8738614928605843`*^9}},
+ CellLabel->"In[27]:=",ExpressionUUID->"95bbad86-614e-4b97-9fc6-251760164b52"],
+
+Cell[BoxData["b1"], "Output",
+ CellChangeTimes->{3.8738614931404047`*^9},
+ CellLabel->"Out[27]=",ExpressionUUID->"5d85cf68-554c-406e-bf70-b9ab668faa91"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"HardIfThenElse", "[", 
+  RowBox[{"False", ",", "b1", ",", "b2"}], "]"}]], "Input",
+ CellChangeTimes->{{3.873861500908733*^9, 3.8738615014525557`*^9}},
+ CellLabel->"In[28]:=",ExpressionUUID->"fc688250-be2c-44e0-834a-cb437fb1aeed"],
+
+Cell[BoxData["b2"], "Output",
+ CellChangeTimes->{3.873861501795952*^9},
+ CellLabel->"Out[28]=",ExpressionUUID->"da213652-5996-47e7-86da-66b299c676fb"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Plot", "[", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"Ramp", "[", "x", "]"}], ",", 
+     RowBox[{"Evaluate", "[", 
+      RowBox[{"D", "[", 
+       RowBox[{
+        RowBox[{"Ramp", "[", "x", "]"}], ",", "x"}], "]"}], "]"}]}], "}"}], 
+   ",", 
+   RowBox[{"{", 
+    RowBox[{"x", ",", 
+     RowBox[{"-", "1"}], ",", "1"}], "}"}], ",", 
+   RowBox[{"PlotLayout", "->", "\"\<Row\>\""}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.874035429560873*^9, 3.8740354918705893`*^9}},
+ CellLabel->"In[17]:=",ExpressionUUID->"076f2f65-6433-4f11-b6a9-5003419e6e3e"],
+
+Cell[BoxData[
+ GraphicsBox[{{{{InsetBox[
+       GraphicsBox[{{{}, {}, 
+          TagBox[
+           {RGBColor[0.368417, 0.506779, 0.709798], AbsoluteThickness[1.6], 
+            Opacity[1.], LineBox[CompressedData["
+1:eJxTTMoPSmViYGBQBWIQrWcv9ur///f7GaAg/6dyx89fCP6GzYZqn78i+EYa
+vknPXiP45oItt85cR/AdHn88NXM9gh/Ufna1cTyCX36+JTd93zs4/8oV7lcH
+E9/C+bIH8kXMZd7A+Vuzj7Dy330F5yf0GH642fQSzv8xqbpjv/0LOH8x3z3J
+GQ+fwflzvAyLLnc+hfObchIrND2fwPnVzKvKi94+gvMTG86rXFvxEM6fuvfp
+jDlZD+D8Xfc1eNYo3YPzlQUcnELm3YbzN2l1ZD16fAPOv390o4KZ2TU4/6nO
+VKP92y7D+YJ1K830GC/C+Tpm73WWfj4D5ze7vL2ws+I4nC8asm5CpPghhH3f
+jvKfUNkF5y+9/bT3Zcs6OD82UGbL7eQpcP6bz18tS49MhvNrpp3fz6eK4M+5
+3XTa8dlEOH/L6UtH/S/2wfnrv+Qov7jVAudbsuovf/DUBc4HAN2nsXg=
+             "]], LineBox[CompressedData["
+1:eJxTTMoPSmViYGCwAmIQbcmqv/zBUxd7GF092e1UtkkCnP5XVzl7vn4qnG7I
+WpNzWSsLTh9W6GyfK1AEp9PTtdK2/WuC0zu5qq8eKp0Mpxfoil5erzQFTrcF
+rL8w5zyCDpn2+HSZ5jQ4/UHR55DW3RlwWs1Sdv0kl3lw+uTmeJeNnUvgtOkj
+RrnGiPVwWvnD7p9Wh3bCac/FN8/6RRyC066+Qsxftx6H0/3x1xsMtp+B08f9
+ZHkDhC7C6beKonWXZl2G06Ul2on9Ytfg9PU7AkFpJ27A6YRKm+fsPrfh9GFt
+867DrPfgtBrnnhdLPB7Aadk92a6sHQ/hNMMvppVFjx7B6e+Be+OOqj6B07dN
+4qVVW57C6YJwAUGlO8/gtOSUJxEssi/g9LroBcs/V7yE0+G29R4n9r6C0xvj
+cpWs/ryG0z+4nJl3hr6F00EXrc1kZ7yD01zW3Af3zEXQB5fc8o5ZjKANKioT
+Z69D0Hzy23skjyLokzlGj0U/IWgHDs0JfD7v4fSPwh9S6wIR9Prbx5f6hiNo
+ufVpu3uSEPSf0CXPuCoR9PbF8rbsyxB0Hu/748tWI2i18n1BbhsR9BSv2IzW
+PQi66OOsycyXEbRWdJbc4hsI+uERy5VO9xB0wIwb+xpfImgOphWeiu8R9P7s
+8isHviDosqtu8Qm/ELSevdir//8RNAA/4Mi3
+             "]]},
+           Annotation[#, "Charting`Private`Tag$34441#1"]& ], {}}, {}},
+        AspectRatio->0.6180339887498949,
+        Axes->False,
+        AxesLabel->{None, None},
+        AxesOrigin->{0, 0},
+        DisplayFunction->Identity,
+        Frame->False,
+        FrameLabel->{{None, None}, {None, None}},
+        FrameTicks->{{
+           Charting`TicksFunction[
+            UpTo[6], {"TickSide" -> "Outside", "LabelSide" -> "Outside"}], 
+           None}, {
+           Charting`TicksFunction[
+           "InteriorBegin", {
+            "TickSide" -> "Outside", "LabelSide" -> "Outside"}], Automatic}},
+        GridLines->{None, None},
+        GridLinesStyle->Directive[
+          GrayLevel[0.5, 0.4]],
+        ImagePadding->None,
+        ImageSize->{360., 222.49223594996215`},
+        Method->{
+         "DefaultBoundaryStyle" -> Automatic, 
+          "DefaultGraphicsInteraction" -> {
+           "Version" -> 1.2, "TrackMousePosition" -> {True, False}, 
+            "Effects" -> {
+             "Highlight" -> {"ratio" -> 2}, 
+              "HighlightPoint" -> {"ratio" -> 2}, 
+              "Droplines" -> {
+               "freeformCursorMode" -> True, 
+                "placement" -> {"x" -> "All", "y" -> "None"}}}}, 
+          "DefaultMeshStyle" -> AbsolutePointSize[6], "ScalingFunctions" -> 
+          None, "CoordinatesToolOptions" -> {"DisplayFunction" -> ({
+              (Identity[#]& )[
+               Part[#, 1]], 
+              (Identity[#]& )[
+               Part[#, 2]]}& ), "CopiedValueFunction" -> ({
+              (Identity[#]& )[
+               Part[#, 1]], 
+              (Identity[#]& )[
+               Part[#, 2]]}& )}},
+        PlotLabel->None,
+        PlotRange->{{-1.04, 1.04}, {-0.05, 1.05}},
+        PlotRangeClipping->True,
+        PlotRangePadding->None,
+        Ticks->{Automatic, Automatic}], 
+       Offset[{23.74486301369862, 22.861111111111086}, {0., 0.}], {
+       Left, Bottom}, {1., 0.6180339887498949}], 
+      {Opacity[0], 
+       TagBox[
+        PointBox[{
+         Offset[{23.74486301369862, 22.861111111111086`}, {0., 0.}], 
+          Offset[{23.74486301369862, 22.861111111111086`}, {1., 
+           0.6180339887498949}]}],
+        Annotation[#, "WRI-GraphicsAlign-PlaceHolder"]& ]}}, {
+      StyleBox[
+       StyleBox[{
+         LineBox[{
+          Offset[{23.74486301369862, 22.861111111111086`}, {0., 0.}], 
+           Offset[{23.74486301369862, 22.861111111111086`}, {0., 
+            0.6180339887498949}]}], 
+         StyleBox[{
+           LineBox[{{
+             Offset[{23.74486301369862, 22.861111111111086`}, {0., 
+               0.028092454034086133`}], 
+              Offset[{19.74486301369862, 22.861111111111086`}, {0., 
+               0.028092454034086133`}]}, {
+             Offset[{23.74486301369862, 22.861111111111086`}, {0., 
+               0.14046227017043064`}], 
+              Offset[{19.74486301369862, 22.861111111111086`}, {0., 
+               0.14046227017043064`}]}, {
+             Offset[{23.74486301369862, 22.861111111111086`}, {0., 
+               0.25283208630677523`}], 
+              Offset[{19.74486301369862, 22.861111111111086`}, {0., 
+               0.25283208630677523`}]}, {
+             Offset[{23.74486301369862, 22.861111111111086`}, {0., 
+               0.36520190244311973`}], 
+              Offset[{19.74486301369862, 22.861111111111086`}, {0., 
+               0.36520190244311973`}]}, {
+             Offset[{23.74486301369862, 22.861111111111086`}, {0., 
+               0.4775717185794643}], 
+              Offset[{19.74486301369862, 22.861111111111086`}, {0., 
+               0.4775717185794643}]}, {
+             Offset[{23.74486301369862, 22.861111111111086`}, {0., 
+               0.5899415347158088}], 
+              Offset[{19.74486301369862, 22.861111111111086`}, {0., 
+               0.5899415347158088}]}}], 
+           
+           StyleBox[{{
+              InsetBox["0", 
+               Offset[{16.74486301369862, 22.861111111111086}, \
+{0., 0.028092454034086133}], ImageScaled[{1, 0.5}], Automatic, {1, 0}], 
+              InsetBox[
+               TagBox[
+                InterpretationBox[
+                 StyleBox["\<\"0.2\"\>",
+                  ShowStringCharacters->False],
+                 0.2,
+                 AutoDelete->True],
+                NumberForm[#, {
+                  DirectedInfinity[1], 1}]& ], 
+               Offset[{16.74486301369862, 22.861111111111086}, \
+{0., 0.14046227017043064}], ImageScaled[{1, 0.5}], Automatic, {1, 0}], 
+              InsetBox[
+               TagBox[
+                InterpretationBox[
+                 StyleBox["\<\"0.4\"\>",
+                  ShowStringCharacters->False],
+                 0.4,
+                 AutoDelete->True],
+                NumberForm[#, {
+                  DirectedInfinity[1], 1}]& ], 
+               Offset[{16.74486301369862, 22.861111111111086}, \
+{0., 0.25283208630677523}], ImageScaled[{1, 0.5}], Automatic, {1, 0}], 
+              InsetBox[
+               TagBox[
+                InterpretationBox[
+                 StyleBox["\<\"0.6\"\>",
+                  ShowStringCharacters->False],
+                 0.6,
+                 AutoDelete->True],
+                NumberForm[#, {
+                  DirectedInfinity[1], 1}]& ], 
+               Offset[{16.74486301369862, 22.861111111111086}, \
+{0., 0.36520190244311973}], ImageScaled[{1, 0.5}], Automatic, {1, 0}], 
+              InsetBox[
+               TagBox[
+                InterpretationBox[
+                 StyleBox["\<\"0.8\"\>",
+                  ShowStringCharacters->False],
+                 0.8,
+                 AutoDelete->True],
+                NumberForm[#, {
+                  DirectedInfinity[1], 1}]& ], 
+               Offset[{16.74486301369862, 22.861111111111086}, \
+{0., 0.4775717185794643}], ImageScaled[{1, 0.5}], Automatic, {1, 0}], InsetBox[
+               TagBox[
+                InterpretationBox[
+                 StyleBox["\<\"1.0\"\>",
+                  ShowStringCharacters->False],
+                 1.,
+                 AutoDelete->True],
+                NumberForm[#, {
+                  DirectedInfinity[1], 1}]& ], 
+               Offset[{16.74486301369862, 22.861111111111086}, \
+{0., 0.5899415347158088}], ImageScaled[{1, 0.5}], Automatic, {1, 0}]}, {}}, 
+            "GraphicsLabel",
+            StripOnInput->False]}, "GraphicsFrameTicks",
+          StripOnInput->False]},
+        Antialiasing->False], "GraphicsFrame",
+       StripOnInput->False], 
+      StyleBox[
+       StyleBox[{
+         LineBox[{
+          Offset[{23.74486301369862, 22.861111111111086`}, {0., 0.}], 
+           Offset[{23.74486301369862, 22.861111111111086`}, {1., 0.}]}], 
+         StyleBox[{
+           LineBox[{{
+             Offset[{23.74486301369862, 22.861111111111086`}, {
+               0.019230769230769246`, 0.}], 
+              Offset[{23.74486301369862, 18.861111111111086`}, {
+               0.019230769230769246`, 0.}]}, {
+             Offset[{23.74486301369862, 22.861111111111086`}, {
+               0.25961538461538464`, 0.}], 
+              Offset[{23.74486301369862, 18.861111111111086`}, {
+               0.25961538461538464`, 0.}]}, {
+             Offset[{23.74486301369862, 22.861111111111086`}, {0.5, 0.}], 
+              Offset[{23.74486301369862, 18.861111111111086`}, {0.5, 0.}]}, {
+             Offset[{23.74486301369862, 22.861111111111086`}, {
+               0.7403846153846153, 0.}], 
+              Offset[{23.74486301369862, 18.861111111111086`}, {
+               0.7403846153846153, 0.}]}}], 
+           StyleBox[{{InsetBox[
+               TagBox[
+                InterpretationBox[
+                 StyleBox["\<\"-1.0\"\>",
+                  ShowStringCharacters->False],
+                 -1.,
+                 AutoDelete->True],
+                NumberForm[#, {
+                  DirectedInfinity[1], 1}]& ], 
+               Offset[{23.74486301369862, 15.861111111111086}, \
+{0.019230769230769246, 0.}], ImageScaled[{0.5, 1.}], Automatic, {1, 0}], 
+              InsetBox[
+               TagBox[
+                InterpretationBox[
+                 StyleBox["\<\"-0.5\"\>",
+                  ShowStringCharacters->False],
+                 -0.5,
+                 AutoDelete->True],
+                NumberForm[#, {
+                  DirectedInfinity[1], 1}]& ], 
+               Offset[{23.74486301369862, 15.861111111111086}, \
+{0.25961538461538464, 0.}], ImageScaled[{0.5, 1.}], Automatic, {1, 0}], 
+              InsetBox["0", 
+               Offset[{23.74486301369862, 15.861111111111086}, {0.5, 0.}], 
+               ImageScaled[{0.5, 1.}], Automatic, {1, 0}], InsetBox[
+               TagBox[
+                InterpretationBox[
+                 StyleBox["\<\"0.5\"\>",
+                  ShowStringCharacters->False],
+                 0.5,
+                 AutoDelete->True],
+                NumberForm[#, {
+                  DirectedInfinity[1], 1}]& ], 
+               Offset[{23.74486301369862, 15.861111111111086}, \
+{0.7403846153846153, 0.}], ImageScaled[{0.5, 1.}], Automatic, {1, 0}]}, {}}, 
+            "GraphicsLabel",
+            StripOnInput->False]}, "GraphicsFrameTicks",
+          StripOnInput->False]},
+        Antialiasing->False], "GraphicsFrame",
+       StripOnInput->False], 
+      StyleBox[
+       StyleBox[{
+         LineBox[{
+          Offset[{23.74486301369862, 22.861111111111086`}, {0., 
+            0.6180339887498948}], 
+           Offset[{23.74486301369862, 22.861111111111086`}, {1., 
+            0.6180339887498948}]}], 
+         StyleBox[{LineBox[{}], 
+           StyleBox[{{}, {}}, "GraphicsLabel",
+            StripOnInput->False]}, "GraphicsFrameTicks",
+          StripOnInput->False]},
+        Antialiasing->False], "GraphicsFrame",
+       StripOnInput->False], 
+      StyleBox[
+       StyleBox[{
+         LineBox[{
+          Offset[{23.74486301369862, 22.861111111111086`}, {1., 0.}], 
+           Offset[{23.74486301369862, 22.861111111111086`}, {1., 
+            0.6180339887498949}]}], 
+         StyleBox[{LineBox[{}], 
+           StyleBox[{{}, {}}, "GraphicsLabel",
+            StripOnInput->False]}, "GraphicsFrameTicks",
+          StripOnInput->False]},
+        Antialiasing->False], "GraphicsFrame",
+       StripOnInput->False]}}, {{InsetBox[
+       GraphicsBox[{{{}, {}, 
+          TagBox[
+           {RGBColor[0.368417, 0.506779, 0.709798], AbsoluteThickness[1.6], 
+            Opacity[1.], LineBox[CompressedData["
+1:eJxTTMoPSmViYGCwAmIQrWcv9ur///f7GaAg/6dyx89fCP6GzYZqn78i+EYa
+vknPXiP45oItt85cR/AdHn88NXM9gh/Ufna1cTyCX36+JTd93zs4/8oV7lcH
+E9/C+bIH8kXMZd7A+Vuzj7Dy330F5yf0GH642fQSzv8xqbpjv/0LOH8x3z3J
+GQ+fwflzvAyLLnc+hfObchIrND2fwPnVzKvKi94+gvMTG86rXFvxEM6fuvfp
+jDlZD+D8Xfc1eNYo3YPzlQUcnELm3YbzN2l1ZD16fAPOv390o4KZ2TU4/6nO
+VKP92y7D+YJ1K830GC/C+Tpm73WWfj4D5ze7vL2ws+I4nC8asm5CpPghhH3f
+jvKfUNkF5y+9/bT3Zcs6OP9Wjdj8ucYIPp+c+4bAR2vh/LKEFZd22iP4bk+z
+xLt+rYbzX7x7v0CrYCWcr8X0a3N29BI4P26x1lF5LgR/kkv0tcs7FsP5v9r2
+/LAWQ/BPc9fb8lxcCOff0OLoi+ydB+fHBspsuZ08Bc5/8/mrZemRyXB+zbTz
++/lUEfw5t5tOOz6bCOdvOX3pqP/FPjh//Zcc5Re3WuD8c5YK+tJzmuH8d3WX
+rfxim+D8CKGSJRn76+H8YGs+JsaTpQj/HS2RTPcuhvMv+N82OHu2AM6ffSJg
+v9HSdDhf4q7su38rk+B87cdXLafFRsP5ajwF0/XSA+F8S1b95Q+eusD5AOwG
+CI4=
+             "]], LineBox[CompressedData["
+1:eJxTTMoPSmViYGBQBmIQbcmqv/zBUxd7BjD4YP/BX/1TflEYnF892e1UtkkC
+nN+QtSbnslYWnH9YobN9rkARnH/i+ztNVvYaOD89XStt278mOD/HbgKH3Nce
+OH8nV/XVQ6WT4fyTm+NdNnYugfNNHzHKNUash/OVP+z+aXVoJ5zvufjmWb+I
+Q3C+q68Q89etx+H8/vjrDQbbz8D5x/1keQOELsL5bxVF6y7Nugznl5ZoJ/aL
+XYPzr98RCEo7cQPOT6i0ec7ucxvhf23zrsOs9+B8Nc49L5Z4PIDzZfdku7J2
+PITzGX4xrSx69AjO/x64N+6o6hM4/7ZJvLRqy1M4vyBcQFDpzjM4X3LKkwgW
+2Rdw/rroBcs/V7yE88Nt6z1O7H0F52+My1Wy+vMazv/B5cy8M/QtnB900dpM
+dsY7ON+BQ3MCn897OF/PXuzV//8IPgB1Kayu
+             "]]},
+           Annotation[#, "Charting`Private`Tag$34494#1"]& ], {}}, {}},
+        AspectRatio->0.6180339887498949,
+        Axes->False,
+        AxesLabel->{None, None},
+        AxesOrigin->{0, 0},
+        DisplayFunction->Identity,
+        Frame->False,
+        FrameLabel->{{None, None}, {None, None}},
+        FrameTicks->{{None, Automatic}, {
+           Charting`TicksFunction[
+           "InteriorEnd", {
+            "TickSide" -> "Outside", "LabelSide" -> "Outside"}], Automatic}},
+        GridLines->{None, None},
+        GridLinesStyle->Directive[
+          GrayLevel[0.5, 0.4]],
+        ImagePadding->None,
+        ImageSize->{360., 222.49223594996215`},
+        Method->{
+         "DefaultBoundaryStyle" -> Automatic, 
+          "DefaultGraphicsInteraction" -> {
+           "Version" -> 1.2, "TrackMousePosition" -> {True, False}, 
+            "Effects" -> {
+             "Highlight" -> {"ratio" -> 2}, 
+              "HighlightPoint" -> {"ratio" -> 2}, 
+              "Droplines" -> {
+               "freeformCursorMode" -> True, 
+                "placement" -> {"x" -> "All", "y" -> "None"}}}}, 
+          "DefaultMeshStyle" -> AbsolutePointSize[6], "ScalingFunctions" -> 
+          None, "CoordinatesToolOptions" -> {"DisplayFunction" -> ({
+              (Identity[#]& )[
+               Part[#, 1]], 
+              (Identity[#]& )[
+               Part[#, 2]]}& ), "CopiedValueFunction" -> ({
+              (Identity[#]& )[
+               Part[#, 1]], 
+              (Identity[#]& )[
+               Part[#, 2]]}& )}},
+        PlotLabel->None,
+        PlotRange->{{-1.04, 1.04}, {-0.05, 1.05}},
+        PlotRangeClipping->True,
+        PlotRangePadding->None,
+        Ticks->{Automatic, Automatic}], 
+       Offset[{28.74486301369862, 22.861111111111086}, {1., 0.}], {
+       Left, Bottom}, {1., 0.6180339887498949}], 
+      {Opacity[0], 
+       TagBox[
+        PointBox[{
+         Offset[{28.74486301369862, 22.861111111111086`}, {1., 0.}], 
+          Offset[{28.74486301369862, 22.861111111111086`}, {2., 
+           0.6180339887498949}]}],
+        Annotation[#, "WRI-GraphicsAlign-PlaceHolder"]& ]}}, {
+      StyleBox[
+       StyleBox[{
+         LineBox[{
+          Offset[{28.74486301369862, 22.861111111111086`}, {1., 0.}], 
+           Offset[{28.74486301369862, 22.861111111111086`}, {1., 
+            0.6180339887498949}]}], 
+         StyleBox[{LineBox[{}], 
+           StyleBox[{{}, {}}, "GraphicsLabel",
+            StripOnInput->False]}, "GraphicsFrameTicks",
+          StripOnInput->False]},
+        Antialiasing->False], "GraphicsFrame",
+       StripOnInput->False], 
+      StyleBox[
+       StyleBox[{
+         LineBox[{
+          Offset[{28.74486301369862, 22.861111111111086`}, {1., 0.}], 
+           Offset[{28.74486301369862, 22.861111111111086`}, {2., 0.}]}], 
+         StyleBox[{
+           LineBox[{{
+             Offset[{28.74486301369862, 22.861111111111086`}, {
+               1.2596153846153846`, 0.}], 
+              Offset[{28.74486301369862, 18.861111111111086`}, {
+               1.2596153846153846`, 0.}]}, {
+             Offset[{28.74486301369862, 22.861111111111086`}, {1.5, 0.}], 
+              Offset[{28.74486301369862, 18.861111111111086`}, {1.5, 0.}]}, {
+             Offset[{28.74486301369862, 22.861111111111086`}, {
+               1.7403846153846152`, 0.}], 
+              Offset[{28.74486301369862, 18.861111111111086`}, {
+               1.7403846153846152`, 0.}]}, {
+             Offset[{28.74486301369862, 22.861111111111086`}, {
+               1.9807692307692306`, 0.}], 
+              Offset[{28.74486301369862, 18.861111111111086`}, {
+               1.9807692307692306`, 0.}]}}], 
+           StyleBox[{{InsetBox[
+               TagBox[
+                InterpretationBox[
+                 StyleBox["\<\"-0.5\"\>",
+                  ShowStringCharacters->False],
+                 -0.5,
+                 AutoDelete->True],
+                NumberForm[#, {
+                  DirectedInfinity[1], 1}]& ], 
+               Offset[{28.74486301369862, 15.861111111111086}, \
+{1.2596153846153846, 0.}], ImageScaled[{0.5, 1.}], Automatic, {1, 0}], 
+              InsetBox["0", 
+               Offset[{28.74486301369862, 15.861111111111086}, {1.5, 0.}], 
+               ImageScaled[{0.5, 1.}], Automatic, {1, 0}], InsetBox[
+               TagBox[
+                InterpretationBox[
+                 StyleBox["\<\"0.5\"\>",
+                  ShowStringCharacters->False],
+                 0.5,
+                 AutoDelete->True],
+                NumberForm[#, {
+                  DirectedInfinity[1], 1}]& ], 
+               Offset[{28.74486301369862, 15.861111111111086}, \
+{1.7403846153846152, 0.}], ImageScaled[{0.5, 1.}], Automatic, {1, 0}], 
+              InsetBox[
+               TagBox[
+                InterpretationBox[
+                 StyleBox["\<\"1.0\"\>",
+                  ShowStringCharacters->False],
+                 1.,
+                 AutoDelete->True],
+                NumberForm[#, {
+                  DirectedInfinity[1], 1}]& ], 
+               Offset[{28.74486301369862, 15.861111111111086}, \
+{1.9807692307692306, 0.}], ImageScaled[{0.5, 1.}], Automatic, {1, 0}]}, {}}, 
+            "GraphicsLabel",
+            StripOnInput->False]}, "GraphicsFrameTicks",
+          StripOnInput->False]},
+        Antialiasing->False], "GraphicsFrame",
+       StripOnInput->False], 
+      StyleBox[
+       StyleBox[{
+         LineBox[{
+          Offset[{28.74486301369862, 22.861111111111086`}, {1., 
+            0.6180339887498948}], 
+           Offset[{28.74486301369862, 22.861111111111086`}, {2., 
+            0.6180339887498948}]}], 
+         StyleBox[{LineBox[{}], 
+           StyleBox[{{}, {}}, "GraphicsLabel",
+            StripOnInput->False]}, "GraphicsFrameTicks",
+          StripOnInput->False]},
+        Antialiasing->False], "GraphicsFrame",
+       StripOnInput->False], 
+      StyleBox[
+       StyleBox[{
+         LineBox[{
+          Offset[{28.74486301369862, 22.861111111111086`}, {2., 0.}], 
+           Offset[{28.74486301369862, 22.861111111111086`}, {2., 
+            0.6180339887498949}]}], 
+         StyleBox[{LineBox[{}], 
+           StyleBox[{{}, {}}, "GraphicsLabel",
+            StripOnInput->False]}, "GraphicsFrameTicks",
+          StripOnInput->False]},
+        Antialiasing->False], "GraphicsFrame",
+       StripOnInput->False]}}}, {}},
+  DisplayFunction->Identity,
+  ImagePadding->{{-1, 30.24486301369862}, {-1, 26.8611111111111}},
+  ImageSize->{
+    UpTo[600], 
+    UpTo[223]},
+  PlotLabel->None]], "Output",
+ CellChangeTimes->{{3.874035442657151*^9, 3.8740354923141737`*^9}},
+ CellLabel->"Out[17]=",ExpressionUUID->"28093bcc-1755-479f-8ea4-0a3058b63679"]
 }, Open  ]],
 
 Cell["\<\
 Requirements
 - Preserve hard semantics (1/2)
-- Always a backprop gradient that can increase/decrease output
-- Monotonic function of its inputs (otherwise get trapped in bad local \
-minima)
+- Always some backprop gradient that can increase/decrease output
+- Ideally: a monotonic function of its inputs (otherwise more likely to get \
+trapped in bad local minima)
 - Continuous function
 - Smooth (or if not smooth, then smooth almost everywhere)\
 \>", "Text",
  CellChangeTimes->{{3.873435912014174*^9, 3.8734359979673567`*^9}, {
   3.8734360714069557`*^9, 3.873436073894665*^9}, {3.873436106286297*^9, 
-  3.873436117650896*^9}, {3.873438104686331*^9, 
-  3.873438120366537*^9}},ExpressionUUID->"bbfaca54-ea74-4ec7-9767-\
+  3.873436117650896*^9}, {3.873438104686331*^9, 3.873438120366537*^9}, {
+  3.8738618870288277`*^9, 3.873861887748809*^9}, {3.874035630732059*^9, 
+  3.874035638213181*^9}},ExpressionUUID->"bbfaca54-ea74-4ec7-9767-\
 e8d7354208d0"],
 
-Cell[BoxData[
- RowBox[{
-  RowBox[{"CandidateDifferentiableHardIfThenElse", "[", 
-   RowBox[{"w_", ",", "b1_", ",", "b2_"}], "]"}], ":=", 
-  RowBox[{"Min", "[", 
-   RowBox[{
-    RowBox[{"Max", "[", 
-     RowBox[{"b1", ",", "w"}], "]"}], ",", 
-    RowBox[{"Max", "[", 
-     RowBox[{"b2", ",", 
-      RowBox[{"1", "-", "w"}]}], "]"}]}], "]"}]}]], "Input",
- CellChangeTimes->{{3.8735180203980103`*^9, 3.873518032257794*^9}},
- CellLabel->"In[23]:=",ExpressionUUID->"0847f88d-f088-4730-a358-2b169fea7652"],
-
-Cell[BoxData[
- RowBox[{"(*", 
-  RowBox[{
-   RowBox[{"CandidateDifferentiableHardIfThenElse", "[", 
-    RowBox[{"w_", ",", "b1_", ",", "b2_"}], "]"}], ":=", 
-   RowBox[{"Max", "[", 
-    RowBox[{
-     RowBox[{"Min", "[", 
-      RowBox[{"b1", ",", 
-       RowBox[{"1", "-", "w"}]}], "]"}], ",", 
-     RowBox[{"Min", "[", 
-      RowBox[{"b2", ",", "w"}], "]"}]}], "]"}]}], "*)"}]], "Input",
- CellChangeTimes->{{3.873536500981254*^9, 3.873536517085266*^9}, {
-  3.873536620660062*^9, 
-  3.8735366226531143`*^9}},ExpressionUUID->"7cb45e00-ef30-45b9-8e10-\
-59c5c406f6c5"],
-
 Cell[CellGroupData[{
 
 Cell[BoxData[
- RowBox[{"BooleanConvert", "[", 
+ RowBox[{"DifferentiableHardIfThenElse", "[", 
+  RowBox[{"w", ",", "b1", ",", "b2"}], "]"}]], "Input",
+ CellChangeTimes->{{3.8735180203980103`*^9, 3.873518032257794*^9}, {
+  3.8738602093198223`*^9, 3.873860216958754*^9}},
+ CellLabel->"In[4]:=",ExpressionUUID->"0847f88d-f088-4730-a358-2b169fea7652"],
+
+Cell[BoxData[
+ RowBox[{"Max", "[", 
   RowBox[{
-   RowBox[{"Or", "[", 
-    RowBox[{
-     RowBox[{"And", "[", 
-      RowBox[{"b1", ",", "w"}], "]"}], ",", 
-     RowBox[{"And", "[", 
-      RowBox[{"b2", ",", 
-       RowBox[{"Not", "[", "w", "]"}]}], "]"}]}], "]"}], ",", "\"\<CNF\>\""}],
-   "]"}]], "Input",
- CellChangeTimes->{{3.873536451207405*^9, 3.873536495276874*^9}},
- CellLabel->"In[19]:=",ExpressionUUID->"853a6ca0-bfea-4833-9335-6f0605456081"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{"(", 
-   RowBox[{"b1", "||", 
-    RowBox[{"!", "w"}]}], ")"}], "&&", 
-  RowBox[{"(", 
-   RowBox[{"b2", "||", "w"}], ")"}]}]], "Output",
- CellChangeTimes->{{3.873536464997621*^9, 3.873536495618477*^9}},
- CellLabel->"Out[19]=",ExpressionUUID->"62dd9d59-44ae-4065-8757-e6ccb48720a5"]
-}, Open  ]],
-
-Cell[CellGroupData[{
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{"CandidateDifferentiableHardIfThenElse", "[", 
-   RowBox[{"w", ",", "b1", ",", "b2"}], "]"}], "//", 
-  "FullSimplify"}]], "Input",
- CellChangeTimes->{{3.873437511550706*^9, 3.8734375136787243`*^9}, {
-  3.8734392061608458`*^9, 3.87343921086754*^9}},
- CellLabel->"In[9]:=",ExpressionUUID->"74f19cf8-ca60-472b-8d78-68ccdc2a13eb"],
-
-Cell[BoxData[
- RowBox[{"Min", "[", 
-  RowBox[{
-   RowBox[{"Max", "[", 
+   RowBox[{"Min", "[", 
     RowBox[{"b1", ",", "w"}], "]"}], ",", 
-   RowBox[{"Max", "[", 
+   RowBox[{"Min", "[", 
     RowBox[{"b2", ",", 
      RowBox[{"1", "-", "w"}]}], "]"}]}], "]"}]], "Output",
- CellChangeTimes->{
-  3.873437514245471*^9, {3.873439203776389*^9, 3.8734392128608027`*^9}, 
-   3.873446900592067*^9, 3.8735180346992903`*^9, 3.8735360088250017`*^9},
- CellLabel->"Out[9]=",ExpressionUUID->"5698154c-01b7-4089-961d-49da4c1b4eff"]
+ CellChangeTimes->{{3.873860217588479*^9, 3.873860236421652*^9}, 
+   3.8738622752788153`*^9, 3.8738708289699783`*^9, 3.873881105720661*^9, 
+   3.8740351741945143`*^9},
+ CellLabel->"Out[4]=",ExpressionUUID->"5cd6c38d-f359-4b92-a05c-39054a4474bc"]
 }, Open  ]],
 
 Cell[CellGroupData[{
 
 Cell[BoxData[
- RowBox[{"VisualiseIfThenElse", "[", "CandidateDifferentiableHardIfThenElse", 
+ RowBox[{"VisualiseIfThenElse", "[", "DifferentiableHardIfThenElse", 
   "]"}]], "Input",
- CellChangeTimes->{{3.873437525124794*^9, 3.873437529442787*^9}},
- CellLabel->"In[10]:=",ExpressionUUID->"5ef2f2d0-10f9-49c1-8281-1e20c5ecd562"],
+ CellChangeTimes->{{3.873437525124794*^9, 3.873437529442787*^9}, 
+   3.87386026062319*^9, {3.873872192192071*^9, 3.873872193284157*^9}, {
+   3.873872281366538*^9, 3.873872282516369*^9}, {3.8740441173311462`*^9, 
+   3.874044118876766*^9}},
+ CellLabel->"In[4]:=",ExpressionUUID->"5ef2f2d0-10f9-49c1-8281-1e20c5ecd562"],
 
 Cell[BoxData[
  TagBox[
   StyleBox[
-   DynamicModuleBox[{$CellContext`b1$$ = 
-    0.8140000000000001, $CellContext`b2$$ = 0.734, $CellContext`w1$$ = 0.916, 
-    Typeset`show$$ = True, Typeset`bookmarkList$$ = {}, 
-    Typeset`bookmarkMode$$ = "Menu", Typeset`animator$$, Typeset`animvar$$ = 
-    1, Typeset`name$$ = "\"untitled\"", Typeset`specs$$ = {{
+   DynamicModuleBox[{$CellContext`b1$$ = 0.156, $CellContext`b2$$ = 
+    0.28200000000000003`, $CellContext`branch1$$ = 
+    True, $CellContext`branch2$$ = True, $CellContext`condition$$ = 
+    True, $CellContext`w1$$ = 0.156, Typeset`show$$ = True, 
+    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{
       Hold[$CellContext`w1$$], 0, 1}, {
       Hold[$CellContext`b1$$], 0, 1}, {
-      Hold[$CellContext`b2$$], 0, 1}}, Typeset`size$$ = {
+      Hold[$CellContext`b2$$], 0, 1}, {
+      Hold[$CellContext`condition$$], {True, False}}, {
+      Hold[$CellContext`branch1$$], {False, True}}, {
+      Hold[$CellContext`branch2$$], {False, True}}}, Typeset`size$$ = {
     1259., {233., 238.38580511223563`}}, Typeset`update$$ = 0, 
     Typeset`initDone$$, Typeset`skipInitDone$$ = True}, 
     DynamicBox[Manipulate`ManipulateBoxes[
      1, StandardForm, 
       "Variables" :> {$CellContext`b1$$ = 0, $CellContext`b2$$ = 
-        0, $CellContext`w1$$ = 0}, "ControllerVariables" :> {}, 
+        0, $CellContext`branch1$$ = False, $CellContext`branch2$$ = 
+        False, $CellContext`condition$$ = True, $CellContext`w1$$ = 0}, 
+      "ControllerVariables" :> {}, 
       "OtherVariables" :> {
        Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
         Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
         Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
          Typeset`skipInitDone$$}, "Body" :> Block[{$CellContext`d1 = D[
-           $CellContext`CandidateDifferentiableHardIfThenElse[$CellContext`w1$\
-$, $CellContext`b, $CellContext`b2$$], $CellContext`b], $CellContext`d2 = D[
-           $CellContext`CandidateDifferentiableHardIfThenElse[$CellContext`w1$\
-$, $CellContext`b1$$, $CellContext`b], $CellContext`b], $CellContext`d3 = D[
-           $CellContext`CandidateDifferentiableHardIfThenElse[$CellContext`w, \
+           
+           neurallogic`DifferentiableHardIfThenElse[$CellContext`w1$$, \
+$CellContext`b, $CellContext`b2$$], $CellContext`b], $CellContext`d2 = D[
+           
+           neurallogic`DifferentiableHardIfThenElse[$CellContext`w1$$, \
+$CellContext`b1$$, $CellContext`b], $CellContext`b], $CellContext`d3 = D[
+           
+           neurallogic`DifferentiableHardIfThenElse[$CellContext`w, \
 $CellContext`b1$$, $CellContext`b2$$], $CellContext`w]}, 
         GraphicsRow[{
-          GraphicsColumn[{
-            Show[
-             Plot[{
-               $CellContext`CandidateDifferentiableHardIfThenElse[$\
-CellContext`w1$$, $CellContext`b, $CellContext`b2$$]}, {$CellContext`b, 0, 1},
+          If[$CellContext`branch1$$, 
+           GraphicsColumn[{
+             Show[
+              Plot[{
+                
+                neurallogic`DifferentiableHardIfThenElse[$CellContext`w1$$, \
+$CellContext`b, $CellContext`b2$$]}, {$CellContext`b, 0, 1}, 
                PlotRange -> {{0, 1}, {0, 1}}, 
-              GridLines -> {{1/2, 1}, {1/2, 1}}, 
-              AxesLabel -> {"b1", "output"}, PlotLabel -> 
-              "FIRST BRANCH b1\n(w and b2 fixed)"], 
-             DiscretePlot[
-              Boole[
-               neurallogic`HardIfThenElse[
-                neurallogic`Harden[$CellContext`w1$$], 
-                neurallogic`Harden[$CellContext`b], 
-                neurallogic`Harden[$CellContext`b2$$]]], {$CellContext`b, 0, 
-               1}, PlotRange -> {{0, 1}, {0, 1}}, ExtentSize -> Full, Filling -> 
-              Axis]], 
-            
-            Plot[$CellContext`d1, {$CellContext`b, 0, 1}, Frame -> True, 
-             GridLines -> {{-1, 0, 1}, {-1, 0, 1}}, ImageSize -> Small]}], 
-          GraphicsColumn[{
-            Show[
-             Plot[{
-               $CellContext`CandidateDifferentiableHardIfThenElse[$\
-CellContext`w1$$, $CellContext`b1$$, $CellContext`b]}, {$CellContext`b, 0, 1},
+               GridLines -> {{1/2, 1}, {1/2, 1}}, 
+               AxesLabel -> {"b1", "output"}, PlotLabel -> 
+               "FIRST BRANCH b1\n(w and b2 fixed)"], 
+              DiscretePlot[
+               Boole[
+                neurallogic`HardIfThenElse[
+                 neurallogic`Harden[$CellContext`w1$$], 
+                 neurallogic`Harden[$CellContext`b], 
+                 neurallogic`Harden[$CellContext`b2$$]]], {$CellContext`b, 0, 
+                1}, PlotRange -> {{0, 1}, {0, 1}}, ExtentSize -> Full, 
+               Filling -> Axis]], 
+             
+             Plot[$CellContext`d1, {$CellContext`b, 0, 1}, Frame -> True, 
+              GridLines -> {{-1, 0, 1}, {-1, 0, 1}}, ImageSize -> Small]}], 
+           Nothing], 
+          If[$CellContext`branch2$$, 
+           GraphicsColumn[{
+             Show[
+              Plot[{
+                
+                neurallogic`DifferentiableHardIfThenElse[$CellContext`w1$$, \
+$CellContext`b1$$, $CellContext`b]}, {$CellContext`b, 0, 1}, 
                PlotRange -> {{0, 1}, {0, 1}}, 
-              GridLines -> {{1/2, 1}, {1/2, 1}}, 
-              AxesLabel -> {"b2", "output"}, PlotLabel -> 
-              "SECOND BRANCH b2\n(w and b1 fixed)"], 
-             DiscretePlot[
-              Boole[
-               neurallogic`HardIfThenElse[
-                neurallogic`Harden[$CellContext`w1$$], 
-                neurallogic`Harden[$CellContext`b1$$], 
-                neurallogic`Harden[$CellContext`b]]], {$CellContext`b, 0, 1}, 
-              PlotRange -> {{0, 1}, {0, 1}}, ExtentSize -> Full, Filling -> 
-              Axis]], 
-            
-            Plot[$CellContext`d2, {$CellContext`b, 0, 1}, Frame -> True, 
-             GridLines -> {{-1, 0, 1}, {-1, 0, 1}}, ImageSize -> Small]}], 
-          GraphicsColumn[{
-            Show[
-             Plot[{
-               $CellContext`CandidateDifferentiableHardIfThenElse[$\
-CellContext`w, $CellContext`b1$$, $CellContext`b2$$]}, {$CellContext`w, 0, 1},
+               GridLines -> {{1/2, 1}, {1/2, 1}}, 
+               AxesLabel -> {"b2", "output"}, PlotLabel -> 
+               "SECOND BRANCH b2\n(w and b1 fixed)"], 
+              DiscretePlot[
+               Boole[
+                neurallogic`HardIfThenElse[
+                 neurallogic`Harden[$CellContext`w1$$], 
+                 neurallogic`Harden[$CellContext`b1$$], 
+                 neurallogic`Harden[$CellContext`b]]], {$CellContext`b, 0, 1},
+                PlotRange -> {{0, 1}, {0, 1}}, ExtentSize -> Full, Filling -> 
+               Axis]], 
+             
+             Plot[$CellContext`d2, {$CellContext`b, 0, 1}, Frame -> True, 
+              GridLines -> {{-1, 0, 1}, {-1, 0, 1}}, ImageSize -> Small]}], 
+           Nothing], 
+          If[$CellContext`condition$$, 
+           GraphicsColumn[{
+             Show[
+              Plot[{
+                
+                neurallogic`DifferentiableHardIfThenElse[$CellContext`w, \
+$CellContext`b1$$, $CellContext`b2$$]}, {$CellContext`w, 0, 1}, 
                PlotRange -> {{0, 1}, {0, 1}}, 
-              GridLines -> {{1/2, 1}, {1/2, 1}}, AxesLabel -> {"w", "output"},
-               PlotLabel -> "CONDITION w\n(b1 and b2 fixed)"], 
-             DiscretePlot[
-              Boole[
-               neurallogic`HardIfThenElse[
-                neurallogic`Harden[$CellContext`w], 
-                neurallogic`Harden[$CellContext`b1$$], 
-                neurallogic`Harden[$CellContext`b2$$]]], {$CellContext`w, 0, 
-               1}, PlotRange -> {{0, 1}, {0, 1}}, ExtentSize -> Full, Filling -> 
-              Axis]], 
-            
-            Plot[$CellContext`d3, {$CellContext`w, 0, 1}, Frame -> True, 
-             GridLines -> {{-1, 0, 1}, {-1, 0, 1}}, ImageSize -> Small]}]}, 
-         ImageSize -> Full]], 
+               GridLines -> {{1/2, 1}, {1/2, 1}}, 
+               AxesLabel -> {"w", "output"}, PlotLabel -> 
+               "CONDITION w\n(b1 and b2 fixed)"], 
+              DiscretePlot[
+               Boole[
+                neurallogic`HardIfThenElse[
+                 neurallogic`Harden[$CellContext`w], 
+                 neurallogic`Harden[$CellContext`b1$$], 
+                 neurallogic`Harden[$CellContext`b2$$]]], {$CellContext`w, 0, 
+                1}, PlotRange -> {{0, 1}, {0, 1}}, ExtentSize -> Full, 
+               Filling -> Axis]], 
+             
+             Plot[$CellContext`d3, {$CellContext`w, 0, 1}, Frame -> True, 
+              GridLines -> {{-1, 0, 1}, {-1, 0, 1}}, ImageSize -> Small]}], 
+           Nothing]}, 
+         If[
+          
+          And[$CellContext`condition$$, $CellContext`branch1$$, \
+$CellContext`branch2$$], ImageSize -> Full, ImageSize -> Automatic]]], 
       "Specifications" :> {{$CellContext`w1$$, 0, 1}, {$CellContext`b1$$, 0, 
-         1}, {$CellContext`b2$$, 0, 1}}, 
-      "Options" :> {SynchronousUpdating -> False}, "DefaultOptions" :> {}],
-     ImageSizeCache->{1305., {302.1875, 307.8125}},
+         1}, {$CellContext`b2$$, 0, 1}, {$CellContext`condition$$, {
+         True, False}}, {$CellContext`branch1$$, {
+         False, True}}, {$CellContext`branch2$$, {False, True}}}, 
+      "Options" :> {}, "DefaultOptions" :> {}],
+     ImageSizeCache->{1305., {323.1875, 328.8125}},
      SingleEvaluation->True],
     Deinitialization:>None,
     DynamicModuleValues:>{},
@@ -594,8 +1114,24 @@ CellContext`w, $CellContext`b1$$, $CellContext`b2$$]}, {$CellContext`w, 0, 1},
    Deployed->True,
    StripOnInput->False],
   Manipulate`InterpretManipulate[1]]], "Output",
- CellChangeTimes->{3.873518041569295*^9, 3.873536009615237*^9},
- CellLabel->"Out[10]=",ExpressionUUID->"17363eff-9cfa-4657-82a9-a1f9c21e47f0"]
+ CellChangeTimes->{
+  3.873518041569295*^9, 3.873536009615237*^9, 3.87386026161235*^9, 
+   3.873861904827265*^9, {3.87386204987223*^9, 3.873862076729109*^9}, {
+   3.873862141589493*^9, 3.87386219519344*^9}, 3.873862227343799*^9, 
+   3.8738631747038403`*^9, 3.873871058419271*^9, {3.873871445451024*^9, 
+   3.873871446003928*^9}, {3.873871495654977*^9, 3.8738714962368917`*^9}, {
+   3.8738717820800533`*^9, 3.873871811316729*^9}, 3.873872213594149*^9, 
+   3.87387228591926*^9, {3.873879646900013*^9, 3.873879647387546*^9}, {
+   3.873880066980515*^9, 3.873880067321005*^9}, 3.8738803194375067`*^9, 
+   3.873881109710747*^9, 3.873881186583847*^9, {3.873881562287467*^9, 
+   3.8738815628026247`*^9}, 3.87388171982126*^9, {3.8740351767794313`*^9, 
+   3.874035186356142*^9}, 3.874035272514846*^9, {3.874035323797427*^9, 
+   3.8740353513816643`*^9}, {3.874035773914785*^9, 3.874035774275478*^9}, {
+   3.8740391972140617`*^9, 3.87403919814642*^9}, {3.874040429523261*^9, 
+   3.874040433902069*^9}, 3.874040798428732*^9, 3.8740429091012497`*^9, {
+   3.874043575625267*^9, 3.874043576013175*^9}, {3.874044119228943*^9, 
+   3.874044121302711*^9}},
+ CellLabel->"Out[4]=",ExpressionUUID->"1f21781c-b412-4c29-9b93-ea8422dbfe2d"]
 }, Open  ]],
 
 Cell[TextData[{
@@ -639,546 +1175,284 @@ e20ea8cfb1c7"],
 Cell[CellGroupData[{
 
 Cell[BoxData[
- RowBox[{"Manipulate", "[", 
-  RowBox[{
-   RowBox[{"Plot3D", "[", 
-    RowBox[{
-     RowBox[{"{", 
-      RowBox[{
-       RowBox[{"CandidateDifferentiableHardIfThenElse", "[", 
-        RowBox[{"w", ",", "b1", ",", "b2"}], "]"}], ",", 
-       RowBox[{"If", "[", 
-        RowBox[{"halfPlane", ",", 
-         RowBox[{"1", "/", "2"}], ",", "Nothing"}], "]"}]}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"b1", ",", "0", ",", "1"}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"b2", ",", "0", ",", "1"}], "}"}], ",", 
-     RowBox[{"PlotRange", "->", 
+ RowBox[{"Row", "[", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{"Manipulate", "[", 
+     RowBox[{
+      RowBox[{"Show", "[", 
+       RowBox[{
+        RowBox[{"Plot3D", "[", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"CandidateDifferentiableHardIfThenElse", "[", 
+             RowBox[{"w", ",", "b1", ",", "b2"}], "]"}], ",", 
+            RowBox[{"If", "[", 
+             RowBox[{"halfPlane", ",", 
+              RowBox[{"1", "/", "2"}], ",", "Nothing"}], "]"}]}], "}"}], ",", 
+          
+          RowBox[{"{", 
+           RowBox[{"b1", ",", "0", ",", "1"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"b2", ",", "0", ",", "1"}], "}"}], ",", 
+          RowBox[{"PlotRange", "->", 
+           RowBox[{"{", 
+            RowBox[{"0", ",", "1"}], "}"}]}], ",", 
+          RowBox[{"AxesLabel", "->", "Automatic"}], ",", 
+          RowBox[{"ColorFunction", "->", "\"\<TemperatureMap\>\""}], ",", 
+          RowBox[{"BoxRatios", "->", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1", ",", "2"}], "}"}]}], ",", 
+          RowBox[{"MeshFunctions", "->", 
+           RowBox[{"{", 
+            RowBox[{"#3", "&"}], "}"}]}]}], "]"}], ",", "lines"}], "]"}], ",", 
       RowBox[{"{", 
-       RowBox[{"0", ",", "1"}], "}"}]}], ",", 
-     RowBox[{"AxesLabel", "->", "Automatic"}], ",", 
-     RowBox[{"ColorFunction", "->", "\"\<TemperatureMap\>\""}], ",", 
-     RowBox[{"BoxRatios", "->", 
+       RowBox[{"w", ",", "0", ",", "1"}], "}"}], ",", 
       RowBox[{"{", 
-       RowBox[{"1", ",", "1", ",", "2"}], "}"}]}], ",", 
-     RowBox[{"MeshFunctions", "->", 
+       RowBox[{"halfPlane", ",", 
+        RowBox[{"{", 
+         RowBox[{"False", ",", "True"}], "}"}]}], "}"}]}], "]"}], ",", 
+    RowBox[{"Manipulate", "[", 
+     RowBox[{
+      RowBox[{"Show", "[", 
+       RowBox[{
+        RowBox[{"Plot3D", "[", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"CandidateDifferentiableHardIfThenElse", "[", 
+             RowBox[{"w", ",", "b1", ",", "b2"}], "]"}], ",", 
+            RowBox[{"If", "[", 
+             RowBox[{"halfPlane", ",", 
+              RowBox[{"1", "/", "2"}], ",", "Nothing"}], "]"}]}], "}"}], ",", 
+          
+          RowBox[{"{", 
+           RowBox[{"w", ",", "0", ",", "1"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"b2", ",", "0", ",", "1"}], "}"}], ",", 
+          RowBox[{"PlotRange", "->", 
+           RowBox[{"{", 
+            RowBox[{"0", ",", "1"}], "}"}]}], ",", 
+          RowBox[{"AxesLabel", "->", "Automatic"}], ",", 
+          RowBox[{"ColorFunction", "->", "\"\<TemperatureMap\>\""}], ",", 
+          RowBox[{"BoxRatios", "->", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1", ",", "2"}], "}"}]}], ",", 
+          RowBox[{"MeshFunctions", "->", 
+           RowBox[{"{", 
+            RowBox[{"#3", "&"}], "}"}]}]}], "]"}], ",", "lines"}], "]"}], ",", 
       RowBox[{"{", 
-       RowBox[{"#3", "&"}], "}"}]}]}], "]"}], ",", 
-   RowBox[{"{", 
-    RowBox[{"w", ",", "0", ",", "1"}], "}"}], ",", 
-   RowBox[{"{", 
-    RowBox[{"halfPlane", ",", 
-     RowBox[{"{", 
-      RowBox[{"False", ",", "True"}], "}"}]}], "}"}]}], "]"}]], "Input",
- CellChangeTimes->{{3.87345443498997*^9, 3.873454436508438*^9}, 
-   3.873455460320155*^9},
- CellLabel->"In[11]:=",ExpressionUUID->"09b928bd-1366-4635-87b9-48c8cf24fb37"],
+       RowBox[{"b1", ",", "0", ",", "1"}], "}"}], ",", 
+      RowBox[{"{", 
+       RowBox[{"halfPlane", ",", 
+        RowBox[{"{", 
+         RowBox[{"False", ",", "True"}], "}"}]}], "}"}]}], "]"}]}], "}"}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.87386124987258*^9, 3.873861252856132*^9}, 
+   3.8738622885707893`*^9, {3.87387109312954*^9, 3.873871095911907*^9}, {
+   3.8738797123294373`*^9, 3.873879722593067*^9}},
+ CellLabel->"In[26]:=",ExpressionUUID->"2274adb8-8f49-482e-a3d3-5ab4e5af0c3f"],
 
 Cell[BoxData[
- TagBox[
-  StyleBox[
-   DynamicModuleBox[{$CellContext`halfPlane$$ = False, $CellContext`w$$ = 
-    0.20600000000000002`, Typeset`show$$ = True, Typeset`bookmarkList$$ = {}, 
-    Typeset`bookmarkMode$$ = "Menu", Typeset`animator$$, Typeset`animvar$$ = 
-    1, Typeset`name$$ = "\"untitled\"", Typeset`specs$$ = {{
-      Hold[$CellContext`w$$], 0, 1}, {
-      Hold[$CellContext`halfPlane$$], {False, True}}}, Typeset`size$$ = {
-    360., {188., 191.78337720317194`}}, Typeset`update$$ = 0, 
-    Typeset`initDone$$, Typeset`skipInitDone$$ = True}, 
-    DynamicBox[Manipulate`ManipulateBoxes[
-     1, StandardForm, 
-      "Variables" :> {$CellContext`halfPlane$$ = False, $CellContext`w$$ = 0},
-       "ControllerVariables" :> {}, 
-      "OtherVariables" :> {
-       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
-        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
-        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
-         Typeset`skipInitDone$$}, "Body" :> Plot3D[{
-         $CellContext`CandidateDifferentiableHardIfThenElse[$CellContext`w$$, \
-$CellContext`b1, $CellContext`b2], 
-         If[$CellContext`halfPlane$$, 1/2, Nothing]}, {$CellContext`b1, 0, 
-         1}, {$CellContext`b2, 0, 1}, PlotRange -> {0, 1}, AxesLabel -> 
-        Automatic, ColorFunction -> "TemperatureMap", BoxRatios -> {1, 1, 2}, 
-        MeshFunctions -> {#3& }], 
-      "Specifications" :> {{$CellContext`w$$, 0, 
-         1}, {$CellContext`halfPlane$$, {False, True}}}, "Options" :> {}, 
-      "DefaultOptions" :> {}],
-     ImageSizeCache->{406., {239.1875, 244.8125}},
-     SingleEvaluation->True],
-    Deinitialization:>None,
-    DynamicModuleValues:>{},
-    SynchronousInitialization->True,
-    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
-    UnsavedVariables:>{Typeset`initDone$$},
-    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
-   Deployed->True,
-   StripOnInput->False],
-  Manipulate`InterpretManipulate[1]]], "Output",
- CellChangeTimes->{{3.873454437595689*^9, 3.873454452162388*^9}, 
-   3.873454954102228*^9, 3.873455461397447*^9, 3.8735180902727747`*^9, 
-   3.873536033199041*^9},
- CellLabel->"Out[11]=",ExpressionUUID->"ea4145b6-8890-4c62-ac67-66114f00728a"]
+ TemplateBox[{
+   TagBox[
+    StyleBox[
+     DynamicModuleBox[{$CellContext`halfPlane$$ = False, $CellContext`w$$ = 
+       0.276, Typeset`show$$ = True, Typeset`bookmarkList$$ = {}, 
+       Typeset`bookmarkMode$$ = "Menu", Typeset`animator$$, Typeset`animvar$$ = 
+       1, Typeset`name$$ = "\"untitled\"", Typeset`specs$$ = {{
+          Hold[$CellContext`w$$], 0, 1}, {
+          Hold[$CellContext`halfPlane$$], {False, True}}}, 
+       Typeset`size$$ = {360., {188., 191.78336981534653`}}, Typeset`update$$ = 
+       0, Typeset`initDone$$, Typeset`skipInitDone$$ = True}, 
+      DynamicBox[
+       Manipulate`ManipulateBoxes[
+       1, StandardForm, 
+        "Variables" :> {$CellContext`halfPlane$$ = False, $CellContext`w$$ = 
+          0}, "ControllerVariables" :> {}, 
+        "OtherVariables" :> {
+         Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+          Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+          Typeset`specs$$, Typeset`size$$, Typeset`update$$, 
+          Typeset`initDone$$, Typeset`skipInitDone$$}, "Body" :> Show[
+          Plot3D[{
+            $CellContext`CandidateDifferentiableHardIfThenElse[$CellContext`w$\
+$, $CellContext`b1, $CellContext`b2], 
+            If[$CellContext`halfPlane$$, 1/2, Nothing]}, {$CellContext`b1, 0, 
+            1}, {$CellContext`b2, 0, 1}, PlotRange -> {0, 1}, AxesLabel -> 
+           Automatic, ColorFunction -> "TemperatureMap", 
+           BoxRatios -> {1, 1, 2}, 
+           MeshFunctions -> {#3& }], $CellContext`lines], 
+        "Specifications" :> {{$CellContext`w$$, 0, 
+           1}, {$CellContext`halfPlane$$, {False, True}}}, "Options" :> {}, 
+        "DefaultOptions" :> {}], 
+       ImageSizeCache -> {406., {239.1875, 244.8125}}, SingleEvaluation -> 
+       True], Deinitialization :> None, DynamicModuleValues :> {}, 
+      SynchronousInitialization -> True, 
+      UndoTrackedVariables :> {Typeset`show$$, Typeset`bookmarkMode$$}, 
+      UnsavedVariables :> {Typeset`initDone$$}, 
+      UntrackedVariables :> {Typeset`size$$}], "Manipulate", Deployed -> True,
+      StripOnInput -> False], 
+    Manipulate`InterpretManipulate[1]], 
+   TagBox[
+    StyleBox[
+     DynamicModuleBox[{$CellContext`b1$$ = 0.616, $CellContext`halfPlane$$ = 
+       False, Typeset`show$$ = True, Typeset`bookmarkList$$ = {}, 
+       Typeset`bookmarkMode$$ = "Menu", Typeset`animator$$, Typeset`animvar$$ = 
+       1, Typeset`name$$ = "\"untitled\"", Typeset`specs$$ = {{
+          Hold[$CellContext`b1$$], 0, 1}, {
+          Hold[$CellContext`halfPlane$$], {False, True}}}, 
+       Typeset`size$$ = {360., {188., 191.78337720317194`}}, Typeset`update$$ = 
+       0, Typeset`initDone$$, Typeset`skipInitDone$$ = True}, 
+      DynamicBox[
+       Manipulate`ManipulateBoxes[
+       1, StandardForm, 
+        "Variables" :> {$CellContext`b1$$ = 0, $CellContext`halfPlane$$ = 
+          False}, "ControllerVariables" :> {}, 
+        "OtherVariables" :> {
+         Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+          Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+          Typeset`specs$$, Typeset`size$$, Typeset`update$$, 
+          Typeset`initDone$$, Typeset`skipInitDone$$}, "Body" :> Show[
+          Plot3D[{
+            $CellContext`CandidateDifferentiableHardIfThenElse[$CellContext`w,\
+ $CellContext`b1$$, $CellContext`b2], 
+            If[$CellContext`halfPlane$$, 1/2, Nothing]}, {$CellContext`w, 0, 
+            1}, {$CellContext`b2, 0, 1}, PlotRange -> {0, 1}, AxesLabel -> 
+           Automatic, ColorFunction -> "TemperatureMap", 
+           BoxRatios -> {1, 1, 2}, 
+           MeshFunctions -> {#3& }], $CellContext`lines], 
+        "Specifications" :> {{$CellContext`b1$$, 0, 
+           1}, {$CellContext`halfPlane$$, {False, True}}}, "Options" :> {}, 
+        "DefaultOptions" :> {}], 
+       ImageSizeCache -> {406., {239.1875, 244.8125}}, SingleEvaluation -> 
+       True], Deinitialization :> None, DynamicModuleValues :> {}, 
+      SynchronousInitialization -> True, 
+      UndoTrackedVariables :> {Typeset`show$$, Typeset`bookmarkMode$$}, 
+      UnsavedVariables :> {Typeset`initDone$$}, 
+      UntrackedVariables :> {Typeset`size$$}], "Manipulate", Deployed -> True,
+      StripOnInput -> False], 
+    Manipulate`InterpretManipulate[1]]},
+  "RowDefault"]], "Output",
+ CellChangeTimes->{3.873879723037485*^9},
+ CellLabel->"Out[26]=",ExpressionUUID->"fb525a76-1a13-4ba4-ad47-dc3bee01c07c"]
+}, Open  ]]
 }, Open  ]],
 
 Cell[CellGroupData[{
 
-Cell[BoxData[
- RowBox[{"Manipulate", "[", 
-  RowBox[{
-   RowBox[{"Plot3D", "[", 
-    RowBox[{
-     RowBox[{"{", 
-      RowBox[{
-       RowBox[{"CandidateDifferentiableHardIfThenElse", "[", 
-        RowBox[{"w", ",", "b1", ",", "b2"}], "]"}], ",", 
-       RowBox[{"If", "[", 
-        RowBox[{"halfPlane", ",", 
-         RowBox[{"1", "/", "2"}], ",", "Nothing"}], "]"}]}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"w", ",", "0", ",", "1"}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"b2", ",", "0", ",", "1"}], "}"}], ",", 
-     RowBox[{"PlotRange", "->", 
-      RowBox[{"{", 
-       RowBox[{"0", ",", "1"}], "}"}]}], ",", 
-     RowBox[{"AxesLabel", "->", "Automatic"}], ",", 
-     RowBox[{"ColorFunction", "->", "\"\<TemperatureMap\>\""}], ",", 
-     RowBox[{"BoxRatios", "->", 
-      RowBox[{"{", 
-       RowBox[{"1", ",", "1", ",", "2"}], "}"}]}], ",", 
-     RowBox[{"MeshFunctions", "->", 
-      RowBox[{"{", 
-       RowBox[{"#3", "&"}], "}"}]}]}], "]"}], ",", 
-   RowBox[{"{", 
-    RowBox[{"b1", ",", "0", ",", "1"}], "}"}], ",", 
-   RowBox[{"{", 
-    RowBox[{"halfPlane", ",", 
-     RowBox[{"{", 
-      RowBox[{"False", ",", "True"}], "}"}]}], "}"}]}], "]"}]], "Input",
- CellChangeTimes->{{3.873455033533247*^9, 3.873455037581295*^9}, 
-   3.8734554682963467`*^9},
- CellLabel->"In[12]:=",ExpressionUUID->"05d3639b-2163-4355-b0b0-17fe4fad12d7"],
-
-Cell[BoxData[
- TagBox[
-  StyleBox[
-   DynamicModuleBox[{$CellContext`b1$$ = 0., $CellContext`halfPlane$$ = False,
-     Typeset`show$$ = True, Typeset`bookmarkList$$ = {}, 
-    Typeset`bookmarkMode$$ = "Menu", Typeset`animator$$, Typeset`animvar$$ = 
-    1, Typeset`name$$ = "\"untitled\"", Typeset`specs$$ = {{
-      Hold[$CellContext`b1$$], 0, 1}, {
-      Hold[$CellContext`halfPlane$$], {False, True}}}, Typeset`size$$ = {
-    360., {188., 191.78337720317194`}}, Typeset`update$$ = 0, 
-    Typeset`initDone$$, Typeset`skipInitDone$$ = True}, 
-    DynamicBox[Manipulate`ManipulateBoxes[
-     1, StandardForm, 
-      "Variables" :> {$CellContext`b1$$ = 0, $CellContext`halfPlane$$ = 
-        False}, "ControllerVariables" :> {}, 
-      "OtherVariables" :> {
-       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
-        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
-        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
-         Typeset`skipInitDone$$}, "Body" :> Plot3D[{
-         $CellContext`CandidateDifferentiableHardIfThenElse[$CellContext`w, \
-$CellContext`b1$$, $CellContext`b2], 
-         If[$CellContext`halfPlane$$, 1/2, Nothing]}, {$CellContext`w, 0, 
-         1}, {$CellContext`b2, 0, 1}, PlotRange -> {0, 1}, AxesLabel -> 
-        Automatic, ColorFunction -> "TemperatureMap", BoxRatios -> {1, 1, 2}, 
-        MeshFunctions -> {#3& }], 
-      "Specifications" :> {{$CellContext`b1$$, 0, 
-         1}, {$CellContext`halfPlane$$, {False, True}}}, "Options" :> {}, 
-      "DefaultOptions" :> {}],
-     ImageSizeCache->{406., {239.1875, 244.8125}},
-     SingleEvaluation->True],
-    Deinitialization:>None,
-    DynamicModuleValues:>{},
-    SynchronousInitialization->True,
-    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
-    UnsavedVariables:>{Typeset`initDone$$},
-    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
-   Deployed->True,
-   StripOnInput->False],
-  Manipulate`InterpretManipulate[1]]], "Output",
- CellChangeTimes->{3.8734550397823467`*^9, 3.873455468874181*^9, 
-  3.8735181357693253`*^9, 3.873536070467245*^9},
- CellLabel->"Out[12]=",ExpressionUUID->"75629b65-3728-4156-921f-246e25e19d79"]
-}, Open  ]],
-
-Cell[CellGroupData[{
+Cell["\<\
+Example of If-Then-Else that does not preserve hard semantics\
+\>", "Chapter",
+ CellChangeTimes->{{3.8647936427675457`*^9, 3.864793644095471*^9}, {
+  3.868426121194284*^9, 3.868426122274289*^9}, {3.87022866137819*^9, 
+  3.870228664045348*^9}, {3.8708591940399427`*^9, 3.8708591951679*^9}, {
+  3.873343756980378*^9, 3.873343762044593*^9}, {3.873861454140048*^9, 
+  3.873861462435193*^9}},ExpressionUUID->"25c79b1a-0486-41b8-aee1-\
+2cc8fe30939c"],
 
 Cell[BoxData[
  RowBox[{
-  RowBox[{"DifferentiableHardIfThenElse", "[", 
-   RowBox[{"w", ",", "b1", ",", "b2"}], "]"}], "//", 
-  "FullSimplify"}]], "Input",
- CellChangeTimes->{{3.8733733252925262`*^9, 3.8733733307581873`*^9}, {
-  3.87343509679453*^9, 3.8734351051760073`*^9}},
- CellLabel->"In[13]:=",ExpressionUUID->"abb338db-1ae1-473c-aec4-a70e2f112425"],
-
-Cell[BoxData[
- RowBox[{"Min", "[", 
+  RowBox[{"CandidateDifferentiableHardIfThenElse", "[", 
+   RowBox[{"w_", ",", "b1_", ",", "b2_"}], "]"}], ":=", 
   RowBox[{
-   RowBox[{"Max", "[", 
-    RowBox[{"b1", ",", "w"}], "]"}], ",", 
-   RowBox[{"Max", "[", 
-    RowBox[{"b2", ",", 
-     RowBox[{"1", "-", "w"}]}], "]"}]}], "]"}]], "Output",
- CellChangeTimes->{3.873446923128624*^9, 3.873536112139553*^9},
- CellLabel->"Out[13]=",ExpressionUUID->"f93ab336-2662-4c6c-a609-c335f54cf61e"]
-}, Open  ]],
-
-Cell[CellGroupData[{
+   RowBox[{"w", " ", "b1"}], "+", 
+   RowBox[{
+    RowBox[{"(", 
+     RowBox[{"1", "-", "w"}], ")"}], " ", "b2"}]}]}]], "Input",
+ CellChangeTimes->{{3.87386084842953*^9, 3.873860857373967*^9}, {
+  3.873860907447411*^9, 3.8738609225581017`*^9}},
+ CellLabel->"In[16]:=",ExpressionUUID->"186f90a4-437d-480d-abac-90832b2ac5d3"],
 
 Cell[BoxData[
- RowBox[{"Manipulate", "[", 
-  RowBox[{
-   RowBox[{"Plot3D", "[", 
-    RowBox[{
-     RowBox[{"{", 
-      RowBox[{
-       RowBox[{"DifferentiableHardIfThenElse", "[", 
-        RowBox[{"w", ",", "b1", ",", "b2"}], "]"}], ",", 
-       RowBox[{"If", "[", 
-        RowBox[{"halfPlane", ",", 
-         RowBox[{"1", "/", "2"}], ",", "Nothing"}], "]"}]}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"b1", ",", "0", ",", "1"}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"b2", ",", "0", ",", "1"}], "}"}], ",", 
-     RowBox[{"PlotRange", "->", 
-      RowBox[{"{", 
-       RowBox[{"0", ",", "1"}], "}"}]}], ",", 
-     RowBox[{"AxesLabel", "->", "Automatic"}], ",", 
-     RowBox[{"ColorFunction", "->", "\"\<TemperatureMap\>\""}], ",", 
-     RowBox[{"BoxRatios", "->", 
-      RowBox[{"{", 
-       RowBox[{"1", ",", "1", ",", "2"}], "}"}]}], ",", 
-     RowBox[{"MeshFunctions", "->", 
-      RowBox[{"{", 
-       RowBox[{"#3", "&"}], "}"}]}]}], "]"}], ",", 
-   RowBox[{"{", 
-    RowBox[{"w", ",", "0", ",", "1"}], "}"}], ",", 
-   RowBox[{"{", 
-    RowBox[{"halfPlane", ",", 
-     RowBox[{"{", 
-      RowBox[{"False", ",", "True"}], "}"}]}], "}"}]}], "]"}]], "Input",
- CellChangeTimes->{{3.8734534446167316`*^9, 3.873453551799596*^9}, {
-   3.873453582767871*^9, 3.873453584225584*^9}, {3.873453625479993*^9, 
-   3.873453659106495*^9}, {3.873453700169314*^9, 3.873454083574872*^9}, 
-   3.873454139433825*^9, {3.873454186264406*^9, 3.8734543824636602`*^9}, {
-   3.8734553999856052`*^9, 3.8734554144129457`*^9}},
- CellLabel->
-  "In[189]:=",ExpressionUUID->"2cf4d344-ad92-4733-8670-c854f1ea4c5c"],
-
-Cell[BoxData[
- TagBox[
-  StyleBox[
-   DynamicModuleBox[{$CellContext`halfPlane$$ = False, $CellContext`w$$ = 1., 
-    Typeset`show$$ = True, Typeset`bookmarkList$$ = {}, 
-    Typeset`bookmarkMode$$ = "Menu", Typeset`animator$$, Typeset`animvar$$ = 
-    1, Typeset`name$$ = "\"untitled\"", Typeset`specs$$ = {{
-      Hold[$CellContext`w$$], 0, 1}, {
-      Hold[$CellContext`halfPlane$$], {False, True}}}, Typeset`size$$ = {
-    360., {188., 191.78337720317194`}}, Typeset`update$$ = 0, 
-    Typeset`initDone$$, Typeset`skipInitDone$$ = True}, 
-    DynamicBox[Manipulate`ManipulateBoxes[
-     1, StandardForm, 
-      "Variables" :> {$CellContext`halfPlane$$ = False, $CellContext`w$$ = 0},
-       "ControllerVariables" :> {}, 
-      "OtherVariables" :> {
-       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
-        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
-        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
-         Typeset`skipInitDone$$}, "Body" :> Plot3D[{
-         neurallogic`DifferentiableHardIfThenElse[$CellContext`w$$, \
-$CellContext`b1, $CellContext`b2], 
-         If[$CellContext`halfPlane$$, 1/2, Nothing]}, {$CellContext`b1, 0, 
-         1}, {$CellContext`b2, 0, 1}, PlotRange -> {0, 1}, AxesLabel -> 
-        Automatic, ColorFunction -> "TemperatureMap", BoxRatios -> {1, 1, 2}, 
-        MeshFunctions -> {#3& }], 
-      "Specifications" :> {{$CellContext`w$$, 0, 
-         1}, {$CellContext`halfPlane$$, {False, True}}}, "Options" :> {}, 
-      "DefaultOptions" :> {}],
-     ImageSizeCache->{406., {239.1875, 244.8125}},
-     SingleEvaluation->True],
-    Deinitialization:>None,
-    DynamicModuleValues:>{},
-    SynchronousInitialization->True,
-    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
-    UnsavedVariables:>{Typeset`initDone$$},
-    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
-   Deployed->True,
-   StripOnInput->False],
-  Manipulate`InterpretManipulate[1]]], "Output",
- CellChangeTimes->{
-  3.8734535227403173`*^9, 3.873453585061822*^9, {3.873453632763627*^9, 
-   3.873453659514346*^9}, 3.8734537007269287`*^9, 3.873453748431678*^9, {
-   3.873453781272571*^9, 3.873453801816221*^9}, {3.873453850537674*^9, 
-   3.873453974138098*^9}, {3.873454008444927*^9, 3.8734540278960238`*^9}, {
-   3.873454076602302*^9, 3.873454149167633*^9}, {3.873454222603753*^9, 
-   3.873454288278055*^9}, {3.8734543202934113`*^9, 3.873454401526925*^9}, {
-   3.873455298253833*^9, 3.873455310393806*^9}, {3.873455402977779*^9, 
-   3.873455424449608*^9}},
- CellLabel->
-  "Out[189]=",ExpressionUUID->"24d8b2a4-faaa-4ea7-97e0-ce31f087603e"]
-}, Open  ]],
-
-Cell[CellGroupData[{
-
-Cell[BoxData[
- RowBox[{"Manipulate", "[", 
-  RowBox[{
-   RowBox[{"Plot3D", "[", 
-    RowBox[{
-     RowBox[{"{", 
-      RowBox[{
-       RowBox[{"DifferentiableHardIfThenElse", "[", 
-        RowBox[{"w", ",", "b1", ",", "b2"}], "]"}], ",", 
-       RowBox[{"If", "[", 
-        RowBox[{"halfPlane", ",", 
-         RowBox[{"1", "/", "2"}], ",", "Nothing"}], "]"}]}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"w", ",", "0", ",", "1"}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"b2", ",", "0", ",", "1"}], "}"}], ",", 
-     RowBox[{"PlotRange", "->", 
-      RowBox[{"{", 
-       RowBox[{"0", ",", "1"}], "}"}]}], ",", 
-     RowBox[{"AxesLabel", "->", "Automatic"}], ",", 
-     RowBox[{"ColorFunction", "->", "\"\<TemperatureMap\>\""}], ",", 
-     RowBox[{"BoxRatios", "->", 
-      RowBox[{"{", 
-       RowBox[{"1", ",", "1", ",", "2"}], "}"}]}], ",", 
-     RowBox[{"MeshFunctions", "->", 
-      RowBox[{"{", 
-       RowBox[{"#3", "&"}], "}"}]}]}], "]"}], ",", 
-   RowBox[{"{", 
-    RowBox[{"b1", ",", "0", ",", "1"}], "}"}], ",", 
-   RowBox[{"{", 
-    RowBox[{"halfPlane", ",", 
-     RowBox[{"{", 
-      RowBox[{"False", ",", "True"}], "}"}]}], "}"}]}], "]"}]], "Input",
- CellChangeTimes->{
-  3.8734550716450777`*^9, {3.873455440007516*^9, 3.8734554428931503`*^9}},
- CellLabel->
-  "In[190]:=",ExpressionUUID->"61d08e23-e0fe-41f0-b16b-413b306a73dc"],
-
-Cell[BoxData[
- TagBox[
-  StyleBox[
-   DynamicModuleBox[{$CellContext`b1$$ = 1., $CellContext`halfPlane$$ = False,
-     Typeset`show$$ = True, Typeset`bookmarkList$$ = {}, 
-    Typeset`bookmarkMode$$ = "Menu", Typeset`animator$$, Typeset`animvar$$ = 
-    1, Typeset`name$$ = "\"untitled\"", Typeset`specs$$ = {{
-      Hold[$CellContext`b1$$], 0, 1}, {
-      Hold[$CellContext`halfPlane$$], {False, True}}}, Typeset`size$$ = {
-    360., {188., 191.78337720317194`}}, Typeset`update$$ = 0, 
-    Typeset`initDone$$, Typeset`skipInitDone$$ = True}, 
-    DynamicBox[Manipulate`ManipulateBoxes[
-     1, StandardForm, 
-      "Variables" :> {$CellContext`b1$$ = 0, $CellContext`halfPlane$$ = 
-        False}, "ControllerVariables" :> {}, 
-      "OtherVariables" :> {
-       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
-        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
-        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
-         Typeset`skipInitDone$$}, "Body" :> Plot3D[{
-         neurallogic`DifferentiableHardIfThenElse[$CellContext`w, \
-$CellContext`b1$$, $CellContext`b2], 
-         If[$CellContext`halfPlane$$, 1/2, Nothing]}, {$CellContext`w, 0, 
-         1}, {$CellContext`b2, 0, 1}, PlotRange -> {0, 1}, AxesLabel -> 
-        Automatic, ColorFunction -> "TemperatureMap", BoxRatios -> {1, 1, 2}, 
-        MeshFunctions -> {#3& }], 
-      "Specifications" :> {{$CellContext`b1$$, 0, 
-         1}, {$CellContext`halfPlane$$, {False, True}}}, "Options" :> {}, 
-      "DefaultOptions" :> {}],
-     ImageSizeCache->{406., {239.1875, 244.8125}},
-     SingleEvaluation->True],
-    Deinitialization:>None,
-    DynamicModuleValues:>{},
-    SynchronousInitialization->True,
-    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
-    UnsavedVariables:>{Typeset`initDone$$},
-    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
-   Deployed->True,
-   StripOnInput->False],
-  Manipulate`InterpretManipulate[1]]], "Output",
- CellChangeTimes->{
-  3.873455072073031*^9, {3.873455282183734*^9, 3.873455294537918*^9}, 
-   3.8734554432816143`*^9},
- CellLabel->
-  "Out[190]=",ExpressionUUID->"9d09cb93-5b29-4d0c-bcee-1e05d647f340"]
-}, Open  ]],
-
-Cell[CellGroupData[{
-
-Cell[BoxData[
- RowBox[{"VisualiseIfThenElse", "[", "DifferentiableHardIfThenElse", 
+ RowBox[{"VisualiseIfThenElse", "[", "CandidateDifferentiableHardIfThenElse", 
   "]"}]], "Input",
- CellChangeTimes->{3.87344693931761*^9},
- CellLabel->
-  "In[151]:=",ExpressionUUID->"83ce3ce2-f384-4751-b9ab-1d0219a31ffb"],
+ CellChangeTimes->{{3.873861075909083*^9, 3.873861077037444*^9}},
+ CellLabel->"In[20]:=",ExpressionUUID->"47d821d3-acc2-4e53-a1ed-b3bd38ecabca"],
 
 Cell[BoxData[
- TagBox[
-  StyleBox[
-   DynamicModuleBox[{$CellContext`b1$$ = 0.058, $CellContext`b2$$ = 
-    0.872, $CellContext`w1$$ = 0.068, Typeset`show$$ = True, 
-    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
-    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
-    "\"untitled\"", Typeset`specs$$ = {{
-      Hold[$CellContext`w1$$], 0, 1}, {
-      Hold[$CellContext`b1$$], 0, 1}, {
-      Hold[$CellContext`b2$$], 0, 1}}, Typeset`size$$ = {
-    1259., {232., 235.73231022762377`}}, Typeset`update$$ = 0, 
-    Typeset`initDone$$, Typeset`skipInitDone$$ = True}, 
-    DynamicBox[Manipulate`ManipulateBoxes[
-     1, StandardForm, 
-      "Variables" :> {$CellContext`b1$$ = 0, $CellContext`b2$$ = 
-        0, $CellContext`w1$$ = 0}, "ControllerVariables" :> {}, 
-      "OtherVariables" :> {
-       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
-        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
-        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
-         Typeset`skipInitDone$$}, "Body" :> Block[{$CellContext`d1 = D[
-           
-           neurallogic`DifferentiableHardIfThenElse[$CellContext`w1$$, \
-$CellContext`b, $CellContext`b2$$], $CellContext`b], $CellContext`d2 = D[
-           
-           neurallogic`DifferentiableHardIfThenElse[$CellContext`w1$$, \
-$CellContext`b1$$, $CellContext`b], $CellContext`b], $CellContext`d3 = D[
-           
-           neurallogic`DifferentiableHardIfThenElse[$CellContext`w, \
-$CellContext`b1$$, $CellContext`b2$$], $CellContext`w]}, 
-        GraphicsRow[{
-          GraphicsColumn[{
-            Show[
-             Plot[{
-               
-               neurallogic`DifferentiableHardIfThenElse[$CellContext`w1$$, \
-$CellContext`b, $CellContext`b2$$]}, {$CellContext`b, 0, 1}, 
-              PlotRange -> {{0, 1}, {0, 1}}, 
-              GridLines -> {{1/2, 1}, {1/2, 1}}, 
-              AxesLabel -> {"b1", "output"}, PlotLabel -> 
-              "FIRST BRANCH b1\n(w and b2 fixed)"], 
-             DiscretePlot[
-              Boole[
-               neurallogic`HardIfThenElse[
-                neurallogic`Harden[$CellContext`w1$$], 
-                neurallogic`Harden[$CellContext`b], 
-                neurallogic`Harden[$CellContext`b2$$]]], {$CellContext`b, 0, 
-               1}, PlotRange -> {{0, 1}, {0, 1}}, ExtentSize -> Full, Filling -> 
-              Axis]], 
-            
-            Plot[$CellContext`d1, {$CellContext`b, 0, 1}, Frame -> True, 
-             GridLines -> {{-1, 0, 1}, {-1, 0, 1}}, ImageSize -> Small]}], 
-          GraphicsColumn[{
-            Show[
-             Plot[{
-               
-               neurallogic`DifferentiableHardIfThenElse[$CellContext`w1$$, \
-$CellContext`b1$$, $CellContext`b]}, {$CellContext`b, 0, 1}, 
-              PlotRange -> {{0, 1}, {0, 1}}, 
-              GridLines -> {{1/2, 1}, {1/2, 1}}, 
-              AxesLabel -> {"b2", "output"}, PlotLabel -> 
-              "SECOND BRANCH b2\n(w and b1 fixed)"], 
-             DiscretePlot[
-              Boole[
-               neurallogic`HardIfThenElse[
-                neurallogic`Harden[$CellContext`w1$$], 
-                neurallogic`Harden[$CellContext`b1$$], 
-                neurallogic`Harden[$CellContext`b]]], {$CellContext`b, 0, 1}, 
-              PlotRange -> {{0, 1}, {0, 1}}, ExtentSize -> Full, Filling -> 
-              Axis]], 
-            
-            Plot[$CellContext`d2, {$CellContext`b, 0, 1}, Frame -> True, 
-             GridLines -> {{-1, 0, 1}, {-1, 0, 1}}, ImageSize -> Small]}], 
-          GraphicsColumn[{
-            Show[
-             Plot[{
-               
-               neurallogic`DifferentiableHardIfThenElse[$CellContext`w, \
-$CellContext`b1$$, $CellContext`b2$$]}, {$CellContext`w, 0, 1}, 
-              PlotRange -> {{0, 1}, {0, 1}}, 
-              GridLines -> {{1/2, 1}, {1/2, 1}}, AxesLabel -> {"w", "output"},
-               PlotLabel -> "CONDITION w\n(b1 and b2 fixed)"], 
-             DiscretePlot[
-              Boole[
-               neurallogic`HardIfThenElse[
-                neurallogic`Harden[$CellContext`w], 
-                neurallogic`Harden[$CellContext`b1$$], 
-                neurallogic`Harden[$CellContext`b2$$]]], {$CellContext`w, 0, 
-               1}, PlotRange -> {{0, 1}, {0, 1}}, ExtentSize -> Full, Filling -> 
-              Axis]], 
-            
-            Plot[$CellContext`d3, {$CellContext`w, 0, 1}, Frame -> True, 
-             GridLines -> {{-1, 0, 1}, {-1, 0, 1}}, ImageSize -> Small]}]}, 
-         ImageSize -> Full]], 
-      "Specifications" :> {{$CellContext`w1$$, 0, 1}, {$CellContext`b1$$, 0, 
-         1}, {$CellContext`b2$$, 0, 1}}, 
-      "Options" :> {SynchronousUpdating -> False}, "DefaultOptions" :> {}],
-     ImageSizeCache->{1305., {300.1875, 305.8125}},
-     SingleEvaluation->True],
-    Deinitialization:>None,
-    DynamicModuleValues:>{},
-    SynchronousInitialization->True,
-    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
-    UnsavedVariables:>{Typeset`initDone$$},
-    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
-   Deployed->True,
-   StripOnInput->False],
-  Manipulate`InterpretManipulate[1]]], "Output",
- CellChangeTimes->{{3.873446939725277*^9, 3.873446953622497*^9}, 
-   3.8734532035846977`*^9},
- CellLabel->
-  "Out[151]=",ExpressionUUID->"76fb47e2-1f26-4c1d-80af-d5ca7db3135d"]
-}, Open  ]],
-
-Cell[TextData[{
- "Explain the visualisation. Play around with new function.\nSet w1=0.2, \
-b1=0.01, b2=0.1\n- Preserve hard semantics? ",
- StyleBox["Yes",
-  FontWeight->"Bold"],
- "\n- Always a backprop gradient that can increase/decrease output? ",
- StyleBox["When b1=0.01. We can only change b2. w is flat ... but that makes \
-sense because switching branches won\[CloseCurlyQuote]t increase output.\n\
-But, if we make b1=0.2 then we do get a gradient for w => switching branches \
-would (soft) increase output.\n",
-  FontWeight->"Bold"],
- "Let\[CloseCurlyQuote]s try another case: ",
- StyleBox["w1=0.2, b1=0.1,b2=0.9",
-  FontWeight->"Bold"],
- "\n",
- StyleBox["We want to decrease. Can change b2 or w.\nWhat\[CloseCurlyQuote]s \
-the pattern: \n- b1 and b2 are the same then: there\[CloseCurlyQuote]s a \
-gradient to change b1&b2 but not w\n- b1 and b2 are different then: there\
-\[CloseCurlyQuote]s a gradient to change the active branch and w, but not the \
-inactive branch",
-  FontWeight->"Bold"],
- "\n- Monotonic function of its inputs. ",
- StyleBox["Yes",
-  FontWeight->"Bold"],
- "\n- Continuous function. ",
- StyleBox["Yes.",
-  FontWeight->"Bold"],
- "\n- Smooth (or if not smooth, then smooth almost everywhere). ",
- StyleBox["Yes, smooth almost everywhere.",
-  FontWeight->"Bold"]
-}], "Text",
- CellChangeTimes->{{3.873435912014174*^9, 3.8734359979673567`*^9}, {
-  3.8734360714069557`*^9, 3.873436073894665*^9}, {3.873436106286297*^9, 
-  3.873436117650896*^9}, {3.8734376116779633`*^9, 3.8734376243743134`*^9}, {
-  3.873437664054181*^9, 3.873437699382381*^9}, {3.873438046902582*^9, 
-  3.873438153718718*^9}, {3.873446989973366*^9, 3.873447005524913*^9}, {
-  3.873448823679061*^9, 3.8734488629002857`*^9}, {3.873449498438054*^9, 
-  3.873449502093648*^9}, {3.87345245561456*^9, 3.8734526018061037`*^9}, {
-  3.8734528434551497`*^9, 3.873452852573876*^9}, {3.8734528906187687`*^9, 
-  3.873452928766119*^9}, {3.873452967493538*^9, 3.8734529903180037`*^9}, {
-  3.873453337805483*^9, 
-  3.8734533897247343`*^9}},ExpressionUUID->"81079916-c6cb-4db1-8839-\
-f2e2fd771a08"]
-}, Open  ]]
+ RowBox[{"Row", "[", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{"Manipulate", "[", 
+     RowBox[{
+      RowBox[{"Show", "[", 
+       RowBox[{
+        RowBox[{"Plot3D", "[", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"CandidateDifferentiableHardIfThenElse", "[", 
+             RowBox[{"w", ",", "b1", ",", "b2"}], "]"}], ",", 
+            RowBox[{"If", "[", 
+             RowBox[{"halfPlane", ",", 
+              RowBox[{"1", "/", "2"}], ",", "Nothing"}], "]"}]}], "}"}], ",", 
+          
+          RowBox[{"{", 
+           RowBox[{"b1", ",", "0", ",", "1"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"b2", ",", "0", ",", "1"}], "}"}], ",", 
+          RowBox[{"PlotRange", "->", 
+           RowBox[{"{", 
+            RowBox[{"0", ",", "1"}], "}"}]}], ",", 
+          RowBox[{"AxesLabel", "->", "Automatic"}], ",", 
+          RowBox[{"ColorFunction", "->", "\"\<TemperatureMap\>\""}], ",", 
+          RowBox[{"BoxRatios", "->", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1", ",", "2"}], "}"}]}], ",", 
+          RowBox[{"MeshFunctions", "->", 
+           RowBox[{"{", 
+            RowBox[{"#3", "&"}], "}"}]}]}], "]"}], ",", "lines"}], "]"}], ",", 
+      RowBox[{"{", 
+       RowBox[{"w", ",", "0", ",", "1"}], "}"}], ",", 
+      RowBox[{"{", 
+       RowBox[{"halfPlane", ",", 
+        RowBox[{"{", 
+         RowBox[{"False", ",", "True"}], "}"}]}], "}"}]}], "]"}], ",", 
+    RowBox[{"Manipulate", "[", 
+     RowBox[{
+      RowBox[{"Show", "[", 
+       RowBox[{
+        RowBox[{"Plot3D", "[", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"CandidateDifferentiableHardIfThenElse", "[", 
+             RowBox[{"w", ",", "b1", ",", "b2"}], "]"}], ",", 
+            RowBox[{"If", "[", 
+             RowBox[{"halfPlane", ",", 
+              RowBox[{"1", "/", "2"}], ",", "Nothing"}], "]"}]}], "}"}], ",", 
+          
+          RowBox[{"{", 
+           RowBox[{"w", ",", "0", ",", "1"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"b2", ",", "0", ",", "1"}], "}"}], ",", 
+          RowBox[{"PlotRange", "->", 
+           RowBox[{"{", 
+            RowBox[{"0", ",", "1"}], "}"}]}], ",", 
+          RowBox[{"AxesLabel", "->", "Automatic"}], ",", 
+          RowBox[{"ColorFunction", "->", "\"\<TemperatureMap\>\""}], ",", 
+          RowBox[{"BoxRatios", "->", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1", ",", "2"}], "}"}]}], ",", 
+          RowBox[{"MeshFunctions", "->", 
+           RowBox[{"{", 
+            RowBox[{"#3", "&"}], "}"}]}]}], "]"}], ",", "lines"}], "]"}], ",", 
+      RowBox[{"{", 
+       RowBox[{"b1", ",", "0", ",", "1"}], "}"}], ",", 
+      RowBox[{"{", 
+       RowBox[{"halfPlane", ",", 
+        RowBox[{"{", 
+         RowBox[{"False", ",", "True"}], "}"}]}], "}"}]}], "]"}]}], "}"}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.87345443498997*^9, 3.873454436508438*^9}, 
+   3.873455460320155*^9, 3.8738602872414913`*^9, {3.873860333499117*^9, 
+   3.873860341322082*^9}, {3.8738607163694763`*^9, 3.873860750456147*^9}, {
+   3.873860895584086*^9, 3.873860896631475*^9}, {3.87386098095352*^9, 
+   3.873861022921337*^9}},
+ CellLabel->"In[19]:=",ExpressionUUID->"0dc03ba9-d7a6-4e83-8829-b0e52c1087c6"]
+}, Closed]]
 }, Open  ]]
 },
 WindowSize->{1440., 782.25},
@@ -1201,61 +1475,53 @@ CellTagsIndex->{}
 (*NotebookFileOutline
 Notebook[{
 Cell[CellGroupData[{
-Cell[580, 22, 359, 6, 98, "Title",ExpressionUUID->"f846cc42-aa02-4854-b58f-d6a00f3f9f87"],
+Cell[580, 22, 396, 6, 98, "Title",ExpressionUUID->"f846cc42-aa02-4854-b58f-d6a00f3f9f87"],
 Cell[CellGroupData[{
-Cell[964, 32, 394, 6, 69, "Chapter",ExpressionUUID->"5495d193-c82b-45fc-afe7-62e6fd8cbcc6"],
-Cell[1361, 40, 875, 17, 59, "Input",ExpressionUUID->"3d283193-d4ed-4662-9e0d-84eec54ddecd"],
-Cell[2239, 59, 14003, 300, 610, "Input",ExpressionUUID->"7675dd75-a14a-4489-819b-3664dcd04742"]
-}, Closed]],
-Cell[CellGroupData[{
-Cell[16279, 364, 351, 6, 58, "Chapter",ExpressionUUID->"f936a74c-da24-4fc7-a6bc-b224055c97fe"],
-Cell[CellGroupData[{
-Cell[16655, 374, 247, 4, 29, "Input",ExpressionUUID->"a1ca5372-1b4c-4bd6-9674-071fde73de4f"],
-Cell[16905, 380, 212, 4, 33, "Output",ExpressionUUID->"0a2d54f6-2455-4c45-86e7-8d96d2390e6f"]
-}, Open  ]],
-Cell[17132, 387, 567, 13, 150, "Text",ExpressionUUID->"bbfaca54-ea74-4ec7-9767-e8d7354208d0"],
-Cell[17702, 402, 499, 12, 59, "Input",ExpressionUUID->"0847f88d-f088-4730-a358-2b169fea7652"],
-Cell[18204, 416, 563, 15, 29, "Input",ExpressionUUID->"7cb45e00-ef30-45b9-8e10-59c5c406f6c5"],
-Cell[CellGroupData[{
-Cell[18792, 435, 460, 12, 29, "Input",ExpressionUUID->"853a6ca0-bfea-4833-9335-6f0605456081"],
-Cell[19255, 449, 314, 8, 33, "Output",ExpressionUUID->"62dd9d59-44ae-4065-8757-e6ccb48720a5"]
+Cell[1001, 32, 394, 6, 69, "Chapter",ExpressionUUID->"5495d193-c82b-45fc-afe7-62e6fd8cbcc6"],
+Cell[1398, 40, 874, 17, 29, "Input",ExpressionUUID->"3d283193-d4ed-4662-9e0d-84eec54ddecd"],
+Cell[2275, 59, 15444, 329, 612, "Input",ExpressionUUID->"7675dd75-a14a-4489-819b-3664dcd04742"],
+Cell[17722, 390, 840, 23, 85, "Input",ExpressionUUID->"501c85bf-acb4-4cd6-a1f0-10185feac3aa"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[19606, 462, 360, 7, 29, "Input",ExpressionUUID->"74f19cf8-ca60-472b-8d78-68ccdc2a13eb"],
-Cell[19969, 471, 465, 11, 33, "Output",ExpressionUUID->"5698154c-01b7-4089-961d-49da4c1b4eff"]
+Cell[18599, 418, 351, 6, 69, "Chapter",ExpressionUUID->"f936a74c-da24-4fc7-a6bc-b224055c97fe"],
+Cell[CellGroupData[{
+Cell[18975, 428, 247, 4, 29, "Input",ExpressionUUID->"a1ca5372-1b4c-4bd6-9674-071fde73de4f"],
+Cell[19225, 434, 261, 5, 33, "Output",ExpressionUUID->"b8749617-64e6-436f-abde-d54015b6bd88"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[20471, 487, 256, 4, 29, "Input",ExpressionUUID->"5ef2f2d0-10f9-49c1-8281-1e20c5ecd562"],
-Cell[20730, 493, 5290, 104, 629, "Output",ExpressionUUID->"17363eff-9cfa-4657-82a9-a1f9c21e47f0"]
-}, Open  ]],
-Cell[26035, 600, 1151, 26, 173, "Text",ExpressionUUID->"755e2f94-6ed5-4113-9e50-c0498b9f0bbf"],
-Cell[27189, 628, 381, 8, 35, "Text",ExpressionUUID->"09e3352b-693f-47d4-aef9-e20ea8cfb1c7"],
-Cell[CellGroupData[{
-Cell[27595, 640, 1352, 35, 51, "Input",ExpressionUUID->"09b928bd-1366-4635-87b9-48c8cf24fb37"],
-Cell[28950, 677, 2253, 43, 503, "Output",ExpressionUUID->"ea4145b6-8890-4c62-ac67-66114f00728a"]
+Cell[19523, 444, 252, 4, 29, "Input",ExpressionUUID->"95bbad86-614e-4b97-9fc6-251760164b52"],
+Cell[19778, 450, 152, 2, 33, "Output",ExpressionUUID->"5d85cf68-554c-406e-bf70-b9ab668faa91"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[31240, 725, 1355, 35, 51, "Input",ExpressionUUID->"05d3639b-2163-4355-b0b0-17fe4fad12d7"],
-Cell[32598, 762, 2191, 42, 503, "Output",ExpressionUUID->"75629b65-3728-4156-921f-246e25e19d79"]
+Cell[19967, 457, 253, 4, 29, "Input",ExpressionUUID->"fc688250-be2c-44e0-834a-cb437fb1aeed"],
+Cell[20223, 463, 150, 2, 33, "Output",ExpressionUUID->"da213652-5996-47e7-86da-66b299c676fb"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[34826, 809, 354, 7, 29, "Input",ExpressionUUID->"abb338db-1ae1-473c-aec4-a70e2f112425"],
-Cell[35183, 818, 363, 9, 33, "Output",ExpressionUUID->"f93ab336-2662-4c6c-a609-c335f54cf61e"]
+Cell[20410, 470, 583, 16, 29, "Input",ExpressionUUID->"076f2f65-6433-4f11-b6a9-5003419e6e3e"],
+Cell[20996, 488, 19715, 447, 234, "Output",ExpressionUUID->"28093bcc-1755-479f-8ea4-0a3058b63679"]
+}, Open  ]],
+Cell[40726, 938, 693, 14, 150, "Text",ExpressionUUID->"bbfaca54-ea74-4ec7-9767-e8d7354208d0"],
+Cell[CellGroupData[{
+Cell[41444, 956, 313, 5, 29, "Input",ExpressionUUID->"0847f88d-f088-4730-a358-2b169fea7652"],
+Cell[41760, 963, 466, 11, 33, "Output",ExpressionUUID->"5cd6c38d-f359-4b92-a05c-39054a4474bc"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[35583, 832, 1598, 39, 51, "Input",ExpressionUUID->"2cf4d344-ad92-4733-8670-c854f1ea4c5c"],
-Cell[37184, 873, 2626, 50, 503, "Output",ExpressionUUID->"24d8b2a4-faaa-4ea7-97e0-ce31f087603e"]
+Cell[42263, 979, 419, 7, 29, "Input",ExpressionUUID->"5ef2f2d0-10f9-49c1-8281-1e20c5ecd562"],
+Cell[42685, 988, 7275, 145, 694, "Output",ExpressionUUID->"1f21781c-b412-4c29-9b93-ea8422dbfe2d"]
 }, Open  ]],
+Cell[49975, 1136, 1151, 26, 173, "Text",ExpressionUUID->"755e2f94-6ed5-4113-9e50-c0498b9f0bbf"],
+Cell[51129, 1164, 381, 8, 35, "Text",ExpressionUUID->"09e3352b-693f-47d4-aef9-e20ea8cfb1c7"],
 Cell[CellGroupData[{
-Cell[39847, 928, 1351, 36, 51, "Input",ExpressionUUID->"61d08e23-e0fe-41f0-b16b-413b306a73dc"],
-Cell[41201, 966, 2189, 44, 503, "Output",ExpressionUUID->"9d09cb93-5b29-4d0c-bcee-1e05d647f340"]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[43427, 1015, 226, 5, 29, "Input",ExpressionUUID->"83ce3ce2-f384-4751-b9ab-1d0219a31ffb"],
-Cell[43656, 1022, 5335, 112, 625, "Output",ExpressionUUID->"76fb47e2-1f26-4c1d-80af-d5ca7db3135d"]
-}, Open  ]],
-Cell[49006, 1137, 2069, 42, 311, "Text",ExpressionUUID->"81079916-c6cb-4db1-8839-f2e2fd771a08"]
+Cell[51535, 1176, 3129, 78, 113, "Input",ExpressionUUID->"2274adb8-8f49-482e-a3d3-5ab4e5af0c3f"],
+Cell[54667, 1256, 4444, 82, 503, "Output",ExpressionUUID->"fb525a76-1a13-4ba4-ad47-dc3bee01c07c"]
 }, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[59160, 1344, 454, 8, 69, "Chapter",ExpressionUUID->"25c79b1a-0486-41b8-aee1-2cc8fe30939c"],
+Cell[59617, 1354, 472, 11, 32, "Input",ExpressionUUID->"186f90a4-437d-480d-abac-90832b2ac5d3"],
+Cell[60092, 1367, 256, 4, 29, "Input",ExpressionUUID->"47d821d3-acc2-4e53-a1ed-b3bd38ecabca"],
+Cell[60351, 1373, 3251, 80, 113, "Input",ExpressionUUID->"0dc03ba9-d7a6-4e83-8829-b0e52c1087c6"]
+}, Closed]]
 }, Open  ]]
 }
 ]
