@@ -25,5 +25,6 @@ Questions? Ask @Z80coder
 - [Neural logic nets](https://drive.google.com/file/d/1P25OxM7Af8ppUGOUhKd6psGHI0OVXIzw/view?usp=sharing) (15m)
 - [Learning XOR (parity)](https://drive.google.com/file/d/1kBxJCkuEzbisWhUGJZ42o-m6xYOZ56pB/view?usp=sharing) (10m)
 - [Numerical regression](https://drive.google.com/file/d/1k2wQIjTN0omKuaFYQHrusMRIdDxPlSAf/view?usp=sharing) (23m)
+- [If-Then-Else neuron](https://drive.google.com/file/d/1qelfWX6s2XhlHxFwUSV76tAS2tyDK3Q0/view?usp=sharing) (23m)
 
 More to come!
