@@ -84,7 +84,7 @@ DifferentiableHardIfThenElse::usage = "Differentiable hard if then else.";
 DifferentiableHardIfThenElse1::usage = "Differentiable hard if then else version 2.";
 DifferentiableHardIfThenElse2::usage = "Differentiable hard if then else version 3.";
 HardIfThenElse::usage = "Hard if then else.";
-IfThenElseLayer::usage = "If then else layer.";
+HardNeuralIfThenElseLayer::usage = "If then else layer.";
 BlendFactor::usage = "Blend factor.";
 HardNeuralDecisionList::usage = "Hard neural decision list.";
 ConditionActionLayers::usage = "Condition action layers.";
@@ -1013,7 +1013,56 @@ NeuralOR[inputSize_, layerSize_] := NetGraph[
 (* If-Then-Else *)
 (* ------------------------------------------------------------------ *)
 
-HardIfThenElse[w_, b1_, b2_] := If[w, b1, b2]
+HardIfThenElse[condition_, ifTrue_, ifFalse_] := If[condition, ifTrue, ifFalse]
+
+HardIfThenElse[c_/;VectorQ[c], b1_/;VectorQ[b1], b2_/;VectorQ[b2]] := Block[{actionsPerCondition, pb1, pb2},
+  ConfirmAssert[Length[b1] == Length[b2], Null, "The action sizes must be identical"];
+  ConfirmAssert[Length[b1] >= Length[c], Null, "The size of the action must be greater than equal to the size of the condition"];
+  ConfirmAssert[IntegerQ[Length[b1]/Length[c]], Null, "The size of action must be a multiple of the size of the condition"];
+  actionsPerCondition = Length[b1]/Length[c];
+  pb1 = Partition[b1, actionsPerCondition];
+  pb2 = Partition[b2, actionsPerCondition];
+  Flatten[MapThread[HardIfThenElse, {c, pb1, pb2}], 1]
+]
+
+HardIfThenElse[c_/;VectorQ[c], b1_/;MatrixQ[b1], b2_/;MatrixQ[b2]] := Block[{},
+  ConfirmAssert[Dimensions[b1] == Dimensions[b2], Null, "The action dimensions must be identical"];
+  ConfirmAssert[Length[b1] >= Length[c], Null, "The size of the action must be greater than equal to the size of the condition"];
+  ConfirmAssert[IntegerQ[Length[b1]/Length[c]], Null, "The size of action must be a multiple of the size of the condition"];
+  MapThread[HardIfThenElse, {c, b1, b2}]
+]
+
+(*
+HardOR[input_/;MatrixQ[input], weights_/;VectorQ[weights]] := Block[{},
+  HardOR[#, weights] & /@ input
+]
+
+HardOR[input_/;VectorQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  HardOR[input, #] & /@ weights  
+]
+
+HardOR[{input_}/;VectorQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  HardOR[input, weights]
+]
+
+HardOR[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  ConfirmAssert[Length[input] == Length[weights], Null, "HardOR[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] semantics check"];
+  Map[HardOR[#[[1]], #[[2]]] &, Partition[Riffle[input, weights], 2]]
+]
+*)
+
+HardIfThenElse[] := Function[{inputs},
+  Block[{input, weights, condition, ifTrue, ifFalse},
+    {input, weights} = inputs;
+    {
+      (* Output *)
+      {condition, ifTrue, ifFalse} = input;
+      output = HardIfThenElse[condition, ifTrue, ifFalse],
+      (* Don't consume weights *)
+      weights
+    }
+  ]
+]
 
 (* Simple *)
 DifferentiableHardIfThenElse1[w_, b1_, b2_] := Max[Min[b1, w], Min[b2, 1 - w]]
@@ -1039,13 +1088,16 @@ DifferentiableHardIfThenElse2[w_, b1_, b2_] := If[
 
 DifferentiableHardIfThenElse[w_, b1_, b2_] := DifferentiableHardIfThenElse1[w, b1, b2]
 
-IfThenElseLayer[] := NetGraph[
-  <|
-    "IfThenElse" -> FunctionLayer[DifferentiableHardIfThenElse[#Condition, #IfTrue, #IfFalse] &]
-  |>,
-  {
-  }
-]
+HardNeuralIfThenElseLayer[] := {
+  NetGraph[
+    <|
+      "IfThenElse" -> FunctionLayer[DifferentiableHardIfThenElse[#Condition, #IfTrue, #IfFalse] &]
+    |>,
+    {
+    }
+  ],
+  HardIfThenElse[]
+}
 
 ConditionAction[condition_, action_] := Module[{conditionOutputSize, actionOutputSize},
   conditionOutputSize = NetExtract[condition, "Output"];
