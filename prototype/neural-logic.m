@@ -31,6 +31,7 @@ DifferentiableHardOR::usage = "Differentiable hard OR.";
 DifferentiableHardXOR::usage = "Differentiable hard XOR.";
 HardClip::usage = "Hard clip.";
 LogisticClip::usage = "Logistic clip.";
+MajorityIndex::usage = "Majority index.";
 HardNeuralMajority::usage = "Hard neural majority.";
 HardNeuralChain::usage = "Hard neural chain.";
 HardNAND::usage = "Hard NAND.";
@@ -537,10 +538,8 @@ HardNeuralNOR[inputSize_, layerSize_, orWeights_Function:NearZeroSoftBits, notWe
 (* Hard MAJORITY *)
 (* ------------------------------------------------------------------ *)
 
-(* TODO *)
-(*
 HardMajority[] := Function[{inputsAndWeights},
-  Block[{inputs, weights, output},
+  Block[{inputs, weights},
     {inputs, weights} = inputsAndWeights;
     {
       (* Output *)
@@ -553,25 +552,21 @@ HardMajority[] := Function[{inputsAndWeights},
       ],
       (* Don't consume weights *)
       weights
-    }
+    } 
   ]
 ]
-*)
 
-HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
-  With[{medianIndex = Floor[(inputSize + 1)/2]},
+MajorityIndex[inputSize_] := Ceiling[(inputSize + 1) / 2]
+
+(* inputSize is the length of each array passed to Majority *)
+HardNeuralMajority[inputSize_] := {
+  With[{majorityIndex = MajorityIndex[inputSize]},
     NetGraph[
       <|
-        "Weights" -> weights[layerSize * inputSize],
-        "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
-        "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-        "Sort" -> FunctionLayer[Sort /@ # &],
-        "Medians" -> PartLayer[{All, medianIndex}, "Output" -> layerSize]
+        "Sort" -> FunctionLayer[ReverseSort /@ # &],
+        "Medians" -> PartLayer[{All, majorityIndex}]
       |>,
       {
-        "Weights" -> "Reshape",
-        "Reshape" -> NetPort["HardInclude", "Weights"],
-        "HardInclude" -> "Sort",
         "Sort" -> "Medians"
       }
     ]
