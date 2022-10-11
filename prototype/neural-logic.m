@@ -1120,8 +1120,8 @@ HardNeuralIfThenElseLayer[] := {
 
 ConditionAction[condition_, action_] := Module[{fullCondition, fullAction, conditionOutputSize, actionOutputSize},
   (* Some condition/actions will be {softNet, hardNet} format; others will just be softNet *)
-  fullCondition = If[ListQ[condition], condition, {condition, # &}];
-  fullAction = If[ListQ[action], action, {action, # &}];
+  fullCondition = If[ListQ[condition], condition, {condition, Identity[#] &}];
+  fullAction = If[ListQ[action], action, {action, Identity[#] &}];
   conditionOutputSize = NetExtract[First[fullCondition], "Output"];
   actionOutputSize = NetExtract[First[fullAction], "Output"];
   ConfirmAssert[actionOutputSize >= conditionOutputSize, Null, "The size of the action must be greater than equal to the size of the condition"];
@@ -1130,48 +1130,72 @@ ConditionAction[condition_, action_] := Module[{fullCondition, fullAction, condi
 ]
 
 ConditionActionLayers[conditionActions_List, defaultAction_] := Module[
-  {layers, lastCondition, softReshapedDefaultAction, hardReshapedDefaultAction},
+  {layers, lastCondition, reshapedDefaultAction},
   layers = Reverse[
     Map[
-      Block[{condition = #[[1]], action = #[[2]], softCondition, hardCondition, softAction, hardAction},
-        (* conditions and actions are themselves pairs of the form {softNet, hardNet} *)
+      Block[{condition = #[[1]], action = #[[2]], softCondition, hardCondition, softAction, hardAction, softITE, hardITE},
+        {softITE, hardITE} = HardNeuralIfThenElseLayer[];
         {{softCondition, hardCondition}, {softAction, hardAction}} = ConditionAction[condition, action];
-        NetGraph[
-          <|
-            "Condition" -> softCondition,
-            "IfTrue" -> softAction,
-            "IfThenElse" -> First[HardNeuralIfThenElseLayer[]] (* XXXX *)
-          |>,
-          {
-            "Condition" -> NetPort["IfThenElse", "Condition"],
-            "IfTrue" -> NetPort["IfThenElse", "IfTrue"]
-          }
-        ]
+        {
+          NetGraph[
+            <|
+              "Condition" -> softCondition,
+              "IfTrue" -> softAction,
+              "IfThenElse" -> softITE
+            |>,
+            {
+              "Condition" -> NetPort["IfThenElse", "Condition"],
+              "IfTrue" -> NetPort["IfThenElse", "IfTrue"]
+            }
+          ],
+          With[{hardITELiteral = hardITE, hardConditionLiteral = hardCondition, hardActionLiteral = hardAction},
+            Function[{inputs},
+              Block[{input, weights},
+                (* the input will be the result of evaluting the ifFalse function *)
+                {input, weights} = inputs;
+                hardITELiteral[{{hardConditionLiteral, hardActionLiteral, input}, weights}]
+              ]
+            ]
+          ]
+        }
       ] &, 
-    conditionActions
+      conditionActions
     ]
   ];
   lastCondition = First[Last[conditionActions]];
-  {softReshapedDefaultAction, hardReshapedDefaultAction} = Last[ConditionAction[lastCondition, defaultAction]];
-  {softReshapedDefaultAction, layers} 
+  reshapedDefaultAction = Last[ConditionAction[lastCondition, defaultAction]];
+  {reshapedDefaultAction, layers} 
 ]
 
-HardNeuralDecisionList[conditionActionLayers_] := Module[{layers, reshapedDefaultAction},
-  {reshapedDefaultAction, layers} = conditionActionLayers;
-  Fold[
-    NetGraph[
-      {#1, #2},
-      {NetPort[1, "Output"] -> NetPort[2, "IfFalse"]}
-    ] &, 
-    reshapedDefaultAction, 
-    layers
-  ]
+HardNeuralDecisionList[conditionActionLayers_] := Module[
+  {layers, softLayers, hardLayers, softReshapedDefaultAction, hardReshapedDefaultAction},
+  {{softReshapedDefaultAction, hardReshapedDefaultAction}, layers} = conditionActionLayers;
+  softLayers = First /@ layers;
+  hardLayers = Last /@ layers;
+  {
+    Fold[
+      NetGraph[
+        {#1, #2},
+        {NetPort[1, "Output"] -> NetPort[2, "IfFalse"]}
+      ] &, 
+      softReshapedDefaultAction, 
+      softLayers
+    ],
+    Fold[
+      With[{ifFalseFunction = #1, iteLayer = #2},
+        Function[{inputs},
+          ifFalseFunction[iteLayer[inputs]]
+        ]
+      ]&,
+      hardReshapedDefaultAction,
+      hardLayers
+    ]
+  }
 ]
 
 (* ------------------------------------------------------------------ *)
 (* Hard AND-or-OR *)
 (* ------------------------------------------------------------------ *)
-
 
 (* TODO: use if-then-else *)
 HardNeuralANDorOR[inputSize_, layerSize_, weights_Function : BalancedSoftBits] := {
