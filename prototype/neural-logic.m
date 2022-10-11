@@ -87,6 +87,7 @@ HardIfThenElse::usage = "Hard if then else.";
 HardNeuralIfThenElseLayer::usage = "If then else layer.";
 BlendFactor::usage = "Blend factor.";
 HardNeuralDecisionList::usage = "Hard neural decision list.";
+ConditionAction::usage = "Condition action.";
 ConditionActionLayers::usage = "Condition action layers.";
 
 (* ------------------------------------------------------------------ *)
@@ -175,6 +176,7 @@ NeuralHardeningLayer[size_] := {HardeningLayer[size], # &}
 (* Learnable soft-bit deterministic variables *)
 (* ------------------------------------------------------------------ *)
 
+(* TODO: should this also return a Hard version? *)
 SoftBits[array_NetArrayLayer] := NetGraph[
   <|
     "SoftBits" -> NetGraph[
@@ -599,7 +601,8 @@ HardDropoutLayer[p_] := {
 (* Hard reshape layer *)
 (* ------------------------------------------------------------------ *)
 
-HardReshapeLayer[numPorts_] := Function[{inputs},
+(* TODO: remove *)
+HardReshapeLayerDeprecated[numPorts_] := Function[{inputs},
   Block[{input, weights},
     {input, weights} = inputs;
     input = Flatten[input];
@@ -610,9 +613,25 @@ HardReshapeLayer[numPorts_] := Function[{inputs},
   ]
 ]
 
-HardNeuralReshapeLayer[inputSize_, numPorts_] := {
+(* TODO: remove *)
+HardNeuralReshapeLayerDeprecated[inputSize_, numPorts_] := {
   ReshapeLayer[{numPorts, inputSize / numPorts}],
   HardReshapeLayer[numPorts]
+}
+
+HardReshapeLayer[dims_] := Function[{inputs},
+  Block[{input, weights},
+    {input, weights} = inputs;
+    {
+      ArrayReshape[input, dims],
+      weights
+    }
+  ]
+]
+
+HardNeuralReshapeLayer[dims_] := {
+  ReshapeLayer[dims],
+  HardReshapeLayer[dims]
 }
 
 (* ------------------------------------------------------------------ *)
@@ -1099,25 +1118,29 @@ HardNeuralIfThenElseLayer[] := {
   HardIfThenElse[]
 }
 
-ConditionAction[condition_, action_] := Module[{conditionOutputSize, actionOutputSize},
-  conditionOutputSize = NetExtract[condition, "Output"];
-  actionOutputSize = NetExtract[action, "Output"];
+ConditionAction[condition_, action_] := Module[{fullCondition, fullAction, conditionOutputSize, actionOutputSize},
+  (* Some condition/actions will be {softNet, hardNet} format; others will just be softNet *)
+  fullCondition = If[ListQ[condition], condition, {condition, # &}];
+  fullAction = If[ListQ[action], action, {action, # &}];
+  conditionOutputSize = NetExtract[First[fullCondition], "Output"];
+  actionOutputSize = NetExtract[First[fullAction], "Output"];
   ConfirmAssert[actionOutputSize >= conditionOutputSize, Null, "The size of the action must be greater than equal to the size of the condition"];
   ConfirmAssert[IntegerQ[actionOutputSize/conditionOutputSize], Null, "The size of action must be a multiple of the size of the condition"];
-  {condition, NetChain[{action, ReshapeLayer[{conditionOutputSize, actionOutputSize / conditionOutputSize}]}]}
+  {fullCondition, HardNeuralChain[{fullAction, HardNeuralReshapeLayer[{conditionOutputSize, actionOutputSize / conditionOutputSize}]}]}
 ]
 
 ConditionActionLayers[conditionActions_List, defaultAction_] := Module[
-  {layers, lastCondition, reshapedDefaultAction},
+  {layers, lastCondition, softReshapedDefaultAction, hardReshapedDefaultAction},
   layers = Reverse[
     Map[
-      Block[{condition = #[[1]], action = #[[2]]},
-        {condition, action} = ConditionAction[condition, action];
+      Block[{condition = #[[1]], action = #[[2]], softCondition, hardCondition, softAction, hardAction},
+        (* conditions and actions are themselves pairs of the form {softNet, hardNet} *)
+        {{softCondition, hardCondition}, {softAction, hardAction}} = ConditionAction[condition, action];
         NetGraph[
           <|
-            "Condition" -> condition,
-            "IfTrue" -> action,
-            "IfThenElse" -> IfThenElseLayer[]
+            "Condition" -> softCondition,
+            "IfTrue" -> softAction,
+            "IfThenElse" -> First[HardNeuralIfThenElseLayer[]] (* XXXX *)
           |>,
           {
             "Condition" -> NetPort["IfThenElse", "Condition"],
@@ -1129,8 +1152,8 @@ ConditionActionLayers[conditionActions_List, defaultAction_] := Module[
     ]
   ];
   lastCondition = First[Last[conditionActions]];
-  reshapedDefaultAction = Last[ConditionAction[lastCondition, defaultAction]];
-  {reshapedDefaultAction, layers} 
+  {softReshapedDefaultAction, hardReshapedDefaultAction} = Last[ConditionAction[lastCondition, defaultAction]];
+  {softReshapedDefaultAction, layers} 
 ]
 
 HardNeuralDecisionList[conditionActionLayers_] := Module[{layers, reshapedDefaultAction},
