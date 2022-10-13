@@ -116,7 +116,8 @@ InitializeToConstant[net_, k_] := NetInitialize[net, All,
     "Random", 
     "Weights" -> UniformDistribution[{k, k}],
     "Biases" -> UniformDistribution[{k, k}]
-  }
+  },
+  RandomSeeding -> Automatic
 ]
 
 InitializeBalanced[net_] := NetInitialize[net, All,
@@ -124,7 +125,8 @@ InitializeBalanced[net_] := NetInitialize[net, All,
     "Random", 
     "Weights" -> UniformDistribution[{0.4, 0.6}],
     "Biases" -> UniformDistribution[{0.4, 0.6}]
-  }
+  },
+  RandomSeeding -> Automatic
 ]
 
 InitializeNearToZero[net_] := NetInitialize[net, All,
@@ -132,7 +134,8 @@ InitializeNearToZero[net_] := NetInitialize[net, All,
     "Random", 
     "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[-1, 1]],
     "Biases" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[-1, 1]]
-  }
+  },
+  RandomSeeding -> Automatic
 ]
 
 InitializeNearToOne[net_] := NetInitialize[net, All,
@@ -141,7 +144,8 @@ InitializeNearToOne[net_] := NetInitialize[net, All,
     "Random", 
     "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[1, 1]],
     "Biases" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[1, 1]]
-  }
+  },
+  RandomSeeding -> Automatic
 ]
 
 (* ------------------------------------------------------------------ *)
@@ -167,16 +171,19 @@ HardeningLayer[] := CompiledLayer[HardeningForward[], HardeningBackward[]]
 (* Specify size to operate faster at batch level *)
 HardeningLayer[size_] := CompiledLayer[HardeningForward[], HardeningBackward[], "Input" -> size]
 
-NeuralHardeningLayer[] := {HardeningLayer[], # &}
+NeuralHardeningLayer[] := {HardeningLayer[], Identity[#] &}
 
 (* Specify size to operate faster at batch level *)
-NeuralHardeningLayer[size_] := {HardeningLayer[size], # &}
+NeuralHardeningLayer[size_] := {HardeningLayer[size], Identity[#] &}
 
 (* ------------------------------------------------------------------ *)
 (* Learnable soft-bit deterministic variables *)
 (* ------------------------------------------------------------------ *)
 
-(* TODO: should this also return a Hard version? *)
+(* TODO: soft and hard weights should be named, and the hard weights represented as
+an association (rather than consuming nested lists). This would avoid problems
+due to softNet evaluation order differing from hardNet evaluation order, and would
+also support weight re-use in the hard function. *)
 SoftBits[array_NetArrayLayer] := NetGraph[
   <|
     "SoftBits" -> NetGraph[
@@ -1032,9 +1039,23 @@ NeuralOR[inputSize_, layerSize_] := NetGraph[
 (* If-Then-Else *)
 (* ------------------------------------------------------------------ *)
 
-HardIfThenElse[condition_, ifTrue_, ifFalse_] := If[condition, ifTrue, ifFalse]
+HardIfThenElse[condition_, ifTrue_, ifFalse_] := Block[{},
+  (*
+  Echo["HardIfThenElse[condition, ifTrue, ifFalse]"];
+  Echo[condition, "condition"];
+  Echo[ifTrue, "ifTrue"];
+  Echo[ifFalse, "ifFalse"];
+  *)
+  If[condition, ifTrue, ifFalse]
+]
 
 HardIfThenElse[c_/;VectorQ[c], b1_/;VectorQ[b1], b2_/;VectorQ[b2]] := Block[{actionsPerCondition, pb1, pb2},
+  (*
+  Echo["HardIfThenElse[c_/;VectorQ[c], b1_/;VectorQ[b1], b2_/;VectorQ[b2]]"];
+  Echo[c, "c"];
+  Echo[b1, "b1"];
+  Echo[b2, "b2"];
+  *)
   ConfirmAssert[Length[b1] == Length[b2], Null, "The action sizes must be identical"];
   ConfirmAssert[Length[b1] >= Length[c], Null, "The size of the action must be greater than equal to the size of the condition"];
   ConfirmAssert[IntegerQ[Length[b1]/Length[c]], Null, "The size of action must be a multiple of the size of the condition"];
@@ -1045,6 +1066,12 @@ HardIfThenElse[c_/;VectorQ[c], b1_/;VectorQ[b1], b2_/;VectorQ[b2]] := Block[{act
 ]
 
 HardIfThenElse[c_/;VectorQ[c], b1_/;MatrixQ[b1], b2_/;MatrixQ[b2]] := Block[{},
+  (*
+  Echo["HardIfThenElse[c_/;VectorQ[c], b1_/;MatrixQ[b1], b2_/;MatrixQ[b2]]"];
+  Echo[c, "c"];
+  Echo[b1, "b1"];
+  Echo[b2, "b2"];
+  *)
   ConfirmAssert[Dimensions[b1] == Dimensions[b2], Null, "The action dimensions must be identical"];
   ConfirmAssert[Length[b1] >= Length[c], Null, "The size of the action must be greater than equal to the size of the condition"];
   ConfirmAssert[IntegerQ[Length[b1]/Length[c]], Null, "The size of action must be a multiple of the size of the condition"];
@@ -1070,14 +1097,22 @@ HardOR[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] := Block[{},
 ]
 *)
 
-HardIfThenElse[] := Function[{inputs},
-  Block[{input, weights, condition, ifTrue, ifFalse},
-    {input, weights} = inputs;
+ComputeHardIfThenElse[condition_, ifTrue_, ifFalse_] := Function[{inputs},
+  Block[{input, weights, conditionValue, ifTrueValue, ifFalseValue},
+    (*
+    Echo[condition, "ComputeHardIfThenElse"];
+    Echo[condition, "condition"];
+    Echo[ifTrue, "ifTrue"];
+    Echo[ifFalse, "ifFalse"]; 
+    *)
+    {input, weights} = (*Echo[*)inputs(*, "inputs"]*);
+    {ifFalseValue, weights} = (*Echo[*)ifFalse[{input, weights}](*, "return value from IfFalseFunction"]*);
+    {ifTrueValue, weights} = (*Echo[*)ifTrue[{input, weights}](*, "return value from ifTrueFunction"]*);
+    {conditionValue, weights} = (*Echo[*)condition[{input, weights}](*, "return value from conditionFunction"]*);
     {
       (* Output *)
-      {condition, ifTrue, ifFalse} = input;
-      output = HardIfThenElse[condition, ifTrue, ifFalse],
-      (* Don't consume weights *)
+      HardIfThenElse[conditionValue, ifTrueValue, ifFalseValue],
+      (* Weights *)
       weights
     }
   ]
@@ -1115,18 +1150,34 @@ HardNeuralIfThenElseLayer[] := {
     {
     }
   ],
-  HardIfThenElse[]
+  ComputeHardIfThenElse[#1, #2, #3] &
 }
+
+(* TOOD: this is a hack because softWeights don't follow the {softNet, hardNet} format*)
+GetWeightStub[] := Function[{inputs},
+  Block[{input, weights},
+    {input, weights} = inputs;
+    {
+      Take[weights, 1],
+      Drop[weights, 1]
+    }
+  ]
+]
 
 ConditionAction[condition_, action_] := Module[{fullCondition, fullAction, conditionOutputSize, actionOutputSize},
   (* Some condition/actions will be {softNet, hardNet} format; others will just be softNet *)
-  fullCondition = If[ListQ[condition], condition, {condition, Identity[#] &}];
-  fullAction = If[ListQ[action], action, {action, Identity[#] &}];
+  (* TODO: fix this *)
+  fullCondition = If[ListQ[condition], condition, {condition, GetWeightStub[]}];
+  fullAction = If[ListQ[action], action, {action, GetWeightStub[]}];
+
   conditionOutputSize = NetExtract[First[fullCondition], "Output"];
   actionOutputSize = NetExtract[First[fullAction], "Output"];
   ConfirmAssert[actionOutputSize >= conditionOutputSize, Null, "The size of the action must be greater than equal to the size of the condition"];
   ConfirmAssert[IntegerQ[actionOutputSize/conditionOutputSize], Null, "The size of action must be a multiple of the size of the condition"];
-  {fullCondition, HardNeuralChain[{fullAction, HardNeuralReshapeLayer[{conditionOutputSize, actionOutputSize / conditionOutputSize}]}]}
+  {
+    fullCondition,
+    HardNeuralChain[{fullAction, HardNeuralReshapeLayer[{conditionOutputSize, actionOutputSize / conditionOutputSize}]}]
+  }
 ]
 
 ConditionActionLayers[conditionActions_List, defaultAction_] := Module[
@@ -1149,13 +1200,7 @@ ConditionActionLayers[conditionActions_List, defaultAction_] := Module[
             }
           ],
           With[{hardITELiteral = hardITE, hardConditionLiteral = hardCondition, hardActionLiteral = hardAction},
-            Function[{inputs},
-              Block[{input, weights},
-                (* the input will be the result of evaluting the ifFalse function *)
-                {input, weights} = inputs;
-                hardITELiteral[{{hardConditionLiteral, hardActionLiteral, input}, weights}]
-              ]
-            ]
+            hardITELiteral[hardConditionLiteral, hardActionLiteral, #1] &
           ]
         }
       ] &, 
@@ -1180,13 +1225,18 @@ HardNeuralDecisionList[conditionActionLayers_] := Module[
       ] &, 
       softReshapedDefaultAction, 
       softLayers
-    ],
+    ],    
     Fold[
-      With[{ifFalseFunction = #1, iteLayer = #2},
-        Function[{inputs},
-          ifFalseFunction[iteLayer[inputs]]
+      Function[{inputs},
+        Block[{ifThenFunction, elseFunction, ifThenElseFunction},
+          (*Echo["ITE function"];*)
+          ifThenFunction = #2;  
+          elseFunction = #1;
+          ifThenElseFunction = ifThenFunction[elseFunction];
+          (*Echo[ifThenElseFunction, "ifThenElseFunction"];*)
+          ifThenElseFunction[inputs]  
         ]
-      ]&,
+      ] &,
       hardReshapedDefaultAction,
       hardLayers
     ]
