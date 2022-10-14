@@ -26,5 +26,6 @@ Questions? Ask @Z80coder
 - [Learning XOR (parity)](https://drive.google.com/file/d/1kBxJCkuEzbisWhUGJZ42o-m6xYOZ56pB/view?usp=sharing) (10m)
 - [Numerical regression](https://drive.google.com/file/d/1k2wQIjTN0omKuaFYQHrusMRIdDxPlSAf/view?usp=sharing) (23m)
 - [If-Then-Else neuron](https://drive.google.com/file/d/1qelfWX6s2XhlHxFwUSV76tAS2tyDK3Q0/view?usp=sharing) (23m)
+- [Neural conditions and actions](https://drive.google.com/file/d/1nrn_4TlNCmdC1ZAlN9pKIOF2hEjtykuo/view?usp=sharing) (24m)
 
 More to come!

@@ -31,6 +31,7 @@ DifferentiableHardOR::usage = "Differentiable hard OR.";
 DifferentiableHardXOR::usage = "Differentiable hard XOR.";
 HardClip::usage = "Hard clip.";
 LogisticClip::usage = "Logistic clip.";
+MajorityIndex::usage = "Majority index.";
 HardNeuralMajority::usage = "Hard neural majority.";
 HardNeuralChain::usage = "Hard neural chain.";
 HardNAND::usage = "Hard NAND.";
@@ -83,10 +84,12 @@ DifferentiableHardIfThenElse::usage = "Differentiable hard if then else.";
 DifferentiableHardIfThenElse1::usage = "Differentiable hard if then else version 2.";
 DifferentiableHardIfThenElse2::usage = "Differentiable hard if then else version 3.";
 HardIfThenElse::usage = "Hard if then else.";
-IfThenElseLayer::usage = "If then else layer.";
+HardNeuralIfThenElseLayer::usage = "If then else layer.";
 BlendFactor::usage = "Blend factor.";
 HardNeuralDecisionList::usage = "Hard neural decision list.";
+ConditionAction::usage = "Condition action.";
 ConditionActionLayers::usage = "Condition action layers.";
+OpenActions::usage = "Open actions.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -114,7 +117,8 @@ InitializeToConstant[net_, k_] := NetInitialize[net, All,
     "Random", 
     "Weights" -> UniformDistribution[{k, k}],
     "Biases" -> UniformDistribution[{k, k}]
-  }
+  },
+  RandomSeeding -> Automatic
 ]
 
 InitializeBalanced[net_] := NetInitialize[net, All,
@@ -122,7 +126,8 @@ InitializeBalanced[net_] := NetInitialize[net, All,
     "Random", 
     "Weights" -> UniformDistribution[{0.4, 0.6}],
     "Biases" -> UniformDistribution[{0.4, 0.6}]
-  }
+  },
+  RandomSeeding -> Automatic
 ]
 
 InitializeNearToZero[net_] := NetInitialize[net, All,
@@ -130,7 +135,8 @@ InitializeNearToZero[net_] := NetInitialize[net, All,
     "Random", 
     "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[-1, 1]],
     "Biases" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[-1, 1]]
-  }
+  },
+  RandomSeeding -> Automatic
 ]
 
 InitializeNearToOne[net_] := NetInitialize[net, All,
@@ -139,7 +145,8 @@ InitializeNearToOne[net_] := NetInitialize[net, All,
     "Random", 
     "Weights" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[1, 1]],
     "Biases" -> CensoredDistribution[{0.001, 0.999}, NormalDistribution[1, 1]]
-  }
+  },
+  RandomSeeding -> Automatic
 ]
 
 (* ------------------------------------------------------------------ *)
@@ -165,15 +172,19 @@ HardeningLayer[] := CompiledLayer[HardeningForward[], HardeningBackward[]]
 (* Specify size to operate faster at batch level *)
 HardeningLayer[size_] := CompiledLayer[HardeningForward[], HardeningBackward[], "Input" -> size]
 
-NeuralHardeningLayer[] := {HardeningLayer[], # &}
+NeuralHardeningLayer[] := {HardeningLayer[], Identity[#] &}
 
 (* Specify size to operate faster at batch level *)
-NeuralHardeningLayer[size_] := {HardeningLayer[size], # &}
+NeuralHardeningLayer[size_] := {HardeningLayer[size], Identity[#] &}
 
 (* ------------------------------------------------------------------ *)
 (* Learnable soft-bit deterministic variables *)
 (* ------------------------------------------------------------------ *)
 
+(* TODO: soft and hard weights should be named, and the hard weights represented as
+an association (rather than consuming nested lists). This would avoid problems
+due to softNet evaluation order differing from hardNet evaluation order, and would
+also support weight re-use in the hard function. *)
 SoftBits[array_NetArrayLayer] := NetGraph[
   <|
     "SoftBits" -> NetGraph[
@@ -537,10 +548,8 @@ HardNeuralNOR[inputSize_, layerSize_, orWeights_Function:NearZeroSoftBits, notWe
 (* Hard MAJORITY *)
 (* ------------------------------------------------------------------ *)
 
-(* TODO *)
-(*
 HardMajority[] := Function[{inputsAndWeights},
-  Block[{inputs, weights, output},
+  Block[{inputs, weights},
     {inputs, weights} = inputsAndWeights;
     {
       (* Output *)
@@ -553,25 +562,21 @@ HardMajority[] := Function[{inputsAndWeights},
       ],
       (* Don't consume weights *)
       weights
-    }
+    } 
   ]
 ]
-*)
 
-HardNeuralMajority[inputSize_, layerSize_, weights_Function:BalancedSoftBits] := {
-  With[{medianIndex = Floor[(inputSize + 1)/2]},
+MajorityIndex[inputSize_] := Ceiling[(inputSize + 1) / 2]
+
+(* inputSize is the length of each array passed to Majority *)
+HardNeuralMajority[inputSize_] := {
+  With[{majorityIndex = MajorityIndex[inputSize]},
     NetGraph[
       <|
-        "Weights" -> weights[layerSize * inputSize],
-        "Reshape" -> ReshapeLayer[{layerSize, inputSize}],
-        "HardInclude" -> ThreadingLayer[DifferentiableHardNOT[#Input, #Weights] &, 1, "Output" -> {layerSize, inputSize}],
-        "Sort" -> FunctionLayer[Sort /@ # &],
-        "Medians" -> PartLayer[{All, medianIndex}, "Output" -> layerSize]
+        "Sort" -> FunctionLayer[ReverseSort /@ # &],
+        "Medians" -> PartLayer[{All, majorityIndex}]
       |>,
       {
-        "Weights" -> "Reshape",
-        "Reshape" -> NetPort["HardInclude", "Weights"],
-        "HardInclude" -> "Sort",
         "Sort" -> "Medians"
       }
     ]
@@ -604,7 +609,8 @@ HardDropoutLayer[p_] := {
 (* Hard reshape layer *)
 (* ------------------------------------------------------------------ *)
 
-HardReshapeLayer[numPorts_] := Function[{inputs},
+(* TODO: remove *)
+HardReshapeLayerDeprecated[numPorts_] := Function[{inputs},
   Block[{input, weights},
     {input, weights} = inputs;
     input = Flatten[input];
@@ -615,9 +621,25 @@ HardReshapeLayer[numPorts_] := Function[{inputs},
   ]
 ]
 
-HardNeuralReshapeLayer[inputSize_, numPorts_] := {
+(* TODO: remove *)
+HardNeuralReshapeLayerDeprecated[inputSize_, numPorts_] := {
   ReshapeLayer[{numPorts, inputSize / numPorts}],
   HardReshapeLayer[numPorts]
+}
+
+HardReshapeLayer[dims_] := Function[{inputs},
+  Block[{input, weights},
+    {input, weights} = inputs;
+    {
+      ArrayReshape[input, dims],
+      weights
+    }
+  ]
+]
+
+HardNeuralReshapeLayer[dims_] := {
+  ReshapeLayer[dims],
+  HardReshapeLayer[dims]
 }
 
 (* ------------------------------------------------------------------ *)
@@ -1018,7 +1040,117 @@ NeuralOR[inputSize_, layerSize_] := NetGraph[
 (* If-Then-Else *)
 (* ------------------------------------------------------------------ *)
 
-HardIfThenElse[w_, b1_, b2_] := If[w, b1, b2]
+HardIfThenElse[condition_, ifTrue_, ifFalse_] := Block[{},
+  (*
+  Echo["HardIfThenElse[condition, ifTrue, ifFalse]"];
+  Echo[condition, "condition"];
+  Echo[ifTrue, "ifTrue"];
+  Echo[ifFalse, "ifFalse"];
+  *)
+  If[condition, ifTrue, ifFalse]
+]
+
+HardIfThenElse[c_/;VectorQ[c], b1_/;VectorQ[b1], b2_/;VectorQ[b2]] := Block[{actionsPerCondition, pb1, pb2},
+  (*
+  Echo["HardIfThenElse[c_/;VectorQ[c], b1_/;VectorQ[b1], b2_/;VectorQ[b2]]"];
+  Echo[c, "c"];
+  Echo[b1, "b1"];
+  Echo[b2, "b2"];
+  *)
+  ConfirmAssert[Length[b1] == Length[b2], Null, "The action sizes must be identical"];
+  ConfirmAssert[Length[b1] >= Length[c], Null, "The size of the action must be greater than equal to the size of the condition"];
+  ConfirmAssert[IntegerQ[Length[b1]/Length[c]], Null, "The size of action must be a multiple of the size of the condition"];
+  actionsPerCondition = Length[b1]/Length[c];
+  pb1 = Partition[b1, actionsPerCondition];
+  pb2 = Partition[b2, actionsPerCondition];
+  Flatten[MapThread[HardIfThenElse, {c, pb1, pb2}], 1]
+]
+
+HardIfThenElse[c_/;VectorQ[c], b1_/;MatrixQ[b1], b2_/;MatrixQ[b2]] := Block[{},
+  (*
+  Echo["HardIfThenElse[c_/;VectorQ[c], b1_/;MatrixQ[b1], b2_/;MatrixQ[b2]]"];
+  Echo[c, "c"];
+  Echo[b1, "b1"];
+  Echo[b2, "b2"];
+  *)
+  ConfirmAssert[Dimensions[b1] == Dimensions[b2], Null, "The action dimensions must be identical"];
+  ConfirmAssert[Length[b1] >= Length[c], Null, "The size of the action must be greater than equal to the size of the condition"];
+  ConfirmAssert[IntegerQ[Length[b1]/Length[c]], Null, "The size of action must be a multiple of the size of the condition"];
+  MapThread[HardIfThenElse, {c, b1, b2}]
+]
+
+(*
+HardOR[input_/;MatrixQ[input], weights_/;VectorQ[weights]] := Block[{},
+  HardOR[#, weights] & /@ input
+]
+
+HardOR[input_/;VectorQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  HardOR[input, #] & /@ weights  
+]
+
+HardOR[{input_}/;VectorQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  HardOR[input, weights]
+]
+
+HardOR[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] := Block[{},
+  ConfirmAssert[Length[input] == Length[weights], Null, "HardOR[input_/;MatrixQ[input], weights_/;MatrixQ[weights]] semantics check"];
+  Map[HardOR[#[[1]], #[[2]]] &, Partition[Riffle[input, weights], 2]]
+]
+*)
+
+(* TODO: we can't guarantee the order of the extracted weights, and thefore the implicit order in this
+function may mismatch the extracted weights. We need to switch from consuming weights to accessing
+named weights.    *)
+ComputeHardIfThenElse[condition_, ifTrue_, ifFalse_] := Function[{inputs},
+  Block[{input, weights, conditionValue, ifTrueValue, ifFalseValue},
+    (*
+    Echo[condition, "ComputeHardIfThenElse"];
+    Echo[condition, "condition"];
+    Echo[ifTrue, "ifTrue"];
+    Echo[ifFalse, "ifFalse"]; 
+    *)
+    {input, weights} = (*Echo[*)inputs(*, "inputs"]*);
+    (*Echo["weight dimensions: " <> ToString[Dimensions[weights]] <> ": " <> ToString[Dimensions/@weights]];*)
+    (*Echo["Evaluating IfFalseFunction"];*)
+    {ifFalseValue, weights} = (*Echo[*)ifFalse[{input, weights}](*, "return value from IfFalseFunction"]*);
+    (*Echo["Evaluating IfTrueFunction"];*)
+    {ifTrueValue, weights} = (*Echo[*)ifTrue[{input, weights}](*, "return value from ifTrueFunction"]*);
+    (*Echo["Evaluating conditionFunction"];*)
+    {conditionValue, weights} = (*Echo[*)condition[{input, weights}](*, "return value from conditionFunction"]*);
+    {
+      (* Output *)
+      HardIfThenElse[conditionValue, ifTrueValue, ifFalseValue],
+      (* Weights *)
+      weights
+    }
+  ]
+]
+
+(* Hack to avoid ordering problem for now *)
+ComputeHardIfThenElse2[condition_, ifTrue_, ifFalse_] := Function[{inputs},
+  Block[{input, weights, conditionValue, ifTrueValue, ifFalseValue},
+    (*
+    Echo[condition, "ComputeHardIfThenElse"];
+    Echo[condition, "condition"];
+    Echo[ifTrue, "ifTrue"];
+    Echo[ifFalse, "ifFalse"]; 
+    *)
+    {input, weights} = (*Echo[*)inputs(*, "inputs"]*);
+    (*Echo["weight dimensions: " <> ToString[Dimensions[weights]] <> ": " <> ToString[Dimensions/@weights]];*)
+    (*Echo["Evaluating IfFalseFunction"];*)
+    {ifFalseValue, weights} = (*Echo[*)ifFalse[{input, weights}](*, "return value from IfFalseFunction"]*);
+    (*Echo["Evaluating conditionFunction"];*)
+    {conditionValue, weights} = (*Echo[*)condition[{input, weights}](*, "return value from conditionFunction"]*);
+    (*Echo["Evaluating IfTrueFunction"];*)
+    {ifTrueValue, weights} = (*Echo[*)ifTrue[{input, weights}](*, "return value from ifTrueFunction"]*);
+    {
+      (* Output *)
+      HardIfThenElse[conditionValue, ifTrueValue, ifFalseValue],
+      (* Weights *)
+      weights
+    }
+  ]
+]
 
 (* Simple *)
 DifferentiableHardIfThenElse1[w_, b1_, b2_] := Max[Min[b1, w], Min[b2, 1 - w]]
@@ -1044,41 +1176,67 @@ DifferentiableHardIfThenElse2[w_, b1_, b2_] := If[
 
 DifferentiableHardIfThenElse[w_, b1_, b2_] := DifferentiableHardIfThenElse1[w, b1, b2]
 
-IfThenElseLayer[] := NetGraph[
-  <|
-    "IfThenElse" -> FunctionLayer[DifferentiableHardIfThenElse[#Condition, #IfTrue, #IfFalse] &]
-  |>,
+HardNeuralIfThenElseLayer[] := {
+  FunctionLayer[DifferentiableHardIfThenElse[#Condition, #IfTrue, #IfFalse] &],
+  ComputeHardIfThenElse[#1, #2, #3] &
+}
+
+OpenActions[] := {
+  FunctionLayer[DifferentiableHardIfThenElse[#Condition, #IfTrue, #IfFalse] &],
+  ComputeHardIfThenElse2[#1, #2, #3] &
+}
+
+(* TOOD: this is a hack because softWeights don't follow the {softNet, hardNet} format*)
+GetWeightStub[] := Function[{inputs},
+  Block[{input, weights},
+    {input, weights} = inputs;
+    {
+      Take[weights, 1],
+      Drop[weights, 1]
+    }
+  ]
+]
+
+ConditionAction[condition_, action_] := Module[{fullCondition, fullAction, conditionOutputSize, actionOutputSize},
+  (* Some condition/actions will be {softNet, hardNet} format; others will just be softNet *)
+  (* TODO: fix this *)
+  fullCondition = If[ListQ[condition], condition, {condition, GetWeightStub[]}];
+  fullAction = If[ListQ[action], action, {action, GetWeightStub[]}];
+  conditionOutputSize = NetExtract[First[fullCondition], "Output"];
+  actionOutputSize = NetExtract[First[fullAction], "Output"];
+  ConfirmAssert[actionOutputSize >= conditionOutputSize, Null, "The size of the action must be greater than equal to the size of the condition"];
+  ConfirmAssert[IntegerQ[actionOutputSize/conditionOutputSize], Null, "The size of action must be a multiple of the size of the condition"];
   {
+    fullCondition,
+    HardNeuralChain[{fullAction, HardNeuralReshapeLayer[{conditionOutputSize, actionOutputSize / conditionOutputSize}]}]
   }
 ]
 
-ConditionAction[condition_, action_] := Module[{conditionOutputSize, actionOutputSize},
-  conditionOutputSize = NetExtract[condition, "Output"];
-  actionOutputSize = NetExtract[action, "Output"];
-  ConfirmAssert[actionOutputSize >= conditionOutputSize, Null, "The size of the action must be greater than equal to the size of the condition"];
-  ConfirmAssert[IntegerQ[actionOutputSize/conditionOutputSize], Null, "The size of action must be a multiple of the size of the condition"];
-  {condition, NetChain[{action, ReshapeLayer[{conditionOutputSize, actionOutputSize / conditionOutputSize}]}]}
-]
-
-ConditionActionLayers[conditionActions_List, defaultAction_] := Module[
+ConditionActionLayers[conditionActions_List, defaultAction_, iteLayer_:HardNeuralIfThenElseLayer] := Module[
   {layers, lastCondition, reshapedDefaultAction},
   layers = Reverse[
     Map[
-      Block[{condition = #[[1]], action = #[[2]]},
-        {condition, action} = ConditionAction[condition, action];
-        NetGraph[
-          <|
-            "Condition" -> condition,
-            "IfTrue" -> action,
-            "IfThenElse" -> IfThenElseLayer[]
-          |>,
-          {
-            "Condition" -> NetPort["IfThenElse", "Condition"],
-            "IfTrue" -> NetPort["IfThenElse", "IfTrue"]
-          }
-        ]
+      Block[{condition = #[[1]], action = #[[2]], softCondition, hardCondition, softAction, hardAction, softITE, hardITE},
+        {softITE, hardITE} = iteLayer[];
+        {{softCondition, hardCondition}, {softAction, hardAction}} = ConditionAction[condition, action];
+        {
+          NetGraph[
+            <|
+              "Condition" -> softCondition,
+              "IfTrue" -> softAction,
+              "IfThenElse" -> softITE
+            |>,
+            {
+              "Condition" -> NetPort["IfThenElse", "Condition"],
+              "IfTrue" -> NetPort["IfThenElse", "IfTrue"]
+            }
+          ],
+          With[{hardITELiteral = hardITE, hardConditionLiteral = hardCondition, hardActionLiteral = hardAction},
+            hardITELiteral[hardConditionLiteral, hardActionLiteral, #1] &
+          ]
+        }
       ] &, 
-    conditionActions
+      conditionActions
     ]
   ];
   lastCondition = First[Last[conditionActions]];
@@ -1086,22 +1244,40 @@ ConditionActionLayers[conditionActions_List, defaultAction_] := Module[
   {reshapedDefaultAction, layers} 
 ]
 
-HardNeuralDecisionList[conditionActionLayers_] := Module[{layers, reshapedDefaultAction},
-  {reshapedDefaultAction, layers} = conditionActionLayers;
-  Fold[
-    NetGraph[
-      {#1, #2},
-      {NetPort[1, "Output"] -> NetPort[2, "IfFalse"]}
-    ] &, 
-    reshapedDefaultAction, 
-    layers
-  ]
+HardNeuralDecisionList[conditionActionLayers_] := Module[
+  {layers, softLayers, hardLayers, softReshapedDefaultAction, hardReshapedDefaultAction},
+  {{softReshapedDefaultAction, hardReshapedDefaultAction}, layers} = conditionActionLayers;
+  softLayers = First /@ layers;
+  hardLayers = Last /@ layers;
+  {
+    Fold[
+      NetGraph[
+        {#1, #2},
+        {NetPort[1, "Output"] -> NetPort[2, "IfFalse"]}
+      ] &, 
+      softReshapedDefaultAction, 
+      softLayers
+    ],    
+    Fold[
+      Function[{inputs},
+        Block[{ifThenFunction, elseFunction, ifThenElseFunction},
+          (*Echo["ITE function"];*)
+          ifThenFunction = #2;  
+          elseFunction = #1;
+          ifThenElseFunction = ifThenFunction[elseFunction];
+          (*Echo[ifThenElseFunction, "ifThenElseFunction"];*)
+          ifThenElseFunction[inputs]  
+        ]
+      ] &,  
+      hardReshapedDefaultAction,
+      hardLayers
+    ]
+  }
 ]
 
 (* ------------------------------------------------------------------ *)
 (* Hard AND-or-OR *)
 (* ------------------------------------------------------------------ *)
-
 
 (* TODO: use if-then-else *)
 HardNeuralANDorOR[inputSize_, layerSize_, weights_Function : BalancedSoftBits] := {
