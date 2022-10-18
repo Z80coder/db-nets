@@ -11,6 +11,7 @@ Questions? Ask @Z80coder
 ## Demos
 
 - [Neural logic nets](https://drive.google.com/file/d/1P25OxM7Af8ppUGOUhKd6psGHI0OVXIzw/view?usp=sharing) (15m)
+- [Neural logic nets for differentiable QL](https://drive.google.com/file/d/195r9Y08Q61V80f2Hqw62YuHpYsCzJCmZ/view?usp=sharing) (30m)
 
 ## Development videos   
 
