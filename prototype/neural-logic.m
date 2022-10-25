@@ -24,6 +24,7 @@ HardNeuralXOR::usage = "Hard neural XOR.";
 HardNeuralReshapeLayer::usage = "Port layer.";
 HardNeuralCatenateLayer::usage = "Catenate layer.";
 HardNeuralFlattenLayer::usage = "Flatten layer.";
+HardNeuralTransposeLayer::usage = "Transpose layer.";
 NeuralOR::usage = "Neural OR.";
 NeuralAND::usage = "Neural AND.";
 DifferentiableHardAND::usage = "Differentiable hard AND.";
@@ -90,6 +91,7 @@ HardNeuralDecisionList::usage = "Hard neural decision list.";
 ConditionAction::usage = "Condition action.";
 ConditionActionLayers::usage = "Condition action layers.";
 OpenActions::usage = "Open actions.";
+ClosedActions::usage = "Closed actions.";
 
 (* ------------------------------------------------------------------ *)
 
@@ -609,24 +611,6 @@ HardDropoutLayer[p_] := {
 (* Hard reshape layer *)
 (* ------------------------------------------------------------------ *)
 
-(* TODO: remove *)
-HardReshapeLayerDeprecated[numPorts_] := Function[{inputs},
-  Block[{input, weights},
-    {input, weights} = inputs;
-    input = Flatten[input];
-    {
-      Partition[input, Length[input] / numPorts], 
-      weights
-    }
-  ]
-]
-
-(* TODO: remove *)
-HardNeuralReshapeLayerDeprecated[inputSize_, numPorts_] := {
-  ReshapeLayer[{numPorts, inputSize / numPorts}],
-  HardReshapeLayer[numPorts]
-}
-
 HardReshapeLayer[dims_] := Function[{inputs},
   Block[{input, weights},
     {input, weights} = inputs;
@@ -640,6 +624,25 @@ HardReshapeLayer[dims_] := Function[{inputs},
 HardNeuralReshapeLayer[dims_] := {
   ReshapeLayer[dims],
   HardReshapeLayer[dims]
+}
+
+(* ------------------------------------------------------------------ *)
+(* Hard transpose layer *)
+(* ------------------------------------------------------------------ *)
+
+HardTransposeLayer[] := Function[{inputs},
+  Block[{input, weights},
+    {input, weights} = inputs;
+    {
+      Transpose[input],
+      weights
+    }
+  ]
+]
+
+HardNeuralTransposeLayer[] := {
+  TransposeLayer[],
+  HardTransposeLayer[]
 }
 
 (* ------------------------------------------------------------------ *)
@@ -897,6 +900,11 @@ HardenNet[net_] := Module[
   NetReplacePart[net, replacements]
 ]
 
+(* TODO: we can probably simplify this logic by using
+
+Information[softNet, "Arrays"]
+
+*)
 GetNetArrays[normalNet_List] := Select[normalNet, MatchQ[#, _NetArrayLayer] &]
 
 GetNetArrays[normalNet_Association] := GetNetArrays[Values[normalNet]]
@@ -1047,7 +1055,20 @@ HardIfThenElse[condition_, ifTrue_, ifFalse_] := Block[{},
   Echo[ifTrue, "ifTrue"];
   Echo[ifFalse, "ifFalse"];
   *)
-  If[condition, ifTrue, ifFalse]
+  If[BooleanQ[condition],
+    (* Normal evaluation *)
+    If[condition, ifTrue, ifFalse],
+    (* Symbolic evaluation *)
+    If[ListQ[ifTrue],
+      Map[
+        With[{t = #[[1]], f = #[[2]]},
+          If[condition, t, f] 
+        ] &,
+        Partition[Riffle[ifTrue, ifFalse], 2]
+      ],
+      If[condition, ifTrue, ifFalse]
+    ]
+  ]
 ]
 
 HardIfThenElse[c_/;VectorQ[c], b1_/;VectorQ[b1], b2_/;VectorQ[b2]] := Block[{actionsPerCondition, pb1, pb2},
@@ -1174,12 +1195,14 @@ DifferentiableHardIfThenElse2[w_, b1_, b2_] := If[
     ]
   ]
 
-DifferentiableHardIfThenElse[w_, b1_, b2_] := DifferentiableHardIfThenElse1[w, b1, b2]
+DifferentiableHardIfThenElse[w_, b1_, b2_] := DifferentiableHardIfThenElse2[w, b1, b2]
 
 HardNeuralIfThenElseLayer[] := {
   FunctionLayer[DifferentiableHardIfThenElse[#Condition, #IfTrue, #IfFalse] &],
   ComputeHardIfThenElse[#1, #2, #3] &
 }
+
+ClosedActions[] := HardNeuralIfThenElseLayer[]
 
 OpenActions[] := {
   FunctionLayer[DifferentiableHardIfThenElse[#Condition, #IfTrue, #IfFalse] &],
