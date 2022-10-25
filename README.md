@@ -28,5 +28,6 @@ Questions? Ask @Z80coder
 - [Numerical regression](https://drive.google.com/file/d/1k2wQIjTN0omKuaFYQHrusMRIdDxPlSAf/view?usp=sharing) (23m)
 - [If-Then-Else neuron](https://drive.google.com/file/d/1qelfWX6s2XhlHxFwUSV76tAS2tyDK3Q0/view?usp=sharing) (23m)
 - [Neural conditions and actions](https://drive.google.com/file/d/1nrn_4TlNCmdC1ZAlN9pKIOF2hEjtykuo/view?usp=sharing) (24m)
+- [Neural decision lists](https://drive.google.com/file/d/16F_2kpBaZO-qPQLX38Sar9pJfuunsVyO/view?usp=sharing) (15m)
 
 More to come!
