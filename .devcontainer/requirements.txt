@@ -4,3 +4,4 @@ matplotlib
 jupyter
 jaxlib
 jax
+flax
