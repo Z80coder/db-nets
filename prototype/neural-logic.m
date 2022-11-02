@@ -8,6 +8,7 @@
   to train the soft-net with 64, rather than 32, bit precision.
   - BooleanCountingFunction and XOR neurons not yet fully implemented.
   - Determine the all-purpose logic layer that will work for most problems (e.g. DNF, CNF, etc.)
+  - TODO: Can we construct first-order logic layers, using vector-subset identities? 
 *)
 
 (* ------------------------------------------------------------------ *)
