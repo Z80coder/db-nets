@@ -1,4 +1,5 @@
-from neurallogic import differentiable_hard_not
+import pytest
+from neurallogic import hard_not
 
 def test_differentiable_hard_not():
-    assert differentiable_hard_not([0.1, 0.5], [0.8, 0.3]) == [0.0, 0.0]
+    assert hard_not.differentiable_hard_not(0.1, 0.6) == pytest.approx(0.42)
