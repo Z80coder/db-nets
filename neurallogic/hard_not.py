@@ -1,7 +1,12 @@
-def differentiable_hard_not(x, w):
+import jax
+
+def hard_not(w, x):
     """
-    w > 0.5 implies the NOT operation is active
-    else the NOT operation is inactive
+    w > 0.5 implies the not operation is active, else inactive
     The corresponding hard logic is: (x AND w) || (! x AND ! w) or equivalently ! (x XOR w)
     """
-    return [1.0 - w[i] + x[i] * (2.0 * w[i] - 1.0) for i in range(len(x))]
+    return 1.0 - w + x * (2.0 * w - 1.0)
+
+hard_not_neuron = jax.vmap(hard_not, 0, 0)
+
+hard_not_layer = jax.vmap(hard_not_neuron, (0, None), 0)
