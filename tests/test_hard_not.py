@@ -1,5 +1,3 @@
-import pytest
-import jax
 import jax.numpy as jnp
 from neurallogic import hard_not
 
