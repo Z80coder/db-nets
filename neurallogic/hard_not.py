@@ -1,6 +1,8 @@
 import jax
+from jax import lax
+import numpy
 
-def soft_not(w, x):
+def soft_not(w: float, x: float) -> float:
     """
     w > 0.5 implies the not operation is active, else inactive
     
@@ -11,13 +13,15 @@ def soft_not(w, x):
     """
     return 1.0 - w + x * (2.0 * w - 1.0)
 
-def hard_not(w: bool, x: bool) -> bool:
-    return (x and w) or (not x and not w)
+@jax.jit
+def hard_not(w, x):
+    return (x & w) | (~x & ~w)
 
 soft_not_neuron = jax.vmap(soft_not, 0, 0)
-
 hard_not_neuron = jax.vmap(hard_not, 0, 0)
-
 soft_not_layer = jax.vmap(soft_not_neuron, (0, None), 0)
-
 hard_not_layer = jax.vmap(hard_not_neuron, (0, None), 0)
+
+def hard_not_deprecated(w, x):
+    return numpy.logical_not(numpy.logical_xor(w, x))
+def hard_not_neuron_deprecated(w, x): return hard_not(w, x)
