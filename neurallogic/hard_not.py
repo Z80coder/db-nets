@@ -12,7 +12,7 @@ def soft_not(w: float, x: float) -> float:
     return 1.0 - w + x * (2.0 * w - 1.0)
 
 @jax.jit
-def hard_not(w, x):
+def hard_not(w: bool, x: bool) -> bool:
     return ~(x ^ w)
 
 soft_not_neuron = jax.vmap(soft_not, 0, 0)
