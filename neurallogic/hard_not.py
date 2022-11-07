@@ -22,17 +22,17 @@ hard_not_neuron = jax.vmap(hard_not, 0, 0)
 soft_not_layer = jax.vmap(soft_not_neuron, (0, None), 0)
 hard_not_layer = jax.vmap(hard_not_neuron, (0, None), 0)
 
-class HardNOT(nn.Module):
-    """A Not layer than transforms its inputs along the last dimension.
+class SoftNOT(nn.Module):
+    """A NOT layer than transforms its inputs along the last dimension.
 
     Attributes:
         kernel_init: initializer function for the weight matrix.
-        dtype: the dtype of the computation (default: infer from input and params).
-        param_dtype: the dtype passed to parameter initializers (default: float32).
+        dtype: the dtype of the computation (default: infer from input and weights).
+        weights_dtype: the dtype passed to the weight initializer (default: float32).
     """
     layer_size: int
     dtype: Optional[Any] = None
-    param_dtype: Any = jax.numpy.float32
+    weights_dtype: Any = jax.numpy.float32
     weights_init: Callable = nn.initializers.uniform(1.0)
 
     @nn.compact
@@ -40,6 +40,6 @@ class HardNOT(nn.Module):
         weights = self.param('weights',
                         self.weights_init,
                         (self.layer_size, jax.numpy.shape(x)[-1]),
-                        self.param_dtype)
+                        self.weights_dtype)
         x = jax.numpy.asarray(x, self.dtype)
         return soft_not_layer(weights, x)     
