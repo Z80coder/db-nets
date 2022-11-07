@@ -18,8 +18,11 @@ def hard_not(w: bool, x: bool) -> bool:
     return ~(x ^ w)
 
 soft_not_neuron = jax.vmap(soft_not, 0, 0)
+
 hard_not_neuron = jax.vmap(hard_not, 0, 0)
+
 soft_not_layer = jax.vmap(soft_not_neuron, (0, None), 0)
+
 hard_not_layer = jax.vmap(hard_not_neuron, (0, None), 0)
 
 class SoftNOT(nn.Module):
@@ -42,4 +45,7 @@ class SoftNOT(nn.Module):
                         (self.layer_size, jax.numpy.shape(x)[-1]),
                         self.weights_dtype)
         x = jax.numpy.asarray(x, self.dtype)
-        return soft_not_layer(weights, x)     
+        return soft_not_layer(weights, x)
+
+
+
