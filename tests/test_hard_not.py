@@ -3,7 +3,12 @@ from neurallogic import hard_not
 from neurallogic import harden
 
 def test_activation():
-    test_data = [[[1.0, 1.0], 1.0], [[1.0, 0.0], 0.0], [[0.0, 0.0], 1.0], [[0.0, 1.0], 0.0]]
+    test_data = [
+        [[1.0, 1.0], 1.0],
+        [[1.0, 0.0], 0.0],
+        [[0.0, 0.0], 1.0],
+        [[0.0, 1.0], 0.0]
+    ]
     for input, expected in test_data:
         assert hard_not.soft_not(*input) == expected
         assert hard_not.hard_not(*harden.harden_list(input)) == harden.harden(expected)
