@@ -1,4 +1,6 @@
+from typing import Any, Callable, Optional, Tuple
 import jax
+from flax import linen as nn
 
 def soft_not(w: float, x: float) -> float:
     """
@@ -20,5 +22,24 @@ hard_not_neuron = jax.vmap(hard_not, 0, 0)
 soft_not_layer = jax.vmap(soft_not_neuron, (0, None), 0)
 hard_not_layer = jax.vmap(hard_not_neuron, (0, None), 0)
 
-def not_layer():
-    return soft_not_layer, hard_not_layer
+class HardNOT(nn.Module):
+    """A Not layer than transforms its inputs along the last dimension.
+
+    Attributes:
+        kernel_init: initializer function for the weight matrix.
+        dtype: the dtype of the computation (default: infer from input and params).
+        param_dtype: the dtype passed to parameter initializers (default: float32).
+    """
+    layer_size: int
+    dtype: Optional[Any] = None
+    param_dtype: Any = jax.numpy.float32
+    weights_init: Callable = nn.initializers.uniform(1.0)
+
+    @nn.compact
+    def __call__(self, x: Any) -> Any:
+        weights = self.param('weights',
+                        self.weights_init,
+                        (self.layer_size, jax.numpy.shape(x)[-1]),
+                        self.param_dtype)
+        x = jax.numpy.asarray(x, self.dtype)
+        return soft_not_layer(weights, x)     
