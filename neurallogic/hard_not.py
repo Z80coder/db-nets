@@ -2,6 +2,7 @@ import jax
 from jax import lax
 import numpy
 
+# TODO: clip weights between 0 and 1
 def soft_not(w: float, x: float) -> float:
     """
     w > 0.5 implies the not operation is active, else inactive
