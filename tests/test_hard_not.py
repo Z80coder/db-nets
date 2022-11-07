@@ -1,36 +1,38 @@
-import pytest
-import jax
 import jax.numpy as jnp
 from neurallogic import hard_not
+from neurallogic import harden
 
-def test_differentiable_hard_not():
-    x = jnp.array([1.0])
-    w = jnp.array([0.0])
-    assert hard_not.differentiable_hard_not(x, w) == pytest.approx([0.0])
-    x = jnp.array([1.0])
-    w = jnp.array([1.0])
-    assert hard_not.differentiable_hard_not(x, w) == pytest.approx([1.0])
-    x = jnp.array([0.0])
-    w = jnp.array([0.0])
-    assert hard_not.differentiable_hard_not(x, w) == pytest.approx([1.0])
-    x = jnp.array([0.0])
-    w = jnp.array([1.0])
-    assert hard_not.differentiable_hard_not(x, w) == pytest.approx([0.0])
-    x = jnp.array([1.0, 0.0, 1.0, 0.0])
-    w = jnp.array([1.0, 1.0, 0.0, 0.0])
-    assert hard_not.differentiable_hard_not(x, w) == pytest.approx([1.0, 0.0, 0.0, 1.0])
+def test_activation():
+    test_data = [
+        [[1.0, 1.0], 1.0],
+        [[1.0, 0.0], 0.0],
+        [[0.0, 0.0], 1.0],
+        [[0.0, 1.0], 0.0]
+    ]
+    for input, expected in test_data:
+        assert hard_not.soft_not(*input) == expected
+        assert hard_not.hard_not(*harden.harden_list(input)) == harden.harden(expected)
 
-def test_threaded_differentiable_hard_not():
-    threaded_differentiable_hard_not = jax.vmap(hard_not.differentiable_hard_not, in_axes=1, out_axes=0)
-    x = jnp.array([1.0, 0.0, 1.0, 0.0])
-    w = jnp.array([1.0, 1.0, 0.0, 0.0])
-    xs = jnp.stack([x for _ in range(10)])
-    ws = jnp.stack([w for _ in range(10)])
-    result = threaded_differentiable_hard_not(xs, ws)
-    expected_result = jnp.stack([jnp.array([1.0, 0.0, 0.0, 1.0]) for _ in range(10)])
-    print("x = ", xs)
-    print("w = ", ws)
-    print("result = ", result)
-    print("expected result = ", expected_result)
-    assert jnp.array_equal(result, expected_result)
+def test_neuron():
+    test_data = [
+        [[1.0, 1.0], [1.0, 1.0], [1.0, 1.0]],
+        [[0.0, 0.0], [0.0, 0.0], [1.0, 1.0]],
+        [[1.0, 0.0], [0.0, 1.0], [0.0, 0.0]],
+        [[0.0, 1.0], [1.0, 0.0], [0.0, 0.0]],
+        [[0.0, 1.0], [0.0, 0.0], [1.0, 0.0]],
+        [[0.0, 1.0], [1.0, 1.0], [0.0, 1.0]]
+    ]
+    for input, weights, expected in test_data:
+        assert jnp.array_equal(hard_not.soft_not_neuron(jnp.array(weights), jnp.array(input)), jnp.array(expected))
+        assert jnp.array_equal(hard_not.hard_not_neuron(harden.harden_array(jnp.array(weights)), harden.harden_array(jnp.array(input))), harden.harden_array(jnp.array(expected)))
 
+def test_layer():
+    test_data = [
+        [[1.0, 0.0], [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0], [0.0, 0.0]], [[1.0, 0.0], [0.0, 0.0], [1.0, 1.0], [0.0, 1.0]]],
+        [[1.0, 1.0], [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0], [0.0, 0.0]], [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0], [0.0, 0.0]]],
+        [[0.0, 1.0], [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0], [0.0, 0.0]], [[0.0, 1.0], [1.0, 1.0], [0.0, 0.0], [1.0, 0.0]]],
+        [[0.0, 0.0], [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0], [0.0, 0.0]], [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]]]
+    ]
+    for input, weights, expected in test_data:
+        assert jnp.array_equal(hard_not.soft_not_layer(jnp.array(weights), jnp.array(input)), jnp.array(expected))
+        assert jnp.array_equal(hard_not.hard_not_layer(harden.harden_array(jnp.array(weights)), harden.harden_array(jnp.array(input))), harden.harden_array(jnp.array(expected)))
