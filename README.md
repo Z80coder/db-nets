@@ -1,5 +1,7 @@
 # neural-logic
 
+[![Python package](https://github.com/github/neural-logic/actions/workflows/python.yaml/badge.svg)](https://github.com/github/neural-logic/actions/workflows/python.yaml)
+
 Neural logic library for learning boolean functions on GPUs with gradient descent.
 
 The working prototype is implemented in Wolfram language.
