@@ -4,6 +4,7 @@ from neurallogic import harden
 
 def test_activation():
     test_data = [
+        # Test logic
         [[1.0, 1.0], 1.0],
         [[1.0, 0.0], 0.0],
         [[0.0, 0.0], 1.0],
