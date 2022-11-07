@@ -2,13 +2,13 @@
 
 [![Python package](https://github.com/github/neural-logic/actions/workflows/python.yaml/badge.svg)](https://github.com/github/neural-logic/actions/workflows/python.yaml)
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://z80coder-legendary-space-cod-65vqgjqqxjq2xv44.github.dev/)
+
 Neural logic library for learning boolean functions on GPUs with gradient descent.
 
 The working prototype is implemented in Wolfram language.
 
 The production library (work-in-progress) is implemented in Python.
-
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://z80coder-legendary-space-cod-65vqgjqqxjq2xv44.github.dev/)
 
 Questions? Ask @Z80coder
 
