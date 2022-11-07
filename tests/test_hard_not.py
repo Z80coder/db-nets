@@ -7,7 +7,12 @@ def test_activation():
         [[1.0, 1.0], 1.0],
         [[1.0, 0.0], 0.0],
         [[0.0, 0.0], 1.0],
-        [[0.0, 1.0], 0.0]
+        [[0.0, 1.0], 0.0],
+        # test clipping
+        [[1.1, 1.0], 1.0],
+        [[1.1, 0.0], 0.0],
+        [[-0.1, 0.0], 1.0],
+        [[-0.1, 1.0], 0.0]
     ]
     for input, expected in test_data:
         assert hard_not.soft_not(*input) == expected

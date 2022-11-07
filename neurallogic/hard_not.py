@@ -4,12 +4,15 @@ import jax
 def soft_not(w: float, x: float) -> float:
     """
     w > 0.5 implies the not operation is active, else inactive
+
+    Assumes x is in [0, 1]
     
     Corresponding hard logic: 
         (x AND w) || (! x AND ! w) 
     or equivalently 
         ! (x XOR w)
     """
+    w = jax.numpy.clip(w, 0.0, 1.0)
     return 1.0 - w + x * (2.0 * w - 1.0)
 
 @jax.jit
