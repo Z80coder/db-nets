@@ -1,7 +1,6 @@
 from typing import Callable, Tuple
 import jax
 from flax import linen as nn
-import harden
 
 def soft_not(w: float, x: float) -> float:
     """
