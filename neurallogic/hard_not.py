@@ -54,8 +54,7 @@ class HardNOTLayer(nn.Module):
     @nn.compact
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
-        weights_init: Callable = nn.initializers.uniform(1.0)
-        weights = self.param('weights', weights_init, weights_shape)
+        weights = self.param('weights', nn.initializers.constant(0.0), weights_shape)
         x = jax.numpy.asarray(x)
         return hard_not_layer(weights, x)
 
