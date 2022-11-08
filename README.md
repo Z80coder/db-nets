@@ -6,9 +6,7 @@
 
 Neural logic library for learning boolean functions on GPUs with gradient descent.
 
-The working prototype is implemented in Wolfram language.
-
-The production library (work-in-progress) is implemented in Python.
+The working prototype is implemented in Wolfram. The production library (work-in-progress) is implemented in Python.
 
 Questions? Ask @Z80coder
 
