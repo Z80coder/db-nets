@@ -45,8 +45,8 @@ def test_layer():
         assert jnp.array_equal(hard_not.hard_not_layer(harden.harden_array(jnp.array(weights)), harden.harden_array(jnp.array(input))), harden.harden_array(jnp.array(expected)))
 
 def test_not():
-    softNot, hardNot = hard_not.NOTLayer(layer_size=4)
-    soft_weights = softNot.init(random.PRNGKey(0), [1.0, 1.0])
+    soft_not, hard_not = hard_not.NotLayer(layer_size=4)
+    soft_weights = soft_not.init(random.PRNGKey(0), [1.0, 1.0])
     hard_weights = harden.harden_dict(soft_weights)
     test_data = [
         [
@@ -71,7 +71,10 @@ def test_not():
         hard_input = harden.harden_array(soft_input)
         soft_expected = jnp.array(expected)
         hard_expected = harden.harden_array(soft_expected)
-        soft_result = softNot.apply(soft_weights, soft_input)
+        soft_result = soft_not.apply(soft_weights, soft_input)
         assert jnp.allclose(soft_result, soft_expected)
-        hard_result = hardNot.apply(hard_weights, hard_input)
+        hard_result = hard_not.apply(hard_weights, hard_input)
         assert jnp.array_equal(hard_result, hard_expected)
+
+
+

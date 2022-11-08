@@ -25,7 +25,7 @@ soft_not_layer = jax.vmap(soft_not_neuron, (0, None), 0)
 
 hard_not_layer = jax.vmap(hard_not_neuron, (0, None), 0)
 
-class SoftNOTLayer(nn.Module):
+class SoftNotLayer(nn.Module):
     """A soft-bit NOT layer than transforms its inputs along the last dimension.
 
     Attributes:
@@ -43,7 +43,7 @@ class SoftNOTLayer(nn.Module):
         x = jax.numpy.asarray(x, dtype)
         return soft_not_layer(weights, x)
 
-class HardNOTLayer(nn.Module):
+class HardNotLayer(nn.Module):
     """A hard-bit NOT layer than transforms its inputs along the last dimension.
 
     Attributes:
@@ -58,5 +58,5 @@ class HardNOTLayer(nn.Module):
         x = jax.numpy.asarray(x)
         return hard_not_layer(weights, x)
 
-def NOTLayer(layer_size: int) -> Tuple[nn.Module, nn.Module]:
-    return SoftNOTLayer(layer_size), HardNOTLayer(layer_size)
+def NotLayer(layer_size: int) -> Tuple[nn.Module, nn.Module]:
+    return SoftNotLayer(layer_size), HardNotLayer(layer_size)
