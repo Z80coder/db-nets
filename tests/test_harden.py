@@ -55,6 +55,11 @@ def test_harden_complex_compound_dict():
     dict = flax.core.frozen_dict.FrozenDict({'a': 0.5, 'b': 0.6, 'c': 0.4, 'd': 0.0, 'e': 1.0, 'f': {'a': 0.5, 'b': 0.6, 'c': 0.4, 'd': 0.0, 'e': 1.0, 'g': [0.5, 0.6, 0.4, 0.0, 1.0]}})
     expected_dict = {'a': False, 'b': True, 'c': False, 'd': False, 'e': True, 'f': {'a': False, 'b': True, 'c': False, 'd': False, 'e': True, 'g': [False, True, False, False, True]}}
     assert harden.harden(dict) == expected_dict
+
+def test_dict_with_array():
+    dict = {'a': 0.5, 'b': 0.6, 'c': 0.4, 'd': 0.0, 'e': 1.0, 'f': jnp.array([0.5, 0.6, 0.4, 0.0, 1.0])}
+    expected_dict = {'a': False, 'b': True, 'c': False, 'd': False, 'e': True, 'f': jnp.array([False, True, False, False, True])}
+    str(harden.harden(dict)) == str(expected_dict)
     
 def test_harden_compound_list():
     list = [0.5, 0.6, 0.4, 0.0, 1.0, [0.5, 0.6, 0.4, 0.0, 1.0]]
