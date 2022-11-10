@@ -1,6 +1,8 @@
-from typing import Callable, Tuple
+from typing import Callable
 import jax
 from flax import linen as nn
+from neurallogic import harden
+from neurallogic import neural_logic_net
 
 def soft_not(w: float, x: float) -> float:
     """
@@ -58,8 +60,14 @@ class HardNotLayer(nn.Module):
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
         weights = self.param('weights', nn.initializers.constant(0.0), weights_shape)
+        weights = harden.harden(weights)
         x = jax.numpy.asarray(x)
         return hard_not_layer(weights, x)
 
-def NotLayer(layer_size: int) -> Tuple[nn.Module, nn.Module, nn.Module]:
-    return SoftNotLayer(layer_size), HardNotLayer(layer_size)
+def NotLayer(layer_size: int, type: neural_logic_net.NetType) -> nn.Module:
+    if type == neural_logic_net.NetType.Soft:
+        return SoftNotLayer(layer_size)
+    elif type == neural_logic_net.NetType.Hard:
+        return HardNotLayer(layer_size)
+    else:
+        raise ValueError(f"Unknown type: {type}")
