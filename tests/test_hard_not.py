@@ -52,7 +52,7 @@ def test_not():
 
     soft, hard = neural_logic_net.net(test_net)
     soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
-    hard_weights = harden.hard_weights(soft_weights)
+    hard_weights = harden.harden_weights(soft_weights)
     test_data = [
         [
             [1.0, 1.0],
@@ -110,9 +110,9 @@ def test_train_not():
         loss, grads = grad_fn(state.params, input, output)
         state = state.apply_gradients(grads=grads)
 
-    # Test the not layer
+    # Test that the not layer (both soft and hard variants) correctly predicts y
     soft_weights = state.params
-    hard_weights = harden.hard_weights(soft_weights)
+    hard_weights = harden.harden_weights(soft_weights)
     for input, expected in zip(x, y):
         hard_input = harden.harden_array(harden.harden(jnp.array(input)))
         hard_expected = harden.harden_array(harden.harden(jnp.array(expected)))
