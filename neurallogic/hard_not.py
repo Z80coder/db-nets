@@ -19,9 +19,6 @@ def soft_not(w: float, x: float) -> float:
 def hard_not(w: bool, x: bool) -> bool:
     return ~(x ^ w)
 
-def symbolic_not(w, x):
-    return f"not({x} ^ {w})"
-
 soft_not_neuron = jax.vmap(soft_not, 0, 0)
 
 hard_not_neuron = jax.vmap(hard_not, 0, 0)
@@ -60,7 +57,6 @@ class HardNotLayer(nn.Module):
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
         weights = self.param('weights', nn.initializers.constant(0.0), weights_shape)
-        weights = harden.harden(weights)
         x = jax.numpy.asarray(x)
         return hard_not_layer(weights, x)
 
