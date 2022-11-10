@@ -28,7 +28,8 @@ soft_not_layer = jax.vmap(soft_not_neuron, (0, None), 0)
 hard_not_layer = jax.vmap(hard_not_neuron, (0, None), 0)
 
 class SoftNotLayer(nn.Module):
-    """A soft-bit NOT layer than transforms its inputs along the last dimension.
+    """
+    A soft-bit NOT layer than transforms its inputs along the last dimension.
 
     Attributes:
         layer_size: The number of neurons in the layer.
@@ -62,9 +63,8 @@ class HardNotLayer(nn.Module):
         return hard_not_layer(weights, x)
 
 def NotLayer(layer_size: int, type: neural_logic_net.NetType) -> nn.Module:
-    if type == neural_logic_net.NetType.Soft:
-        return SoftNotLayer(layer_size)
-    elif type == neural_logic_net.NetType.Hard:
-        return HardNotLayer(layer_size)
-    else:
-        raise ValueError(f"Unknown type: {type}")
+    return {
+        neural_logic_net.NetType.Soft: SoftNotLayer(layer_size),
+        neural_logic_net.NetType.Hard: HardNotLayer(layer_size),
+    }[type]
+
