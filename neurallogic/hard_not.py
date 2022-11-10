@@ -57,7 +57,6 @@ class HardNotLayer(nn.Module):
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
         weights = self.param('weights', nn.initializers.constant(0.0), weights_shape)
-        x = jax.numpy.asarray(x)
         return hard_not_layer(weights, x)
 
 def NotLayer(layer_size: int, type: neural_logic_net.NetType) -> nn.Module:
