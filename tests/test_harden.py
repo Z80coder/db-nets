@@ -66,3 +66,9 @@ def test_harden_compound_list():
     expected_list = [False, True, False, False, True, [False, True, False, False, True]]
     assert harden.harden(list) == expected_list
 
+def test_hard_weights():
+    weights = flax.core.FrozenDict({'Soft_params': {'a': 0.5, 'b': 0.6, 'c': 0.4, 'Soft_d': 0.0, 'e': 1.0}})
+    expected_weights = flax.core.FrozenDict({'Hard_params': {'a': False, 'b': True, 'c': False, 'Hard_d': False, 'e': True}})
+    hard_weights = harden.harden_weights(weights).unfreeze()
+    assert str(hard_weights) == str(expected_weights.unfreeze())
+

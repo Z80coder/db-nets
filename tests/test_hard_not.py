@@ -1,19 +1,16 @@
 import jax
 import jax.numpy as jnp
 from jax import random
-from neurallogic import hard_not
-from neurallogic import harden
 import optax
 from flax.training import train_state
+from neurallogic import hard_not, harden, neural_logic_net
 
 def test_activation():
     test_data = [
-        # Test logic
         [[1.0, 1.0], 1.0],
         [[1.0, 0.0], 0.0],
         [[0.0, 0.0], 1.0],
         [[0.0, 1.0], 0.0],
-        # test clipping
         [[1.1, 1.0], 1.0],
         [[1.1, 0.0], 0.0],
         [[-0.1, 0.0], 1.0],
@@ -21,8 +18,7 @@ def test_activation():
     ]
     for input, expected in test_data:
         assert hard_not.soft_not(*input) == expected
-        assert hard_not.hard_not(*harden.harden_list(input)) == harden.harden(expected)
-        assert eval(hard_not.symbolic_not(*harden.harden_list(input))) == harden.harden(expected)
+        assert hard_not.hard_not(*harden.harden(input)) == harden.harden(expected)
 
 def test_neuron():
     test_data = [
@@ -35,8 +31,7 @@ def test_neuron():
     ]
     for input, weights, expected in test_data:
         assert jnp.array_equal(hard_not.soft_not_neuron(jnp.array(weights), jnp.array(input)), jnp.array(expected))
-        assert jnp.array_equal(hard_not.hard_not_neuron(harden.harden_array(jnp.array(weights)), harden.harden_array(jnp.array(input))), harden.harden_array(jnp.array(expected)))
-        assert jnp.array_equal(eval(hard_not.symbolic_not_neuron(harden.harden_array(jnp.array(weights)), harden.harden_array(jnp.array(input)))), harden.harden_array(jnp.array(expected)))
+        assert jnp.array_equal(hard_not.hard_not_neuron(harden.harden(jnp.array(weights)), harden.harden(jnp.array(input))), harden.harden(jnp.array(expected)))
 
 def test_layer():
     test_data = [
@@ -47,47 +42,51 @@ def test_layer():
     ]
     for input, weights, expected in test_data:
         assert jnp.array_equal(hard_not.soft_not_layer(jnp.array(weights), jnp.array(input)), jnp.array(expected))
-        assert jnp.array_equal(hard_not.hard_not_layer(harden.harden_array(jnp.array(weights)), harden.harden_array(jnp.array(input))), harden.harden_array(jnp.array(expected)))
-        assert jnp.array_equal(eval(hard_not.symbolic_not_layer(harden.harden_array(jnp.array(weights)), harden.harden_array(jnp.array(input)))), harden.harden_array(jnp.array(expected)))
+        assert jnp.array_equal(hard_not.hard_not_layer(harden.harden(jnp.array(weights)), harden.harden(jnp.array(input))), harden.harden(jnp.array(expected)))
 
 def test_not():
-    soft_net, hard_net, symbolic_net = hard_not.NotLayer(layer_size=4)
-    soft_weights = soft_net.init(random.PRNGKey(0), [1.0, 1.0])
-    hard_weights = harden.harden_dict(soft_weights)
+    def test_net(type, x):
+        x = hard_not.NotLayer(4, type)(x)
+        x = jax.numpy.ravel(x)
+        return x
+
+    soft, hard = neural_logic_net.net(test_net)
+    soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
+    hard_weights = harden.harden_weights(soft_weights)
     test_data = [
         [
             [1.0, 1.0],
-            [[0.26377404, 0.8707025], [0.44444847, 0.03216302], [0.6110164, 0.685097], [0.9133855, 0.08662593]]
+            [0.9469013, 0.679816, 0.3194083, 0.41585994, 0.7815013, 0.9580679, 0.2925768, 0.02594423]
         ],
         [
             [1.0, 0.0],
-            [[0.26377404, 0.1292975], [0.44444847, 0.967837], [0.6110164, 0.31490302], [0.9133855, 0.91337407]]
+            [0.9469013, 0.320184, 0.3194083, 0.58414006, 0.7815013, 0.04193211, 0.2925768, 0.97405577]
         ],
         [
             [0.0, 1.0],
-            [[0.73622596, 0.8707025], [0.5555515, 0.03216302], [0.3889836, 0.685097], [0.08661449, 0.08662593]]
+            [0.05309868, 0.679816, 0.6805917, 0.41585994, 0.2184987, 0.9580679, 0.7074232, 0.02594423]
         ],
         [
             [0.0, 0.0],
-            [[0.73622596, 0.1292975], [0.5555515, 0.967837], [0.3889836, 0.31490302], [0.08661449, 0.91337407]]
+            [0.05309868, 0.320184, 0.6805917, 0.58414006, 0.2184987, 0.04193211, 0.7074232, 0.97405577]
         ]
     ]
     for input, expected in test_data:
         soft_input = jnp.array(input)
-        hard_input = harden.harden_array(soft_input)
         soft_expected = jnp.array(expected)
-        hard_expected = harden.harden_array(soft_expected)
-        soft_result = soft_net.apply(soft_weights, soft_input)
+        soft_result = soft.apply(soft_weights, soft_input)
         assert jnp.allclose(soft_result, soft_expected)
-        hard_result = hard_net.apply(hard_weights, hard_input)
+        hard_input = harden.harden(soft_input)
+        hard_expected = harden.harden(soft_expected)
+        hard_result = hard.apply(hard_weights, hard_input)
         assert jnp.array_equal(hard_result, hard_expected)
-        symbolic_result = symbolic_net.apply(harden.harden_dict(soft_weights), harden.harden_array(soft_input))
-        assert jnp.array_equal(eval(symbolic_result), hard_expected)
 
 def test_train_not():
-    rng = random.PRNGKey(0)
-    soft_net, hard_net, symbolic_net = hard_not.NotLayer(layer_size=4)
-    soft_weights = soft_net.init(rng, [1.0, 1.0])
+    def test_net(type, x):
+        return hard_not.NotLayer(4, type)(x)
+
+    soft, hard = neural_logic_net.net(test_net)
+    soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
     x = [
         [1.0, 1.0],
         [1.0, 0.0],
@@ -105,19 +104,17 @@ def test_train_not():
 
     # Train the not layer
     tx = optax.sgd(0.1)
-    state = train_state.TrainState.create(apply_fn=jax.vmap(soft_net.apply, in_axes=(None, 0)), params=soft_weights, tx=tx)
+    state = train_state.TrainState.create(apply_fn=jax.vmap(soft.apply, in_axes=(None, 0)), params=soft_weights, tx=tx)
     grad_fn = jax.jit(jax.value_and_grad(lambda params, x, y: jnp.mean((state.apply_fn(params, x) - y) ** 2)))
     for epoch in range(1, 100):
         loss, grads = grad_fn(state.params, input, output)
         state = state.apply_gradients(grads=grads)
 
-    # Test the not layer
+    # Test that the not layer (both soft and hard variants) correctly predicts y
     soft_weights = state.params
-    hard_weights = harden.harden(soft_weights)
+    hard_weights = harden.harden_weights(soft_weights)
     for input, expected in zip(x, y):
         hard_input = harden.harden_array(harden.harden(jnp.array(input)))
         hard_expected = harden.harden_array(harden.harden(jnp.array(expected)))
-        hard_result = hard_net.apply(hard_weights, hard_input)
+        hard_result = hard.apply(hard_weights, hard_input)
         assert jnp.array_equal(hard_result, hard_expected)
-        symbolic_result = symbolic_net.apply(harden.harden_dict(soft_weights), harden.harden(jnp.array(input)))
-        assert jnp.array_equal(eval(symbolic_result), hard_expected)

@@ -22,3 +22,8 @@ def harden(x):
     else:
         return harden_array(x)
 
+def map_keys_nested(f, d: dict) -> dict:
+    return {f(k): map_keys_nested(f, v) if isinstance(v, dict) else v for k, v in d.items()}
+
+def harden_weights(weights):
+    return flax.core.FrozenDict(map_keys_nested(lambda str: str.replace("Soft", "Hard"), harden(weights.unfreeze())))
