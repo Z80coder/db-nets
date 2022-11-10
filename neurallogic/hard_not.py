@@ -46,7 +46,9 @@ class SoftNotLayer(nn.Module):
         return soft_not_layer(weights, x)
 
 class HardNotLayer(nn.Module):
-    """A hard-bit NOT layer than transforms its inputs along the last dimension.
+    """
+    A hard-bit NOT layer that shadows the SoftNotLayer.
+    This is a convenience class to make it easier to switch between soft and hard logic.
 
     Attributes:
         layer_size: The number of neurons in the layer.
