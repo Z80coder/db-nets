@@ -1,9 +1,11 @@
 import jax
 import jax.numpy as jnp
-from jax import random
 import optax
 from flax.training import train_state
+from jax import random
+
 from neurallogic import hard_not, harden, neural_logic_net
+
 
 def test_activation():
     test_data = [

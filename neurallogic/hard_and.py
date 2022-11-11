@@ -6,33 +6,37 @@ from flax import linen as nn
 from neurallogic import neural_logic_net
 
 
-def soft_not(w: float, x: float) -> float:
+def soft_and_include(w: float, x: float) -> float:
     """
-    w > 0.5 implies the not operation is inactive, else active
+    w > 0.5 implies the and operation is active, else inactive
 
     Assumes x is in [0, 1]
     
-    Corresponding hard logic: ! (x XOR w)
+    Corresponding hard logic: x OR ! w
     """
     w = jax.numpy.clip(w, 0.0, 1.0)
-    return 1.0 - w + x * (2.0 * w - 1.0)
+    return jax.numpy.maximum(x, 1.0 - w)
 
 # TODO: why do I need to jax.jit this?
 @jax.jit
-def hard_not(w: bool, x: bool) -> bool:
-    return ~(x ^ w)
+def hard_and_include(w: bool, x: bool) -> bool:
+    return x | ~w
 
-soft_not_neuron = jax.vmap(soft_not, 0, 0)
+def soft_and_neuron(w, x):
+    x = jax.vmap(soft_and_include, 0, 0)(w, x)
+    return jax.numpy.min(x)
 
-hard_not_neuron = jax.vmap(hard_not, 0, 0)
+def hard_and_neuron(w, x):
+    x = jax.vmap(hard_and_include, 0, 0)(w, x)
+    return jax.lax.reduce(x, True, jax.lax.bitwise_and, [0])
 
-soft_not_layer = jax.vmap(soft_not_neuron, (0, None), 0)
+soft_and_layer = jax.vmap(soft_and_neuron, (0, None), 0)
 
-hard_not_layer = jax.vmap(hard_not_neuron, (0, None), 0)
+hard_and_layer = jax.vmap(hard_and_neuron, (0, None), 0)
 
-class SoftNotLayer(nn.Module):
+class SoftAndLayer(nn.Module):
     """
-    A soft-bit NOT layer than transforms its inputs along the last dimension.
+    A soft-bit AND layer than transforms its inputs along the last dimension.
 
     Attributes:
         layer_size: The number of neurons in the layer.
@@ -48,11 +52,11 @@ class SoftNotLayer(nn.Module):
         weights = self.param('weights', self.weights_init, weights_shape, dtype)
         # TODO: do we need this?
         x = jax.numpy.asarray(x, dtype)
-        return soft_not_layer(weights, x)
+        return soft_and_layer(weights, x)
 
-class HardNotLayer(nn.Module):
+class HardAndLayer(nn.Module):
     """
-    A hard-bit NOT layer that shadows the SoftNotLayer.
+    A hard-bit And layer that shadows the SoftAndLayer.
     This is a convenience class to make it easier to switch between soft and hard logic.
 
     Attributes:
@@ -64,11 +68,11 @@ class HardNotLayer(nn.Module):
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
         weights = self.param('weights', nn.initializers.constant(0.0), weights_shape)
-        return hard_not_layer(weights, x)
+        return hard_and_layer(weights, x)
 
-def NotLayer(layer_size: int, type: neural_logic_net.NetType) -> nn.Module:
+def AndLayer(layer_size: int, type: neural_logic_net.NetType) -> nn.Module:
     return {
-        neural_logic_net.NetType.Soft: SoftNotLayer(layer_size),
-        neural_logic_net.NetType.Hard: HardNotLayer(layer_size),
+        neural_logic_net.NetType.Soft: SoftAndLayer(layer_size),
+        neural_logic_net.NetType.Hard: HardAndLayer(layer_size),
     }[type]
 
