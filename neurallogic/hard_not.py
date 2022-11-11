@@ -1,8 +1,10 @@
 from typing import Callable
+
 import jax
 from flax import linen as nn
-from neurallogic import harden
+
 from neurallogic import neural_logic_net
+
 
 def soft_not(w: float, x: float) -> float:
     """
@@ -44,6 +46,7 @@ class SoftNotLayer(nn.Module):
         dtype = jax.numpy.float32
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
         weights = self.param('weights', self.weights_init, weights_shape, dtype)
+        # TODO: do we need this?
         x = jax.numpy.asarray(x, dtype)
         return soft_not_layer(weights, x)
 

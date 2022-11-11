@@ -1,8 +1,10 @@
 from typing import Callable
+
 import jax
 from flax import linen as nn
-from neurallogic import harden
+
 from neurallogic import neural_logic_net
+
 
 def soft_and_include(w: float, x: float) -> float:
     """
@@ -31,3 +33,46 @@ def hard_and_neuron(w, x):
 soft_and_layer = jax.vmap(soft_and_neuron, (0, None), 0)
 
 hard_and_layer = jax.vmap(hard_and_neuron, (0, None), 0)
+
+class SoftAndLayer(nn.Module):
+    """
+    A soft-bit AND layer than transforms its inputs along the last dimension.
+
+    Attributes:
+        layer_size: The number of neurons in the layer.
+        weights_init: The initializer function for the weight matrix.
+    """
+    layer_size: int
+    weights_init: Callable = nn.initializers.uniform(1.0)
+
+    @nn.compact
+    def __call__(self, x):
+        dtype = jax.numpy.float32
+        weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
+        weights = self.param('weights', self.weights_init, weights_shape, dtype)
+        # TODO: do we need this?
+        x = jax.numpy.asarray(x, dtype)
+        return soft_and_layer(weights, x)
+
+class HardAndLayer(nn.Module):
+    """
+    A hard-bit And layer that shadows the SoftAndLayer.
+    This is a convenience class to make it easier to switch between soft and hard logic.
+
+    Attributes:
+        layer_size: The number of neurons in the layer.
+    """
+    layer_size: int
+
+    @nn.compact
+    def __call__(self, x):
+        weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
+        weights = self.param('weights', nn.initializers.constant(0.0), weights_shape)
+        return hard_and_layer(weights, x)
+
+def AndLayer(layer_size: int, type: neural_logic_net.NetType) -> nn.Module:
+    return {
+        neural_logic_net.NetType.Soft: SoftAndLayer(layer_size),
+        neural_logic_net.NetType.Hard: HardAndLayer(layer_size),
+    }[type]
+
