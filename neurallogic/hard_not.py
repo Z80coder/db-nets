@@ -6,7 +6,7 @@ from neurallogic import neural_logic_net
 
 def soft_not(w: float, x: float) -> float:
     """
-    w > 0.5 implies the not operation is active, else inactive
+    w > 0.5 implies the not operation is inactive, else active
 
     Assumes x is in [0, 1]
     
@@ -15,6 +15,7 @@ def soft_not(w: float, x: float) -> float:
     w = jax.numpy.clip(w, 0.0, 1.0)
     return 1.0 - w + x * (2.0 * w - 1.0)
 
+# TODO: why do I need to jax.jit this?
 @jax.jit
 def hard_not(w: bool, x: bool) -> bool:
     return ~(x ^ w)
