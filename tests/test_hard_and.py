@@ -57,7 +57,7 @@ def test_and():
         x = jax.numpy.ravel(x)
         return x
 
-    soft, hard = neural_logic_net.net(test_net)
+    soft, hard, symbolic = neural_logic_net.net(test_net)
     soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
     hard_weights = harden.harden_weights(soft_weights)
     test_data = [
@@ -92,7 +92,7 @@ def test_train_and():
     def test_net(type, x):
         return hard_and.AndLayer(4, type)(x)
 
-    soft, hard = neural_logic_net.net(test_net)
+    soft, hard, symbolic = neural_logic_net.net(test_net)
     soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
     x = [
         [1.0, 1.0],

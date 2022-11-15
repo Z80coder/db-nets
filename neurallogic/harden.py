@@ -1,5 +1,7 @@
-import jax
 import flax
+import jax
+import numpy
+
 
 def harden_float(x: float) -> bool:
     return x > 0.5
@@ -27,3 +29,6 @@ def map_keys_nested(f, d: dict) -> dict:
 
 def harden_weights(weights):
     return flax.core.FrozenDict(map_keys_nested(lambda str: str.replace("Soft", "Hard"), harden(weights.unfreeze())))
+
+def symbolize_weights(weights):
+    return flax.core.FrozenDict(map_keys_nested(lambda str: str.replace("Soft", "Symbolic"), harden(weights.unfreeze())))
