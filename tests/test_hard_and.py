@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 from jax import random
 
-from neurallogic import hard_and, harden, neural_logic_net, primitives
+from neurallogic import hard_and, harden, neural_logic_net, primitives, hard_not
 
 import optax
 from flax.training import train_state

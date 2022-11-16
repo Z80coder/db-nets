@@ -23,7 +23,7 @@ def hard_not(w: bool, x: bool) -> bool:
     return ~(x ^ w)
 
 def symbolic_not(w, x):
-    expression = f"not({x} ^ {w})"
+    expression = f"(not({x} ^ {w}))"
     # Check if w is of type bool
     if isinstance(w, bool) and isinstance(x, bool):
         # We know the value of w and x, so we can evaluate the expression
