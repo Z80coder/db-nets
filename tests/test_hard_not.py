@@ -22,6 +22,8 @@ def test_activation():
         assert hard_not.soft_not(*input) == expected
         assert hard_not.hard_not(*harden.harden(input)) == harden.harden(expected)
         assert eval(str(hard_not.symbolic_not(*harden.harden(input)))) == harden.harden(expected)
+        symbolic_output = hard_not.symbolic_not(*harden.harden(input))
+        assert symbolic_output == harden.harden(expected)
 
 def test_neuron():
     test_data = [
@@ -35,7 +37,8 @@ def test_neuron():
     for input, weights, expected in test_data:
         assert jnp.array_equal(hard_not.soft_not_neuron(jnp.array(weights), jnp.array(input)), jnp.array(expected))
         assert jnp.array_equal(hard_not.hard_not_neuron(harden.harden(jnp.array(weights)), harden.harden(jnp.array(input))), harden.harden(jnp.array(expected)))
-        assert jnp.array_equal(eval(str(hard_not.symbolic_not_neuron(harden.harden(jnp.array(weights)).tolist(), harden.harden(jnp.array(input)).tolist()))), harden.harden(jnp.array(expected)))
+        symbolic_output = hard_not.symbolic_not_neuron(harden.harden(weights), harden.harden(input))
+        assert jnp.array_equal(symbolic_output, harden.harden(expected))
 
 def test_layer():
     test_data = [
@@ -47,6 +50,12 @@ def test_layer():
     for input, weights, expected in test_data:
         assert jnp.array_equal(hard_not.soft_not_layer(jnp.array(weights), jnp.array(input)), jnp.array(expected))
         assert jnp.array_equal(hard_not.hard_not_layer(harden.harden(jnp.array(weights)), harden.harden(jnp.array(input))), harden.harden(jnp.array(expected)))
+        # Now test they symbolic layer
+        symbolic_weights = harden.harden(jnp.array(weights)).tolist()
+        symbolic_input = harden.harden(jnp.array(input)).tolist()
+        assert jnp.array_equal(eval(str(hard_not.symbolic_not_layer(symbolic_weights, symbolic_input))), harden.harden(jnp.array(expected)))
+        symbolic_output = hard_not.symbolic_not_layer(symbolic_weights, symbolic_input)
+        assert jnp.array_equal(symbolic_output, harden.harden(expected))
 
 def test_not():
     def test_net(type, x):
