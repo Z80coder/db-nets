@@ -105,8 +105,6 @@ class SymbolicNotLayer(nn.Module):
         weights = weights.tolist()
         if not isinstance(x, list):
             raise TypeError(f"Input {x} should be a list")
-        if not isinstance(weights, list):
-            weights = weights.tolist()
         return symbolic_not_layer(weights, x)
 
 def NotLayer(layer_size: int, type: neural_logic_net.NetType) -> nn.Module:

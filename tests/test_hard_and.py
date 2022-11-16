@@ -88,7 +88,7 @@ def test_and():
         hard_expected = harden.harden(soft_expected)
         hard_result = hard.apply(hard_weights, hard_input)
         assert jnp.array_equal(hard_result, hard_expected)
-        symbolic_result = symbolic.apply(symbolic_weights, hard_input)
+        symbolic_result = symbolic.apply(symbolic_weights, hard_input.tolist())
         assert jnp.array_equal(symbolic_result, hard_expected)
 
 def test_train_and():
@@ -129,5 +129,19 @@ def test_train_and():
         hard_expected = harden.harden_array(harden.harden(jnp.array(expected)))
         hard_result = hard.apply(hard_weights, hard_input)
         assert jnp.array_equal(hard_result, hard_expected)
-        symbolic_result = symbolic.apply(symbolic_weights, hard_input)
+        symbolic_result = symbolic.apply(symbolic_weights, hard_input.tolist())
         assert jnp.array_equal(symbolic_result, hard_expected)
+
+def test_symbolic_and():
+    def test_net(type, x):
+        x = hard_and.AndLayer(4, type)(x)
+        x = hard_and.AndLayer(4, type)(x)
+        return x
+
+    soft, hard, symbolic = neural_logic_net.net(test_net)
+    soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
+    symbolic_weights = harden.symbolic_weights(soft_weights)
+    symbolic_input = ['x1', 'x2']
+    symbolic_result = symbolic.apply(symbolic_weights, symbolic_input)
+    assert(symbolic_result == ['((((x1 or not(True)) and (x2 or not(False))) or not(False)) and (((x1 or not(True)) and (x2 or not(True))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(False)))', '((((x1 or not(True)) and (x2 or not(False))) or not(True)) and (((x1 or not(True)) and (x2 or not(True))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(False)))', '((((x1 or not(True)) and (x2 or not(False))) or not(False)) and (((x1 or not(True)) and (x2 or not(True))) or not(False)) and (((x1 or not(True)) and (x2 or not(False))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(False)))', '((((x1 or not(True)) and (x2 or not(False))) or not(False)) and (((x1 or not(True)) and (x2 or not(True))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(True)))'])
+
