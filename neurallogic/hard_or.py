@@ -8,23 +8,23 @@ from neurallogic import neural_logic_net
 
 jax.lax.create_token
 
-def soft_and_include(w: float, x: float) -> float:
+def soft_or_include(w: float, x: float) -> float:
     """
     w > 0.5 implies the and operation is active, else inactive
 
     Assumes x is in [0, 1]
     
-    Corresponding hard logic: x OR ! w
+    Corresponding hard logic: b AND w
     """
     w = jax.numpy.clip(w, 0.0, 1.0)
-    return jax.numpy.maximum(x, 1.0 - w)
+    return 1.0 - jax.numpy.maximum(1.0 - x, 1.0 - w)
 
 @jax.jit
-def hard_and_include(w: bool, x: bool) -> bool:
-    return x | ~w
+def hard_or_include(w: bool, x: bool) -> bool:
+    return x & w
 
-def symbolic_and_include(w, x):
-    expression = f"({x} or not({w}))"
+def symbolic_or_include(w, x):
+    expression = f"({x} and {w})"
     # Check if w is of type bool
     if isinstance(w, bool) and isinstance(x, bool):
         # We know the value of w and x, so we can evaluate the expression
@@ -32,42 +32,42 @@ def symbolic_and_include(w, x):
     # We don't know the value of w or x, so we return the expression
     return expression
 
-def soft_and_neuron(w, x):
-    x = jax.vmap(soft_and_include, 0, 0)(w, x)
-    return jax.numpy.min(x)
+def soft_or_neuron(w, x):
+    x = jax.vmap(soft_or_include, 0, 0)(w, x)
+    return jax.numpy.max(x)
 
-def hard_and_neuron(w, x):
-    x = jax.vmap(hard_and_include, 0, 0)(w, x)
-    return jax.lax.reduce(x, True, jax.lax.bitwise_and, [0])
+def hard_or_neuron(w, x):
+    x = jax.vmap(hard_or_include, 0, 0)(w, x)
+    return jax.lax.reduce(x, False, jax.lax.bitwise_or, [0])
 
-def symbolic_and_neuron(w, x):
+def symbolic_or_neuron(w, x):
     # TODO: ensure that this implementation has the same generality over tensors as vmap
     if not isinstance(w, list):
         raise TypeError(f"Input {x} should be a list")
     if not isinstance(x, list):
         raise TypeError(f"Input {x} should be a list")
-    y = [symbolic_and_include(wi, xi) for wi, xi in zip(w, x)]
-    expression = "(" + str(reduce(lambda a, b: f"{a} and {b}", y)) + ")"
+    y = [symbolic_or_include(wi, xi) for wi, xi in zip(w, x)]
+    expression = "(" + str(reduce(lambda a, b: f"{a} or {b}", y)) + ")"
     if all(isinstance(yi, bool) for yi in y):
         # We know the value of all yis, so we can evaluate the expression
         return eval(expression)
     return expression
 
-soft_and_layer = jax.vmap(soft_and_neuron, (0, None), 0)
+soft_or_layer = jax.vmap(soft_or_neuron, (0, None), 0)
 
-hard_and_layer = jax.vmap(hard_and_neuron, (0, None), 0)
+hard_or_layer = jax.vmap(hard_or_neuron, (0, None), 0)
 
-def symbolic_and_layer(w, x):
+def symbolic_or_layer(w, x):
     # TODO: ensure that this implementation has the same generality over tensors as vmap
     if not isinstance(w, list):
         raise TypeError(f"Input {x} should be a list")
     if not isinstance(x, list):
         raise TypeError(f"Input {x} should be a list")
-    return [symbolic_and_neuron(wi, x) for wi in w]
+    return [symbolic_or_neuron(wi, x) for wi in w]
 
-class SoftAndLayer(nn.Module):
+class SoftOrLayer(nn.Module):
     """
-    A soft-bit AND layer than transforms its inputs along the last dimension.
+    A soft-bit Or layer than transforms its inputs along the last dimension.
 
     Attributes:
         layer_size: The number of neurons in the layer.
@@ -82,11 +82,11 @@ class SoftAndLayer(nn.Module):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
         weights = self.param('weights', self.weights_init, weights_shape, dtype)
         x = jax.numpy.asarray(x, dtype)
-        return soft_and_layer(weights, x)
+        return soft_or_layer(weights, x)
 
-class HardAndLayer(nn.Module):
+class HardOrLayer(nn.Module):
     """
-    A hard-bit And layer that shadows the SoftAndLayer.
+    A hard-bit Or layer that shadows the SoftAndLayer.
     This is a convenience class to make it easier to switch between soft and hard logic.
 
     Attributes:
@@ -98,10 +98,10 @@ class HardAndLayer(nn.Module):
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
         weights = self.param('weights', nn.initializers.constant(0.0), weights_shape)
-        return hard_and_layer(weights, x)
+        return hard_or_layer(weights, x)
 
-class SymbolicAndLayer(nn.Module):
-    """A symbolic And layer than transforms its inputs along the last dimension.
+class SymbolicOrLayer(nn.Module):
+    """A symbolic Or layer than transforms its inputs along the last dimension.
     Attributes:
         layer_size: The number of neurons in the layer.
     """
@@ -114,12 +114,12 @@ class SymbolicAndLayer(nn.Module):
         weights = weights.tolist()
         if not isinstance(x, list):
             raise TypeError(f"Input {x} should be a list")
-        return symbolic_and_layer(weights, x)
+        return symbolic_or_layer(weights, x)
 
-def AndLayer(layer_size: int, type: neural_logic_net.NetType) -> nn.Module:
+def OrLayer(layer_size: int, type: neural_logic_net.NetType) -> nn.Module:
     return {
-        neural_logic_net.NetType.Soft: SoftAndLayer(layer_size),
-        neural_logic_net.NetType.Hard: HardAndLayer(layer_size),
-        neural_logic_net.NetType.Symbolic: SymbolicAndLayer(layer_size)
+        neural_logic_net.NetType.Soft: SoftOrLayer(layer_size),
+        neural_logic_net.NetType.Hard: HardOrLayer(layer_size),
+        neural_logic_net.NetType.Symbolic: SymbolicOrLayer(layer_size)
     }[type]
 
