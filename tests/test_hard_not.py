@@ -4,7 +4,7 @@ import optax
 from flax.training import train_state
 from jax import random
 
-from neurallogic import hard_not, harden, neural_logic_net
+from neurallogic import hard_not, harden, neural_logic_net, primitives
 
 
 def test_activation():
@@ -21,6 +21,7 @@ def test_activation():
     for input, expected in test_data:
         assert hard_not.soft_not(*input) == expected
         assert hard_not.hard_not(*harden.harden(input)) == harden.harden(expected)
+        assert eval(str(hard_not.symbolic_not(*harden.harden(input)))) == harden.harden(expected)
 
 def test_neuron():
     test_data = [
@@ -34,6 +35,7 @@ def test_neuron():
     for input, weights, expected in test_data:
         assert jnp.array_equal(hard_not.soft_not_neuron(jnp.array(weights), jnp.array(input)), jnp.array(expected))
         assert jnp.array_equal(hard_not.hard_not_neuron(harden.harden(jnp.array(weights)), harden.harden(jnp.array(input))), harden.harden(jnp.array(expected)))
+        assert jnp.array_equal(eval(str(hard_not.symbolic_not_neuron(harden.harden(jnp.array(weights)).tolist(), harden.harden(jnp.array(input)).tolist()))), harden.harden(jnp.array(expected)))
 
 def test_layer():
     test_data = [
@@ -49,12 +51,13 @@ def test_layer():
 def test_not():
     def test_net(type, x):
         x = hard_not.NotLayer(4, type)(x)
-        x = jax.numpy.ravel(x)
+        x = primitives.ravel(type)(x)
         return x
 
-    soft, hard = neural_logic_net.net(test_net)
+    soft, hard, symbolic = neural_logic_net.net(test_net)
     soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
-    hard_weights = harden.harden_weights(soft_weights)
+    hard_weights = harden.hard_weights(soft_weights)
+    symbolic_weights = harden.symbolic_weights(soft_weights)
     test_data = [
         [
             [1.0, 1.0],
@@ -82,12 +85,14 @@ def test_not():
         hard_expected = harden.harden(soft_expected)
         hard_result = hard.apply(hard_weights, hard_input)
         assert jnp.array_equal(hard_result, hard_expected)
+        symbolic_result = symbolic.apply(symbolic_weights, hard_input.tolist())
+        assert jnp.array_equal(symbolic_result, hard_expected)
 
 def test_train_not():
     def test_net(type, x):
         return hard_not.NotLayer(4, type)(x)
 
-    soft, hard = neural_logic_net.net(test_net)
+    soft, hard, symbolic = neural_logic_net.net(test_net)
     soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
     x = [
         [1.0, 1.0],
@@ -114,9 +119,28 @@ def test_train_not():
 
     # Test that the not layer (both soft and hard variants) correctly predicts y
     soft_weights = state.params
-    hard_weights = harden.harden_weights(soft_weights)
+    hard_weights = harden.hard_weights(soft_weights)
+    symbolic_weights = harden.symbolic_weights(soft_weights)
     for input, expected in zip(x, y):
         hard_input = harden.harden_array(harden.harden(jnp.array(input)))
         hard_expected = harden.harden_array(harden.harden(jnp.array(expected)))
         hard_result = hard.apply(hard_weights, hard_input)
         assert jnp.array_equal(hard_result, hard_expected)
+        symbolic_result = symbolic.apply(symbolic_weights, hard_input.tolist())
+        assert jnp.array_equal(symbolic_result, hard_expected)
+
+def test_symbolic_not():
+    def test_net(type, x):
+        x = hard_not.NotLayer(4, type)(x)
+        x = primitives.ravel(type)(x)
+        x = hard_not.NotLayer(4, type)(x)
+        x = primitives.ravel(type)(x)
+        return x
+
+    soft, hard, symbolic = neural_logic_net.net(test_net)
+    soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
+    symbolic_weights = harden.symbolic_weights(soft_weights)
+    symbolic_input = ['x1', 'x2']
+    symbolic_result = symbolic.apply(symbolic_weights, symbolic_input)
+    assert(symbolic_result == ['(not((not(x1 ^ True)) ^ True))', '(not((not(x2 ^ True)) ^ True))', '(not((not(x1 ^ False)) ^ False))', '(not((not(x2 ^ False)) ^ False))', '(not((not(x1 ^ True)) ^ False))', '(not((not(x2 ^ True)) ^ True))', '(not((not(x1 ^ False)) ^ False))', '(not((not(x2 ^ False)) ^ False))', '(not((not(x1 ^ True)) ^ True))', '(not((not(x2 ^ True)) ^ False))', '(not((not(x1 ^ False)) ^ True))', '(not((not(x2 ^ False)) ^ True))', '(not((not(x1 ^ True)) ^ False))', '(not((not(x2 ^ True)) ^ False))', '(not((not(x1 ^ False)) ^ True))', '(not((not(x2 ^ False)) ^ True))', '(not((not(x1 ^ True)) ^ False))', '(not((not(x2 ^ True)) ^ True))', '(not((not(x1 ^ False)) ^ False))', '(not((not(x2 ^ False)) ^ False))', '(not((not(x1 ^ True)) ^ True))', '(not((not(x2 ^ True)) ^ True))', '(not((not(x1 ^ False)) ^ False))', '(not((not(x2 ^ False)) ^ True))', '(not((not(x1 ^ True)) ^ True))', '(not((not(x2 ^ True)) ^ False))', '(not((not(x1 ^ False)) ^ False))', '(not((not(x2 ^ False)) ^ False))', '(not((not(x1 ^ True)) ^ False))', '(not((not(x2 ^ True)) ^ True))', '(not((not(x1 ^ False)) ^ False))', '(not((not(x2 ^ False)) ^ False))'])
+
