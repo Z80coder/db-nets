@@ -19,7 +19,6 @@ def soft_and_include(w: float, x: float) -> float:
     w = jax.numpy.clip(w, 0.0, 1.0)
     return jax.numpy.maximum(x, 1.0 - w)
 
-# TODO: why do I need to jax.jit this?
 @jax.jit
 def hard_and_include(w: bool, x: bool) -> bool:
     return x | ~w
@@ -41,9 +40,6 @@ def soft_and_neuron(w, x):
 def hard_and_neuron(w, x):
     x = jax.vmap(hard_and_include, 0, 0)(w, x)
     return jax.lax.reduce(x, True, jax.lax.bitwise_and, [0])
-
-def all_values_in_list_are_bools(x):
-    return 
 
 def symbolic_and_neuron(w, x):
     # TODO: ensure that this implementation has the same generality over tensors as vmap
@@ -86,7 +82,6 @@ class SoftAndLayer(nn.Module):
         dtype = jax.numpy.float32
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
         weights = self.param('weights', self.weights_init, weights_shape, dtype)
-        # TODO: do we need this?
         x = jax.numpy.asarray(x, dtype)
         return soft_and_layer(weights, x)
 

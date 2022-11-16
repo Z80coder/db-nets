@@ -17,7 +17,6 @@ def soft_not(w: float, x: float) -> float:
     w = jax.numpy.clip(w, 0.0, 1.0)
     return 1.0 - w + x * (2.0 * w - 1.0)
 
-# TODO: why do I need to jax.jit this?
 @jax.jit
 def hard_not(w: bool, x: bool) -> bool:
     return ~(x ^ w)
@@ -71,7 +70,6 @@ class SoftNotLayer(nn.Module):
         dtype = jax.numpy.float32
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
         weights = self.param('weights', self.weights_init, weights_shape, dtype)
-        # TODO: do we need this?
         x = jax.numpy.asarray(x, dtype)
         return soft_not_layer(weights, x)
 
