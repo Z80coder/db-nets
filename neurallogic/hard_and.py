@@ -1,12 +1,11 @@
-from typing import Callable
 from functools import reduce
+from typing import Callable
 
 import jax
 from flax import linen as nn
 
 from neurallogic import neural_logic_net
 
-jax.lax.create_token
 
 def soft_and_include(w: float, x: float) -> float:
     """
@@ -65,6 +64,18 @@ def symbolic_and_layer(w, x):
         raise TypeError(f"Input {x} should be a list")
     return [symbolic_and_neuron(wi, x) for wi in w]
 
+# TODO: investigate better initialization
+def initialize_near_to_zero():
+    def init(key, shape, dtype):
+        dtype = jax.dtypes.canonicalize_dtype(dtype)
+        # Sample from standard normal distribution (zero mean, unit variance)
+        x = jax.random.normal(key, shape, dtype)
+        # Transform to a normal distribution with mean -1 and standard deviation 0.5
+        x = 0.5 * x - 1
+        x = jax.numpy.clip(x, 0.001, 0.999)
+        return x
+    return init
+
 class SoftAndLayer(nn.Module):
     """
     A soft-bit AND layer than transforms its inputs along the last dimension.
@@ -74,14 +85,14 @@ class SoftAndLayer(nn.Module):
         weights_init: The initializer function for the weight matrix.
     """
     layer_size: int
-    weights_init: Callable = nn.initializers.uniform(1.0)
+    weights_init: Callable = initialize_near_to_zero()
+    dtype: jax.numpy.dtype = jax.numpy.float32
 
     @nn.compact
     def __call__(self, x):
-        dtype = jax.numpy.float32
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
-        weights = self.param('weights', self.weights_init, weights_shape, dtype)
-        x = jax.numpy.asarray(x, dtype)
+        weights = self.param('weights', self.weights_init, weights_shape, self.dtype)
+        x = jax.numpy.asarray(x, self.dtype)
         return soft_and_layer(weights, x)
 
 class HardAndLayer(nn.Module):
@@ -116,10 +127,6 @@ class SymbolicAndLayer(nn.Module):
             raise TypeError(f"Input {x} should be a list")
         return symbolic_and_layer(weights, x)
 
-def AndLayer(layer_size: int, type: neural_logic_net.NetType) -> nn.Module:
-    return {
-        neural_logic_net.NetType.Soft: SoftAndLayer(layer_size),
-        neural_logic_net.NetType.Hard: HardAndLayer(layer_size),
-        neural_logic_net.NetType.Symbolic: SymbolicAndLayer(layer_size)
-    }[type]
+def and_layer(layer_size: int, type: neural_logic_net.NetType, weights_init: Callable = initialize_near_to_zero(), dtype: jax.numpy.dtype = jax.numpy.float32):
+    return neural_logic_net.select(SoftAndLayer(layer_size, weights_init, dtype), HardAndLayer(layer_size), SymbolicAndLayer(layer_size))(type)
 

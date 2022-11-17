@@ -1,0 +1,71 @@
+from jax.config import config
+config.update("jax_enable_x64", True)
+
+import jax
+import jax.numpy as jnp
+import optax
+from flax import linen as nn
+from flax.training import train_state
+from jax import random
+
+from neurallogic import (hard_and, hard_not, hard_or, harden, harden_layer,
+                         neural_logic_net, primitives)
+
+
+def test_train_network():
+    def test_net(type, x):
+        x = hard_or.or_layer(16, type, nn.initializers.uniform(1.0), jnp.float64)(x)
+        x = hard_and.and_layer(4, type, nn.initializers.uniform(1.0), jnp.float64)(x)
+        x = hard_not.not_layer(1, type, dtype=jnp.float64)(x)
+        x = primitives.nl_ravel(type)(x)
+        x = harden_layer.harden_layer(type)(x)
+        return x
+
+    soft, hard, symbolic = neural_logic_net.net(test_net)
+    soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
+    x = [
+        [1.0, 1.0],
+        [1.0, 0.0],
+        [0.0, 1.0],
+        [0.0, 0.0]
+    ]
+    y = [
+        [1.0, 0.0, 1.0, 0.0],
+        [1.0, 0.0, 1.0, 0.0],
+        [1.0, 0.0, 1.0, 0.0],
+        [1.0, 0.0, 1.0, 0.0]
+    ]
+    input = jnp.array(x)
+    output = jnp.array(y)
+
+    # Train the and layer
+    tx = optax.sgd(0.01)
+    state = train_state.TrainState.create(apply_fn=jax.vmap(soft.apply, in_axes=(None, 0)), params=soft_weights, tx=tx)
+    grad_fn = jax.jit(jax.value_and_grad(lambda params, x, y: jnp.mean((state.apply_fn(params, x) - y) ** 2)))
+    min_loss = 1e10
+    best_epoch = 0
+    best_weights = None
+    for epoch in range(1, 500):
+        loss, grads = grad_fn(state.params, input, output)
+        state = state.apply_gradients(grads=grads)
+        if loss < min_loss:
+            min_loss = loss
+            best_epoch = epoch
+            best_weights = state.params
+    print("Final loss:", loss)
+    print(f"Minimum loss {min_loss} at epoch {best_epoch}")
+
+    # Test that the and layer (both soft and hard variants) correctly predicts y
+    for input, expected in zip(x, y):
+        input = jnp.array(input)
+        expected = jnp.array(expected)
+        soft_result = soft.apply(best_weights, input)
+        assert jnp.allclose(soft_result, expected)
+        hard_input = harden.harden(input)
+        hard_expected = harden.harden(expected)
+        hard_weights = harden.hard_weights(best_weights)
+        hard_result = hard.apply(hard_weights, hard_input)
+        assert jnp.array_equal(hard_result, hard_expected)
+        symbolic_weights = harden.symbolic_weights(best_weights)
+        symbolic_result = symbolic.apply(symbolic_weights, hard_input.tolist())
+        assert jnp.array_equal(symbolic_result, hard_expected)
