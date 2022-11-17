@@ -1,6 +1,7 @@
 import jax
 import jax.numpy as jnp
 import optax
+from flax import linen as nn
 from flax.training import train_state
 from jax import random
 
@@ -36,8 +37,8 @@ def test_neuron():
     for input, weights, expected in test_data:
         input = jnp.array(input)
         weights = jnp.array(weights)
-        assert jnp.array_equal(hard_or.soft_or_neuron(weights, input), expected)
-        assert jnp.array_equal(hard_or.hard_or_neuron(harden.harden(weights), harden.harden(input)), harden.harden(expected))
+        assert jnp.allclose(hard_or.soft_or_neuron(weights, input), expected)
+        assert jnp.allclose(hard_or.hard_or_neuron(harden.harden(weights), harden.harden(input)), harden.harden(expected))
         symbolic_output = hard_or.symbolic_or_neuron(harden.harden(weights.tolist()), harden.harden(input.tolist()))
         assert jnp.array_equal(symbolic_output, harden.harden(expected))
 
@@ -52,15 +53,15 @@ def test_layer():
         input = jnp.array(input)
         weights = jnp.array(weights)
         expected = jnp.array(expected)
-        assert jnp.array_equal(hard_or.soft_or_layer(weights, input), expected)
-        assert jnp.array_equal(hard_or.hard_or_layer(harden.harden(weights), harden.harden(input)), harden.harden(expected))
+        assert jnp.allclose(hard_or.soft_or_layer(weights, input), expected)
+        assert jnp.allclose(hard_or.hard_or_layer(harden.harden(weights), harden.harden(input)), harden.harden(expected))
         symbolic_output = hard_or.symbolic_or_layer(harden.harden(weights.tolist()), harden.harden(input.tolist()))
         assert jnp.array_equal(symbolic_output, harden.harden(expected))
 
 def test_or():
     def test_net(type, x):
-        x = hard_or.OrLayer(4, type)(x)
-        x = primitives.ravel(type)(x)
+        x = hard_or.or_layer(4, type, nn.initializers.uniform(1.0))(x)
+        x = primitives.nl_ravel(type)(x)
         return x
 
     soft, hard, symbolic = neural_logic_net.net(test_net)
@@ -93,13 +94,13 @@ def test_or():
         hard_input = harden.harden(soft_input)
         hard_expected = harden.harden(soft_expected)
         hard_result = hard.apply(hard_weights, hard_input)
-        assert jnp.array_equal(hard_result, hard_expected)
+        assert jnp.allclose(hard_result, hard_expected)
         symbolic_result = symbolic.apply(symbolic_weights, hard_input.tolist())
         assert jnp.array_equal(symbolic_result, hard_expected)
 
 def test_train_or():
     def test_net(type, x):
-        return hard_or.OrLayer(4, type)(x)
+        return hard_or.or_layer(4, type, nn.initializers.uniform(1.0))(x)
 
     soft, hard, symbolic = neural_logic_net.net(test_net)
     soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
@@ -134,14 +135,14 @@ def test_train_or():
         hard_input = harden.harden_array(harden.harden(jnp.array(input)))
         hard_expected = harden.harden_array(harden.harden(jnp.array(expected)))
         hard_result = hard.apply(hard_weights, hard_input)
-        assert jnp.array_equal(hard_result, hard_expected)
+        assert jnp.allclose(hard_result, hard_expected)
         symbolic_result = symbolic.apply(symbolic_weights, hard_input.tolist())
         assert jnp.array_equal(symbolic_result, hard_expected)
 
 def test_symbolic_or():
     def test_net(type, x):
-        x = hard_or.OrLayer(4, type)(x)
-        x = hard_or.OrLayer(4, type)(x)
+        x = hard_or.or_layer(4, type, nn.initializers.uniform(1.0))(x)
+        x = hard_or.or_layer(4, type, nn.initializers.uniform(1.0))(x)
         return x
 
     soft, hard, symbolic = neural_logic_net.net(test_net)

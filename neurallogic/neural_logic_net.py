@@ -3,6 +3,15 @@ from flax import linen as nn
 
 NetType = Enum('NetType', ['Soft', 'Hard', 'Symbolic'])
 
+def select(soft, hard, symbolic):
+    def selector(type: NetType):
+        return {
+            NetType.Soft: soft,
+            NetType.Hard: hard,
+            NetType.Symbolic: symbolic
+        }[type]
+    return selector
+
 def net(f):
     class SoftNet(nn.Module):
         @nn.compact

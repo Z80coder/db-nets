@@ -35,8 +35,8 @@ def test_neuron():
         [[0.0, 1.0], [1.0, 1.0], [0.0, 1.0]]
     ]
     for input, weights, expected in test_data:
-        assert jnp.array_equal(hard_not.soft_not_neuron(jnp.array(weights), jnp.array(input)), jnp.array(expected))
-        assert jnp.array_equal(hard_not.hard_not_neuron(harden.harden(jnp.array(weights)), harden.harden(jnp.array(input))), harden.harden(jnp.array(expected)))
+        assert jnp.allclose(hard_not.soft_not_neuron(jnp.array(weights), jnp.array(input)), jnp.array(expected))
+        assert jnp.allclose(hard_not.hard_not_neuron(harden.harden(jnp.array(weights)), harden.harden(jnp.array(input))), harden.harden(jnp.array(expected)))
         symbolic_output = hard_not.symbolic_not_neuron(harden.harden(weights), harden.harden(input))
         assert jnp.array_equal(symbolic_output, harden.harden(expected))
 
@@ -48,8 +48,8 @@ def test_layer():
         [[0.0, 0.0], [[1.0, 0.01], [0.0, 1.0], [1.0, 0.0], [0.0, 0.0]], [[0.0, 0.99], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]]]
     ]
     for input, weights, expected in test_data:
-        assert jnp.array_equal(hard_not.soft_not_layer(jnp.array(weights), jnp.array(input)), jnp.array(expected))
-        assert jnp.array_equal(hard_not.hard_not_layer(harden.harden(jnp.array(weights)), harden.harden(jnp.array(input))), harden.harden(jnp.array(expected)))
+        assert jnp.allclose(hard_not.soft_not_layer(jnp.array(weights), jnp.array(input)), jnp.array(expected))
+        assert jnp.allclose(hard_not.hard_not_layer(harden.harden(jnp.array(weights)), harden.harden(jnp.array(input))), harden.harden(jnp.array(expected)))
         # Now test they symbolic layer
         symbolic_weights = harden.harden(jnp.array(weights)).tolist()
         symbolic_input = harden.harden(jnp.array(input)).tolist()
@@ -59,8 +59,8 @@ def test_layer():
 
 def test_not():
     def test_net(type, x):
-        x = hard_not.NotLayer(4, type)(x)
-        x = primitives.ravel(type)(x)
+        x = hard_not.not_layer(4, type)(x)
+        x = primitives.nl_ravel(type)(x)
         return x
 
     soft, hard, symbolic = neural_logic_net.net(test_net)
@@ -93,13 +93,13 @@ def test_not():
         hard_input = harden.harden(soft_input)
         hard_expected = harden.harden(soft_expected)
         hard_result = hard.apply(hard_weights, hard_input)
-        assert jnp.array_equal(hard_result, hard_expected)
+        assert jnp.allclose(hard_result, hard_expected)
         symbolic_result = symbolic.apply(symbolic_weights, hard_input.tolist())
         assert jnp.array_equal(symbolic_result, hard_expected)
 
 def test_train_not():
     def test_net(type, x):
-        return hard_not.NotLayer(4, type)(x)
+        return hard_not.not_layer(4, type)(x)
 
     soft, hard, symbolic = neural_logic_net.net(test_net)
     soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
@@ -134,16 +134,16 @@ def test_train_not():
         hard_input = harden.harden_array(harden.harden(jnp.array(input)))
         hard_expected = harden.harden_array(harden.harden(jnp.array(expected)))
         hard_result = hard.apply(hard_weights, hard_input)
-        assert jnp.array_equal(hard_result, hard_expected)
+        assert jnp.allclose(hard_result, hard_expected)
         symbolic_result = symbolic.apply(symbolic_weights, hard_input.tolist())
         assert jnp.array_equal(symbolic_result, hard_expected)
 
 def test_symbolic_not():
     def test_net(type, x):
-        x = hard_not.NotLayer(4, type)(x)
-        x = primitives.ravel(type)(x)
-        x = hard_not.NotLayer(4, type)(x)
-        x = primitives.ravel(type)(x)
+        x = hard_not.not_layer(4, type)(x)
+        x = primitives.nl_ravel(type)(x)
+        x = hard_not.not_layer(4, type)(x)
+        x = primitives.nl_ravel(type)(x)
         return x
 
     soft, hard, symbolic = neural_logic_net.net(test_net)

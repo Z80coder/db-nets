@@ -64,13 +64,13 @@ class SoftNotLayer(nn.Module):
     """
     layer_size: int
     weights_init: Callable = nn.initializers.uniform(1.0)
+    dtype: jax.numpy.dtype = jax.numpy.float32
 
     @nn.compact
     def __call__(self, x):
-        dtype = jax.numpy.float32
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
-        weights = self.param('weights', self.weights_init, weights_shape, dtype)
-        x = jax.numpy.asarray(x, dtype)
+        weights = self.param('weights', self.weights_init, weights_shape, self.dtype)
+        x = jax.numpy.asarray(x, self.dtype)
         return soft_not_layer(weights, x)
 
 class HardNotLayer(nn.Module):
@@ -105,10 +105,6 @@ class SymbolicNotLayer(nn.Module):
             raise TypeError(f"Input {x} should be a list")
         return symbolic_not_layer(weights, x)
 
-def NotLayer(layer_size: int, type: neural_logic_net.NetType) -> nn.Module:
-    return {
-        neural_logic_net.NetType.Soft: SoftNotLayer(layer_size),
-        neural_logic_net.NetType.Hard: HardNotLayer(layer_size),
-        neural_logic_net.NetType.Symbolic: SymbolicNotLayer(layer_size)
-    }[type]
+def not_layer(layer_size: int, type: neural_logic_net.NetType, weights_init: Callable = nn.initializers.uniform(1.0), dtype: jax.numpy.dtype = jax.numpy.float32) -> nn.Module:
+    return neural_logic_net.select(SoftNotLayer(layer_size, weights_init, dtype), HardNotLayer(layer_size), SymbolicNotLayer(layer_size))(type)
 
