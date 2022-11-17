@@ -43,17 +43,13 @@ def test_train_network():
     state = train_state.TrainState.create(apply_fn=jax.vmap(soft.apply, in_axes=(None, 0)), params=soft_weights, tx=tx)
     grad_fn = jax.jit(jax.value_and_grad(lambda params, x, y: jnp.mean((state.apply_fn(params, x) - y) ** 2)))
     min_loss = 1e10
-    best_epoch = 0
     best_weights = None
     for epoch in range(1, 500):
         loss, grads = grad_fn(state.params, input, output)
         state = state.apply_gradients(grads=grads)
         if loss < min_loss:
             min_loss = loss
-            best_epoch = epoch
             best_weights = state.params
-    print("Final loss:", loss)
-    print(f"Minimum loss {min_loss} at epoch {best_epoch}")
 
     # Test that the and layer (both soft and hard variants) correctly predicts y
     for input, expected in zip(x, y):
@@ -69,3 +65,7 @@ def test_train_network():
         symbolic_weights = harden.symbolic_weights(best_weights)
         symbolic_result = symbolic.apply(symbolic_weights, hard_input.tolist())
         assert jnp.array_equal(symbolic_result, hard_expected)
+        symbolic_input = ['x1', 'x2']
+        symbolic_expected = ['(not(((((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and False) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and False)) or not(False)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True))) ^ False))', '(not(((((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and False)) or not(False)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False))) ^ True))', '(not(((((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and False)) or not(True)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True))) ^ False))', '(not(((((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and False)) or not(True)) and (((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True))) ^ True))']
+        symbolic_result = symbolic.apply(symbolic_weights, symbolic_input)
+        assert symbolic_result == symbolic_expected
