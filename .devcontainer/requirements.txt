@@ -6,3 +6,5 @@ jaxlib
 jax
 flax
 pytest
+tensorflow
+tensorflow_datasets
