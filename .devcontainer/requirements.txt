@@ -8,3 +8,4 @@ flax
 pytest
 tensorflow
 tensorflow_datasets
+ml_collections
