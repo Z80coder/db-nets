@@ -1,8 +1,13 @@
 numpy
 pandas
-matplotlib
-jupyter
-jaxlib
-jax
-flax
 pytest
+jupyter
+
+tensorflow
+tensorflow_datasets
+ml_collections
+
+--find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+jaxlib
+jax[cuda]
+flax
