@@ -3,11 +3,11 @@ pandas
 pytest
 jupyter
 
-tensorflow-gpu
+tensorflow
 tensorflow_datasets
 ml_collections
 
---find-links https://storage.googleapis.com/jax-releases/jax_releases.html
+--find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 jaxlib
-jax[cuda11_cudnn82]
+jax[cuda]
 flax
