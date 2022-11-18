@@ -1,11 +1,13 @@
 numpy
 pandas
-matplotlib
-jupyter
-jaxlib
-jax
-flax
 pytest
-tensorflow
+jupyter
+
+tensorflow-gpu
 tensorflow_datasets
 ml_collections
+
+--find-links https://storage.googleapis.com/jax-releases/jax_releases.html
+jaxlib
+jax[cuda11_cudnn82]
+flax
