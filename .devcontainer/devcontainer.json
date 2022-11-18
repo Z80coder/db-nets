@@ -45,11 +45,4 @@
 		}
 	}
 
-	//"runArgs": [
-	//	"--gpus",
-	//	"all"
-	//]
-
-	//"runArgs": ["--runtime=nvidia"]
-
 }
