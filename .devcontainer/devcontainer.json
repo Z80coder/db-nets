@@ -33,19 +33,23 @@
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "pip3 install --user -r requirements.txt",
-
+	
 	// Set `remoteUser` to `root` to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
 	"remoteUser": "jovyan",
 
 	// Install NVIDIA cuda and deep neural network support
 	"features": {
 		"ghcr.io/devcontainers/features/nvidia-cuda:1": { 
-		  "installCudnn": true
+		  "installCudnn": true,
+		  "installNvtx": true
 		}
-	  },
+	}
 
-	"runArgs": [
-		"--gpus",
-		"all"
-	]
+	//"runArgs": [
+	//	"--gpus",
+	//	"all"
+	//]
+
+	//"runArgs": ["--runtime=nvidia"]
+
 }
