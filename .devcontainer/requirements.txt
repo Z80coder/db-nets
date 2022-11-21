@@ -11,3 +11,4 @@ ml_collections
 jaxlib
 jax[cuda]
 flax
+clu
