@@ -1,14 +1,11 @@
 import tensorflow as tf
 import tensorflow_datasets as tfds
-from clu import platform
-import tempfile
-import pathlib
 import jax
 import jax.numpy as jnp
 import numpy as np
 from flax import linen as nn
+from flax.metrics import tensorboard
 from flax.training import train_state
-import tensorboard
 import ml_collections
 from absl import logging
 from neurallogic import (hard_and, hard_not, hard_or, harden, harden_layer,
@@ -22,10 +19,10 @@ The data is loaded using tensorflow_datasets.
 """
 
 def net(type, x):
-    x = hard_or.or_layer(16, type, nn.initializers.uniform(1.0), jnp.float64)(x)
-    x = hard_and.and_layer(4, type, nn.initializers.uniform(1.0), jnp.float64)(x)
-    x = hard_not.not_layer(1, type, dtype=jnp.float64)(x)
-    x = primitives.nl_ravel(type)(x)
+    x = hard_or.or_layer(32, type, nn.initializers.uniform(1.0), jnp.float64)(x)
+    x = hard_and.and_layer(32, type, nn.initializers.uniform(1.0), jnp.float64)(x)
+    x = hard_not.not_layer(10, type, dtype=jnp.float64)(x)
+    x = primitives.nl_ravel(type)(x) # 320 soft-bits
     x = harden_layer.harden_layer(type)(x)
     return x
 
@@ -100,7 +97,7 @@ def create_train_state(rng, config):
   """Creates initial `TrainState`."""
   # soft, hard, symbolic = neural_logic_net.net(net)
   soft = CNN()
-  soft_weights = soft.init(rng, jnp.ones([1, 28, 28, 1]))
+  soft_weights = soft.init(rng, jnp.ones([1, 28, 28, 1]))['params']
   tx = optax.sgd(config.learning_rate, config.momentum)
   return train_state.TrainState.create(apply_fn=soft.apply, params=soft_weights, tx=tx)
 
@@ -130,6 +127,11 @@ def train_and_evaluate(config: ml_collections.ConfigDict,
     _, test_loss, test_accuracy = apply_model(state, test_ds['image'],
                                               test_ds['label'])
 
+    print(
+        'epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f'
+        % (epoch, train_loss, train_accuracy * 100, test_loss,
+           test_accuracy * 100))
+           
     logging.info(
         'epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f'
         % (epoch, train_loss, train_accuracy * 100, test_loss,
@@ -140,14 +142,13 @@ def train_and_evaluate(config: ml_collections.ConfigDict,
     summary_writer.scalar('test_loss', test_loss, epoch)
     summary_writer.scalar('test_accuracy', test_accuracy, epoch)
 
-  summary_writer.flush()
   return state
 
 def get_config():
   """Get the default hyperparameter configuration."""
   config = ml_collections.ConfigDict()
 
-  config.learning_rate = 0.1
+  config.learning_rate = 0.01
   config.momentum = 0.9
   config.batch_size = 128
   config.num_epochs = 10
@@ -159,20 +160,11 @@ def test_mnist():
 
   # Define training configuration.
   config = get_config()
-  config.num_epochs = 1
-  config.batch_size = 8
 
   rng = jax.random.PRNGKey(0)
-  inputs = jnp.ones((1, 28, 28, 3), jnp.float32)
   state = create_train_state(rng, config)
 
   # Create a temporary directory where tensorboard metrics are written.
-  workdir = tempfile.mkdtemp()
-
-  # Go two directories up to the root of the flax directory.
-  root_dir = pathlib.Path(__file__).absolute()
-  data_dir = str(root_dir) + "/.tfds/metadata"  # pylint: disable=unused-variable
-
-  with tfds.testing.mock_data(num_examples=8, data_dir=data_dir):
-    train_and_evaluate(config=config, workdir=workdir)
+  workdir = "./mnist_metrics"
+  train_and_evaluate(config=config, workdir=workdir)
 
