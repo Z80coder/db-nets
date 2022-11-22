@@ -7,7 +7,6 @@ from flax import linen as nn
 from flax.metrics import tensorboard
 from flax.training import train_state
 import ml_collections
-from absl import logging
 from neurallogic import (hard_and, hard_not, hard_or, harden, harden_layer,
                          neural_logic_net, primitives)
 import optax
@@ -18,13 +17,18 @@ Executes the training and evaluation loop for MNIST.
 The data is loaded using tensorflow_datasets.
 """
 
-def net(type, x):
-    x = hard_or.or_layer(32, type, nn.initializers.uniform(1.0), jnp.float64)(x)
-    x = hard_and.and_layer(32, type, nn.initializers.uniform(1.0), jnp.float64)(x)
-    x = hard_not.not_layer(10, type, dtype=jnp.float64)(x)
-    x = primitives.nl_ravel(type)(x) # 320 soft-bits
-    x = harden_layer.harden_layer(type)(x)
-    return x
+def nln(type, x):
+  x = primitives.nl_ravel(type)(x) 
+  x = hard_or.or_layer(250, type, nn.initializers.uniform(1.0), jnp.float64)(x)
+  x = hard_not.not_layer(16, type, dtype=jnp.float64)(x)
+  x = primitives.nl_ravel(type)(x) 
+  x = primitives.nl_reshape(type)(x, (10, 400))
+  x = primitives.nl_sum(type)(x)
+  # x = harden_layer.harden_layer(type)(x)
+  return x
+
+def batch_nln(type, x):
+  return jax.vmap(lambda x: nln(type, x))(x)
 
 class CNN(nn.Module):
   """A simple CNN model."""
@@ -91,13 +95,17 @@ def get_datasets():
   test_ds = tfds.as_numpy(ds_builder.as_dataset(split='test', batch_size=-1))
   train_ds['image'] = jnp.float32(train_ds['image']) / 255.
   test_ds['image'] = jnp.float32(test_ds['image']) / 255.
+  # convert the floating point values in [0,1] to binary values in {0,1}
+  train_ds['image'] = jnp.round(train_ds['image'])
+  test_ds['image'] = jnp.round(test_ds['image'])
   return train_ds, test_ds
 
 def create_train_state(rng, config):
   """Creates initial `TrainState`."""
-  # soft, hard, symbolic = neural_logic_net.net(net)
-  soft = CNN()
-  soft_weights = soft.init(rng, jnp.ones([1, 28, 28, 1]))['params']
+  # soft = CNN()
+  soft, hard, symbolic = neural_logic_net.net(batch_nln)
+  mock_input = jnp.ones([1, 28, 28, 1])
+  soft_weights = soft.init(rng, mock_input)['params']
   tx = optax.sgd(config.learning_rate, config.momentum)
   return train_state.TrainState.create(apply_fn=soft.apply, params=soft_weights, tx=tx)
 
@@ -132,11 +140,6 @@ def train_and_evaluate(config: ml_collections.ConfigDict,
         % (epoch, train_loss, train_accuracy * 100, test_loss,
            test_accuracy * 100))
            
-    logging.info(
-        'epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f'
-        % (epoch, train_loss, train_accuracy * 100, test_loss,
-           test_accuracy * 100))
-
     summary_writer.scalar('train_loss', train_loss, epoch)
     summary_writer.scalar('train_accuracy', train_accuracy, epoch)
     summary_writer.scalar('test_loss', test_loss, epoch)
@@ -151,7 +154,8 @@ def get_config():
   config.learning_rate = 0.01
   config.momentum = 0.9
   config.batch_size = 128
-  config.num_epochs = 10
+  # Always commit with num_epochs = 1 for short test time
+  config.num_epochs = 50
   return config
 
 def test_mnist():
