@@ -18,13 +18,15 @@ The data is loaded using tensorflow_datasets.
 """
 
 def nln(type, x):
-  x = primitives.nl_ravel(type)(x) 
+  x = primitives.nl_ravel(type)(x)
+  # TODO: fix this signature 
   x = hard_or.or_layer(250, type, nn.initializers.uniform(1.0), jnp.float64)(x)
+  # TODO: fix this signature 
   x = hard_not.not_layer(16, type, dtype=jnp.float64)(x)
   x = primitives.nl_ravel(type)(x) 
+  x = harden_layer.harden_layer(type)(x)
   x = primitives.nl_reshape(type)(x, (10, 400))
-  x = primitives.nl_sum(type)(x)
-  # x = harden_layer.harden_layer(type)(x)
+  x = primitives.nl_mean(type)(x, -1)
   return x
 
 def batch_nln(type, x):
@@ -102,8 +104,8 @@ def get_datasets():
 
 def create_train_state(rng, config):
   """Creates initial `TrainState`."""
-  # soft = CNN()
-  soft, hard, symbolic = neural_logic_net.net(batch_nln)
+  soft = CNN()
+  # soft, hard, symbolic = neural_logic_net.net(batch_nln)
   mock_input = jnp.ones([1, 28, 28, 1])
   soft_weights = soft.init(rng, mock_input)['params']
   tx = optax.sgd(config.learning_rate, config.momentum)
@@ -155,7 +157,7 @@ def get_config():
   config.momentum = 0.9
   config.batch_size = 128
   # Always commit with num_epochs = 1 for short test time
-  config.num_epochs = 50
+  config.num_epochs = 1
   return config
 
 def test_mnist():
