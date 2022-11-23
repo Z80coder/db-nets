@@ -126,7 +126,7 @@ class SymbolicOrLayer(nn.Module):
         if not isinstance(x, list):
             raise TypeError(f"Input {x} should be a list")
         return symbolic_or_layer(weights, x)
-
+    
 def or_layer(layer_size: int, type: neural_logic_net.NetType, weights_init: Callable = initialize_near_to_one(), dtype: jax.numpy.dtype = jax.numpy.float32):
     return neural_logic_net.select(SoftOrLayer(layer_size, weights_init, dtype), HardOrLayer(layer_size), SymbolicOrLayer(layer_size))(type)
 
