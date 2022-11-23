@@ -21,12 +21,13 @@ The data is loaded using tensorflow_datasets.
 
 def nln(type, x):
   x = primitives.nl_ravel(type)(x)
-  # TODO: fix this signature 
-  x = hard_or.or_layer(1000, type, nn.initializers.uniform(1.0), dtype=jnp.float32)(x)
+  # TODO: fix this signature
+  # >=1500 need for >98% accuracy
+  x = hard_or.or_layer(100, type, nn.initializers.uniform(1.0), dtype=jnp.float32)(x)
   x = hard_not.not_layer(10, type, dtype=jnp.float32)(x)
   x = primitives.nl_ravel(type)(x) 
   x = harden_layer.harden_layer(type)(x)
-  x = primitives.nl_reshape(type)(x, (10, 1000))
+  x = primitives.nl_reshape(type)(x, (10, 100))
   x = primitives.nl_sum(type)(x, -1)
   return x
 
@@ -156,15 +157,12 @@ def get_config():
 
   # config for CNN
   config.learning_rate = 0.01
-  config.momentum = 0.9
-  config.batch_size = 128
-
   # config for NLN
   config.learning_rate = 0.1
-  config.momentum = 0.9
-  config.batch_size = 64
   
   # Always commit with num_epochs = 1 for short test time
+  config.momentum = 0.9
+  config.batch_size = 128
   config.num_epochs = 1
   return config
 
