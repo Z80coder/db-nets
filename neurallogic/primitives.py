@@ -50,11 +50,3 @@ def symbolic_reduce(op, x, axis=None):
 nl_symbolic_sum = lambda x, axis=None: symbolic_reduce((operator.add, "+"), x, axis)
 
 nl_sum = neural_logic_net.select(jnp.sum, jnp.sum, nl_symbolic_sum)
-
-def nl_symbolic_mean(x, axis=None):
-    n = numpy.prod(numpy.array(x).shape)       
-    x = nl_symbolic_sum(x, axis)
-    # TODO: implement symbolic division
-    return x
-
-nl_mean = neural_logic_net.select(jnp.mean, jnp.mean, nl_symbolic_mean)
