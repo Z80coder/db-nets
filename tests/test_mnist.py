@@ -29,8 +29,8 @@ def nln(type, x):
     return x
 
 def batch_nln(type, x):
-    # jax.debug.print("x = {x}", x=x)
-    return jax.vmap(lambda x: nln(type, x), 0)(x)
+    #return jax.vmap(lambda x: nln(type, x))(x)
+    return primitives.nl_vmap(type)(lambda x: nln(type,x))(x)
 
 class CNN(nn.Module):
     """A simple CNN model."""
@@ -162,16 +162,14 @@ def get_config():
     # Always commit with num_epochs = 1 for short test time
     config.momentum = 0.9
     config.batch_size = 128
-    config.num_epochs = 50
+    config.num_epochs = 1
     return config
 
 def apply_hard_model(state, images, labels):
     def logits_fn(params):
-      logits = state.apply_fn({'params': params}, images)
-      # Convert boolean logits to float in range [0, 1]
-      return logits * 1.0
+      return state.apply_fn({'params': params}, images)
 
-    logits = logits_fn(state.params)
+    logits = logits_fn(state.params) * 1.0
     accuracy = jnp.mean(jnp.argmax(logits, -1) == labels)
     return accuracy
 
@@ -185,9 +183,11 @@ def check_symbolic(nets, datasets, trained_state):
     hard_input = harden.harden(test_ds['image'])
     hard_test_accuracy = apply_hard_model(hard_trained_state, hard_input, test_ds['label'])
     print('hard_net: final test_accuracy: %.2f' % (hard_test_accuracy * 100))
+    assert np.isclose(test_accuracy, hard_test_accuracy, atol=0.0001)
     symbolic_weights = harden.symbolic_weights(trained_state.params)
     symbolic_trained_state = train_state.TrainState.create(apply_fn=symbolic.apply, params=symbolic_weights, tx=optax.sgd(1.0, 1.0))
-    #symbolic_test_accuracy = apply_hard_model(symbolic_trained_state, hard_input, test_ds['label'])
+    symbolic_input = hard_input.tolist()
+    #symbolic_test_accuracy = apply_hard_model(symbolic_trained_state, symbolic_input, test_ds['label'])
     #print('symbolic_net: final test_accuracy: %.2f' % (symbolic_test_accuracy * 100))
 
 def test_mnist():

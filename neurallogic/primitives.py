@@ -1,3 +1,4 @@
+import jax
 import jax.numpy as jnp
 import numpy
 import operator
@@ -17,6 +18,17 @@ def symbolic_reshape(x, newshape):
     return jnp.array(x).reshape(newshape).tolist()
 
 nl_reshape = neural_logic_net.select(lambda newshape: lambda x: jnp.reshape(x, newshape), lambda newshape: lambda x: jnp.reshape(x, newshape), lambda newshape: lambda x: symbolic_reshape(x, newshape))
+
+"""
+    symbolic auto-vectorization
+    TODO: avoid repeated initialisation of a new instance of f
+"""
+def symbolic_vmap(f):
+    def f_vmap(x):
+        return [f(x_i) for x_i in x]
+    return lambda x: f_vmap(x)
+
+nl_vmap = neural_logic_net.select(jax.vmap, jax.vmap, symbolic_vmap)
 
 """
     symbolic computations
