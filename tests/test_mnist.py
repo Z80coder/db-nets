@@ -20,7 +20,6 @@ The data is loaded using tensorflow_datasets.
 """
 
 def nln(type, x):
-    x = primitives.nl_ravel(type)(x) # flatten 28x28 images to a 784 vector
     x = hard_or.or_layer(type)(100, nn.initializers.uniform(1.0), dtype=jnp.float32)(x) # >=1500 need for >98% accuracy
     x = hard_not.not_layer(type)(10, dtype=jnp.float32)(x)
     x = primitives.nl_ravel(type)(x) # flatten the outputs of the not layer
@@ -29,11 +28,9 @@ def nln(type, x):
     x = primitives.nl_sum(type)(-1)(x) # sum the 100 bits in each port
     return x
 
-#def batch_nln(type, x):
-#    return jax.vmap(lambda x: nln(type, x))(x)
-
 def batch_nln(type, x):
-    return jax.vmap(lambda x: nln(type, x))(x)
+    # jax.debug.print("x = {x}", x=x)
+    return jax.vmap(lambda x: nln(type, x), 0)(x)
 
 class CNN(nn.Module):
     """A simple CNN model."""
@@ -100,14 +97,17 @@ def get_datasets():
     test_ds = tfds.as_numpy(ds_builder.as_dataset(split='test', batch_size=-1))
     train_ds['image'] = jnp.float32(train_ds['image']) / 255.
     test_ds['image'] = jnp.float32(test_ds['image']) / 255.
-    # convert the floating point values in [0,1] to binary values in {0,1}
+    # Convert the floating point values in [0,1] to binary values in {0,1}
     train_ds['image'] = jnp.round(train_ds['image'])
     test_ds['image'] = jnp.round(test_ds['image'])
     return train_ds, test_ds
 
 def create_train_state(net, rng, config):
     """Creates initial `TrainState`."""
-    mock_input = jnp.ones([1, 28, 28, 1])
+    # for CNN
+    # mock_input = jnp.ones([1, 28, 28, 1])
+    # for NLN
+    mock_input = jnp.ones([1, 28 * 28])
     soft_weights = net.init(rng, mock_input)['params']
     tx = optax.sgd(config.learning_rate, config.momentum)
     return train_state.TrainState.create(apply_fn=net.apply, params=soft_weights, tx=tx)
@@ -162,7 +162,7 @@ def get_config():
     # Always commit with num_epochs = 1 for short test time
     config.momentum = 0.9
     config.batch_size = 128
-    config.num_epochs = 1
+    config.num_epochs = 50
     return config
 
 def apply_hard_model(state, images, labels):
@@ -197,16 +197,19 @@ def test_mnist():
     # Define training configuration.
     config = get_config()
 
-    # Get the MNIST dataset.
-    datasets = get_datasets()
-
     # Define the model.
     # soft = CNN()
     soft, hard, symbolic = neural_logic_net.net(batch_nln)
 
+    # Get the MNIST dataset.
+    train_ds, test_ds = get_datasets()
+    # If we're using a NLN then flatten the images
+    train_ds["image"] = jnp.reshape(train_ds["image"], (train_ds["image"].shape[0], -1))
+    test_ds["image"] = jnp.reshape(test_ds["image"], (test_ds["image"].shape[0], -1))
+    
     # Train and evaluate the model.
-    trained_state = train_and_evaluate(soft, datasets, config=config, workdir="./mnist_metrics")
+    trained_state = train_and_evaluate(soft, (train_ds, test_ds), config=config, workdir="./mnist_metrics")
 
     # Check symbolic net
-    check_symbolic((soft, hard, symbolic), datasets, trained_state)
+    check_symbolic((soft, hard, symbolic), (train_ds, test_ds), trained_state)
 
