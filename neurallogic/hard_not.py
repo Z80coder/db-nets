@@ -105,6 +105,7 @@ class SymbolicNotLayer(nn.Module):
             raise TypeError(f"Input {x} should be a list")
         return symbolic_not_layer(weights, x)
 
-def not_layer(layer_size: int, type: neural_logic_net.NetType, weights_init: Callable = nn.initializers.uniform(1.0), dtype: jax.numpy.dtype = jax.numpy.float32) -> nn.Module:
-    return neural_logic_net.select(SoftNotLayer(layer_size, weights_init, dtype), HardNotLayer(layer_size), SymbolicNotLayer(layer_size))(type)
-
+not_layer = neural_logic_net.select(
+    lambda layer_size, weights_init=nn.initializers.uniform(1.0), dtype=jax.numpy.float32: SoftNotLayer(layer_size, weights_init, dtype),
+    lambda layer_size, weights_init=nn.initializers.uniform(1.0), dtype=jax.numpy.float32: HardNotLayer(layer_size),
+    lambda layer_size, weights_init=nn.initializers.uniform(1.0), dtype=jax.numpy.float32: SymbolicNotLayer(layer_size))

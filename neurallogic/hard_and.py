@@ -127,6 +127,7 @@ class SymbolicAndLayer(nn.Module):
             raise TypeError(f"Input {x} should be a list")
         return symbolic_and_layer(weights, x)
 
-def and_layer(layer_size: int, type: neural_logic_net.NetType, weights_init: Callable = initialize_near_to_zero(), dtype: jax.numpy.dtype = jax.numpy.float32):
-    return neural_logic_net.select(SoftAndLayer(layer_size, weights_init, dtype), HardAndLayer(layer_size), SymbolicAndLayer(layer_size))(type)
-
+and_layer = neural_logic_net.select(
+        lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: SoftAndLayer(layer_size, weights_init, dtype),
+        lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: HardAndLayer(layer_size),
+        lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: SymbolicAndLayer(layer_size))

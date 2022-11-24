@@ -14,9 +14,9 @@ from neurallogic import (hard_and, hard_not, hard_or, harden, harden_layer,
 
 def test_train_network():
     def test_net(type, x):
-        x = hard_or.or_layer(16, type, nn.initializers.uniform(1.0), jnp.float64)(x)
-        x = hard_and.and_layer(4, type, nn.initializers.uniform(1.0), jnp.float64)(x)
-        x = hard_not.not_layer(1, type, dtype=jnp.float64)(x)
+        x = hard_or.or_layer(type)(16, nn.initializers.uniform(1.0), jnp.float64)(x)
+        x = hard_and.and_layer(type)(4, nn.initializers.uniform(1.0), jnp.float64)(x)
+        x = hard_not.not_layer(type)(1, dtype=jnp.float64)(x)
         x = primitives.nl_ravel(type)(x)
         x = harden_layer.harden_layer(type)(x)
         return x

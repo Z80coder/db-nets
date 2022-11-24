@@ -21,14 +21,12 @@ The data is loaded using tensorflow_datasets.
 
 def nln(type, x):
   x = primitives.nl_ravel(type)(x)
-  # TODO: fix this signature
-  # >=1500 need for >98% accuracy
-  x = hard_or.or_layer(100, type, nn.initializers.uniform(1.0), dtype=jnp.float32)(x)
-  x = hard_not.not_layer(10, type, dtype=jnp.float32)(x)
+  x = hard_or.or_layer(type)(100, nn.initializers.uniform(1.0), dtype=jnp.float32)(x) # >=1500 need for >98% accuracy
+  x = hard_not.not_layer(type)(10, dtype=jnp.float32)(x)
   x = primitives.nl_ravel(type)(x) 
   x = harden_layer.harden_layer(type)(x)
-  x = primitives.nl_reshape(type)(x, (10, 100))
-  x = primitives.nl_sum(type)(x, -1)
+  x = primitives.nl_reshape(type)((10, 100))(x)
+  x = primitives.nl_sum(type)(-1)(x)
   return x
 
 def batch_nln(type, x):
