@@ -60,7 +60,7 @@ def test_layer():
 
 def test_or():
     def test_net(type, x):
-        x = hard_or.or_layer(4, type, nn.initializers.uniform(1.0))(x)
+        x = hard_or.or_layer(type)(4, nn.initializers.uniform(1.0))(x)
         x = primitives.nl_ravel(type)(x)
         return x
 
@@ -100,7 +100,7 @@ def test_or():
 
 def test_train_or():
     def test_net(type, x):
-        return hard_or.or_layer(4, type, nn.initializers.uniform(1.0))(x)
+        return hard_or.or_layer(type)(4, nn.initializers.uniform(1.0))(x)
 
     soft, hard, symbolic = neural_logic_net.net(test_net)
     soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
@@ -141,8 +141,8 @@ def test_train_or():
 
 def test_symbolic_or():
     def test_net(type, x):
-        x = hard_or.or_layer(4, type, nn.initializers.uniform(1.0))(x)
-        x = hard_or.or_layer(4, type, nn.initializers.uniform(1.0))(x)
+        x = hard_or.or_layer(type)(4, nn.initializers.uniform(1.0))(x)
+        x = hard_or.or_layer(type)(4, nn.initializers.uniform(1.0))(x)
         return x
 
     soft, hard, symbolic = neural_logic_net.net(test_net)

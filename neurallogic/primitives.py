@@ -14,9 +14,9 @@ def symbolic_ravel(x):
 nl_ravel = neural_logic_net.select(jnp.ravel, jnp.ravel, symbolic_ravel)
 
 def symbolic_reshape(x, newshape):
-    return jnp.array(x).reshape(newshape).tolist()
+    return numpy.array(x).reshape(newshape).tolist()
 
-nl_reshape = neural_logic_net.select(jnp.reshape, jnp.reshape, symbolic_reshape)
+nl_reshape = neural_logic_net.select(lambda newshape: lambda x: jnp.reshape(x, newshape), lambda newshape: lambda x: jnp.reshape(x, newshape), lambda newshape: lambda x: symbolic_reshape(x, newshape))
 
 """
     symbolic computations
@@ -46,7 +46,7 @@ def symbolic_reduce(op, x, axis=None):
         x = symbolic_reduce_impl(op, x, axis)
     return x
 
+def symbolic_sum(x, axis=None):
+    return symbolic_reduce((operator.add, "+"), x, axis)
 
-nl_symbolic_sum = lambda x, axis=None: symbolic_reduce((operator.add, "+"), x, axis)
-
-nl_sum = neural_logic_net.select(jnp.sum, jnp.sum, nl_symbolic_sum)
+nl_sum = neural_logic_net.select(lambda axis=None: lambda x: jnp.sum(x, axis), lambda axis=None: lambda x: jnp.sum(x, axis), lambda axis=None: lambda x: symbolic_sum(x, axis))

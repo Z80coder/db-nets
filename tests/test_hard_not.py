@@ -59,7 +59,7 @@ def test_layer():
 
 def test_not():
     def test_net(type, x):
-        x = hard_not.not_layer(4, type)(x)
+        x = hard_not.not_layer(type)(4)(x)
         x = primitives.nl_ravel(type)(x)
         return x
 
@@ -99,7 +99,7 @@ def test_not():
 
 def test_train_not():
     def test_net(type, x):
-        return hard_not.not_layer(4, type)(x)
+        return hard_not.not_layer(type)(4)(x)
 
     soft, hard, symbolic = neural_logic_net.net(test_net)
     soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
@@ -140,9 +140,9 @@ def test_train_not():
 
 def test_symbolic_not():
     def test_net(type, x):
-        x = hard_not.not_layer(4, type)(x)
+        x = hard_not.not_layer(type)(4)(x)
         x = primitives.nl_ravel(type)(x)
-        x = hard_not.not_layer(4, type)(x)
+        x = hard_not.not_layer(type)(4)(x)
         x = primitives.nl_ravel(type)(x)
         return x
 
