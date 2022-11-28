@@ -1,9 +1,6 @@
-from typing import Callable
-import jax
 import jax.numpy as jnp
 import numpy
 import operator
-from flax import linen as nn
 
 from neurallogic import neural_logic_net
 

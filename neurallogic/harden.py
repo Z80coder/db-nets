@@ -1,6 +1,5 @@
 import flax
 import jax
-import numpy
 
 
 def harden_float(x: float) -> bool:

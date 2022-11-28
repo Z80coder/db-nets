@@ -1,7 +1,6 @@
 import jax.numpy as jnp
 import numpy
 from neurallogic import primitives, neural_logic_net, harden
-import pytest
 
 def test_ravel():
     input = jnp.array([[0.1, 0.2], [0.3, 0.4]])
