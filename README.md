@@ -18,6 +18,7 @@ Questions? Ask @Z80coder
 
 - [Neural logic nets](https://drive.google.com/file/d/1P25OxM7Af8ppUGOUhKd6psGHI0OVXIzw/view?usp=sharing) (15m)
 - [Neural logic nets for differentiable QL](https://drive.google.com/file/d/195r9Y08Q61V80f2Hqw62YuHpYsCzJCmZ/view?usp=sharing) (30m)
+- [Boolean logic nets and MNIST](https://drive.google.com/file/d/1dWAQfFWcOm1ORqfh62H66nigGy2wQ17G/view?usp=share_link) (18m)
 
 ## Development videos   
 
@@ -35,5 +36,6 @@ Questions? Ask @Z80coder
 - [If-Then-Else neuron](https://drive.google.com/file/d/1qelfWX6s2XhlHxFwUSV76tAS2tyDK3Q0/view?usp=sharing) (23m)
 - [Neural conditions and actions](https://drive.google.com/file/d/1nrn_4TlNCmdC1ZAlN9pKIOF2hEjtykuo/view?usp=sharing) (24m)
 - [Neural decision lists](https://drive.google.com/file/d/16F_2kpBaZO-qPQLX38Sar9pJfuunsVyO/view?usp=sharing) (15m)
+- [Boolean logic nets and MNIST](https://drive.google.com/file/d/1dWAQfFWcOm1ORqfh62H66nigGy2wQ17G/view?usp=share_link) (18m)
 
 More to come!
