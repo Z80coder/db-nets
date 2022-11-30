@@ -1,4 +1,5 @@
 from tqdm import tqdm
+from matplotlib import pyplot as plt
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import jax
@@ -20,17 +21,17 @@ Executes the training and evaluation loop for MNIST.
 The data is loaded using tensorflow_datasets.
 """
 
-def nln(type, x):
-    x = hard_or.or_layer(type)(100, nn.initializers.uniform(1.0), dtype=jnp.float32)(x) # >=1700 need for >98% accuracy
+def nln(type, x, width):
+    x = hard_or.or_layer(type)(width, nn.initializers.uniform(1.0), dtype=jnp.float32)(x) # >=1700 need for >98% accuracy
     x = hard_not.not_layer(type)(10, dtype=jnp.float32)(x)
     x = primitives.nl_ravel(type)(x) # flatten the outputs of the not layer
     x = harden_layer.harden_layer(type)(x) # harden the outputs of the not layer
-    x = primitives.nl_reshape(type)((10, 100))(x) # reshape to 10 ports, 100 bits each
+    x = primitives.nl_reshape(type)((10, width))(x) # reshape to 10 ports, 100 bits each
     x = primitives.nl_sum(type)(-1)(x) # sum the 100 bits in each port
     return x
 
-def batch_nln(type, x):
-    return jax.vmap(lambda x: nln(type, x))(x)
+def batch_nln(type, x, width):
+    return jax.vmap(lambda x: nln(type, x, width))(x)
 
 class CNN(nn.Module):
     """A simple CNN model."""
@@ -101,6 +102,23 @@ def get_datasets():
     train_ds['image'] = jnp.round(train_ds['image'])
     test_ds['image'] = jnp.round(test_ds['image'])
     return train_ds, test_ds
+
+def show_img(img, ax=None, title=None):
+    """Shows a single image."""
+    if ax is None:
+      ax = plt.gca()
+    ax.imshow(img.reshape(28, 28), cmap='gray')
+    ax.set_xticks([])
+    ax.set_yticks([])
+    if title:
+      ax.set_title(title)
+
+def show_img_grid(imgs, titles):
+    """Shows a grid of images."""
+    n = int(np.ceil(len(imgs)**.5))
+    _, axs = plt.subplots(n, n, figsize=(3 * n, 3 * n))
+    for i, (img, title) in enumerate(zip(imgs, titles)):
+      show_img(img, axs[i // n][i % n], title)
 
 def create_train_state(net, rng, config):
     """Creates initial `TrainState`."""
@@ -216,7 +234,8 @@ def test_mnist():
 
     # Define the model.
     # soft = CNN()
-    soft, _, _ = neural_logic_net.net(batch_nln)
+    width = 100
+    soft, _, _ = neural_logic_net.net(lambda type, x: batch_nln(type, x, width))
 
     # Get the MNIST dataset.
     train_ds, test_ds = get_datasets()
@@ -228,5 +247,5 @@ def test_mnist():
     trained_state = train_and_evaluate(soft, (train_ds, test_ds), config=config, workdir="./mnist_metrics")
 
     # Check symbolic net
-    _, hard, symbolic = neural_logic_net.net(nln)
+    _, hard, symbolic = neural_logic_net.net(lambda type, x: nln(type,x, width))
     check_symbolic((soft, hard, symbolic), (train_ds, test_ds), trained_state)
