@@ -16,7 +16,11 @@ Questions? Ask @Z80coder
 
 ## Demos
 
-- [Neural logic nets](https://drive.google.com/file/d/1P25OxM7Af8ppUGOUhKd6psGHI0OVXIzw/view?usp=sharing) (15m)
+Neural logic nets
+
+https://user-images.githubusercontent.com/55286208/205712875-54d4cdfe-5199-4429-a438-3b797e4c4456.mp4
+
+
 - [Neural logic nets for differentiable QL](https://drive.google.com/file/d/195r9Y08Q61V80f2Hqw62YuHpYsCzJCmZ/view?usp=sharing) (30m)
 - [Boolean logic nets and MNIST](https://drive.google.com/file/d/1dWAQfFWcOm1ORqfh62H66nigGy2wQ17G/view?usp=share_link) (18m)
 
