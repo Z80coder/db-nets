@@ -2,6 +2,7 @@ numpy
 pandas
 pytest
 jupyter
+plum-dispatch
 
 tensorflow
 tensorflow_datasets
