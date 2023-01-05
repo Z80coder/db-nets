@@ -147,3 +147,8 @@ def test_symbolic_broadcast_in_dim():
     # Test 3D
     input = jax.numpy.array([[[1, 1], [1, 1]], [[1, 1], [1, 1]]])
     output = symbolic_primitives.symbolic_broadcast_in_dim(input, (2, 2, 2, 2), (0, 1, 2))
+
+def test_symbolic_reduce_or():
+    input = numpy.array([[True, False], [True, False]])
+    output = symbolic_primitives.symbolic_reduce_or(input, axes=(1,))
+    expected = numpy.array(True)

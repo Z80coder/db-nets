@@ -77,12 +77,15 @@ def symbolic_or(x, y):
 def symbolic_not(x):
   return f"~{x}"
 
+# Uses the lax reference implementation of broadcast_in_dim to
+# implement a symbolic version of broadcast_in_dim
 def symbolic_broadcast_in_dim(*args, **kwargs):
-  #print("broadcasting type", args[0].dtype)
-  r = lax_reference.broadcast_in_dim(*args, **kwargs)
-  #print("broadcasting result type", r.dtype)
-  return r
+  return lax_reference.broadcast_in_dim(*args, **kwargs)
 
+# This function is a hack to get around the fact that JAX doesn't
+# support symbolic reduction operations. It takes a symbolic reduction
+# operation and a symbolic initial value and returns a function that
+# performs the reduction operation on a numpy array.
 def make_symbolic_reducer(py_binop, init_val):
   def reducer(operand, axis=0):
     axis = range(numpy.ndim(operand)) if axis is None else axis
