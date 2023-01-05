@@ -58,3 +58,77 @@ def test_binary_operator_matrix_matrix_2():
     eval_output = symbolic_primitives.symbolic_eval(output)
     numpy_output = numpy.add(symbolic_primitives.symbolic_eval(x1), symbolic_primitives.symbolic_eval(x2))
     assert numpy.all(eval_output == numpy_output)
+
+def test_to_boolean_value_string():
+    output = symbolic_primitives.to_boolean_value_string(1)
+    expected = "True"
+    assert output == expected
+    output = symbolic_primitives.to_boolean_value_string(0)
+    expected = "False"
+    assert output == expected
+    output = symbolic_primitives.to_boolean_value_string("1")
+    expected = "True"
+    assert output == expected
+    output = symbolic_primitives.to_boolean_value_string("0")
+    expected = "False"
+    assert output == expected
+    output = symbolic_primitives.to_boolean_value_string(1.0)
+    expected = "True"
+    assert output == expected
+    output = symbolic_primitives.to_boolean_value_string(0.0)
+    expected = "False"
+    assert output == expected
+    output = symbolic_primitives.to_boolean_value_string("1.0")
+    expected = "True"
+    assert output == expected
+    output = symbolic_primitives.to_boolean_value_string("0.0")
+    expected = "False"
+    assert output == expected
+    output = symbolic_primitives.to_boolean_value_string("True")
+    expected = "True"
+    assert output == expected
+    output = symbolic_primitives.to_boolean_value_string("False")
+    expected = "False"
+    assert output == expected
+
+def test_to_boolean_string():
+    output = symbolic_primitives.to_boolean_string([1, 1])
+    expected = numpy.array(["True", "True"])
+    assert numpy.all(output == expected)
+    output = symbolic_primitives.to_boolean_string([0, 0])
+    expected = numpy.array(["False", "False"])
+    assert numpy.all(output == expected)
+    output = symbolic_primitives.to_boolean_string([True, False])
+    expected = numpy.array(["True", "False"])
+    assert numpy.all(output == expected)
+    output = symbolic_primitives.to_boolean_string([False, True])
+    expected = numpy.array(["False", "True"])
+    assert numpy.all(output == expected)
+    output = symbolic_primitives.to_boolean_string([1.0, 1.0])
+    expected = numpy.array(["True", "True"])
+    assert numpy.all(output == expected)
+    output = symbolic_primitives.to_boolean_string([0.0, 0.0])
+    expected = numpy.array(["False", "False"])
+    assert numpy.all(output == expected)
+    output = symbolic_primitives.to_boolean_string([[1, 1], [1, 1]])
+    expected = numpy.array([["True", "True"], ["True", "True"]])
+    assert numpy.all(output == expected)
+    output = symbolic_primitives.to_boolean_string([[0, 0], [0, 0]])
+    expected = numpy.array([["False", "False"], ["False", "False"]])
+    assert numpy.all(output == expected)
+    output = symbolic_primitives.to_boolean_string([[True, False], [False, True]])
+    expected = numpy.array([["True", "False"], ["False", "True"]])
+    assert numpy.all(output == expected)
+    output = symbolic_primitives.to_boolean_string([[[1, 0, 1], [1, 0, 1]], [[1, 0, 0], [1, 0, 0]]])
+    expected = numpy.array([[["True", "False", "True"], ["True", "False", "True"]], [["True", "False", "False"], ["True", "False", "False"]]])
+    assert numpy.all(output == expected)
+    output = symbolic_primitives.to_boolean_string([[[1, "f", 1], [1, "g", 1]], [[1, "h", 0], [1, "f", 0]]])
+    expected = numpy.array([[["True", "f", "True"], ["True", "g", "True"]], [["True", "h", "False"], ["True", "f", "False"]]])
+    assert numpy.all(output == expected)
+    
+def test_symbolic_and():
+    x1 = numpy.array([True, False])
+    x2 = numpy.array([True, True])
+    output = symbolic_primitives.symbolic_and(x1, x2)
+    expected = numpy.array([True, False])
+    assert numpy.all(output == expected)
