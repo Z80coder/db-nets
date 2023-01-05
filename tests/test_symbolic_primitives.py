@@ -1,5 +1,5 @@
 import numpy
-
+import jax
 from neurallogic import symbolic_primitives
 
 def test_binary_operator_str_str():
@@ -132,3 +132,18 @@ def test_symbolic_and():
     output = symbolic_primitives.symbolic_and(x1, x2)
     expected = numpy.array([True, False])
     assert numpy.all(output == expected)
+
+def test_symbolic_broadcast_in_dim():
+    # Test 1D
+    input = jax.numpy.array([1, 1])
+    output = symbolic_primitives.symbolic_broadcast_in_dim(input, (2, 2), (0,))
+    expected = jax.numpy.array([[1, 1], [1, 1]])
+    assert numpy.all(output == expected)
+    # Test 2D
+    input = jax.numpy.array([[1, 1], [1, 1]])
+    output = symbolic_primitives.symbolic_broadcast_in_dim(input, (2, 2, 2), (0, 1))
+    expected = jax.numpy.array([[[1, 1], [1, 1]], [[1, 1], [1, 1]]])
+    assert numpy.all(output == expected)
+    # Test 3D
+    input = jax.numpy.array([[[1, 1], [1, 1]], [[1, 1], [1, 1]]])
+    output = symbolic_primitives.symbolic_broadcast_in_dim(input, (2, 2, 2, 2), (0, 1, 2))

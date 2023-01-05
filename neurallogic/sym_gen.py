@@ -5,48 +5,15 @@ from jax._src.util import safe_map
 import numpy
 from neurallogic import symbolic_primitives
 
-def symbolic_broadcast_in_dim(*args, **kwargs):
-  #print("broadcasting type", args[0].dtype)
-  r = lax_reference.broadcast_in_dim(*args, **kwargs)
-  #print("broadcasting result type", r.dtype)
-  return r
-
-def make_symbolic_reducer(py_binop, init_val):
-  def reducer(operand, axis=0):
-    axis = range(numpy.ndim(operand)) if axis is None else axis
-    result = numpy.full(numpy.delete(numpy.shape(operand), axis), init_val, dtype=numpy.asarray(operand).dtype)
-    for idx, _ in numpy.ndenumerate(operand):
-      out_idx = tuple(numpy.delete(idx, axis))
-      result[out_idx] = py_binop(result[out_idx], operand[idx])
-    return result
-  return reducer
-
-def symbolic_reduce(operand, init_value, computation, dimensions):
-  reducer = make_symbolic_reducer(computation, init_value)
-  return reducer(operand, tuple(dimensions)).astype(operand.dtype)
-  
-def symbolic_reduce_or(*args, **kwargs):
-  if args[0].dtype == bool:
-    return lax_reference.reduce(*args, init_value=False, dimensions=kwargs['axes'], computation=numpy.logical_or)
-  else:
-    #print("args = ", args)
-    #print("type args[0] = ", type(args[0]))
-    #print("element type = ", args[0].dtype)
-    r = symbolic_reduce(*args, init_value='False', dimensions=kwargs['axes'], computation=symbolic_primitives.symbolic_or)
-    #print("symbolic_reduce_or result: ", r)
-    #print("type: ", type(r))
-    #print("element type: ", r.dtype)
-    return r
-
 def symbolic_bind(prim, *args, **params):
   #print("primitive: ", prim.name)
   symbolic_outvals = {
     'and': symbolic_primitives.symbolic_and,
-    'broadcast_in_dim': symbolic_broadcast_in_dim,
+    'broadcast_in_dim': symbolic_primitives.symbolic_broadcast_in_dim,
     'xor': symbolic_primitives.symbolic_xor,
     'not': symbolic_primitives.symbolic_not,
     'reshape': lax_reference.reshape,
-    'reduce_or': symbolic_reduce_or,
+    'reduce_or': symbolic_primitives.symbolic_reduce_or,
   }[prim.name](*args, **params)
   return symbolic_outvals
 

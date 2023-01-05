@@ -1,6 +1,7 @@
 import numpy
 from plum import dispatch
 import jax
+import jax._src.lax_reference as lax_reference
 
 # to_boolean_value_string returns a string representation of a boolean value x, where
 # x is either a boolean, 0, 1, the string 'True', or the string 'False'
@@ -75,3 +76,37 @@ def symbolic_or(x, y):
 
 def symbolic_not(x):
   return f"~{x}"
+
+def symbolic_broadcast_in_dim(*args, **kwargs):
+  #print("broadcasting type", args[0].dtype)
+  r = lax_reference.broadcast_in_dim(*args, **kwargs)
+  #print("broadcasting result type", r.dtype)
+  return r
+
+def make_symbolic_reducer(py_binop, init_val):
+  def reducer(operand, axis=0):
+    axis = range(numpy.ndim(operand)) if axis is None else axis
+    result = numpy.full(numpy.delete(numpy.shape(operand), axis), init_val, dtype=numpy.asarray(operand).dtype)
+    for idx, _ in numpy.ndenumerate(operand):
+      out_idx = tuple(numpy.delete(idx, axis))
+      result[out_idx] = py_binop(result[out_idx], operand[idx])
+    return result
+  return reducer
+
+def symbolic_reduce(operand, init_value, computation, dimensions):
+  reducer = make_symbolic_reducer(computation, init_value)
+  return reducer(operand, tuple(dimensions)).astype(operand.dtype)
+  
+def symbolic_reduce_or(*args, **kwargs):
+  if is_boolean_value(args[0]):
+    return lax_reference.reduce(*args, init_value=False, dimensions=kwargs['axes'], computation=numpy.logical_or)
+  else:
+    #print("args = ", args)
+    #print("type args[0] = ", type(args[0]))
+    #print("element type = ", args[0].dtype)
+    r = symbolic_reduce(*args, init_value='False', dimensions=kwargs['axes'], computation=symbolic_or)
+    #print("symbolic_reduce_or result: ", r)
+    #print("type: ", type(r))
+    #print("element type: ", r.dtype)
+    return r
+
