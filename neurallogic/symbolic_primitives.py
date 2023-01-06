@@ -59,11 +59,21 @@ def binary_operator(operator: str, a: numpy.ndarray, b: numpy.ndarray):
 def symbolic_eval(x):
     return numpy.vectorize(eval)(x)
 
-def is_boolean_value(x):
-    return x.dtype == bool
+def all_boolean(data):
+  if isinstance(data, bool):
+    return True
+  if isinstance(data, (list, tuple)):
+    return all(all_boolean(x) for x in data)
+  if isinstance(data, dict):
+    return all(all_boolean(v) for v in data.values())
+  if isinstance(data, numpy.ndarray):
+    return all_boolean(data.tolist())
+  if isinstance(data, jax.numpy.ndarray):
+    return all_boolean(data.tolist())
+  return False
 
 def symbolic_and(*args, **kwargs):
-  if is_boolean_value(args[0]):
+  if all_boolean([*args]):
     return numpy.logical_and(*args, **kwargs)
   else:
     return binary_operator(" and ", *args, **kwargs)
@@ -88,9 +98,19 @@ def symbolic_broadcast_in_dim(*args, **kwargs):
 # performs the reduction operation on a numpy array.
 def make_symbolic_reducer(py_binop, init_val):
   def reducer(operand, axis=0):
+    # axis=0 means we are reducing over the first axis (i.e. the rows) of the operand.
+    # axis=None means we are reducing over all axes of the operand.
     axis = range(numpy.ndim(operand)) if axis is None else axis
+
+    # We create a new array with the same shape as the operand, but with the
+    # dimensions corresponding to the axis argument removed. The values in this
+    # array will be the result of the reduction.
     result = numpy.full(numpy.delete(numpy.shape(operand), axis), init_val, dtype=numpy.asarray(operand).dtype)
+
+    # We iterate over all elements of the operand, computing the reduction.
     for idx, _ in numpy.ndenumerate(operand):
+      # We need to index into the result array with the same indices that we used
+      # to index into the operand, but with the axis dimensions removed.
       out_idx = tuple(numpy.delete(idx, axis))
       result[out_idx] = py_binop(result[out_idx], operand[idx])
     return result
@@ -101,7 +121,7 @@ def symbolic_reduce(operand, init_value, computation, dimensions):
   return reducer(operand, tuple(dimensions)).astype(operand.dtype)
   
 def symbolic_reduce_or(*args, **kwargs):
-  if is_boolean_value(args[0]):
+  if all_boolean(*args):
     return lax_reference.reduce(*args, init_value=False, dimensions=kwargs['axes'], computation=numpy.logical_or)
   else:
     #print("args = ", args)

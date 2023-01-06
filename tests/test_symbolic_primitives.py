@@ -148,7 +148,38 @@ def test_symbolic_broadcast_in_dim():
     input = jax.numpy.array([[[1, 1], [1, 1]], [[1, 1], [1, 1]]])
     output = symbolic_primitives.symbolic_broadcast_in_dim(input, (2, 2, 2, 2), (0, 1, 2))
 
+def symbolic_reduce_or_impl(input, expected, symbolic_expected, axes):
+    # symbolic_reduce_or uses the lax reference implementation if its input consists of boolean values,
+    # otherwise it evaluates symbolically. Therefore we first test the reference implementation and then
+    # the symbolic implementation, and then compare them.
+    # Test reference implementation
+    input = numpy.array(input)
+    output = symbolic_primitives.symbolic_reduce_or(input, axes=axes)
+    expected = numpy.array(expected)
+    assert numpy.array_equal(output, expected)
+    # Test symbolic implementation
+    input = symbolic_primitives.to_boolean_string(input)
+    output = symbolic_primitives.symbolic_reduce_or(input, axes=axes)
+    symbolic_expected = numpy.array(symbolic_expected)
+    assert numpy.array_equal(output, symbolic_expected)
+    # Compare the reference and symbolic evaluation
+    symbolic_expected = symbolic_primitives.symbolic_eval(symbolic_expected)
+    assert numpy.array_equal(expected, symbolic_expected)
+
 def test_symbolic_reduce_or():
-    input = numpy.array([[True, False], [True, False]])
-    output = symbolic_primitives.symbolic_reduce_or(input, axes=(1,))
-    expected = numpy.array(True)
+    # Test 1: 2D matrix with different axes inputs
+    symbolic_reduce_or_impl(input=[[True, False], [True, False]], expected=[True, True], symbolic_expected=['False or True or False', 'False or True or False'], axes=(1,))
+    symbolic_reduce_or_impl(input=[[True, False], [True, False]], expected=[True, False], symbolic_expected=['False or True or True', 'False or False or False'], axes=(0,))
+    symbolic_reduce_or_impl(input=[[True, False], [True, False]], expected=True, symbolic_expected='False or True or False or True or False', axes=(0, 1))
+    # Test 2: 3D matrix with different axes inputs
+    symbolic_reduce_or_impl(input=[[[True, False], [True, False]], [[True, False], [True, False]]], expected=[True, True], symbolic_expected=['False or True or False or True or False', 'False or True or False or True or False'], axes=(1, 2))
+    symbolic_reduce_or_impl(input=[[[True, False], [True, False]], [[True, False], [True, False]]], expected=[True, True], symbolic_expected=['False or True or False or True or False', 'False or True or False or True or False'], axes=(0, 2))
+    symbolic_reduce_or_impl(input=[[[True, False], [True, False]], [[True, False], [True, False]]], expected=[True, False], symbolic_expected=['False or True or True or True or True', 'False or False or False or False or False'], axes=(0, 1))
+    symbolic_reduce_or_impl(input=[[[True, False], [True, False]], [[True, False], [True, False]]], expected=True, symbolic_expected='False or True or False or True or False or True or False or True or False', axes=(0, 1, 2))
+    # Test 3: 4D matrix with different axes inputs
+    symbolic_reduce_or_impl(input=[[[[True, False], [True, False]], [[True, False], [True, False]]], [[[True, False], [True, False]], [[True, False], [True, False]]]], expected=[True, True], symbolic_expected=['False or True or False or True or False or True or False or True or False', 'False or True or False or True or False or True or False or True or False'], axes=(1, 2, 3))
+    symbolic_reduce_or_impl(input=[[[[True, False], [True, False]], [[True, False], [True, False]]], [[[True, False], [True, False]], [[True, False], [True, False]]]], expected=[True, True], symbolic_expected=['False or True or False or True or False or True or False or True or False', 'False or True or False or True or False or True or False or True or False'], axes=(0, 2, 3))
+    symbolic_reduce_or_impl(input=[[[[True, False], [True, False]], [[True, False], [True, False]]], [[[True, False], [True, False]], [[True, False], [True, False]]]], expected=[True, True], symbolic_expected=['False or True or False or True or False or True or False or True or False', 'False or True or False or True or False or True or False or True or False'], axes=(0, 1, 3))
+    symbolic_reduce_or_impl(input=[[[[True, False], [True, False]], [[True, False], [True, False]]], [[[True, False], [True, False]], [[True, False], [True, False]]]], expected=[True, False], symbolic_expected=['False or True or True or True or True or True or True or True or True', 'False or False or False or False or False or False or False or False or False'], axes=(0, 1, 2))
+    symbolic_reduce_or_impl(input=[[[[True, False], [True, False]], [[True, False], [True, False]]], [[[True, False], [True, False]], [[True, False], [True, False]]]], expected=True, symbolic_expected='False or True or False or True or False or True or False or True or False or True or False or True or False or True or False or True or False', axes=(0, 1, 2, 3))
+
