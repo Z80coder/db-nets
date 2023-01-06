@@ -7,7 +7,10 @@ from neurallogic import symbolic_primitives
 
 
 def symbolic_bind(prim, *args, **params):
-    # print("primitive: ", prim.name)
+    #print("\n---symbolic_bind:")
+    #print("primitive: ", prim.name)
+    #print("args: ", args)
+    #print("params: ", params)
     symbolic_outvals = {
         'and': symbolic_primitives.symbolic_and,
         'broadcast_in_dim': symbolic_primitives.symbolic_broadcast_in_dim,

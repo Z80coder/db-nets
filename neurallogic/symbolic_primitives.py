@@ -25,7 +25,8 @@ def to_boolean_value_string(x):
         return 'True' if x == 'True' else 'False'
     elif isinstance(x, numpy.ndarray) or isinstance(x, jax.numpy.ndarray) or isinstance(x, list) or isinstance(x, tuple):
         # We only operate on scalars
-        raise ValueError(f"to_boolean_value_string only operates on scalars, but got {x}")
+        raise ValueError(
+            f"to_boolean_value_string only operates on scalars, but got {x}")
     else:
         # x is not interpretable as a boolean
         return str(x)
@@ -80,6 +81,11 @@ def unary_operator(operator: str, x: numpy.ndarray):
 
 
 @dispatch
+def unary_operator(operator: str, x: list):
+    return unary_operator(operator, numpy.array(x))
+
+
+@dispatch
 def binary_infix_operator(operator: str, a: str, b: str) -> str:
     return f"{a} {operator} {b}"
 
@@ -87,6 +93,16 @@ def binary_infix_operator(operator: str, a: str, b: str) -> str:
 @dispatch
 def binary_infix_operator(operator: str, a: numpy.ndarray, b: numpy.ndarray):
     return numpy.vectorize(binary_infix_operator, otypes=[object])(operator, a, b)
+
+
+@dispatch
+def binary_infix_operator(operator: str, a: list, b: numpy.ndarray):
+    return binary_infix_operator(operator, numpy.array(a), b)
+
+
+@dispatch
+def binary_infix_operator(operator: str, a: numpy.ndarray, b: list):
+    return binary_infix_operator(operator, a, numpy.array(b))
 
 
 def symbolic_eval(x):
@@ -128,8 +144,12 @@ def symbolic_xor(*args, **kwargs):
         return binary_infix_operator("^", *args, **kwargs)
 
 
-def symbolic_or(x, y):
-    return f"{x} or {y}"
+def symbolic_or(*args, **kwargs):
+    if all_boolean([*args]):
+        return numpy.logical_or(*args, **kwargs)
+    else:
+        return binary_infix_operator("or", *args, **kwargs)
+
 
 # Uses the lax reference implementation of broadcast_in_dim to
 # implement a symbolic version of broadcast_in_dim
@@ -173,7 +193,7 @@ def symbolic_reduce(operand, init_value, computation, dimensions):
 
 def symbolic_reduce_or(*args, **kwargs):
     # Check if all the boolean arguments are True or False
-    if all_boolean(*args):
+    if all_boolean([*args]):
         # If so, use the numpy function reduce to reduce the logical_or operator
         return lax_reference.reduce(*args, init_value=False, dimensions=kwargs['axes'], computation=numpy.logical_or)
     else:
