@@ -84,6 +84,7 @@ def unary_operator(operator: str, x: list):
 
 @dispatch
 def binary_infix_operator(operator: str, a: str, b: str, bracket: bool = False) -> str:
+    # We need to specify bracket because Python cannot evaluate expressions with too many nested parantheses
     if bracket:
         return f"({a}) {operator} ({b})"
     return f"{a} {operator} {b}"

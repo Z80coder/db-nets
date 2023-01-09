@@ -21,9 +21,11 @@ def test_include():
     ]
     for input, expected in test_data:
         assert hard_and.soft_and_include(*input) == expected
-        assert hard_and.hard_and_include(*harden.harden(input)) == harden.harden(expected)
+        assert hard_and.hard_and_include(
+            *harden.harden(input)) == harden.harden(expected)
         symbolic_output = hard_and.symbolic_and_include(*harden.harden(input))
         assert symbolic_output == harden.harden(expected)
+
 
 def test_neuron():
     test_data = [
@@ -38,25 +40,35 @@ def test_neuron():
         input = jnp.array(input)
         weights = jnp.array(weights)
         assert jnp.allclose(hard_and.soft_and_neuron(weights, input), expected)
-        assert jnp.allclose(hard_and.hard_and_neuron(harden.harden(weights), harden.harden(input)), harden.harden(expected))
-        symbolic_output = hard_and.symbolic_and_neuron(harden.harden(weights.tolist()), harden.harden(input.tolist()))
+        assert jnp.allclose(hard_and.hard_and_neuron(harden.harden(
+            weights), harden.harden(input)), harden.harden(expected))
+        symbolic_output = hard_and.symbolic_and_neuron(
+            harden.harden(weights.tolist()), harden.harden(input.tolist()))
         assert jnp.array_equal(symbolic_output, harden.harden(expected))
+
 
 def test_layer():
     test_data = [
-        [[1.0, 0.0], [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0], [0.0, 0.2]], [0.0, 0.0, 1.0, 0.8]],
-        [[1.0, 0.4], [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0], [0.0, 0.0]], [0.4, 0.4, 1.0, 1.0]],
-        [[0.0, 1.0], [[1.0, 1.0], [0.0, 0.8], [1.0, 0.0], [0.0, 0.0]], [0.0, 1.0, 0.0, 1.0]],
-        [[0.0, 0.0], [[1.0, 0.01], [0.0, 1.0], [1.0, 0.0], [0.0, 0.0]], [0.0, 0.0, 0.0, 1.0]]
+        [[1.0, 0.0], [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0],
+                      [0.0, 0.2]], [0.0, 0.0, 1.0, 0.8]],
+        [[1.0, 0.4], [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0],
+                      [0.0, 0.0]], [0.4, 0.4, 1.0, 1.0]],
+        [[0.0, 1.0], [[1.0, 1.0], [0.0, 0.8], [1.0, 0.0],
+                      [0.0, 0.0]], [0.0, 1.0, 0.0, 1.0]],
+        [[0.0, 0.0], [[1.0, 0.01], [0.0, 1.0], [
+            1.0, 0.0], [0.0, 0.0]], [0.0, 0.0, 0.0, 1.0]]
     ]
     for input, weights, expected in test_data:
         input = jnp.array(input)
         weights = jnp.array(weights)
         expected = jnp.array(expected)
         assert jnp.allclose(hard_and.soft_and_layer(weights, input), expected)
-        assert jnp.allclose(hard_and.hard_and_layer(harden.harden(weights), harden.harden(input)), harden.harden(expected))
-        symbolic_output = hard_and.symbolic_and_layer(harden.harden(weights.tolist()), harden.harden(input.tolist()))
+        assert jnp.allclose(hard_and.hard_and_layer(harden.harden(
+            weights), harden.harden(input)), harden.harden(expected))
+        symbolic_output = hard_and.symbolic_and_layer(
+            harden.harden(weights.tolist()), harden.harden(input.tolist()))
         assert jnp.array_equal(symbolic_output, harden.harden(expected))
+
 
 def test_and():
     def test_net(type, x):
@@ -98,6 +110,7 @@ def test_and():
         symbolic_result = symbolic.apply(symbolic_weights, hard_input.tolist())
         assert jnp.array_equal(symbolic_result, hard_expected)
 
+
 def test_train_and():
     def test_net(type, x):
         return hard_and.and_layer(type)(4, nn.initializers.uniform(1.0))(x)
@@ -121,8 +134,10 @@ def test_train_and():
 
     # Train the and layer
     tx = optax.sgd(0.1)
-    state = train_state.TrainState.create(apply_fn=jax.vmap(soft.apply, in_axes=(None, 0)), params=soft_weights, tx=tx)
-    grad_fn = jax.jit(jax.value_and_grad(lambda params, x, y: jnp.mean((state.apply_fn(params, x) - y) ** 2)))
+    state = train_state.TrainState.create(apply_fn=jax.vmap(
+        soft.apply, in_axes=(None, 0)), params=soft_weights, tx=tx)
+    grad_fn = jax.jit(jax.value_and_grad(lambda params, x,
+                      y: jnp.mean((state.apply_fn(params, x) - y) ** 2)))
     for epoch in range(1, 100):
         loss, grads = grad_fn(state.params, input, output)
         state = state.apply_gradients(grads=grads)
@@ -139,6 +154,7 @@ def test_train_and():
         symbolic_result = symbolic.apply(symbolic_weights, hard_input.tolist())
         assert jnp.array_equal(symbolic_result, hard_expected)
 
+
 def test_symbolic_and():
     def test_net(type, x):
         x = hard_and.and_layer(type)(4, nn.initializers.uniform(1.0))(x)
@@ -150,5 +166,5 @@ def test_symbolic_and():
     symbolic_weights = harden.symbolic_weights(soft_weights)
     symbolic_input = ['x1', 'x2']
     symbolic_result = symbolic.apply(symbolic_weights, symbolic_input)
-    assert(symbolic_result == ['((((x1 or not(True)) and (x2 or not(False))) or not(False)) and (((x1 or not(True)) and (x2 or not(True))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(False)))', '((((x1 or not(True)) and (x2 or not(False))) or not(True)) and (((x1 or not(True)) and (x2 or not(True))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(False)))', '((((x1 or not(True)) and (x2 or not(False))) or not(False)) and (((x1 or not(True)) and (x2 or not(True))) or not(False)) and (((x1 or not(True)) and (x2 or not(False))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(False)))', '((((x1 or not(True)) and (x2 or not(False))) or not(False)) and (((x1 or not(True)) and (x2 or not(True))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(True)))'])
-
+    assert (symbolic_result == ['((((x1 or not(True)) and (x2 or not(False))) or not(False)) and (((x1 or not(True)) and (x2 or not(True))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(False)))', '((((x1 or not(True)) and (x2 or not(False))) or not(True)) and (((x1 or not(True)) and (x2 or not(True))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(False)))',
+            '((((x1 or not(True)) and (x2 or not(False))) or not(False)) and (((x1 or not(True)) and (x2 or not(True))) or not(False)) and (((x1 or not(True)) and (x2 or not(False))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(False)))', '((((x1 or not(True)) and (x2 or not(False))) or not(False)) and (((x1 or not(True)) and (x2 or not(True))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(True)) and (((x1 or not(True)) and (x2 or not(False))) or not(True)))'])

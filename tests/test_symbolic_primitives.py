@@ -193,22 +193,25 @@ def test_symbolic_eval():
     output = symbolic_primitives.symbolic_eval(['1', '2', '3'])
     expected = [1, 2, 3]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.symbolic_eval(['1', '2', '3'] + ['4', '5', '6'])
+    output = symbolic_primitives.symbolic_eval(
+        ['1', '2', '3'] + ['4', '5', '6'])
     expected = [1, 2, 3, 4, 5, 6]
     assert numpy.array_equal(output, expected)
     output = symbolic_primitives.symbolic_eval(['not(False)', 'not(True)'])
     expected = [True, False]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.symbolic_eval([['not(False)', 'not(True)'] + ['not(False)', 'not(True)']])
+    output = symbolic_primitives.symbolic_eval(
+        [['not(False)', 'not(True)'] + ['not(False)', 'not(True)']])
     expected = [[True, False, True, False]]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.symbolic_eval(numpy.array([['not(False)', 'not(True)'] + ['not(False)', 'not(True)']]))
+    output = symbolic_primitives.symbolic_eval(numpy.array(
+        [['not(False)', 'not(True)'] + ['not(False)', 'not(True)']]))
     expected = [[True, False, True, False]]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.symbolic_eval(numpy.array([['not(False)', False], ['not(False)', 'not(True)']]))
+    output = symbolic_primitives.symbolic_eval(numpy.array(
+        [['not(False)', False], ['not(False)', 'not(True)']]))
     expected = [[True, False], [True, False]]
     assert numpy.array_equal(output, expected)
-    
 
 
 def test_symbolic_not():

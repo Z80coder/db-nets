@@ -1,21 +1,21 @@
-from jax.config import config
-config.update("jax_enable_x64", True)
-
-import jax
-import jax.numpy as jnp
-import optax
-from flax import linen as nn
-from flax.training import train_state
-from jax import random
-
 from neurallogic import (hard_and, hard_not, hard_or, harden, harden_layer,
                          neural_logic_net, primitives)
+from jax import random
+from flax.training import train_state
+from flax import linen as nn
+import optax
+import jax.numpy as jnp
+import jax
+from jax.config import config
+config.update("jax_enable_x64", True)
 
 
 def test_train_network():
     def test_net(type, x):
-        x = hard_or.or_layer(type)(16, nn.initializers.uniform(1.0), jnp.float64)(x)
-        x = hard_and.and_layer(type)(4, nn.initializers.uniform(1.0), jnp.float64)(x)
+        x = hard_or.or_layer(type)(
+            16, nn.initializers.uniform(1.0), jnp.float64)(x)
+        x = hard_and.and_layer(type)(
+            4, nn.initializers.uniform(1.0), jnp.float64)(x)
         x = hard_not.not_layer(type)(1, dtype=jnp.float64)(x)
         x = primitives.nl_ravel(type)(x)
         x = harden_layer.harden_layer(type)(x)
@@ -40,8 +40,10 @@ def test_train_network():
 
     # Train the and layer
     tx = optax.sgd(0.01)
-    state = train_state.TrainState.create(apply_fn=jax.vmap(soft.apply, in_axes=(None, 0)), params=soft_weights, tx=tx)
-    grad_fn = jax.jit(jax.value_and_grad(lambda params, x, y: jnp.mean((state.apply_fn(params, x) - y) ** 2)))
+    state = train_state.TrainState.create(apply_fn=jax.vmap(
+        soft.apply, in_axes=(None, 0)), params=soft_weights, tx=tx)
+    grad_fn = jax.jit(jax.value_and_grad(lambda params, x,
+                      y: jnp.mean((state.apply_fn(params, x) - y) ** 2)))
     min_loss = 1e10
     best_weights = None
     for epoch in range(1, 500):
@@ -66,6 +68,7 @@ def test_train_network():
         symbolic_result = symbolic.apply(symbolic_weights, hard_input.tolist())
         assert jnp.array_equal(symbolic_result, hard_expected)
         symbolic_input = ['x1', 'x2']
-        symbolic_expected = ['(not(((((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and False) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and False)) or not(False)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True))) ^ False))', '(not(((((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and False)) or not(False)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False))) ^ True))', '(not(((((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and False)) or not(True)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True))) ^ False))', '(not(((((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and False)) or not(True)) and (((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True))) ^ True))']
+        symbolic_expected = ['(not(((((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and False) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and False)) or not(False)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True))) ^ False))', '(not(((((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and False)) or not(False)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False))) ^ True))',
+                             '(not(((((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and False) or (x2 and False)) or not(True)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True))) ^ False))', '(not(((((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and False)) or not(False)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and False)) or not(True)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and True) or (x2 and True)) or not(False)) and (((x1 and False) or (x2 and False)) or not(True)) and (((x1 and False) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True)) and (((x1 and True) or (x2 and True)) or not(True))) ^ True))']
         symbolic_result = symbolic.apply(symbolic_weights, symbolic_input)
         assert symbolic_result == symbolic_expected
