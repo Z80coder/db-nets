@@ -56,9 +56,9 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
             if not symbolic:
                 invals = safe_map(read, eqn.invars)
             symbolic_invals = safe_map(symbolic_read, eqn.invars)
-            # `bind` is how a primitive is called
             prim = eqn.primitive
             if type(prim) is jax.core.CallPrimitive:
+                # print(f"call primitive: {prim.name}")
                 call_jaxpr = eqn.params['call_jaxpr']
                 if not symbolic:
                     safe_map(write, call_jaxpr.invars, map(read, eqn.invars))
@@ -70,6 +70,7 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
                 safe_map(symbolic_write, eqn.outvars, map(
                     symbolic_read, call_jaxpr.outvars))
             else:
+                # print(f"primitive: {prim.name}")
                 if not symbolic:
                     outvals = prim.bind(*invals, **eqn.params)
                 symbolic_outvals = symbolic_bind(

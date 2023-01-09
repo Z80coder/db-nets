@@ -3,9 +3,6 @@ from plum import dispatch
 import jax
 import jax._src.lax_reference as lax_reference
 
-# to_boolean_value_string returns a string representation of a boolean value x, where
-# x is either a boolean, 0, 1, the string 'True', or the string 'False'
-
 
 def to_boolean_value_string(x):
     if isinstance(x, bool):
@@ -13,7 +10,7 @@ def to_boolean_value_string(x):
         return 'True' if x else 'False'
     elif x == 1.0 or x == 0.0:
         # x is a float
-        return 'True' if x == 1 else 'False'
+        return 'True' if x == 1.0 else 'False'
     elif isinstance(x, str) and (x == '1' or x == '0'):
         # x is a string representing an integer
         return 'True' if x == '1' else 'False'
@@ -22,7 +19,7 @@ def to_boolean_value_string(x):
         return 'True' if x == '1.0' else 'False'
     elif isinstance(x, str) and (x == 'True' or x == 'False'):
         # x is a string representing a boolean
-        return 'True' if x == 'True' else 'False'
+        return x
     elif isinstance(x, numpy.ndarray) or isinstance(x, jax.numpy.ndarray) or isinstance(x, list) or isinstance(x, tuple):
         # We only operate on scalars
         raise ValueError(
@@ -43,7 +40,7 @@ def to_boolean_symbolic_values_impl(x):
         A list representation of the input, where boolean-interpretable
         values are converted to "True" or "False".
     """
-    if isinstance(x, numpy.ndarray) or isinstance(x, jax.numpy.ndarray):
+    if isinstance(x, numpy.ndarray) or isinstance(x, jax.numpy.ndarray) or isinstance(x, tuple):
         return to_boolean_symbolic_values_impl(x.tolist())
     elif isinstance(x, list):
         return [to_boolean_symbolic_values_impl(y) for y in x]
@@ -62,12 +59,12 @@ def to_boolean_symbolic_values(x):
         A numpy array representation of the input, where boolean-interpretable
         values are converted to "True" or "False".
     """
-    x_list = to_boolean_symbolic_values_impl(x)
-    if isinstance(x_list, list):
-        x_array = numpy.array(x_list, dtype=object)
+    x = to_boolean_symbolic_values_impl(x)
+    if isinstance(x, list):
+        x = numpy.array(x, dtype=object)
     else:
-        x_array = numpy.array([x_list], dtype=object)
-    return x_array
+        x = numpy.array([x], dtype=object)
+    return x
 
 
 @dispatch
@@ -86,26 +83,29 @@ def unary_operator(operator: str, x: list):
 
 
 @dispatch
-def binary_infix_operator(operator: str, a: str, b: str) -> str:
+def binary_infix_operator(operator: str, a: str, b: str, bracket: bool = False) -> str:
+    if bracket:
+        return f"({a}) {operator} ({b})"
     return f"{a} {operator} {b}"
 
 
 @dispatch
-def binary_infix_operator(operator: str, a: numpy.ndarray, b: numpy.ndarray):
-    return numpy.vectorize(binary_infix_operator, otypes=[object])(operator, a, b)
+def binary_infix_operator(operator: str, a: numpy.ndarray, b: numpy.ndarray, bracket: bool = False):
+    return numpy.vectorize(binary_infix_operator, otypes=[object])(operator, a, b, bracket)
 
 
 @dispatch
-def binary_infix_operator(operator: str, a: list, b: numpy.ndarray):
-    return binary_infix_operator(operator, numpy.array(a), b)
+def binary_infix_operator(operator: str, a: list, b: numpy.ndarray, bracket: bool = False):
+    return binary_infix_operator(operator, numpy.array(a), b, bracket)
 
 
 @dispatch
-def binary_infix_operator(operator: str, a: numpy.ndarray, b: list):
-    return binary_infix_operator(operator, a, numpy.array(b))
+def binary_infix_operator(operator: str, a: numpy.ndarray, b: list, bracket: bool = False):
+    return binary_infix_operator(operator, a, numpy.array(b), bracket)
 
 
 def symbolic_eval(x):
+    # Returns a numpy array of the same shape as x, where each element is the result of evaluating the string in that element
     return numpy.vectorize(eval)(x)
 
 
@@ -141,7 +141,7 @@ def symbolic_xor(*args, **kwargs):
     if all_boolean([*args]):
         return numpy.logical_xor(*args, **kwargs)
     else:
-        return binary_infix_operator("^", *args, **kwargs)
+        return binary_infix_operator("^", *args, **kwargs, bracket=True)
 
 
 def symbolic_or(*args, **kwargs):

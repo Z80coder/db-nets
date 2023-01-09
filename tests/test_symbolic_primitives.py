@@ -180,6 +180,37 @@ def test_to_boolean_symbolic_values():
     assert numpy.array_equal(output, expected)
 
 
+def test_symbolic_eval():
+    output = symbolic_primitives.symbolic_eval("1 + 2")
+    expected = 3
+    assert output == expected
+    output = symbolic_primitives.symbolic_eval("[1, 2, 3]")
+    expected = [1, 2, 3]
+    assert numpy.array_equal(output, expected)
+    output = symbolic_primitives.symbolic_eval("[1, 2, 3] + [4, 5, 6]")
+    expected = [1, 2, 3, 4, 5, 6]
+    assert numpy.array_equal(output, expected)
+    output = symbolic_primitives.symbolic_eval(['1', '2', '3'])
+    expected = [1, 2, 3]
+    assert numpy.array_equal(output, expected)
+    output = symbolic_primitives.symbolic_eval(['1', '2', '3'] + ['4', '5', '6'])
+    expected = [1, 2, 3, 4, 5, 6]
+    assert numpy.array_equal(output, expected)
+    output = symbolic_primitives.symbolic_eval(['not(False)', 'not(True)'])
+    expected = [True, False]
+    assert numpy.array_equal(output, expected)
+    output = symbolic_primitives.symbolic_eval([['not(False)', 'not(True)'] + ['not(False)', 'not(True)']])
+    expected = [[True, False, True, False]]
+    assert numpy.array_equal(output, expected)
+    output = symbolic_primitives.symbolic_eval(numpy.array([['not(False)', 'not(True)'] + ['not(False)', 'not(True)']]))
+    expected = [[True, False, True, False]]
+    assert numpy.array_equal(output, expected)
+    output = symbolic_primitives.symbolic_eval(numpy.array([['not(False)', False], ['not(False)', 'not(True)']]))
+    expected = [[True, False], [True, False]]
+    assert numpy.array_equal(output, expected)
+    
+
+
 def test_symbolic_not():
     x1 = numpy.array([True, False])
     output = symbolic_primitives.symbolic_not(x1)
@@ -213,7 +244,7 @@ def test_symbolic_xor():
     x1 = symbolic_primitives.to_boolean_symbolic_values(x1)
     x2 = symbolic_primitives.to_boolean_symbolic_values(x2)
     output = symbolic_primitives.symbolic_xor(x1, x2)
-    expected = numpy.array(["True ^ True", "False ^ True"])
+    expected = numpy.array(["(True) ^ (True)", "(False) ^ (True)"])
     assert numpy.array_equal(output, expected)
 
 

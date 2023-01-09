@@ -7,9 +7,8 @@ from flax import linen as nn
 
 
 def nln(type, x, width):
-    x = hard_or.or_layer(type)(
-        width, nn.initializers.uniform(1.0), dtype=jnp.float32)(x)
-    # x = hard_not.not_layer(type)(2, dtype=jnp.float32)(x)
+    x = hard_or.or_layer(type)(width)(x)
+    x = hard_not.not_layer(type)(2)(x)
     # x = primitives.nl_ravel(type)(x)
     # x = harden_layer.harden_layer(type)(x)
     # x = primitives.nl_reshape(type)((10, width))(x)
@@ -50,8 +49,7 @@ def test_sym_gen():
     eval_hard_output, eval_symbolic_output = sym_gen.eval_jaxpr(
         False, jaxpr.jaxpr, jaxpr.literals, hard_mock_input)
     # Check that the hard output and the symbolic output are identical
-    assert numpy.array_equal(numpy.array(
-        eval_hard_output), eval_symbolic_output)
+    assert numpy.array_equal(eval_hard_output, eval_symbolic_output)
     # Evaluate the jaxpr with the hard input using standard jax evaluation
     standard_jax_output = hard.apply(hard_weights, hard_mock_input)
     # Check that the hard output and the standard jax output are identical
@@ -77,6 +75,4 @@ def test_sym_gen():
     reduced_eval_symbolic_output = symbolic_primitives.symbolic_eval(
         eval_symbolic_output)
     # Check that the hard output and the reduced symbolic output are identical
-    #print("eval_hard_output", eval_hard_output)
-    #print("reduced_eval_symbolic_output", reduced_eval_symbolic_output)
     assert numpy.array_equal(eval_hard_output, reduced_eval_symbolic_output)
