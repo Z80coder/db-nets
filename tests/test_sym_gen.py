@@ -1,19 +1,18 @@
-from neurallogic import neural_logic_net, harden, hard_or, hard_not, sym_gen, symbolic_primitives
+from neurallogic import neural_logic_net, harden, harden_layer, hard_or, hard_not, sym_gen, primitives, symbolic_primitives
 from tests import test_mnist
 import numpy
 import jax
 import jax.numpy as jnp
-from flax import linen as nn
 
 
 def nln(type, x, width):
     x = hard_or.or_layer(type)(width)(x)
     # if not_layer has size "width" then this fails. why?
-    x = hard_not.not_layer(type)(2 * width)(x)
-    # x = primitives.nl_ravel(type)(x)
-    # x = harden_layer.harden_layer(type)(x)
-    # x = primitives.nl_reshape(type)((10, width))(x)
-    # x = primitives.nl_sum(type)(-1)(x)
+    x = hard_not.not_layer(type)(10)(x)
+    x = primitives.nl_ravel(type)(x)
+    x = harden_layer.harden_layer(type)(x)
+    x = primitives.nl_reshape(type)((10, width))(x)
+    x = primitives.nl_sum(type)(-1)(x)
     return x
 
 
@@ -27,7 +26,7 @@ def test_sym_gen():
         test_ds["image"], (test_ds["image"].shape[0], -1))
 
     # Define width of network
-    width = 10
+    width = 4
     # Define the neural logic net
     soft, hard, _ = neural_logic_net.net(lambda type, x: nln(type, x, width))
     # Initialize a random number generator

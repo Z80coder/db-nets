@@ -22,7 +22,7 @@ def soft_and_include(w: float, x: float) -> float:
 def hard_and_include(w: bool, x: bool) -> bool:
     return x | ~w
 
-def symbolic_and_include_deprecated(w, x):
+def symbolic_and_include(w, x):
     expression = f"({x} or not({w}))"
     # Check if w is of type bool
     if isinstance(w, bool) and isinstance(x, bool):
@@ -39,13 +39,13 @@ def hard_and_neuron(w, x):
     x = jax.vmap(hard_and_include, 0, 0)(w, x)
     return jax.lax.reduce(x, True, jax.lax.bitwise_and, [0])
 
-def symbolic_and_neuron_deprecated(w, x):
+def symbolic_and_neuron(w, x):
     # TODO: ensure that this implementation has the same generality over tensors as vmap
     if not isinstance(w, list):
         raise TypeError(f"Input {x} should be a list")
     if not isinstance(x, list):
         raise TypeError(f"Input {x} should be a list")
-    y = [symbolic_and_include_deprecated(wi, xi) for wi, xi in zip(w, x)]
+    y = [symbolic_and_include(wi, xi) for wi, xi in zip(w, x)]
     expression = "(" + str(reduce(lambda a, b: f"{a} and {b}", y)) + ")"
     if all(isinstance(yi, bool) for yi in y):
         # We know the value of all yis, so we can evaluate the expression
@@ -56,13 +56,13 @@ soft_and_layer = jax.vmap(soft_and_neuron, (0, None), 0)
 
 hard_and_layer = jax.vmap(hard_and_neuron, (0, None), 0)
 
-def symbolic_and_layer_deprecated(w, x):
+def symbolic_and_layer(w, x):
     # TODO: ensure that this implementation has the same generality over tensors as vmap
     if not isinstance(w, list):
         raise TypeError(f"Input {x} should be a list")
     if not isinstance(x, list):
         raise TypeError(f"Input {x} should be a list")
-    return [symbolic_and_neuron_deprecated(wi, x) for wi in w]
+    return [symbolic_and_neuron(wi, x) for wi in w]
 
 # TODO: investigate better initialization
 def initialize_near_to_zero():
@@ -111,7 +111,7 @@ class HardAndLayer(nn.Module):
         weights = self.param('weights', nn.initializers.constant(0.0), weights_shape)
         return hard_and_layer(weights, x)
 
-class SymbolicAndLayer_deprecated(nn.Module):
+class SymbolicAndLayer(nn.Module):
     """A symbolic And layer than transforms its inputs along the last dimension.
     Attributes:
         layer_size: The number of neurons in the layer.
@@ -125,9 +125,9 @@ class SymbolicAndLayer_deprecated(nn.Module):
         weights = weights.tolist()
         if not isinstance(x, list):
             raise TypeError(f"Input {x} should be a list")
-        return symbolic_and_layer_deprecated(weights, x)
+        return symbolic_and_layer(weights, x)
 
 and_layer = neural_logic_net.select(
         lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: SoftAndLayer(layer_size, weights_init, dtype),
         lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: HardAndLayer(layer_size),
-        lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: SymbolicAndLayer_deprecated(layer_size))
+        lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: SymbolicAndLayer(layer_size))

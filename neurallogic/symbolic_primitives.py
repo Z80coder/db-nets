@@ -2,6 +2,7 @@ import numpy
 from plum import dispatch
 import jax
 import jax._src.lax_reference as lax_reference
+from neurallogic import primitives
 
 
 def to_boolean_value_string(x):
@@ -110,47 +111,53 @@ def symbolic_eval(x):
     return numpy.vectorize(eval)(x)
 
 
-def all_boolean(data):
-    if isinstance(data, bool):
-        return True
+def all_concrete_values(data):
+    if isinstance(data, str):
+        return False
     if isinstance(data, (list, tuple)):
-        return all(all_boolean(x) for x in data)
+        return all(all_concrete_values(x) for x in data)
     if isinstance(data, dict):
-        return all(all_boolean(v) for v in data.values())
+        return all(all_concrete_values(v) for v in data.values())
     if isinstance(data, numpy.ndarray):
-        return all_boolean(data.tolist())
+        return all_concrete_values(data.tolist())
     if isinstance(data, jax.numpy.ndarray):
-        return all_boolean(data.tolist())
-    return False
+        return all_concrete_values(data.tolist())
+    return True
 
 
 def symbolic_and(*args, **kwargs):
-    if all_boolean([*args]):
+    if all_concrete_values([*args]):
         return numpy.logical_and(*args, **kwargs)
     else:
         return binary_infix_operator("and", *args, **kwargs)
 
 
 def symbolic_not(*args, **kwargs):
-    if all_boolean([*args]):
+    if all_concrete_values([*args]):
         return numpy.logical_not(*args, **kwargs)
     else:
         return unary_operator("not", *args, **kwargs)
 
 
 def symbolic_xor(*args, **kwargs):
-    if all_boolean([*args]):
+    if all_concrete_values([*args]):
         return numpy.logical_xor(*args, **kwargs)
     else:
         return binary_infix_operator("^", *args, **kwargs, bracket=True)
 
 
 def symbolic_or(*args, **kwargs):
-    if all_boolean([*args]):
+    if all_concrete_values([*args]):
         return numpy.logical_or(*args, **kwargs)
     else:
         return binary_infix_operator("or", *args, **kwargs)
 
+
+def symbolic_sum(*args, **kwargs):
+    if all_concrete_values([*args]):
+        return numpy.sum(*args, **kwargs)
+    else:
+        return binary_infix_operator("+", *args, **kwargs)
 
 # Uses the lax reference implementation of broadcast_in_dim to
 # implement a symbolic version of broadcast_in_dim
@@ -159,6 +166,56 @@ def symbolic_or(*args, **kwargs):
 def symbolic_broadcast_in_dim(*args, **kwargs):
     return lax_reference.broadcast_in_dim(*args, **kwargs)
 
+
+def is_iterable(obj):
+    try:
+        iter(obj)
+        return True
+    except TypeError:
+        return False
+
+# TODO: unify this way of walking a nested iterable with the code above
+def apply_func_to_nested_impl(iterable, func):
+    if isinstance(iterable, (numpy.ndarray, jax.numpy.ndarray)):
+        iterable = iterable.tolist()
+    if is_iterable(iterable):
+        transformed = []
+        for item in iterable:
+            if isinstance(item, list):
+                transformed.append(apply_func_to_nested_impl(item, func))
+            else:
+                transformed.append(func(item))
+        return transformed
+    else:
+        return func(iterable)
+
+def apply_func_to_nested(iterable, func):
+    iterable_type = type(iterable)
+    r = apply_func_to_nested_impl(iterable, func)
+    if iterable_type == numpy.ndarray:
+        r = numpy.array(r, dtype=object)
+    assert type(r) == iterable_type
+    return r
+
+def symbolic_convert_element_type_impl(x, dtype):
+    if dtype == numpy.int32 or dtype == numpy.int64:
+        dtype = "int"
+    def convert(x):
+        return f"{dtype}({x})"
+    return apply_func_to_nested(x, convert)
+
+
+# TODO: add a test for this
+def symbolic_convert_element_type(*args, **kwargs):
+    # Check if all the boolean arguments are True or False
+    if all_concrete_values([*args]):
+        # If so, we can use the lax reference implementation
+        return lax_reference.convert_element_type(*args, dtype=kwargs['new_dtype'])
+    else:
+        # Otherwise, we use the symbolic implementation
+        return symbolic_convert_element_type_impl(*args, dtype=kwargs['new_dtype'])
+
+
 # This function is a hack to get around the fact that JAX doesn't
 # support symbolic reduction operations. It takes a symbolic reduction
 # operation and a symbolic initial value and returns a function that
@@ -166,8 +223,7 @@ def symbolic_broadcast_in_dim(*args, **kwargs):
 
 
 def make_symbolic_reducer(py_binop, init_val):
-    def reducer(operand, axis=0):
-        # axis=0 means we are reducing over the first axis (i.e. the rows) of the operand.
+    def reducer(operand, axis):
         # axis=None means we are reducing over all axes of the operand.
         axis = range(numpy.ndim(operand)) if axis is None else axis
 
@@ -193,10 +249,14 @@ def symbolic_reduce(operand, init_value, computation, dimensions):
 
 
 def symbolic_reduce_or(*args, **kwargs):
-    # Check if all the boolean arguments are True or False
-    if all_boolean([*args]):
-        # If so, use the numpy function reduce to reduce the logical_or operator
-        return lax_reference.reduce(*args, init_value=False, dimensions=kwargs['axes'], computation=numpy.logical_or)
+    if all_concrete_values([*args]):
+        return lax_reference.reduce(*args, init_value=False, computation=numpy.logical_or, dimensions=kwargs['axes'])
     else:
-        # Otherwise, we use the symbolic_reduce function to reduce the symbolic_or operator
-        return symbolic_reduce(*args, init_value='False', dimensions=kwargs['axes'], computation=symbolic_or)
+        return symbolic_reduce(*args, init_value='False', computation=symbolic_or, dimensions=kwargs['axes'])
+
+
+def symbolic_reduce_sum(*args, **kwargs):
+    if all_concrete_values([*args]):
+        return lax_reference.reduce(*args, init_value=0, computation=numpy.add, dimensions=kwargs['axes'])
+    else:
+        return symbolic_reduce(*args, init_value='0', computation=symbolic_sum, dimensions=kwargs['axes'])

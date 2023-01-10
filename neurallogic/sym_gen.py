@@ -18,6 +18,8 @@ def symbolic_bind(prim, *args, **params):
         'not': symbolic_primitives.symbolic_not,
         'reshape': lax_reference.reshape,
         'reduce_or': symbolic_primitives.symbolic_reduce_or,
+        'reduce_sum': symbolic_primitives.symbolic_reduce_sum,
+        'convert_element_type': symbolic_primitives.symbolic_convert_element_type
     }[prim.name](*args, **params)
     return symbolic_outvals
 
