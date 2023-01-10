@@ -8,20 +8,20 @@ from neurallogic import neural_logic_net
     symbolic shape transformations
 """
 
-def symbolic_ravel(x):
+def symbolic_ravel_deprecated(x):
     return numpy.array(x).ravel().tolist()
 
-nl_ravel = neural_logic_net.select(jnp.ravel, jnp.ravel, symbolic_ravel)
+nl_ravel_deprecated = neural_logic_net.select(jnp.ravel, jnp.ravel, symbolic_ravel_deprecated)
 
-def symbolic_reshape(x, newshape):
+def symbolic_reshape_deprecated(x, newshape):
     return numpy.array(x).reshape(newshape).tolist()
 
-nl_reshape = neural_logic_net.select(lambda newshape: lambda x: jnp.reshape(x, newshape), lambda newshape: lambda x: jnp.reshape(x, newshape), lambda newshape: lambda x: symbolic_reshape(x, newshape))
+nl_reshape_deprecated = neural_logic_net.select(lambda newshape: lambda x: jnp.reshape(x, newshape), lambda newshape: lambda x: jnp.reshape(x, newshape), lambda newshape: lambda x: symbolic_reshape_deprecated(x, newshape))
 
 """
     symbolic computations
 """
-def symbolic_reduce_impl(op, x, axis):
+def symbolic_reduce_impl_deprecated(op, x, axis):
     """
         Cannot support multiple axes due to limitations of numpy.        
     """
@@ -36,17 +36,17 @@ def symbolic_reduce_impl(op, x, axis):
         x = x.tolist()
     return x
 
-def symbolic_reduce(op, x, axis=None):
+def symbolic_reduce_deprecated(op, x, axis=None):
     if axis is None:
         # Special case for reducing all elements in a tensor
         while isinstance(x, list) and len(x) > 1:
-            x = symbolic_reduce_impl(op, x, 0)
+            x = symbolic_reduce_impl_deprecated(op, x, 0)
         return x
     else:
-        x = symbolic_reduce_impl(op, x, axis)
+        x = symbolic_reduce_impl_deprecated(op, x, axis)
     return x
 
-def symbolic_sum(x, axis=None):
-    return symbolic_reduce((operator.add, "+"), x, axis)
+def symbolic_sum_deprecated(x, axis=None):
+    return symbolic_reduce_deprecated((operator.add, "+"), x, axis)
 
-nl_sum = neural_logic_net.select(lambda axis=None: lambda x: jnp.sum(x, axis), lambda axis=None: lambda x: jnp.sum(x, axis), lambda axis=None: lambda x: symbolic_sum(x, axis))
+nl_sum_deprecated = neural_logic_net.select(lambda axis=None: lambda x: jnp.sum(x, axis), lambda axis=None: lambda x: jnp.sum(x, axis), lambda axis=None: lambda x: symbolic_sum_deprecated(x, axis))

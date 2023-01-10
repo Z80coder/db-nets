@@ -22,7 +22,29 @@ def symbolic_bind(prim, *args, **params):
     return symbolic_outvals
 
 
+
 def eval_jaxpr(symbolic, jaxpr, consts, *args):
+    """Evaluates a jaxpr by interpreting it as Python code.
+
+    Parameters
+    ----------
+    symbolic : bool
+        Whether to return symbolic values or concrete values. If symbolic is
+        True, returns symbolic values, and if symbolic is False, returns
+        concrete values.
+    jaxpr : Jaxpr
+        The jaxpr to interpret.
+    consts : tuple
+        Constant values for the jaxpr.
+    args : tuple
+        Arguments for the jaxpr.
+
+    Returns
+    -------
+    out : tuple
+        The result of evaluating the jaxpr.
+    """
+
     # Mapping from variable -> value
     env = {}
     symbolic_env = {}
@@ -84,6 +106,7 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
                     #print(f"outvals: {type(outvals)}: {outvals}")
                     #print(
                     #    f"symbolic_outvals: {type(symbolic_outvals)}: {symbolic_outvals}")
+                    # Check that the concrete and symbolic values are equal
                     assert numpy.array_equal(
                         numpy.array(outvals), symbolic_outvals)
                 # Write the results of the primitive into the environment
@@ -94,8 +117,18 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
     # Read the final result of the Jaxpr from the environment
     eval_jaxpr_impl(jaxpr)
     if not symbolic:
-        val, symbolic_val = safe_map(read, jaxpr.outvars), safe_map(
-            symbolic_read, jaxpr.outvars)
-        return val[0], symbolic_val[0]
+        return safe_map(read, jaxpr.outvars)[0]
     else:
         return safe_map(symbolic_read, jaxpr.outvars)[0]
+
+
+def eval_jaxpr_concrete(jaxpr, *args):
+    return eval_jaxpr(False, jaxpr.jaxpr, jaxpr.literals, *args)
+
+
+def eval_jaxpr_symbolic(jaxpr, *args):
+    # Convert the literals to symbolic literals
+    symbolic_jaxpr_literals = symbolic_primitives.to_boolean_symbolic_values(
+        jaxpr.literals)
+    return eval_jaxpr(True, jaxpr.jaxpr, symbolic_jaxpr_literals, *args)
+

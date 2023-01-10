@@ -23,7 +23,7 @@ def test_include():
         assert hard_and.soft_and_include(*input) == expected
         assert hard_and.hard_and_include(
             *harden.harden(input)) == harden.harden(expected)
-        symbolic_output = hard_and.symbolic_and_include(*harden.harden(input))
+        symbolic_output = hard_and.symbolic_and_include_deprecated(*harden.harden(input))
         assert symbolic_output == harden.harden(expected)
 
 
@@ -42,7 +42,7 @@ def test_neuron():
         assert jnp.allclose(hard_and.soft_and_neuron(weights, input), expected)
         assert jnp.allclose(hard_and.hard_and_neuron(harden.harden(
             weights), harden.harden(input)), harden.harden(expected))
-        symbolic_output = hard_and.symbolic_and_neuron(
+        symbolic_output = hard_and.symbolic_and_neuron_deprecated(
             harden.harden(weights.tolist()), harden.harden(input.tolist()))
         assert jnp.array_equal(symbolic_output, harden.harden(expected))
 
@@ -65,7 +65,7 @@ def test_layer():
         assert jnp.allclose(hard_and.soft_and_layer(weights, input), expected)
         assert jnp.allclose(hard_and.hard_and_layer(harden.harden(
             weights), harden.harden(input)), harden.harden(expected))
-        symbolic_output = hard_and.symbolic_and_layer(
+        symbolic_output = hard_and.symbolic_and_layer_deprecated(
             harden.harden(weights.tolist()), harden.harden(input.tolist()))
         assert jnp.array_equal(symbolic_output, harden.harden(expected))
 
@@ -73,7 +73,7 @@ def test_layer():
 def test_and():
     def test_net(type, x):
         x = hard_and.and_layer(type)(4, nn.initializers.uniform(1.0))(x)
-        x = primitives.nl_ravel(type)(x)
+        x = primitives.nl_ravel_deprecated(type)(x)
         return x
 
     soft, hard, symbolic = neural_logic_net.net(test_net)
