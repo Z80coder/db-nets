@@ -1,71 +1,72 @@
 import numpy
 from plum import dispatch
+import typing
 import jax
 import jax._src.lax_reference as lax_reference
-from neurallogic import primitives
+import jaxlib
 
-
-def to_boolean_value_string(x):
-    if isinstance(x, bool):
-        # x is a bool
-        return 'True' if x else 'False'
-    elif x == 1.0 or x == 0.0:
-        # x is a float
-        return 'True' if x == 1.0 else 'False'
-    elif isinstance(x, str) and (x == '1' or x == '0'):
-        # x is a string representing an integer
-        return 'True' if x == '1' else 'False'
-    elif isinstance(x, str) and (x == '1.0' or x == '0.0'):
-        # x is a string representing a float
-        return 'True' if x == '1.0' else 'False'
-    elif isinstance(x, str) and (x == 'True' or x == 'False'):
-        # x is a string representing a boolean
+def convert_iterable_type(x: list, new_type):
+    if new_type == list:
         return x
-    elif isinstance(x, numpy.ndarray) or isinstance(x, jax.numpy.ndarray) or isinstance(x, list) or isinstance(x, tuple):
-        # We only operate on scalars
-        raise ValueError(
-            f"to_boolean_value_string only operates on scalars, but got {x}")
+    elif new_type == numpy.ndarray:
+        return numpy.array(x, dtype=object)
+    elif new_type == jax.numpy.ndarray:
+        return jax.numpy.array(x, dtype=object)
+    elif new_type == jaxlib.xla_extension.DeviceArray:
+        return jax.numpy.array(x, dtype=object)
     else:
-        # x is not interpretable as a boolean
-        return str(x)
+        raise NotImplementedError(f"Cannot convert type {type(x)} to type {new_type}")
 
+@dispatch
+def map_at_elements(x: list, func: typing.Callable):
+    return convert_iterable_type([map_at_elements(item, func) for item in x], type(x))
 
-def to_boolean_symbolic_values_impl(x):
-    """Converts an arbitrary vector of arbitrary values to a list where
-    every boolean-interpretable value gets converted to the strings "True" or "False".
+@dispatch
+def map_at_elements(x: numpy.ndarray, func: typing.Callable):
+    return convert_iterable_type([map_at_elements(item, func) for item in x], type(x))
 
-    Args:
-        x: The vector of values to convert (or can be a single value in the degenerate case)
+@dispatch
+def map_at_elements(x: jax.numpy.ndarray, func: typing.Callable):
+    if x.ndim == 0:
+        return func(x.item())
+    return convert_iterable_type([map_at_elements(item, func) for item in x], type(x))
 
-    Returns:
-        A list representation of the input, where boolean-interpretable
-        values are converted to "True" or "False".
-    """
-    if isinstance(x, numpy.ndarray) or isinstance(x, jax.numpy.ndarray) or isinstance(x, tuple):
-        return to_boolean_symbolic_values_impl(x.tolist())
-    elif isinstance(x, list):
-        return [to_boolean_symbolic_values_impl(y) for y in x]
+@dispatch
+def map_at_elements(x: str, func: typing.Callable):
+    return func(x)
+
+@dispatch
+def map_at_elements(x, func: typing.Callable):
+    return func(x)
+
+@dispatch
+def to_boolean_value_string(x: bool):
+    return 'True' if x else 'False'
+
+@dispatch
+def to_boolean_value_string(x: numpy.bool_):
+    return 'True' if x else 'False'
+
+@dispatch
+def to_boolean_value_string(x: int):
+    return 'True' if x == 1.0 else 'False'
+
+@dispatch
+def to_boolean_value_string(x: float):
+    return 'True' if x == 1.0 else 'False'
+
+@dispatch
+def to_boolean_value_string(x: str):
+    if x == '1' or x == '1.0' or x =='True':
+        return 'True'
+    elif x == '0' or x == '0.0' or x =='False':
+        return 'False'
     else:
-        return to_boolean_value_string(x)
+        return x
 
 
 def to_boolean_symbolic_values(x):
-    """Converts an arbitrary vector of arbitrary values to a numpy array where
-    every boolean-interpretable value gets converted to the strings "True" or "False".
-
-    Args:
-        x: The vector of values to convert (or can be a single value in the degenerate case)
-
-    Returns:
-        A numpy array representation of the input, where boolean-interpretable
-        values are converted to "True" or "False".
-    """
-    x = to_boolean_symbolic_values_impl(x)
-    if isinstance(x, list):
-        x = numpy.array(x, dtype=object)
-    else:
-        x = numpy.array([x], dtype=object)
-    return x
+    return map_at_elements(x, to_boolean_value_string)
 
 
 @dispatch
@@ -167,42 +168,12 @@ def symbolic_broadcast_in_dim(*args, **kwargs):
     return lax_reference.broadcast_in_dim(*args, **kwargs)
 
 
-def is_iterable(obj):
-    try:
-        iter(obj)
-        return True
-    except TypeError:
-        return False
-
-# TODO: unify this way of walking a nested iterable with the code above
-def apply_func_to_nested_impl(iterable, func):
-    if isinstance(iterable, (numpy.ndarray, jax.numpy.ndarray)):
-        iterable = iterable.tolist()
-    if is_iterable(iterable):
-        transformed = []
-        for item in iterable:
-            if isinstance(item, list):
-                transformed.append(apply_func_to_nested_impl(item, func))
-            else:
-                transformed.append(func(item))
-        return transformed
-    else:
-        return func(iterable)
-
-def apply_func_to_nested(iterable, func):
-    iterable_type = type(iterable)
-    r = apply_func_to_nested_impl(iterable, func)
-    if iterable_type == numpy.ndarray:
-        r = numpy.array(r, dtype=object)
-    assert type(r) == iterable_type
-    return r
-
 def symbolic_convert_element_type_impl(x, dtype):
     if dtype == numpy.int32 or dtype == numpy.int64:
         dtype = "int"
     def convert(x):
         return f"{dtype}({x})"
-    return apply_func_to_nested(x, convert)
+    return map_at_elements(x, convert)
 
 
 # TODO: add a test for this

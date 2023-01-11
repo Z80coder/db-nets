@@ -129,8 +129,7 @@ def eval_jaxpr_concrete(jaxpr, *args):
 
 
 def eval_jaxpr_symbolic(jaxpr, *args):
-    # Convert the literals to symbolic literals
-    symbolic_jaxpr_literals = symbolic_primitives.to_boolean_symbolic_values(
-        jaxpr.literals)
+    symbolic_jaxpr_literals = safe_map(lambda x: numpy.array(x, dtype=object), jaxpr.literals)
+    symbolic_jaxpr_literals = symbolic_primitives.to_boolean_symbolic_values(symbolic_jaxpr_literals)
     return eval_jaxpr(True, jaxpr.jaxpr, symbolic_jaxpr_literals, *args)
 

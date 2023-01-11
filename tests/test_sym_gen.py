@@ -53,7 +53,7 @@ def test_sym_gen():
     # -- TEST 2: Compare the standard evaluation of the network with the non-standard symbolic evaluation of the jaxpr
     # Convert the hard input to a symbolic input
     symbolic_mock_input = symbolic_primitives.to_boolean_symbolic_values(
-        hard_mock_input)
+        numpy.array(hard_mock_input, dtype=object))
     # Symbolically evaluate the jaxpr with the symbolic input
     eval_symbolic_output = sym_gen.eval_jaxpr_symbolic(
         jaxpr, symbolic_mock_input)

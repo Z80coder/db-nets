@@ -141,42 +141,42 @@ def test_to_boolean_value_string():
 
 def test_to_boolean_symbolic_values():
     output = symbolic_primitives.to_boolean_symbolic_values([1, 1])
-    expected = numpy.array(["True", "True"])
+    expected = ["True", "True"]
     assert numpy.array_equal(output, expected)
     output = symbolic_primitives.to_boolean_symbolic_values([0, 0])
-    expected = numpy.array(["False", "False"])
+    expected = ["False", "False"]
     assert numpy.array_equal(output, expected)
     output = symbolic_primitives.to_boolean_symbolic_values([True, False])
-    expected = numpy.array(["True", "False"])
+    expected = ["True", "False"]
     assert numpy.array_equal(output, expected)
     output = symbolic_primitives.to_boolean_symbolic_values([False, True])
-    expected = numpy.array(["False", "True"])
+    expected = ["False", "True"]
     assert numpy.array_equal(output, expected)
     output = symbolic_primitives.to_boolean_symbolic_values([1.0, 1.0])
-    expected = numpy.array(["True", "True"])
+    expected = ["True", "True"]
     assert numpy.array_equal(output, expected)
     output = symbolic_primitives.to_boolean_symbolic_values([0.0, 0.0])
-    expected = numpy.array(["False", "False"])
+    expected = ["False", "False"]
     assert numpy.array_equal(output, expected)
     output = symbolic_primitives.to_boolean_symbolic_values([[1, 1], [1, 1]])
-    expected = numpy.array([["True", "True"], ["True", "True"]])
+    expected = [["True", "True"], ["True", "True"]]
     assert numpy.array_equal(output, expected)
     output = symbolic_primitives.to_boolean_symbolic_values([[0, 0], [0, 0]])
-    expected = numpy.array([["False", "False"], ["False", "False"]])
+    expected = [["False", "False"], ["False", "False"]]
     assert numpy.array_equal(output, expected)
     output = symbolic_primitives.to_boolean_symbolic_values(
         [[True, False], [False, True]])
-    expected = numpy.array([["True", "False"], ["False", "True"]])
+    expected = [["True", "False"], ["False", "True"]]
     assert numpy.array_equal(output, expected)
     output = symbolic_primitives.to_boolean_symbolic_values(
         [[[1, 0, 1], [1, 0, 1]], [[1, 0, 0], [1, 0, 0]]])
-    expected = numpy.array([[["True", "False", "True"], ["True", "False", "True"]], [
-                           ["True", "False", "False"], ["True", "False", "False"]]])
+    expected = [[["True", "False", "True"], ["True", "False", "True"]], [
+        ["True", "False", "False"], ["True", "False", "False"]]]
     assert numpy.array_equal(output, expected)
     output = symbolic_primitives.to_boolean_symbolic_values(
         [[[1, "f", 1], [1, "g", 1]], [[1, "h", 0], [1, "f", 0]]])
-    expected = numpy.array([[["True", "f", "True"], ["True", "g", "True"]], [
-                           ["True", "h", "False"], ["True", "f", "False"]]])
+    expected = [[["True", "f", "True"], ["True", "g", "True"]], [
+        ["True", "h", "False"], ["True", "f", "False"]]]
     assert numpy.array_equal(output, expected)
 
 
