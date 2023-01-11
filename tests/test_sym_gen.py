@@ -7,7 +7,6 @@ import jax.numpy as jnp
 
 def nln(type, x, width):
     x = hard_or.or_layer(type)(width)(x)
-    # if not_layer has size "width" then this fails. why?
     x = hard_not.not_layer(type)(10)(x)
     x = primitives.nl_ravel(type)(x)
     x = harden_layer.harden_layer(type)(x)
@@ -26,7 +25,7 @@ def test_sym_gen():
         test_ds["image"], (test_ds["image"].shape[0], -1))
 
     # Define width of network
-    width = 4
+    width = 10
     # Define the neural logic net
     soft, hard, _ = neural_logic_net.net(lambda type, x: nln(type, x, width))
     # Initialize a random number generator
