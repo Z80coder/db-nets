@@ -31,3 +31,4 @@ def hard_weights(weights):
 
 def symbolic_weights(weights):
     return flax.core.FrozenDict(map_keys_nested(lambda str: str.replace("Soft", "Symbolic"), harden(weights.unfreeze())))
+
