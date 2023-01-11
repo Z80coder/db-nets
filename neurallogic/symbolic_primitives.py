@@ -59,12 +59,12 @@ def to_boolean_value_string(x: numpy.bool_):
 
 @dispatch
 def to_boolean_value_string(x: int):
-    return 'True' if x == 1.0 else 'False'
+    return 'True' if x >= 1 else 'False'
 
 
 @dispatch
 def to_boolean_value_string(x: float):
-    return 'True' if x == 1.0 else 'False'
+    return 'True' if x >= 1.0 else 'False'
 
 
 @dispatch
@@ -118,7 +118,19 @@ def binary_infix_operator(operator: str, a: numpy.ndarray, b: list, bracket: boo
     return binary_infix_operator(operator, a, numpy.array(b), bracket)
 
 
+@dispatch
 def symbolic_eval(x):
+    # print(f"Warning: symbolic_eval called on type {type(x)}")
+    return eval(x)
+
+@dispatch
+def symbolic_eval(x: numpy.ndarray):
+    # Returns a numpy array of the same shape as x, where each element is the result of evaluating the string in that element
+    return numpy.vectorize(eval)(x)
+
+
+@dispatch
+def symbolic_eval(x: list):
     # Returns a numpy array of the same shape as x, where each element is the result of evaluating the string in that element
     return numpy.vectorize(eval)(x)
 
@@ -137,6 +149,13 @@ def all_concrete_values(data):
     return True
 
 
+def symbolic_not(*args, **kwargs):
+    if all_concrete_values([*args]):
+        return numpy.logical_not(*args, **kwargs)
+    else:
+        return unary_operator("not", *args, **kwargs)
+
+
 def symbolic_and(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_and(*args, **kwargs)
@@ -144,11 +163,11 @@ def symbolic_and(*args, **kwargs):
         return binary_infix_operator("and", *args, **kwargs)
 
 
-def symbolic_not(*args, **kwargs):
+def symbolic_or(*args, **kwargs):
     if all_concrete_values([*args]):
-        return numpy.logical_not(*args, **kwargs)
+        return numpy.logical_or(*args, **kwargs)
     else:
-        return unary_operator("not", *args, **kwargs)
+        return binary_infix_operator("or", *args, **kwargs)
 
 
 def symbolic_xor(*args, **kwargs):
@@ -196,8 +215,6 @@ def symbolic_convert_element_type(*args, **kwargs):
     else:
         # Otherwise, we use the symbolic implementation
         return symbolic_convert_element_type_impl(*args, dtype=kwargs['new_dtype'])
-
-
 
 
 def make_symbolic_reducer(py_binop, init_val):

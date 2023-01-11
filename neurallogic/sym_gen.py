@@ -3,26 +3,26 @@ import jax._src.lax_reference as lax_reference
 from jax import core
 from jax._src.util import safe_map
 import numpy
-from neurallogic import symbolic_primitives
+from neurallogic import symbolic_primitives, harden
 
 
 def symbolic_bind(prim, *args, **params):
-    #print("\n---symbolic_bind:")
-    #print("primitive: ", prim.name)
-    #print("args: ", args)
-    #print("params: ", params)
+    # print("\n---symbolic_bind:")
+    # print("primitive: ", prim.name)
+    # print("args: ", args)
+    # print("params: ", params)
     symbolic_outvals = {
-        'and': symbolic_primitives.symbolic_and,
         'broadcast_in_dim': symbolic_primitives.symbolic_broadcast_in_dim,
+        'reshape': lax_reference.reshape,
+        'convert_element_type': symbolic_primitives.symbolic_convert_element_type,
+        'and': symbolic_primitives.symbolic_and,
+        'or': symbolic_primitives.symbolic_or,
         'xor': symbolic_primitives.symbolic_xor,
         'not': symbolic_primitives.symbolic_not,
-        'reshape': lax_reference.reshape,
         'reduce_or': symbolic_primitives.symbolic_reduce_or,
         'reduce_sum': symbolic_primitives.symbolic_reduce_sum,
-        'convert_element_type': symbolic_primitives.symbolic_convert_element_type
     }[prim.name](*args, **params)
     return symbolic_outvals
-
 
 
 def eval_jaxpr(symbolic, jaxpr, consts, *args):
@@ -82,19 +82,20 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
             symbolic_invals = safe_map(symbolic_read, eqn.invars)
             prim = eqn.primitive
             if type(prim) is jax.core.CallPrimitive:
-                # print(f"call primitive: {prim.name}")
                 call_jaxpr = eqn.params['call_jaxpr']
                 if not symbolic:
                     safe_map(write, call_jaxpr.invars, map(read, eqn.invars))
-                safe_map(symbolic_write, call_jaxpr.invars,
-                         map(symbolic_read, eqn.invars))
+                try:
+                    safe_map(symbolic_write, call_jaxpr.invars,
+                             map(symbolic_read, eqn.invars))
+                except:
+                    pass
                 eval_jaxpr_impl(call_jaxpr)
                 if not symbolic:
                     safe_map(write, eqn.outvars, map(read, call_jaxpr.outvars))
                 safe_map(symbolic_write, eqn.outvars, map(
                     symbolic_read, call_jaxpr.outvars))
             else:
-                # print(f"primitive: {prim.name}")
                 if not symbolic:
                     outvals = prim.bind(*invals, **eqn.params)
                 symbolic_outvals = symbolic_bind(
@@ -105,8 +106,8 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
                         outvals = [outvals]
                     symbolic_outvals = [symbolic_outvals]
                 if not symbolic:
-                    #print(f"outvals: {type(outvals)}: {outvals}")
-                    #print(
+                    # print(f"outvals: {type(outvals)}: {outvals}")
+                    # print(
                     #    f"symbolic_outvals: {type(symbolic_outvals)}: {symbolic_outvals}")
                     # Check that the concrete and symbolic values are equal
                     assert numpy.array_equal(
@@ -124,12 +125,19 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
         return safe_map(symbolic_read, jaxpr.outvars)[0]
 
 
-def eval_jaxpr_concrete(jaxpr, *args):
+def make_symbolic_net(net, net_weights, mock_net_input):
+    return jax.make_jaxpr(lambda x: net.apply(net_weights, x))(harden.harden(mock_net_input))
+
+
+def eval_symbolic_net(jaxpr, *args):
     return eval_jaxpr(False, jaxpr.jaxpr, jaxpr.literals, *args)
 
 
-def eval_jaxpr_symbolic(jaxpr, *args):
-    symbolic_jaxpr_literals = safe_map(lambda x: numpy.array(x, dtype=object), jaxpr.literals)
-    symbolic_jaxpr_literals = symbolic_primitives.to_boolean_symbolic_values(symbolic_jaxpr_literals)
-    return eval_jaxpr(True, jaxpr.jaxpr, symbolic_jaxpr_literals, *args)
+def compute_symbolic_output(symbolic_net, *args):
+    symbolic_jaxpr_literals = safe_map(
+        lambda x: numpy.array(x, dtype=object), symbolic_net.literals)
+    symbolic_jaxpr_literals = symbolic_primitives.to_boolean_symbolic_values(
+        symbolic_jaxpr_literals)
+    return eval_jaxpr(True, symbolic_net.jaxpr, symbolic_jaxpr_literals, *args)
+
 

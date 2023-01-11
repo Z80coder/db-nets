@@ -4,8 +4,9 @@ import optax
 from flax import linen as nn
 from flax.training import train_state
 from jax import random
+import numpy
 
-from neurallogic import hard_and, harden, neural_logic_net, primitives
+from neurallogic import hard_and, harden, neural_logic_net, primitives, sym_gen, symbolic_primitives
 
 
 def test_include():
@@ -21,11 +22,14 @@ def test_include():
     ]
     for input, expected in test_data:
         assert hard_and.soft_and_include(*input) == expected
-        assert hard_and.hard_and_include(
-            *harden.harden(input)) == harden.harden(expected)
-        symbolic_output = hard_and.symbolic_and_include(*harden.harden(input))
-        assert symbolic_output == harden.harden(expected)
-
+        hard_input = harden.harden(input)
+        expected_hard_output = harden.harden(expected)
+        assert hard_and.hard_and_include(*hard_input) == expected_hard_output
+        jaxpr = jax.make_jaxpr(lambda x, y: hard_and.hard_and_include(x, y))(*hard_input)
+        symbolic_input = symbolic_primitives.to_boolean_symbolic_values(numpy.array(input, dtype=object))
+        symbolic_output = sym_gen.eval_jaxpr(True, jaxpr.jaxpr, [], *symbolic_input)
+        evaluated_symbolic_output = symbolic_primitives.symbolic_eval(symbolic_output)
+        assert evaluated_symbolic_output == expected_hard_output
 
 def test_neuron():
     test_data = [

@@ -18,10 +18,12 @@ def soft_and_include(w: float, x: float) -> float:
     w = jax.numpy.clip(w, 0.0, 1.0)
     return jax.numpy.maximum(x, 1.0 - w)
 
+# TODO: do we need to jit here? should apply jit at the highest level of the architecture
 @jax.jit
 def hard_and_include(w: bool, x: bool) -> bool:
     return x | ~w
 
+"""
 def symbolic_and_include(w, x):
     expression = f"({x} or not({w}))"
     # Check if w is of type bool
@@ -30,6 +32,7 @@ def symbolic_and_include(w, x):
         return eval(expression)
     # We don't know the value of w or x, so we return the expression
     return expression
+"""
 
 def soft_and_neuron(w, x):
     x = jax.vmap(soft_and_include, 0, 0)(w, x)
@@ -39,6 +42,7 @@ def hard_and_neuron(w, x):
     x = jax.vmap(hard_and_include, 0, 0)(w, x)
     return jax.lax.reduce(x, True, jax.lax.bitwise_and, [0])
 
+"""
 def symbolic_and_neuron(w, x):
     # TODO: ensure that this implementation has the same generality over tensors as vmap
     if not isinstance(w, list):
@@ -51,11 +55,13 @@ def symbolic_and_neuron(w, x):
         # We know the value of all yis, so we can evaluate the expression
         return eval(expression)
     return expression
+"""
 
 soft_and_layer = jax.vmap(soft_and_neuron, (0, None), 0)
 
 hard_and_layer = jax.vmap(hard_and_neuron, (0, None), 0)
 
+"""
 def symbolic_and_layer(w, x):
     # TODO: ensure that this implementation has the same generality over tensors as vmap
     if not isinstance(w, list):
@@ -63,6 +69,7 @@ def symbolic_and_layer(w, x):
     if not isinstance(x, list):
         raise TypeError(f"Input {x} should be a list")
     return [symbolic_and_neuron(wi, x) for wi in w]
+"""
 
 # TODO: investigate better initialization
 def initialize_near_to_zero():
@@ -111,11 +118,8 @@ class HardAndLayer(nn.Module):
         weights = self.param('weights', nn.initializers.constant(0.0), weights_shape)
         return hard_and_layer(weights, x)
 
+"""
 class SymbolicAndLayer(nn.Module):
-    """A symbolic And layer than transforms its inputs along the last dimension.
-    Attributes:
-        layer_size: The number of neurons in the layer.
-    """
     layer_size: int
 
     @nn.compact
@@ -126,8 +130,9 @@ class SymbolicAndLayer(nn.Module):
         if not isinstance(x, list):
             raise TypeError(f"Input {x} should be a list")
         return symbolic_and_layer(weights, x)
+"""
 
 and_layer = neural_logic_net.select(
         lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: SoftAndLayer(layer_size, weights_init, dtype),
         lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: HardAndLayer(layer_size),
-        lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: SymbolicAndLayer(layer_size))
+        lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: [])
