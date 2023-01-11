@@ -77,10 +77,6 @@ def to_boolean_value_string(x: str):
         return x
 
 
-def to_boolean_symbolic_values(x):
-    return map_at_elements(x, to_boolean_value_string)
-
-
 @dispatch
 def unary_operator(operator: str, x: str) -> str:
     return f"{operator}({x})"
@@ -118,21 +114,6 @@ def binary_infix_operator(operator: str, a: numpy.ndarray, b: list, bracket: boo
     return binary_infix_operator(operator, a, numpy.array(b), bracket)
 
 
-@dispatch
-def symbolic_eval(x):
-    # print(f"Warning: symbolic_eval called on type {type(x)}")
-    return eval(x)
-
-@dispatch
-def symbolic_eval(x: numpy.ndarray):
-    # Returns a numpy array of the same shape as x, where each element is the result of evaluating the string in that element
-    return numpy.vectorize(eval)(x)
-
-
-@dispatch
-def symbolic_eval(x: list):
-    # Returns a numpy array of the same shape as x, where each element is the result of evaluating the string in that element
-    return numpy.vectorize(eval)(x)
 
 
 def all_concrete_values(data):

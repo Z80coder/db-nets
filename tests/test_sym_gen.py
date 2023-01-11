@@ -40,30 +40,28 @@ def test_sym_gen():
     hard_output = hard.apply(hard_weights, hard_mock_input)
 
     # Create a jaxpr from the neural logic net (with an arbitrary image input to set sizes)
-    #symbolic_net = jax.make_jaxpr(lambda x: hard.apply(hard_weights, x))(
-    #    harden.harden(test_ds['image'][0]))
-    symbolic_net = sym_gen.make_symbolic_net(hard, hard_weights, test_ds['image'][0])
+    symbolic_net = sym_gen.make_symbolic(lambda x: hard.apply(hard_weights, x), harden.harden(test_ds['image'][0]))
 
     # -- TEST 1: Compare the standard evaluation of the network with the non-standard evaluation of the jaxpr
     # Evaluate the jaxpr with the hard input
-    eval_hard_output = sym_gen.eval_symbolic_net(symbolic_net, hard_mock_input)
+    eval_hard_output = sym_gen.eval_symbolic(symbolic_net, hard_mock_input)
     # If this assertion succeeds then the non-standard evaluation of the jaxpr is is identical to the standard evaluation of network
     assert numpy.array_equal(eval_hard_output, hard_output)
 
     # -- TEST 2: Compare the standard evaluation of the network with the non-standard symbolic evaluation of the jaxpr
     # Convert the hard input to a symbolic input
     # TODO: move this conversion into compute_symbolic_output
-    symbolic_mock_input = symbolic_primitives.to_boolean_symbolic_values(
+    symbolic_mock_input = sym_gen.make_symbolic(
         numpy.array(hard_mock_input, dtype=object))
     # Symbolically evaluate the jaxpr with the symbolic input
-    symbolic_output = sym_gen.compute_symbolic_output(
+    symbolic_output = sym_gen.symbolic_expression(
         symbolic_net, symbolic_mock_input)
     # If this assertion succeeds then the shape of the non-standard symbolic evaluation of the jaxpr
     # is identical to the shape of the standard evaluation of the jaxpr
     assert numpy.array_equal(hard_output.shape,
                              symbolic_output.shape)
     # Compute the symbolic expression, i.e. perform the actual operations in the symbolic expression
-    eval_symbolic_output = symbolic_primitives.symbolic_eval(
+    eval_symbolic_output = sym_gen.eval_symbolic_expression(
         symbolic_output)
     # If this assertion succeeds then the non-standard symbolic evaluation of the jaxpr is is identical to the standard evaluation of network
     assert numpy.array_equal(hard_output, eval_symbolic_output)

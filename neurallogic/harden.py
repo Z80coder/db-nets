@@ -1,5 +1,6 @@
 import flax
 import jax
+import numpy
 
 
 def harden_float(x: float) -> bool:
@@ -13,6 +14,7 @@ def harden_list(x: list) -> list:
 def harden_dict(x: dict) -> dict:
     return {k: harden(v) for k, v in x.items()}
 
+# TODO: use dispatch
 def harden(x):
     if isinstance(x, float):
         return harden_float(x)
@@ -21,7 +23,11 @@ def harden(x):
     elif isinstance(x, flax.core.frozen_dict.FrozenDict) or isinstance(x, dict):
         return harden_dict(x)
     else:
-        return harden_array(x)
+        # Assuming x is a numpy array
+        if x.shape != ():
+            return harden_array(x)
+        else:
+            return numpy.array(harden(x.item()))
 
 def map_keys_nested(f, d: dict) -> dict:
     return {f(k): map_keys_nested(f, v) if isinstance(v, dict) else v for k, v in d.items()}

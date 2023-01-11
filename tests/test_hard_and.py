@@ -21,15 +21,24 @@ def test_include():
         [[-0.1, 1.0], 1.0]
     ]
     for input, expected in test_data:
+        # Check that soft_and_include performs as expected
         assert hard_and.soft_and_include(*input) == expected
-        hard_input = harden.harden(input)
-        expected_hard_output = harden.harden(expected)
-        assert hard_and.hard_and_include(*hard_input) == expected_hard_output
-        jaxpr = jax.make_jaxpr(lambda x, y: hard_and.hard_and_include(x, y))(*hard_input)
-        symbolic_input = symbolic_primitives.to_boolean_symbolic_values(numpy.array(input, dtype=object))
-        symbolic_output = sym_gen.eval_jaxpr(True, jaxpr.jaxpr, [], *symbolic_input)
-        evaluated_symbolic_output = symbolic_primitives.symbolic_eval(symbolic_output)
-        assert evaluated_symbolic_output == expected_hard_output
+
+        # Check that hard_and_include performs as expected
+        assert hard_and.hard_and_include(*harden.harden(input)) == harden.harden(expected)
+
+        # Check that soft_and_include and hard_and_include are consistent
+        assert harden.harden(hard_and.soft_and_include(*input)) == hard_and.hard_and_include(*harden.harden(input))
+
+        # Check that the symbolic version of hard_and_include performs as expected
+        symbolic_hard_and_include = sym_gen.make_symbolic(hard_and.hard_and_include, *harden.harden(input))
+        assert sym_gen.eval_symbolic(symbolic_hard_and_include, *harden.harden(input)) == harden.harden(expected)
+
+        # Check that the symbolic version of hard_and_include, when evaluted with symbolic inputs, performs as expected
+        symbolic_input = sym_gen.make_symbolic(numpy.array(input, dtype=object))
+        symbolic_output = sym_gen.symbolic_expression(symbolic_hard_and_include, *symbolic_input)
+        evaluated_symbolic_output = sym_gen.eval_symbolic_expression(symbolic_output)
+        assert evaluated_symbolic_output == harden.harden(expected)
 
 def test_neuron():
     test_data = [

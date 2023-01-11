@@ -7,8 +7,8 @@ def test_unary_operator_str():
     output = symbolic_primitives.unary_operator("not", "True")
     expected = "not(True)"
     assert output == expected
-    eval_output = symbolic_primitives.symbolic_eval(output)
-    eval_expected = symbolic_primitives.symbolic_eval(expected)
+    eval_output = symbolic_primitives.eval_symbolic_expression(output)
+    eval_expected = symbolic_primitives.eval_symbolic_expression(expected)
     assert eval_output == eval_expected
 
 
@@ -17,8 +17,8 @@ def test_unary_operator_vector():
     output = symbolic_primitives.unary_operator("not", x)
     expected = numpy.array(["not(True)", "not(False)"])
     assert numpy.array_equal(output, expected)
-    eval_output = symbolic_primitives.symbolic_eval(output)
-    eval_expected = symbolic_primitives.symbolic_eval(expected)
+    eval_output = symbolic_primitives.eval_symbolic_expression(output)
+    eval_expected = symbolic_primitives.eval_symbolic_expression(expected)
     assert numpy.array_equal(eval_output, eval_expected)
 
 
@@ -28,8 +28,8 @@ def test_unary_operator_matrix():
     expected = numpy.array(
         [["not(True)", "not(False)"], ["not(False)", "not(True)"]])
     assert numpy.array_equal(output, expected)
-    eval_output = symbolic_primitives.symbolic_eval(output)
-    eval_expected = symbolic_primitives.symbolic_eval(expected)
+    eval_output = symbolic_primitives.eval_symbolic_expression(output)
+    eval_expected = symbolic_primitives.eval_symbolic_expression(expected)
     assert numpy.array_equal(eval_output, eval_expected)
 
 
@@ -37,9 +37,9 @@ def test_binary_operator_str_str():
     output = symbolic_primitives.binary_infix_operator("+", "1", "2")
     expected = "1 + 2"
     assert output == expected
-    eval_output = symbolic_primitives.symbolic_eval(output)
-    numpy_output = numpy.add(symbolic_primitives.symbolic_eval(
-        "1"), symbolic_primitives.symbolic_eval("2"))
+    eval_output = symbolic_primitives.eval_symbolic_expression(output)
+    numpy_output = numpy.add(symbolic_primitives.eval_symbolic_expression(
+        "1"), symbolic_primitives.eval_symbolic_expression("2"))
     assert numpy.array_equal(eval_output, numpy_output)
 
 
@@ -49,9 +49,9 @@ def test_binary_operator_vector_vector():
     output = symbolic_primitives.binary_infix_operator("+", x1, x2)
     expected = numpy.array(["1 + 3", "2 + 4"])
     assert numpy.array_equal(output, expected)
-    eval_output = symbolic_primitives.symbolic_eval(output)
-    numpy_output = numpy.add(symbolic_primitives.symbolic_eval(
-        x1), symbolic_primitives.symbolic_eval(x2))
+    eval_output = symbolic_primitives.eval_symbolic_expression(output)
+    numpy_output = numpy.add(symbolic_primitives.eval_symbolic_expression(
+        x1), symbolic_primitives.eval_symbolic_expression(x2))
     assert numpy.array_equal(eval_output, numpy_output)
 
 
@@ -61,9 +61,9 @@ def test_binary_operator_matrix_vector():
     output = symbolic_primitives.binary_infix_operator("+", x1, x2)
     expected = numpy.array([["1 + 5", "2 + 6"], ["3 + 5", "4 + 6"]])
     assert numpy.array_equal(output, expected)
-    eval_output = symbolic_primitives.symbolic_eval(output)
-    numpy_output = numpy.add(symbolic_primitives.symbolic_eval(
-        x1), symbolic_primitives.symbolic_eval(x2))
+    eval_output = symbolic_primitives.eval_symbolic_expression(output)
+    numpy_output = numpy.add(symbolic_primitives.eval_symbolic_expression(
+        x1), symbolic_primitives.eval_symbolic_expression(x2))
     assert numpy.array_equal(eval_output, numpy_output)
 
 
@@ -73,9 +73,9 @@ def test_binary_operator_vector_matrix():
     output = symbolic_primitives.binary_infix_operator("+", x1, x2)
     expected = numpy.array([["1 + 3", "2 + 4"], ["1 + 5", "2 + 6"]])
     assert numpy.array_equal(output, expected)
-    eval_output = symbolic_primitives.symbolic_eval(output)
-    numpy_output = numpy.add(symbolic_primitives.symbolic_eval(
-        x1), symbolic_primitives.symbolic_eval(x2))
+    eval_output = symbolic_primitives.eval_symbolic_expression(output)
+    numpy_output = numpy.add(symbolic_primitives.eval_symbolic_expression(
+        x1), symbolic_primitives.eval_symbolic_expression(x2))
     assert numpy.array_equal(eval_output, numpy_output)
 
 
@@ -85,9 +85,9 @@ def test_binary_operator_matrix_matrix():
     output = symbolic_primitives.binary_infix_operator("+", x1, x2)
     expected = numpy.array([["1 + 5", "2 + 6"], ["3 + 7", "4 + 8"]])
     assert numpy.array_equal(output, expected)
-    eval_output = symbolic_primitives.symbolic_eval(output)
-    numpy_output = numpy.add(symbolic_primitives.symbolic_eval(
-        x1), symbolic_primitives.symbolic_eval(x2))
+    eval_output = symbolic_primitives.eval_symbolic_expression(output)
+    numpy_output = numpy.add(symbolic_primitives.eval_symbolic_expression(
+        x1), symbolic_primitives.eval_symbolic_expression(x2))
     assert numpy.array_equal(eval_output, numpy_output)
 
 
@@ -100,9 +100,9 @@ def test_binary_operator_matrix_matrix_2():
     expected = numpy.array(
         [["1 + 5", "2 + 6", "3 + 7", "4 + 8"] for _ in range(10)])
     assert numpy.array_equal(output, expected)
-    eval_output = symbolic_primitives.symbolic_eval(output)
-    numpy_output = numpy.add(symbolic_primitives.symbolic_eval(
-        x1), symbolic_primitives.symbolic_eval(x2))
+    eval_output = symbolic_primitives.eval_symbolic_expression(output)
+    numpy_output = numpy.add(symbolic_primitives.eval_symbolic_expression(
+        x1), symbolic_primitives.eval_symbolic_expression(x2))
     assert numpy.array_equal(eval_output, numpy_output)
 
 
@@ -140,40 +140,40 @@ def test_to_boolean_value_string():
 
 
 def test_to_boolean_symbolic_values():
-    output = symbolic_primitives.to_boolean_symbolic_values([1, 1])
+    output = symbolic_primitives.make_symbolic([1, 1])
     expected = ["True", "True"]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.to_boolean_symbolic_values([0, 0])
+    output = symbolic_primitives.make_symbolic([0, 0])
     expected = ["False", "False"]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.to_boolean_symbolic_values([True, False])
+    output = symbolic_primitives.make_symbolic([True, False])
     expected = ["True", "False"]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.to_boolean_symbolic_values([False, True])
+    output = symbolic_primitives.make_symbolic([False, True])
     expected = ["False", "True"]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.to_boolean_symbolic_values([1.0, 1.0])
+    output = symbolic_primitives.make_symbolic([1.0, 1.0])
     expected = ["True", "True"]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.to_boolean_symbolic_values([0.0, 0.0])
+    output = symbolic_primitives.make_symbolic([0.0, 0.0])
     expected = ["False", "False"]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.to_boolean_symbolic_values([[1, 1], [1, 1]])
+    output = symbolic_primitives.make_symbolic([[1, 1], [1, 1]])
     expected = [["True", "True"], ["True", "True"]]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.to_boolean_symbolic_values([[0, 0], [0, 0]])
+    output = symbolic_primitives.make_symbolic([[0, 0], [0, 0]])
     expected = [["False", "False"], ["False", "False"]]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.to_boolean_symbolic_values(
+    output = symbolic_primitives.make_symbolic(
         [[True, False], [False, True]])
     expected = [["True", "False"], ["False", "True"]]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.to_boolean_symbolic_values(
+    output = symbolic_primitives.make_symbolic(
         [[[1, 0, 1], [1, 0, 1]], [[1, 0, 0], [1, 0, 0]]])
     expected = [[["True", "False", "True"], ["True", "False", "True"]], [
         ["True", "False", "False"], ["True", "False", "False"]]]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.to_boolean_symbolic_values(
+    output = symbolic_primitives.make_symbolic(
         [[[1, "f", 1], [1, "g", 1]], [[1, "h", 0], [1, "f", 0]]])
     expected = [[["True", "f", "True"], ["True", "g", "True"]], [
         ["True", "h", "False"], ["True", "f", "False"]]]
@@ -181,34 +181,34 @@ def test_to_boolean_symbolic_values():
 
 
 def test_symbolic_eval():
-    output = symbolic_primitives.symbolic_eval("1 + 2")
+    output = symbolic_primitives.eval_symbolic_expression("1 + 2")
     expected = 3
     assert output == expected
-    output = symbolic_primitives.symbolic_eval("[1, 2, 3]")
+    output = symbolic_primitives.eval_symbolic_expression("[1, 2, 3]")
     expected = [1, 2, 3]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.symbolic_eval("[1, 2, 3] + [4, 5, 6]")
+    output = symbolic_primitives.eval_symbolic_expression("[1, 2, 3] + [4, 5, 6]")
     expected = [1, 2, 3, 4, 5, 6]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.symbolic_eval(['1', '2', '3'])
+    output = symbolic_primitives.eval_symbolic_expression(['1', '2', '3'])
     expected = [1, 2, 3]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.symbolic_eval(
+    output = symbolic_primitives.eval_symbolic_expression(
         ['1', '2', '3'] + ['4', '5', '6'])
     expected = [1, 2, 3, 4, 5, 6]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.symbolic_eval(['not(False)', 'not(True)'])
+    output = symbolic_primitives.eval_symbolic_expression(['not(False)', 'not(True)'])
     expected = [True, False]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.symbolic_eval(
+    output = symbolic_primitives.eval_symbolic_expression(
         [['not(False)', 'not(True)'] + ['not(False)', 'not(True)']])
     expected = [[True, False, True, False]]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.symbolic_eval(numpy.array(
+    output = symbolic_primitives.eval_symbolic_expression(numpy.array(
         [['not(False)', 'not(True)'] + ['not(False)', 'not(True)']]))
     expected = [[True, False, True, False]]
     assert numpy.array_equal(output, expected)
-    output = symbolic_primitives.symbolic_eval(numpy.array(
+    output = symbolic_primitives.eval_symbolic_expression(numpy.array(
         [['not(False)', False], ['not(False)', 'not(True)']]))
     expected = [[True, False], [True, False]]
     assert numpy.array_equal(output, expected)
@@ -219,7 +219,7 @@ def test_symbolic_not():
     output = symbolic_primitives.symbolic_not(x1)
     expected = numpy.array([False, True])
     assert numpy.array_equal(output, expected)
-    x1 = symbolic_primitives.to_boolean_symbolic_values(x1)
+    x1 = symbolic_primitives.make_symbolic(x1)
     output = symbolic_primitives.symbolic_not(x1)
     expected = numpy.array(["not(True)", "not(False)"])
     assert numpy.array_equal(output, expected)
@@ -231,8 +231,8 @@ def test_symbolic_and():
     output = symbolic_primitives.symbolic_and(x1, x2)
     expected = numpy.array([True, False])
     assert numpy.array_equal(output, expected)
-    x1 = symbolic_primitives.to_boolean_symbolic_values(x1)
-    x2 = symbolic_primitives.to_boolean_symbolic_values(x2)
+    x1 = symbolic_primitives.make_symbolic(x1)
+    x2 = symbolic_primitives.make_symbolic(x2)
     output = symbolic_primitives.symbolic_and(x1, x2)
     expected = numpy.array(["True and True", "False and True"])
     assert numpy.array_equal(output, expected)
@@ -244,8 +244,8 @@ def test_symbolic_xor():
     output = symbolic_primitives.symbolic_xor(x1, x2)
     expected = numpy.array([False, True])
     assert numpy.array_equal(output, expected)
-    x1 = symbolic_primitives.to_boolean_symbolic_values(x1)
-    x2 = symbolic_primitives.to_boolean_symbolic_values(x2)
+    x1 = symbolic_primitives.make_symbolic(x1)
+    x2 = symbolic_primitives.make_symbolic(x2)
     output = symbolic_primitives.symbolic_xor(x1, x2)
     expected = numpy.array(["(True) ^ (True)", "(False) ^ (True)"])
     assert numpy.array_equal(output, expected)
@@ -282,12 +282,12 @@ def symbolic_reduce_or_impl(input, expected, symbolic_expected, axes):
     expected = numpy.array(expected)
     assert numpy.array_equal(output, expected)
     # Test symbolic implementation
-    input = symbolic_primitives.to_boolean_symbolic_values(input)
+    input = symbolic_primitives.make_symbolic(input)
     output = symbolic_primitives.symbolic_reduce_or(input, axes=axes)
     symbolic_expected = numpy.array(symbolic_expected)
     assert numpy.array_equal(output, symbolic_expected)
     # Compare the reference and symbolic evaluation
-    symbolic_expected = symbolic_primitives.symbolic_eval(symbolic_expected)
+    symbolic_expected = symbolic_primitives.eval_symbolic_expression(symbolic_expected)
     assert numpy.array_equal(expected, symbolic_expected)
 
 

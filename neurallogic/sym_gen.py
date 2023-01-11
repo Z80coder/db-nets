@@ -4,7 +4,10 @@ from jax import core
 from jax._src.util import safe_map
 import numpy
 from neurallogic import symbolic_primitives, harden
+from plum import dispatch
+import typing
 
+# TODO: rename this file to symbolic.py
 
 def symbolic_bind(prim, *args, **params):
     # print("\n---symbolic_bind:")
@@ -106,9 +109,6 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
                         outvals = [outvals]
                     symbolic_outvals = [symbolic_outvals]
                 if not symbolic:
-                    # print(f"outvals: {type(outvals)}: {outvals}")
-                    # print(
-                    #    f"symbolic_outvals: {type(symbolic_outvals)}: {symbolic_outvals}")
                     # Check that the concrete and symbolic values are equal
                     assert numpy.array_equal(
                         numpy.array(outvals), symbolic_outvals)
@@ -125,19 +125,45 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
         return safe_map(symbolic_read, jaxpr.outvars)[0]
 
 
-def make_symbolic_net(net, net_weights, mock_net_input):
-    return jax.make_jaxpr(lambda x: net.apply(net_weights, x))(harden.harden(mock_net_input))
+@dispatch
+def make_symbolic(x):
+    return symbolic_primitives.map_at_elements(x, symbolic_primitives.to_boolean_value_string)
 
 
-def eval_symbolic_net(jaxpr, *args):
-    return eval_jaxpr(False, jaxpr.jaxpr, jaxpr.literals, *args)
+@dispatch
+def make_symbolic(func: typing.Callable, *args):
+    return jax.make_jaxpr(lambda *args: func(*args))(*args)
 
 
-def compute_symbolic_output(symbolic_net, *args):
-    symbolic_jaxpr_literals = safe_map(
-        lambda x: numpy.array(x, dtype=object), symbolic_net.literals)
-    symbolic_jaxpr_literals = symbolic_primitives.to_boolean_symbolic_values(
-        symbolic_jaxpr_literals)
-    return eval_jaxpr(True, symbolic_net.jaxpr, symbolic_jaxpr_literals, *args)
+def eval_symbolic(symbolic_function, *args):
+    if hasattr(symbolic_function, 'literals'):
+        return eval_jaxpr(False, symbolic_function.jaxpr, symbolic_function.literals, *args)
+    return eval_jaxpr(False, symbolic_function.jaxpr, [], *args)
 
 
+def symbolic_expression(symbolic_function, *args):
+    if hasattr(symbolic_function, 'literals'):
+        symbolic_jaxpr_literals = safe_map(
+            lambda x: numpy.array(x, dtype=object), symbolic_function.literals)
+        symbolic_jaxpr_literals = make_symbolic(
+            symbolic_jaxpr_literals)
+        return eval_jaxpr(True, symbolic_function.jaxpr, symbolic_jaxpr_literals, *args)
+    return eval_jaxpr(True, symbolic_function.jaxpr, [], *args)
+
+
+@dispatch
+def eval_symbolic_expression(x):
+    # print(f"Warning: symbolic_eval called on type {type(x)}")
+    return eval(x)
+
+
+@dispatch
+def eval_symbolic_expression(x: numpy.ndarray):
+    # Returns a numpy array of the same shape as x, where each element is the result of evaluating the string in that element
+    return numpy.vectorize(eval)(x)
+
+
+@dispatch
+def eval_symbolic_expression(x: list):
+    # Returns a numpy array of the same shape as x, where each element is the result of evaluating the string in that element
+    return numpy.vectorize(eval)(x)
