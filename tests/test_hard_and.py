@@ -10,42 +10,39 @@ import typing
 from neurallogic import hard_and, harden, neural_logic_net, primitives, sym_gen, symbolic_primitives
 
 
-def check_consistency(soft_function, hard_function, input, expected, caller: typing.Callable = lambda x: x):
+def check_consistency(soft_function, hard_function, input, expected, soft_caller: typing.Callable, hard_caller: typing.Callable):
     # Check that the soft function performs as expected
-    assert numpy.allclose(caller(soft_function, input), expected)
+    assert numpy.allclose(soft_caller(soft_function, input), expected)
 
     # Check that the hard function performs as expected
-    print(f'caller(hard_function, harden.harden(input))={caller(hard_function, harden.harden(input))} with type {type(caller(hard_function, harden.harden(input)))}')
-    print(f'harden.harden(expected)={harden.harden(expected)} with type {type(harden.harden(expected))}')
-    assert numpy.allclose(caller(hard_function, harden.harden(input)), harden.harden(expected))
+    #print(f'caller(hard_function, harden.harden(input))={hard_caller(hard_function, harden.harden(input))} with type {type(hard_caller(hard_function, harden.harden(input)))}')
+    #print(f'harden.harden(expected)={harden.harden(expected)} with type {type(harden.harden(expected))}')
+    assert numpy.allclose(hard_caller(hard_function, harden.harden(input)), harden.harden(expected))
 
     # Check that the soft and hard functions are consistent
-    #assert harden.harden(caller(soft_function, input)) == caller(hard_function, harden.harden(input))
-    assert numpy.allclose(harden.harden(caller(soft_function, input)), caller(hard_function, harden.harden(input)))
+    assert numpy.allclose(harden.harden(soft_caller(soft_function, input)), hard_caller(hard_function, harden.harden(input)))
 
     # Check that the symbolic version of the hard function performs as expected
     def make_symbolic_function(*input):
         return sym_gen.make_symbolic(hard_function, *input)
-    symbolic_hard_function = caller(
+    symbolic_hard_function = hard_caller(
         make_symbolic_function, harden.harden(input))
 
     def make_eval_symbolic_function(*input):
         return sym_gen.eval_symbolic(symbolic_hard_function, *input)
-    #assert caller(make_eval_symbolic_function, harden.harden(input)) == harden.harden(expected)
-    assert numpy.allclose(caller(make_eval_symbolic_function, harden.harden(input)), harden.harden(expected))
+    assert numpy.allclose(hard_caller(make_eval_symbolic_function, harden.harden(input)), harden.harden(expected))
 
     # Check that the symbolic version of the hard function, when evaluted with symbolic inputs, performs as expected
     symbolic_input = sym_gen.make_symbolic(numpy.array(input, dtype=object))
 
     def make_symbolic_expression_function(*input):
         return sym_gen.symbolic_expression(symbolic_hard_function, *input)
-    symbolic_expression = caller(
+    symbolic_expression = hard_caller(
         make_symbolic_expression_function, symbolic_input)
     #print(f'symbolic_expression={symbolic_expression} with type {type(symbolic_expression)}')
     symbolic_output = sym_gen.eval_symbolic_expression(symbolic_expression)
     #print(f'symbolic_output={symbolic_output} with type {type(symbolic_output)}')
     #print(f'harden.harden(expected)={harden.harden(expected)} with type {type(harden.harden(expected))}')
-    #assert symbolic_output == harden.harden(expected)
     assert numpy.allclose(symbolic_output, harden.harden(expected))
 
 
@@ -91,11 +88,13 @@ def test_include():
         assert symbolic_output == harden.harden(expected)
 
         # Do all the above again
-        def caller(f, x):
+        def soft_caller(f, x):
             return f(x[0], x[1])
+        def hard_caller(f, x):
+            return soft_caller(f, x)
 
         check_consistency(hard_and.soft_and_include,
-                          hard_and.hard_and_include, input, expected, caller)
+                          hard_and.hard_and_include, input, expected, soft_caller, hard_caller)
 
 
 def test_neuron():
@@ -116,11 +115,13 @@ def test_neuron():
 
         # Do all the above again
         hard_weights = harden.harden(weights)
-        def caller(f, x):
+        def soft_caller(f, x):
             return f(hard_weights, x)
+        def hard_caller(f, x):
+            return soft_caller(f, x)
 
         check_consistency(hard_and.soft_and_neuron,
-                          hard_and.hard_and_neuron, input, expected, caller)
+                          hard_and.hard_and_neuron, input, expected, soft_caller, hard_caller)
 
 
 def test_layer():
@@ -145,11 +146,13 @@ def test_layer():
             weights), harden.harden(input)), harden.harden(expected))
 
         # Do all the above again
-        def caller(f, x):
+        def soft_caller(f, x):
             return f(weights, x)
+        hard_weights = harden.harden(weights)
+        def hard_caller(f, x):
+            return f(hard_weights, x)
         
-        print(f'checking consistency for input {input} and weights {weights} and expected {expected}')
-        check_consistency(hard_and.soft_and_layer, hard_and.hard_and_layer, input, expected, caller)
+        check_consistency(hard_and.soft_and_layer, hard_and.hard_and_layer, input, expected, soft_caller, hard_caller)
 
 
 def test_and():
