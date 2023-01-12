@@ -1,10 +1,12 @@
 from functools import reduce
 from typing import Callable
 
+import numpy
 import jax
 from flax import linen as nn
 
 from neurallogic import neural_logic_net
+
 
 
 def soft_and_include(w: float, x: float) -> float:
@@ -19,9 +21,21 @@ def soft_and_include(w: float, x: float) -> float:
     return jax.numpy.maximum(x, 1.0 - w)
 
 # TODO: do we need to jit here? should apply jit at the highest level of the architecture
+# TODO: may need to jit in unit tests, however
+"""
 @jax.jit
 def hard_and_include(w: bool, x: bool) -> bool:
+    print(f"hard_and_include: w={w}, x={x}")
+    # TODO: this works when the function is jitted, but not when it is not jitted
     return x | ~w
+    #return x or not w
+"""
+
+def hard_and_include(w, x):
+    return jax.numpy.logical_or(x, jax.numpy.logical_not(w))
+
+#def hard_and_include(w, x):
+#    return jax.numpy.logical_or(x, jax.numpy.logical_not(w))
 
 """
 def symbolic_and_include(w, x):
@@ -41,6 +55,13 @@ def soft_and_neuron(w, x):
 def hard_and_neuron(w, x):
     x = jax.vmap(hard_and_include, 0, 0)(w, x)
     return jax.lax.reduce(x, True, jax.lax.bitwise_and, [0])
+
+
+"""
+def hard_and_neuron(w, x):
+    x = jax.vmap(hard_and_include, 0, 0)(w, x)
+    return jax.lax.reduce(x, True, jax.numpy.logical_and, [0])
+"""
 
 """
 def symbolic_and_neuron(w, x):

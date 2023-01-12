@@ -6,6 +6,20 @@ import jax._src.lax_reference as lax_reference
 import jaxlib
 
 
+def convert_element_type(x, dtype):
+    if dtype == numpy.int32 or dtype == numpy.int64:
+        dtype = "int"
+    elif dtype == bool:
+        dtype = "bool"
+    else:
+        raise NotImplementedError(
+            f"Symbolic conversion to {dtype} is not implemented")
+
+    def convert(x):
+        return f"{dtype}({x})"
+    return map_at_elements(x, convert)
+
+
 def convert_iterable_type(x: list, new_type):
     if new_type == list:
         return x
@@ -47,6 +61,38 @@ def map_at_elements(x, func: typing.Callable):
     return func(x)
 
 
+"""
+@dispatch
+def to_boolean_value_string(x: bool):
+    return '1' if x else '0'
+
+
+@dispatch
+def to_boolean_value_string(x: numpy.bool_):
+    return '1' if x else '0'
+
+
+@dispatch
+def to_boolean_value_string(x: int):
+    return '1' if x >= 1 else '0'
+
+
+@dispatch
+def to_boolean_value_string(x: float):
+    return '1' if x >= 1.0 else '0'
+
+
+@dispatch
+def to_boolean_value_string(x: str):
+    if x == '1' or x == '1.0' or x == 'True':
+        return '1'
+    elif x == '0' or x == '0.0' or x == 'False':
+        return '0'
+    else:
+        return x
+"""
+
+
 @dispatch
 def to_boolean_value_string(x: bool):
     return 'True' if x else 'False'
@@ -77,6 +123,7 @@ def to_boolean_value_string(x: str):
         return x
 
 
+
 @dispatch
 def unary_operator(operator: str, x: str) -> str:
     return f"{operator}({x})"
@@ -95,7 +142,7 @@ def unary_operator(operator: str, x: list):
 @dispatch
 def binary_infix_operator(operator: str, a: str, b: str, bracket: bool = False) -> str:
     if bracket:
-        return f"({a}) {operator} ({b})"
+        return f"({a} {operator} {b})"
     return f"{a} {operator} {b}"
 
 
@@ -114,6 +161,9 @@ def binary_infix_operator(operator: str, a: numpy.ndarray, b: list, bracket: boo
     return binary_infix_operator(operator, a, numpy.array(b), bracket)
 
 
+@dispatch
+def binary_infix_operator(operator: str, a: str, b: int, bracket: bool = False):
+    return binary_infix_operator(operator, a, str(b), bracket)
 
 
 def all_concrete_values(data):
@@ -137,6 +187,13 @@ def symbolic_not(*args, **kwargs):
         return unary_operator("not", *args, **kwargs)
 
 
+def symbolic_ne(*args, **kwargs):
+    if all_concrete_values([*args]):
+        return numpy.not_equal(*args, **kwargs)
+    else:
+        return binary_infix_operator("!=", *args, **kwargs)
+
+
 def symbolic_and(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_and(*args, **kwargs)
@@ -148,21 +205,15 @@ def symbolic_or(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_or(*args, **kwargs)
     else:
-        return binary_infix_operator("or", *args, **kwargs)
+        return binary_infix_operator("or", *args, **kwargs, bracket=True)
 
 
 def symbolic_xor(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_xor(*args, **kwargs)
     else:
-        return binary_infix_operator("^", *args, **kwargs, bracket=True)
+        return binary_infix_operator("^", *args, **kwargs)
 
-
-def symbolic_or(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return numpy.logical_or(*args, **kwargs)
-    else:
-        return binary_infix_operator("or", *args, **kwargs)
 
 
 def symbolic_sum(*args, **kwargs):
@@ -178,15 +229,6 @@ def symbolic_broadcast_in_dim(*args, **kwargs):
     return lax_reference.broadcast_in_dim(*args, **kwargs)
 
 
-def symbolic_convert_element_type_impl(x, dtype):
-    if dtype == numpy.int32 or dtype == numpy.int64:
-        dtype = "int"
-
-    def convert(x):
-        return f"{dtype}({x})"
-    return map_at_elements(x, convert)
-
-
 # TODO: add a test for this
 def symbolic_convert_element_type(*args, **kwargs):
     # Check if all the boolean arguments are True or False
@@ -195,7 +237,7 @@ def symbolic_convert_element_type(*args, **kwargs):
         return lax_reference.convert_element_type(*args, dtype=kwargs['new_dtype'])
     else:
         # Otherwise, we use the symbolic implementation
-        return symbolic_convert_element_type_impl(*args, dtype=kwargs['new_dtype'])
+        return convert_element_type(*args, dtype=kwargs['new_dtype'])
 
 
 def make_symbolic_reducer(py_binop, init_val):
@@ -226,6 +268,13 @@ def make_symbolic_reducer(py_binop, init_val):
 def symbolic_reduce(operand, init_value, computation, dimensions):
     reducer = make_symbolic_reducer(computation, init_value)
     return reducer(operand, tuple(dimensions)).astype(operand.dtype)
+
+
+def symbolic_reduce_and(*args, **kwargs):
+    if all_concrete_values([*args]):
+        return lax_reference.reduce(*args, init_value=True, computation=numpy.logical_and, dimensions=kwargs['axes'])
+    else:
+        return symbolic_reduce(*args, init_value='True', computation=symbolic_and, dimensions=kwargs['axes'])
 
 
 def symbolic_reduce_or(*args, **kwargs):

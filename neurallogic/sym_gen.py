@@ -10,10 +10,9 @@ import typing
 # TODO: rename this file to symbolic.py
 
 def symbolic_bind(prim, *args, **params):
-    # print("\n---symbolic_bind:")
-    # print("primitive: ", prim.name)
-    # print("args: ", args)
-    # print("params: ", params)
+    #print("\nprimitive: ", prim.name)
+    #print("args: ", args)
+    #print("params: ", params)
     symbolic_outvals = {
         'broadcast_in_dim': symbolic_primitives.symbolic_broadcast_in_dim,
         'reshape': lax_reference.reshape,
@@ -22,6 +21,8 @@ def symbolic_bind(prim, *args, **params):
         'or': symbolic_primitives.symbolic_or,
         'xor': symbolic_primitives.symbolic_xor,
         'not': symbolic_primitives.symbolic_not,
+        'ne': symbolic_primitives.symbolic_ne,
+        'reduce_and': symbolic_primitives.symbolic_reduce_and,
         'reduce_or': symbolic_primitives.symbolic_reduce_or,
         'reduce_sum': symbolic_primitives.symbolic_reduce_sum,
     }[prim.name](*args, **params)
@@ -54,6 +55,8 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
     env = {}
     symbolic_env = {}
 
+    # TODO: unify read and symbolic_read
+
     def read(var):
         # Literals are values baked into the Jaxpr
         if type(var) is core.Literal:
@@ -61,6 +64,9 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
         return env[var]
 
     def symbolic_read(var):
+        # Literals are values baked into the Jaxpr
+        if type(var) is core.Literal:
+            return var.val
         return symbolic_env[var]
 
     def write(var, val):
@@ -147,13 +153,16 @@ def symbolic_expression(symbolic_function, *args):
             lambda x: numpy.array(x, dtype=object), symbolic_function.literals)
         symbolic_jaxpr_literals = make_symbolic(
             symbolic_jaxpr_literals)
-        return eval_jaxpr(True, symbolic_function.jaxpr, symbolic_jaxpr_literals, *args)
-    return eval_jaxpr(True, symbolic_function.jaxpr, [], *args)
+        sym_expr = eval_jaxpr(True, symbolic_function.jaxpr, symbolic_jaxpr_literals, *args)
+    else:
+        sym_expr = eval_jaxpr(True, symbolic_function.jaxpr, [], *args)
+    #if not isinstance(sym_expr, str):
+    #    return str(sym_expr)
+    return sym_expr
 
 
 @dispatch
-def eval_symbolic_expression(x):
-    # print(f"Warning: symbolic_eval called on type {type(x)}")
+def eval_symbolic_expression(x: str):
     return eval(x)
 
 
