@@ -79,23 +79,13 @@ def test_layer():
             1.0, 0.0], [0.0, 0.0]], [0.0, 0.0, 0.0, 1.0]]
     ]
     for input, weights, expected in test_data:
-        input = jnp.array(input)
-        weights = jnp.array(weights)
-        expected = jnp.array(expected)
-        assert jnp.allclose(hard_and.soft_and_layer(weights, input), expected)
-        assert jnp.allclose(hard_and.hard_and_layer(harden.harden(
-            weights), harden.harden(input)), harden.harden(expected))
+        def soft(weights, input):
+            return hard_and.soft_and_layer(weights, input)
+        def hard(weights, input):
+            hard_weights = harden.harden(weights)
+            return hard_and.hard_and_layer(hard_weights, input)
 
-        # Do all the above again
-        def soft_caller(f, x):
-            return f(weights, x)
-        hard_weights = harden.harden(weights)
-        def hard_caller(f, x):
-            return f(hard_weights, x)
-        def symbolic_caller(f, x):
-            return hard_caller(f, x)
-        
-        check_consistency(hard_and.soft_and_layer, hard_and.hard_and_layer, input, expected, soft_caller, hard_caller, symbolic_caller)
+        check_consistency(soft, hard, expected, weights, input)
 
 
 def test_and():
@@ -104,12 +94,9 @@ def test_and():
         x = primitives.nl_ravel(type)(x)
         return x
 
-    soft, hard, symbolic = neural_logic_net.net(test_net)
-    soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
-    hard_weights = harden.hard_weights(soft_weights)
-    print(f'hard_weights: {hard_weights} of type {type(hard_weights)}')
-    symbolic_weights = sym_gen.make_symbolic(hard_weights)
-    print(f'symbolic_weights: {symbolic_weights} of type {type(symbolic_weights)}')
+    soft_and, hard_and, symbolic_and = neural_logic_net.net(test_net)
+    weights = soft_and.init(random.PRNGKey(0), [0.0, 0.0])
+    hard_weights = harden.hard_weights(weights)
     test_data = [
         [
             [1.0, 1.0],
@@ -131,24 +118,23 @@ def test_and():
     for input, expected in test_data:
         soft_input = jnp.array(input)
         soft_expected = jnp.array(expected)
-        soft_result = soft.apply(soft_weights, soft_input)
+        soft_result = soft_and.apply(weights, soft_input)
         assert jnp.allclose(soft_result, soft_expected)
         hard_input = harden.harden(soft_input)
         hard_expected = harden.harden(soft_expected)
-        hard_result = hard.apply(hard_weights, hard_input)
+        hard_result = hard_and.apply(hard_weights, hard_input)
         assert jnp.allclose(hard_result, hard_expected)
         #symbolic_result = symbolic.apply(symbolic_weights, hard_input.tolist())
         #assert jnp.array_equal(symbolic_result, hard_expected)
 
         # Do all the above again
-        def soft_caller(f, x):
-            return f(soft_weights, x)
-        def hard_caller(f, x):
-            return f(hard_weights, x)
-        def symbolic_caller(f, x):
-            return f(symbolic_weights, x)
-            
-        check_consistency(soft.apply, hard.apply, soft_input, soft_expected, soft_caller, hard_caller, symbolic_caller)
+        def soft(weights, input):
+            return soft_and.apply(weights, input)
+        def hard(weights, input):
+            hard_weights = harden.harden(weights)
+            return hard_and.apply(hard_weights, input)
+
+        check_consistency(soft, hard, expected, weights, input)
 
 
 def test_train_and():
