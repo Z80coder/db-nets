@@ -20,6 +20,7 @@ def convert_element_type(x, dtype):
     return map_at_elements(x, convert)
 
 
+# TODO: remove me
 def convert_iterable_type(x: list, new_type):
     if new_type == list:
         return x
@@ -33,32 +34,47 @@ def convert_iterable_type(x: list, new_type):
         raise NotImplementedError(
             f"Cannot convert type {type(x)} to type {new_type}")
 
+# TODO: allow func callable to control the type of the numpy.array or jax.numpy.array
 
-@dispatch
-def map_at_elements(x: list, func: typing.Callable):
-    return convert_iterable_type([map_at_elements(item, func) for item in x], type(x))
-
-
-@dispatch
-def map_at_elements(x: numpy.ndarray, func: typing.Callable):
-    return convert_iterable_type([map_at_elements(item, func) for item in x], type(x))
-
-
-@dispatch
-def map_at_elements(x: jax.numpy.ndarray, func: typing.Callable):
-    if x.ndim == 0:
-        return func(x.item())
-    return convert_iterable_type([map_at_elements(item, func) for item in x], type(x))
-
+# map_at_elements should alter the elements but not the type of the container
 
 @dispatch
 def map_at_elements(x: str, func: typing.Callable):
     return func(x)
 
+@dispatch
+def map_at_elements(x: bool, func: typing.Callable):
+    return func(x)
 
 @dispatch
-def map_at_elements(x, func: typing.Callable):
+def map_at_elements(x: numpy.bool_, func: typing.Callable):
     return func(x)
+
+@dispatch
+def map_at_elements(x: numpy.float, func: typing.Callable):
+    return func(x)
+
+@dispatch
+def map_at_elements(x: list, func: typing.Callable):
+    return [map_at_elements(item, func) for item in x]
+
+@dispatch
+def map_at_elements(x: numpy.ndarray, func: typing.Callable):
+    return numpy.array([map_at_elements(item, func) for item in x], dtype=object)
+
+@dispatch
+def map_at_elements(x: jax.numpy.ndarray, func: typing.Callable):
+    if x.ndim == 0:
+        return func(x.item())
+    return jax.numpy.array([map_at_elements(item, func) for item in x], dtype=object)
+
+@dispatch
+def map_at_elements(x: dict, func: typing.Callable):
+    return {k: map_at_elements(v, func) for k, v in x.items()}
+
+
+
+
 
 
 """

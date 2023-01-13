@@ -1,18 +1,20 @@
+import numpy
 import jax
 import jax._src.lax_reference as lax_reference
 from jax import core
 from jax._src.util import safe_map
-import numpy
+import flax
 from neurallogic import symbolic_primitives, harden
 from plum import dispatch
 import typing
 
 # TODO: rename this file to symbolic.py
 
+
 def symbolic_bind(prim, *args, **params):
-    #print("\nprimitive: ", prim.name)
-    #print("args: ", args)
-    #print("params: ", params)
+    # print("\nprimitive: ", prim.name)
+    # print("args: ", args)
+    # print("params: ", params)
     symbolic_outvals = {
         'broadcast_in_dim': symbolic_primitives.symbolic_broadcast_in_dim,
         'reshape': lax_reference.reshape,
@@ -137,6 +139,27 @@ def make_symbolic(x):
 
 
 @dispatch
+def make_symbolic(x: dict):
+    return symbolic_primitives.map_at_elements(x, symbolic_primitives.to_boolean_value_string)
+
+
+@dispatch
+def convert_jax_to_numpy_arrays(x: jax.numpy.ndarray):
+    return numpy.asarray(x)
+
+
+@dispatch
+def convert_jax_to_numpy_arrays(x: dict):
+    return {k: convert_jax_to_numpy_arrays(v) for k, v in x.items()}
+
+
+@dispatch
+def make_symbolic(x: flax.core.FrozenDict):
+    x = convert_jax_to_numpy_arrays(x.unfreeze())
+    return flax.core.FrozenDict(make_symbolic(x))
+
+
+@dispatch
 def make_symbolic(func: typing.Callable, *args):
     return jax.make_jaxpr(lambda *args: func(*args))(*args)
 
@@ -153,10 +176,11 @@ def symbolic_expression(symbolic_function, *args):
             lambda x: numpy.array(x, dtype=object), symbolic_function.literals)
         symbolic_jaxpr_literals = make_symbolic(
             symbolic_jaxpr_literals)
-        sym_expr = eval_jaxpr(True, symbolic_function.jaxpr, symbolic_jaxpr_literals, *args)
+        sym_expr = eval_jaxpr(True, symbolic_function.jaxpr,
+                              symbolic_jaxpr_literals, *args)
     else:
         sym_expr = eval_jaxpr(True, symbolic_function.jaxpr, [], *args)
-    #if not isinstance(sym_expr, str):
+    # if not isinstance(sym_expr, str):
     #    return str(sym_expr)
     return sym_expr
 

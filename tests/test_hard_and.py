@@ -25,7 +25,7 @@ def check_consistency(soft_function, hard_function, input, expected, soft_caller
     # Check that the symbolic version of the hard function performs as expected
     def make_symbolic(*input):
         return sym_gen.make_symbolic(hard_function, *input)
-    symbolic_hard_function = symbolic_caller(make_symbolic, harden.harden(input))
+    symbolic_hard_function = hard_caller(make_symbolic, harden.harden(input))
     print(f'symbolic_hard_function={symbolic_hard_function} with type {type(symbolic_hard_function)}')
     def eval_symbolic(*input):
         return sym_gen.eval_symbolic(symbolic_hard_function, *input)
@@ -167,7 +167,9 @@ def test_and():
     soft, hard, _ = neural_logic_net.net(test_net)
     soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
     hard_weights = harden.hard_weights(soft_weights)
-    #symbolic_weights = harden.symbolic_weights(soft_weights)
+    print(f'hard_weights: {hard_weights} of type {type(hard_weights)}')
+    symbolic_weights = sym_gen.make_symbolic(hard_weights)
+    print(f'symbolic_weights: {symbolic_weights} of type {type(symbolic_weights)}')
     test_data = [
         [
             [1.0, 1.0],
@@ -203,8 +205,6 @@ def test_and():
             return f(soft_weights, x)
         def hard_caller(f, x):
             return f(hard_weights, x)
-        # The symbolic net is actually the intepretation of the hard net (so we need to hard the hard_weights)
-        symbolic_weights = harden.harden(hard_weights)
         def symbolic_caller(f, x):
             return f(symbolic_weights, x)
             
