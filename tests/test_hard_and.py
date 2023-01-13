@@ -10,17 +10,17 @@ import typing
 from neurallogic import hard_and, harden, neural_logic_net, primitives, sym_gen, symbolic_primitives
 
 
-def check_consistency(soft_f: typing.Callable, hard_f: typing.Callable, expected, *args):
+def check_consistency(soft: typing.Callable, hard: typing.Callable,  symbolic: typing.Callable, expected, *args):
     # Check that the soft function performs as expected
-    assert numpy.allclose(soft_f(*args), expected)
+    assert numpy.allclose(soft(*args), expected)
 
     # Check that the hard function performs as expected
     hard_args = harden.harden(*args)
     hard_expected = harden.harden(expected)
-    assert numpy.allclose(hard_f(*hard_args), hard_expected)
+    assert numpy.allclose(hard(*hard_args), hard_expected)
 
     # Check that the symbolic function performs as expected
-    symbolic_f = sym_gen.make_symbolic_jaxpr(hard_f, *hard_args)
+    symbolic_f = sym_gen.make_symbolic_jaxpr(symbolic, *hard_args)
     assert numpy.allclose(sym_gen.eval_symbolic(symbolic_f, *hard_args), hard_expected)
 
     # Check that the symbolic function, when evaluted with symbolic inputs, performs as expected
@@ -28,7 +28,6 @@ def check_consistency(soft_f: typing.Callable, hard_f: typing.Callable, expected
     symbolic_expression = sym_gen.symbolic_expression(symbolic_f, *symbolic_input)
     symbolic_output = sym_gen.eval_symbolic_expression(symbolic_expression)
     assert numpy.allclose(symbolic_output, hard_expected)
-
 
 
 def test_include():
@@ -43,7 +42,7 @@ def test_include():
         [[-0.1, 1.0], 1.0]
     ]
     for input, expected in test_data:
-        check_consistency(hard_and.soft_and_include, hard_and.hard_and_include, expected, input[0], input[1])
+        check_consistency(hard_and.soft_and_include, hard_and.hard_and_include, hard_and.hard_and_include, expected, input[0], input[1])
 
 
 def test_neuron():
@@ -59,10 +58,11 @@ def test_neuron():
         def soft(weights, input):
             return hard_and.soft_and_neuron(weights, input)
         def hard(weights, input):
-            hard_weights = harden.harden(weights)
-            return hard_and.hard_and_neuron(hard_weights, input)
+            return hard_and.hard_and_neuron(weights, input)
+        def symbolic(weights, input):
+            return hard(weights, input)
 
-        check_consistency(soft, hard, expected, weights, input)
+        check_consistency(soft, hard, symbolic, expected, numpy.array(weights), numpy.array(input))
 
 
 def test_layer():
@@ -82,10 +82,11 @@ def test_layer():
         def soft(weights, input):
             return hard_and.soft_and_layer(weights, input)
         def hard(weights, input):
-            hard_weights = harden.harden(weights)
-            return hard_and.hard_and_layer(hard_weights, input)
+            return hard_and.hard_and_layer(weights, input)
+        def symbolic(weights, input):
+            return hard(weights, input)
 
-        check_consistency(soft, hard, expected, weights, input)
+        check_consistency(soft, hard, symbolic, expected, numpy.array(weights), numpy.array(input))
 
 
 def test_and():
