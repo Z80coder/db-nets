@@ -1,11 +1,10 @@
 from functools import reduce
 from typing import Callable
 
-import numpy
 import jax
 from flax import linen as nn
 
-from neurallogic import neural_logic_net
+from neurallogic import neural_logic_net, sym_gen
 
 
 
@@ -47,6 +46,11 @@ def symbolic_and_include(w, x):
     # We don't know the value of w or x, so we return the expression
     return expression
 """
+
+#def symbolic_and_include(w, x):
+#    symbolic_f = sym_gen.make_symbolic(hard_and_include, w, x)
+#    return sym_gen.eval_symbolic(symbolic_f, w, x)
+
 
 def soft_and_neuron(w, x):
     x = jax.vmap(soft_and_include, 0, 0)(w, x)
@@ -91,6 +95,10 @@ def symbolic_and_layer(w, x):
         raise TypeError(f"Input {x} should be a list")
     return [symbolic_and_neuron(wi, x) for wi in w]
 """
+
+def symbolic_and_layer(w, x):
+    symbolic_hard_and_layer = sym_gen.make_symbolic(hard_and_layer)
+    return sym_gen.eval_symbolic(symbolic_hard_and_layer, w, x)
 
 # TODO: investigate better initialization
 def initialize_near_to_zero():
@@ -139,7 +147,6 @@ class HardAndLayer(nn.Module):
         weights = self.param('weights', nn.initializers.constant(0.0), weights_shape)
         return hard_and_layer(weights, x)
 
-"""
 class SymbolicAndLayer(nn.Module):
     layer_size: int
 
@@ -147,13 +154,9 @@ class SymbolicAndLayer(nn.Module):
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
         weights = self.param('weights', nn.initializers.constant(0.0), weights_shape)
-        weights = weights.tolist()
-        if not isinstance(x, list):
-            raise TypeError(f"Input {x} should be a list")
         return symbolic_and_layer(weights, x)
-"""
 
 and_layer = neural_logic_net.select(
         lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: SoftAndLayer(layer_size, weights_init, dtype),
         lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: HardAndLayer(layer_size),
-        lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: [])
+        lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: SymbolicAndLayer(layer_size))

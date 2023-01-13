@@ -11,9 +11,11 @@ def convert_element_type(x, dtype):
         dtype = "int"
     elif dtype == bool:
         dtype = "bool"
+    elif dtype == numpy.float32:
+        dtype = "float"
     else:
         raise NotImplementedError(
-            f"Symbolic conversion to {dtype} is not implemented")
+                f"Symbolic conversion of type {type(x)} to {dtype} not implemented")
 
     def convert(x):
         return f"{dtype}({x})"
@@ -51,7 +53,7 @@ def map_at_elements(x: numpy.bool_, func: typing.Callable):
     return func(x)
 
 @dispatch
-def map_at_elements(x: numpy.float, func: typing.Callable):
+def map_at_elements(x: float, func: typing.Callable):
     return func(x)
 
 @dispatch
@@ -72,41 +74,6 @@ def map_at_elements(x: jax.numpy.ndarray, func: typing.Callable):
 def map_at_elements(x: dict, func: typing.Callable):
     return {k: map_at_elements(v, func) for k, v in x.items()}
 
-
-
-
-
-
-"""
-@dispatch
-def to_boolean_value_string(x: bool):
-    return '1' if x else '0'
-
-
-@dispatch
-def to_boolean_value_string(x: numpy.bool_):
-    return '1' if x else '0'
-
-
-@dispatch
-def to_boolean_value_string(x: int):
-    return '1' if x >= 1 else '0'
-
-
-@dispatch
-def to_boolean_value_string(x: float):
-    return '1' if x >= 1.0 else '0'
-
-
-@dispatch
-def to_boolean_value_string(x: str):
-    if x == '1' or x == '1.0' or x == 'True':
-        return '1'
-    elif x == '0' or x == '0.0' or x == 'False':
-        return '0'
-    else:
-        return x
-"""
 
 
 @dispatch
@@ -181,6 +148,14 @@ def binary_infix_operator(operator: str, a: numpy.ndarray, b: list, bracket: boo
 def binary_infix_operator(operator: str, a: str, b: int, bracket: bool = False):
     return binary_infix_operator(operator, a, str(b), bracket)
 
+@dispatch
+def binary_infix_operator(operator: str, a: numpy.ndarray, b: float, bracket: bool = False):
+    return binary_infix_operator(operator, a, str(b), bracket)
+
+@dispatch
+def binary_infix_operator(operator: str, a: numpy.ndarray, b: str, bracket: bool = False):
+    return binary_infix_operator(operator, a, numpy.array(b), bracket)
+
 
 def all_concrete_values(data):
     if isinstance(data, str):
@@ -209,6 +184,11 @@ def symbolic_ne(*args, **kwargs):
     else:
         return binary_infix_operator("!=", *args, **kwargs)
 
+def symbolic_gt(*args, **kwargs):
+    if all_concrete_values([*args]):
+        return numpy.greater(*args, **kwargs)
+    else:
+        return binary_infix_operator(">", *args, **kwargs)
 
 def symbolic_and(*args, **kwargs):
     if all_concrete_values([*args]):

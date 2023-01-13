@@ -24,6 +24,7 @@ def symbolic_bind(prim, *args, **params):
         'xor': symbolic_primitives.symbolic_xor,
         'not': symbolic_primitives.symbolic_not,
         'ne': symbolic_primitives.symbolic_ne,
+        'gt': symbolic_primitives.symbolic_gt,
         'reduce_and': symbolic_primitives.symbolic_reduce_and,
         'reduce_or': symbolic_primitives.symbolic_reduce_or,
         'reduce_sum': symbolic_primitives.symbolic_reduce_sum,
@@ -133,14 +134,31 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
         return safe_map(symbolic_read, jaxpr.outvars)[0]
 
 
-@dispatch
-def make_symbolic(x):
-    return symbolic_primitives.map_at_elements(x, symbolic_primitives.to_boolean_value_string)
 
-
+# TODO: use union types to consolidate these functions
 @dispatch
 def make_symbolic(x: dict):
     return symbolic_primitives.map_at_elements(x, symbolic_primitives.to_boolean_value_string)
+
+@dispatch
+def make_symbolic(x: list):
+    return symbolic_primitives.map_at_elements(x, symbolic_primitives.to_boolean_value_string)
+
+@dispatch
+def make_symbolic(x: numpy.ndarray):
+    return symbolic_primitives.map_at_elements(x, symbolic_primitives.to_boolean_value_string)
+
+@dispatch
+def make_symbolic(x: jax.numpy.ndarray):
+    return symbolic_primitives.map_at_elements(convert_jax_to_numpy_arrays(x), symbolic_primitives.to_boolean_value_string)
+
+@dispatch
+def make_symbolic(x: bool):
+    return symbolic_primitives.to_boolean_value_string(x)
+
+@dispatch
+def make_symbolic(*args):
+    return tuple([make_symbolic(arg) for arg in args])
 
 
 @dispatch
@@ -153,6 +171,7 @@ def convert_jax_to_numpy_arrays(x: dict):
     return {k: convert_jax_to_numpy_arrays(v) for k, v in x.items()}
 
 
+# TODO: use flax traversal?
 @dispatch
 def make_symbolic(x: flax.core.FrozenDict):
     x = convert_jax_to_numpy_arrays(x.unfreeze())
@@ -160,7 +179,7 @@ def make_symbolic(x: flax.core.FrozenDict):
 
 
 @dispatch
-def make_symbolic(func: typing.Callable, *args):
+def make_symbolic_jaxpr(func: typing.Callable, *args):
     return jax.make_jaxpr(lambda *args: func(*args))(*args)
 
 
