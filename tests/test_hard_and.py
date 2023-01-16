@@ -200,11 +200,31 @@ def test_symbolic_and():
         return x
 
     soft, hard, jaxpr, symbolic = neural_logic_net.net(test_net)
-    soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
+
+    # Compute soft result
+    soft_input = [0.6, 0.45]
+    soft_weights = soft.init(random.PRNGKey(0), soft_input)
+    soft_result = soft.apply(soft_weights, numpy.array(soft_input))
+    
+    # Compute hard result
     hard_weights = harden.hard_weights(soft_weights)
+    hard_input = harden.harden(soft_input)
+    hard_result = hard.apply(hard_weights, numpy.array(hard_input))
+    # Check that the hard result is the same as the soft result
+    assert numpy.array_equal(harden.harden(soft_result), hard_result)
+
+    # Compute symbolic result with evaluable inputs
+    symbolic_input = ['True', 'False']
+    symbolic_expression = symbolic.apply(hard_weights, symbolic_input)
+    symbolic_output = sym_gen.eval_symbolic_expression(symbolic_expression)
+    # Check that the symbolic result is the same as the hard result
+    assert numpy.array_equal(symbolic_output, hard_result)
+
+    # Compute symbolic result with symbolic inputs
     symbolic_input = ['x1', 'x2']
-    symbolic_result = symbolic.apply(hard_weights, symbolic_input)
-    assert symbolic_result.tolist() == ['True and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(True)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False))',
+    symbolic_expression = symbolic.apply(hard_weights, symbolic_input)
+    # Check the form of the symbolic expression
+    assert symbolic_expression.tolist() == ['True and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(True)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False))',
                                         'True and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(True)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False))',
                                         'True and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(True)) != 0.0 or not(False)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False))',
                                         'True and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(True)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True))']
