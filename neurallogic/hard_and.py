@@ -161,25 +161,26 @@ class HardAndLayer(nn.Module):
 class JaxprAndLayer:
     def __init__(self, layer_size):
         self.layer_size = layer_size
+        self.hard_and_layer = HardAndLayer(self.layer_size)
 
-    def __call__(self, *args):
-        hard_and_layer = HardAndLayer(self.layer_size)
-        jaxpr = sym_gen.make_symbolic_jaxpr(hard_and_layer, *args)
-        return sym_gen.eval_symbolic(jaxpr, *args)
-
+    def __call__(self, x):
+        jaxpr = sym_gen.make_symbolic_jaxpr(self.hard_and_layer, x)
+        return sym_gen.eval_symbolic(jaxpr, x)
 
 
 class SymbolicAndLayer:
     def __init__(self, layer_size):
         self.layer_size = layer_size
+        self.hard_and_layer = HardAndLayer(self.layer_size)
 
-    def __call__(self, *args):
-        hard_and_layer = HardAndLayer(self.layer_size)
-        numeric_input = numpy.array(sym_gen.make_numeric(*args), dtype=numpy.float32)
-        jaxpr = sym_gen.make_symbolic_jaxpr(hard_and_layer, numeric_input)
-        symbolic_input = sym_gen.make_symbolic(*args)
-        symbolic_expr = sym_gen.symbolic_expression(jaxpr, symbolic_input)
-        return symbolic_expr
+    def __call__(self, x):
+        # Convert the symbolic input to a numerical input so that we can generate a jaxpr
+        numeric_input = numpy.array(
+            sym_gen.make_numeric(x), dtype=numpy.float32)
+        jaxpr = sym_gen.make_symbolic_jaxpr(self.hard_and_layer, numeric_input)
+        # Convert the symbolic input back to a symbolic input so that we can symbolically evaluate the jaxpr
+        symbolic_input = sym_gen.make_symbolic(x)
+        return sym_gen.symbolic_expression(jaxpr, symbolic_input)
 
 
 and_layer = neural_logic_net.select(

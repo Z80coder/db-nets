@@ -228,3 +228,12 @@ def test_symbolic_and():
                                         'True and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(True)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False))',
                                         'True and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(True)) != 0.0 or not(False)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False))',
                                         'True and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(True)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True))']
+
+    # Compute symbolic result with symbolic inputs and symbolic weights
+    #symbolic_weights = sym_gen.make_symbolic(hard_weights)
+    #symbolic_expression = symbolic.apply(symbolic_weights, symbolic_input)
+    #symbolic_output = sym_gen.eval_symbolic_expression(symbolic_expression)
+    #print(f'symbolic_output = {symbolic_output}')
+    # Check the form of the symbolic expression
+    # TODO
+
