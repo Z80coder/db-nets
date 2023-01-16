@@ -189,18 +189,16 @@ def eval_symbolic(symbolic_function, *args):
     return eval_jaxpr(False, symbolic_function.jaxpr, [], *args)
 
 
-def symbolic_expression(symbolic_function, *args):
-    if hasattr(symbolic_function, 'literals'):
+def symbolic_expression(jaxpr, *args):
+    if hasattr(jaxpr, 'literals'):
         symbolic_jaxpr_literals = safe_map(
-            lambda x: numpy.array(x, dtype=object), symbolic_function.literals)
+            lambda x: numpy.array(x, dtype=object), jaxpr.literals)
         symbolic_jaxpr_literals = make_symbolic(
             symbolic_jaxpr_literals)
-        sym_expr = eval_jaxpr(True, symbolic_function.jaxpr,
+        sym_expr = eval_jaxpr(True, jaxpr.jaxpr,
                               symbolic_jaxpr_literals, *args)
     else:
-        sym_expr = eval_jaxpr(True, symbolic_function.jaxpr, [], *args)
-    # if not isinstance(sym_expr, str):
-    #    return str(sym_expr)
+        sym_expr = eval_jaxpr(True, jaxpr.jaxpr, [], *args)
     return sym_expr
 
 

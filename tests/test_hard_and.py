@@ -92,12 +92,14 @@ def test_layer():
 def test_and():
     def test_net(type, x):
         x = hard_and.and_layer(type)(4, nn.initializers.uniform(1.0))(x)
-        x = primitives.nl_ravel(type)(x)
+        #x = primitives.nl_ravel(type)(x)
+        x = x.ravel()
         return x
 
-    soft_and, hard_and, symbolic_and = neural_logic_net.net(test_net)
-    weights = soft_and.init(random.PRNGKey(0), [0.0, 0.0])
+    soft, hard, jaxpr, symbolic = neural_logic_net.net(test_net)
+    weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
     hard_weights = harden.hard_weights(weights)
+
     test_data = [
         [
             [1.0, 1.0],
@@ -117,25 +119,24 @@ def test_and():
         ]
     ]
     for input, expected in test_data:
-        soft_input = jnp.array(input)
-        soft_expected = jnp.array(expected)
-        soft_result = soft_and.apply(weights, soft_input)
-        assert jnp.allclose(soft_result, soft_expected)
-        hard_input = harden.harden(soft_input)
-        hard_expected = harden.harden(soft_expected)
-        hard_result = hard_and.apply(hard_weights, hard_input)
+        # Check that the soft function performs as expected
+        assert jnp.allclose(soft.apply(weights, jnp.array(input)), jnp.array(expected))
+
+        # Check that the hard function performs as expected
+        hard_input = harden.harden(jnp.array(input))
+        hard_expected = harden.harden(jnp.array(expected))
+        hard_result = hard.apply(hard_weights, hard_input)
         assert jnp.allclose(hard_result, hard_expected)
-        #symbolic_result = symbolic.apply(symbolic_weights, hard_input.tolist())
-        #assert jnp.array_equal(symbolic_result, hard_expected)
 
-        # Do all the above again
-        def soft(weights, input):
-            return soft_and.apply(weights, input)
-        def hard(weights, input):
-            hard_weights = harden.harden(weights)
-            return hard_and.apply(hard_weights, input)
-
-        check_consistency(soft, hard, expected, weights, input)
+        # Check that the jaxpr expression performs as expected
+        jaxpr_result = jaxpr.apply(hard_weights, hard_input)
+        assert numpy.allclose(jaxpr_result, hard_expected)
+    
+        # Check that the symbolic function, when evaluted with symbolic inputs, performs as expected
+        symbolic_input = sym_gen.make_symbolic(hard_input)
+        symbolic_expression = symbolic.apply(hard_weights, hard_input)
+        symbolic_output = sym_gen.eval_symbolic_expression(symbolic_expression)
+        assert numpy.allclose(symbolic_output, hard_expected)
 
 
 def test_train_and():

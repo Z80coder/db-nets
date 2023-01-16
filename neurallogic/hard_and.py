@@ -7,17 +7,17 @@ from flax import linen as nn
 from neurallogic import neural_logic_net, sym_gen
 
 
-
 def soft_and_include(w: float, x: float) -> float:
     """
     w > 0.5 implies the and operation is active, else inactive
 
     Assumes x is in [0, 1]
-    
+
     Corresponding hard logic: x OR ! w
     """
     w = jax.numpy.clip(w, 0.0, 1.0)
     return jax.numpy.maximum(x, 1.0 - w)
+
 
 # TODO: do we need to jit here? should apply jit at the highest level of the architecture
 # TODO: may need to jit in unit tests, however
@@ -30,11 +30,13 @@ def hard_and_include(w: bool, x: bool) -> bool:
     #return x or not w
 """
 
+
 def hard_and_include(w, x):
     return jax.numpy.logical_or(x, jax.numpy.logical_not(w))
 
-#def hard_and_include(w, x):
+# def hard_and_include(w, x):
 #    return jax.numpy.logical_or(x, jax.numpy.logical_not(w))
+
 
 """
 def symbolic_and_include(w, x):
@@ -47,7 +49,7 @@ def symbolic_and_include(w, x):
     return expression
 """
 
-#def symbolic_and_include(w, x):
+# def symbolic_and_include(w, x):
 #    symbolic_f = sym_gen.make_symbolic(hard_and_include, w, x)
 #    return sym_gen.eval_symbolic(symbolic_f, w, x)
 
@@ -55,6 +57,7 @@ def symbolic_and_include(w, x):
 def soft_and_neuron(w, x):
     x = jax.vmap(soft_and_include, 0, 0)(w, x)
     return jax.numpy.min(x)
+
 
 def hard_and_neuron(w, x):
     x = jax.vmap(hard_and_include, 0, 0)(w, x)
@@ -96,11 +99,13 @@ def symbolic_and_layer(w, x):
     return [symbolic_and_neuron(wi, x) for wi in w]
 """
 
-def symbolic_and_layer(w, x):
-    symbolic_hard_and_layer = sym_gen.make_symbolic(hard_and_layer)
-    return sym_gen.eval_symbolic(symbolic_hard_and_layer, w, x)
+# def symbolic_and_layer(w, x):
+#    symbolic_hard_and_layer = sym_gen.make_symbolic(hard_and_layer)
+#    return sym_gen.eval_symbolic(symbolic_hard_and_layer, w, x)
 
 # TODO: investigate better initialization
+
+
 def initialize_near_to_zero():
     def init(key, shape, dtype):
         dtype = jax.dtypes.canonicalize_dtype(dtype)
@@ -111,6 +116,7 @@ def initialize_near_to_zero():
         x = jax.numpy.clip(x, 0.001, 0.999)
         return x
     return init
+
 
 class SoftAndLayer(nn.Module):
     """
@@ -127,9 +133,11 @@ class SoftAndLayer(nn.Module):
     @nn.compact
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
-        weights = self.param('weights', self.weights_init, weights_shape, self.dtype)
+        weights = self.param('weights', self.weights_init,
+                             weights_shape, self.dtype)
         x = jax.numpy.asarray(x, self.dtype)
         return soft_and_layer(weights, x)
+
 
 class HardAndLayer(nn.Module):
     """
@@ -144,19 +152,39 @@ class HardAndLayer(nn.Module):
     @nn.compact
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
-        weights = self.param('weights', nn.initializers.constant(0.0), weights_shape)
+        weights = self.param(
+            'weights', nn.initializers.constant(0.0), weights_shape)
         return hard_and_layer(weights, x)
 
-class SymbolicAndLayer(nn.Module):
-    layer_size: int
 
-    @nn.compact
-    def __call__(self, x):
-        weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
-        weights = self.param('weights', nn.initializers.constant(0.0), weights_shape)
-        return symbolic_and_layer(weights, x)
+class JaxprAndLayer:
+    def __init__(self, layer_size):
+        self.layer_size = layer_size
+
+    def __call__(self, *args):
+        hard_and_layer = HardAndLayer(self.layer_size)
+        jaxpr = sym_gen.make_symbolic_jaxpr(hard_and_layer, *args)
+        return sym_gen.eval_symbolic(jaxpr, *args)
+
+
+class SymbolicAndLayer:
+    def __init__(self, layer_size):
+        self.layer_size = layer_size
+
+    def __call__(self, *args):
+        hard_and_layer = HardAndLayer(self.layer_size)
+        jaxpr = sym_gen.make_symbolic_jaxpr(hard_and_layer, *args)
+        symbolic_input = sym_gen.make_symbolic(*args)
+        symbolic_expr = sym_gen.symbolic_expression(jaxpr, symbolic_input)
+        return symbolic_expr
+
 
 and_layer = neural_logic_net.select(
-        lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: SoftAndLayer(layer_size, weights_init, dtype),
-        lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: HardAndLayer(layer_size),
-        lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: SymbolicAndLayer(layer_size))
+    lambda layer_size, weights_init=initialize_near_to_zero(),
+    dtype=jax.numpy.float32: SoftAndLayer(layer_size, weights_init, dtype),
+    lambda layer_size, weights_init=initialize_near_to_zero(
+    ), dtype=jax.numpy.float32: HardAndLayer(layer_size),
+    lambda layer_size, weights_init=initialize_near_to_zero(
+    ), dtype=jax.numpy.float32: JaxprAndLayer(layer_size),
+    lambda layer_size, weights_init=initialize_near_to_zero(),
+    dtype=jax.numpy.float32: SymbolicAndLayer(layer_size))

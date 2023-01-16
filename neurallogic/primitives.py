@@ -4,6 +4,8 @@ import operator
 
 from neurallogic import neural_logic_net
 
+# TODO: remove this file
+
 """
     symbolic shape transformations
 """
@@ -11,12 +13,12 @@ from neurallogic import neural_logic_net
 def symbolic_ravel(x):
     return numpy.array(x).ravel().tolist()
 
-nl_ravel = neural_logic_net.select(jnp.ravel, jnp.ravel, symbolic_ravel)
+#nl_ravel = neural_logic_net.select(jnp.ravel, jnp.ravel, symbolic_ravel)
 
 def symbolic_reshape(x, newshape):
     return numpy.array(x).reshape(newshape).tolist()
 
-nl_reshape = neural_logic_net.select(lambda newshape: lambda x: jnp.reshape(x, newshape), lambda newshape: lambda x: jnp.reshape(x, newshape), lambda newshape: lambda x: symbolic_reshape(x, newshape))
+#nl_reshape = neural_logic_net.select(lambda newshape: lambda x: jnp.reshape(x, newshape), lambda newshape: lambda x: jnp.reshape(x, newshape), lambda newshape: lambda x: symbolic_reshape(x, newshape))
 
 """
     symbolic computations
@@ -49,4 +51,4 @@ def symbolic_reduce(op, x, axis=None):
 def symbolic_sum(x, axis=None):
     return symbolic_reduce((operator.add, "+"), x, axis)
 
-nl_sum = neural_logic_net.select(lambda axis=None: lambda x: jnp.sum(x, axis), lambda axis=None: lambda x: jnp.sum(x, axis), lambda axis=None: lambda x: symbolic_sum(x, axis))
+#nl_sum = neural_logic_net.select(lambda axis=None: lambda x: jnp.sum(x, axis), lambda axis=None: lambda x: jnp.sum(x, axis), lambda axis=None: lambda x: symbolic_sum(x, axis))

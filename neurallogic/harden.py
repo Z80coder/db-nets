@@ -57,6 +57,10 @@ def map_keys_nested(f, d: dict) -> dict:
 def hard_weights(weights):
     return flax.core.FrozenDict(map_keys_nested(lambda str: str.replace("Soft", "Hard"), harden(weights.unfreeze())))
 
+"""
 def symbolic_weights(weights):
     return flax.core.FrozenDict(map_keys_nested(lambda str: str.replace("Soft", "Symbolic"), harden(weights.unfreeze())))
+"""
 
+def symbolic_weights(weights):
+    return flax.core.FrozenDict(map_keys_nested(lambda str: str.replace("Soft", "Hard"), harden(weights.unfreeze())))
