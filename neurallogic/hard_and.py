@@ -1,10 +1,11 @@
 from functools import reduce
 from typing import Callable
 
+import numpy
 import jax
 from flax import linen as nn
 
-from neurallogic import neural_logic_net, sym_gen
+from neurallogic import neural_logic_net, sym_gen, symbolic_primitives
 
 
 def soft_and_include(w: float, x: float) -> float:
@@ -167,13 +168,15 @@ class JaxprAndLayer:
         return sym_gen.eval_symbolic(jaxpr, *args)
 
 
+
 class SymbolicAndLayer:
     def __init__(self, layer_size):
         self.layer_size = layer_size
 
     def __call__(self, *args):
         hard_and_layer = HardAndLayer(self.layer_size)
-        jaxpr = sym_gen.make_symbolic_jaxpr(hard_and_layer, *args)
+        numeric_input = numpy.array(sym_gen.make_numeric(*args), dtype=numpy.float32)
+        jaxpr = sym_gen.make_symbolic_jaxpr(hard_and_layer, numeric_input)
         symbolic_input = sym_gen.make_symbolic(*args)
         symbolic_expr = sym_gen.symbolic_expression(jaxpr, symbolic_input)
         return symbolic_expr

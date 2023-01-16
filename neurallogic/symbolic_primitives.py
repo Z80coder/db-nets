@@ -105,6 +105,9 @@ def to_boolean_value_string(x: str):
     else:
         return x
 
+@dispatch
+def to_numeric_value(x):
+    return 1.0
 
 
 @dispatch
@@ -153,8 +156,9 @@ def binary_infix_operator(operator: str, a: numpy.ndarray, b: float, bracket: bo
     return binary_infix_operator(operator, a, str(b), bracket)
 
 @dispatch
-def binary_infix_operator(operator: str, a: numpy.ndarray, b: str, bracket: bool = False):
-    return binary_infix_operator(operator, a, numpy.array(b), bracket)
+def binary_infix_operator(operator: str, a: str, b: float, bracket: bool = False):
+    return binary_infix_operator(operator, a, str(b), bracket)
+
 
 
 def all_concrete_values(data):

@@ -133,32 +133,62 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
     else:
         return safe_map(symbolic_read, jaxpr.outvars)[0]
 
-
+# TODO: parameterise these functions by the element conversion function
 
 # TODO: use union types to consolidate these functions
 @dispatch
 def make_symbolic(x: dict):
     return symbolic_primitives.map_at_elements(x, symbolic_primitives.to_boolean_value_string)
+@dispatch
+def make_numeric(x: dict):
+    return symbolic_primitives.map_at_elements(x, symbolic_primitives.to_numeric_value)
+
 
 @dispatch
 def make_symbolic(x: list):
     return symbolic_primitives.map_at_elements(x, symbolic_primitives.to_boolean_value_string)
+@dispatch
+def make_numeric(x: list):
+    return symbolic_primitives.map_at_elements(x, symbolic_primitives.to_numeric_value)
+
 
 @dispatch
 def make_symbolic(x: numpy.ndarray):
     return symbolic_primitives.map_at_elements(x, symbolic_primitives.to_boolean_value_string)
+@dispatch
+def make_numeric(x: numpy.ndarray):
+    return symbolic_primitives.map_at_elements(x, symbolic_primitives.to_numeric_value)
+
 
 @dispatch
 def make_symbolic(x: jax.numpy.ndarray):
     return symbolic_primitives.map_at_elements(convert_jax_to_numpy_arrays(x), symbolic_primitives.to_boolean_value_string)
+@dispatch
+def make_numeric(x: jax.numpy.ndarray):
+    return symbolic_primitives.map_at_elements(convert_jax_to_numpy_arrays(x), symbolic_primitives.to_numeric_value)
+
 
 @dispatch
 def make_symbolic(x: bool):
     return symbolic_primitives.to_boolean_value_string(x)
+@dispatch
+def make_numeric(x: bool):
+    return symbolic_primitives.to_numeric_value(x)
+
+
+@dispatch
+def make_symbolic(x: str):
+    return symbolic_primitives.to_boolean_value_string(x)
+@dispatch
+def make_numeric(x: str):
+    return symbolic_primitives.to_numeric_value(x)
 
 @dispatch
 def make_symbolic(*args):
     return tuple([make_symbolic(arg) for arg in args])
+@dispatch
+def make_numeric(*args):
+    return tuple([make_numeric(arg) for arg in args])
 
 
 @dispatch
@@ -171,11 +201,14 @@ def convert_jax_to_numpy_arrays(x: dict):
     return {k: convert_jax_to_numpy_arrays(v) for k, v in x.items()}
 
 
-# TODO: use flax traversal?
 @dispatch
 def make_symbolic(x: flax.core.FrozenDict):
     x = convert_jax_to_numpy_arrays(x.unfreeze())
     return flax.core.FrozenDict(make_symbolic(x))
+@dispatch
+def make_numeric(x: flax.core.FrozenDict):
+    x = convert_jax_to_numpy_arrays(x.unfreeze())
+    return flax.core.FrozenDict(make_numeric(x))
 
 
 @dispatch
