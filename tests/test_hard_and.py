@@ -4,7 +4,6 @@ from flax import linen as nn
 from flax.training import train_state
 from jax import random
 import numpy
-import typing
 
 from neurallogic import hard_and, harden, neural_logic_net, symbolic_generation
 from tests import utils
