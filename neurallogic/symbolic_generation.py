@@ -7,7 +7,7 @@ import flax
 from neurallogic import symbolic_primitives
 from plum import dispatch
 import typing
-from typing import (Any, Callable)
+from typing import (Any, Mapping)
 
 # TODO: rename this file to symbolic.py
 
@@ -55,12 +55,12 @@ def make_symbolic_flax_jaxpr(flax_layer, x):
     # Convert actual weights to dummy numeric weights (if needed)
     if isinstance(actual_weights, list) or (isinstance(actual_weights, numpy.ndarray) and actual_weights.dtype == object):
         numeric_weights = symbolic_primitives.map_at_elements(actual_weights, lambda x: 0)
-        numeric_weights = numpy.asarray(numeric_weights, dtype=numpy.float32)
+        numeric_weights = numpy.asarray(numeric_weights, dtype=numpy.int32)
         put_variable(flax_layer, "params", "weights", numeric_weights)
     # Convert input to dummy numeric input (if needed)
     if isinstance(x, list) or (isinstance(x, numpy.ndarray) and x.dtype == object):
         x = symbolic_primitives.map_at_elements(x, lambda x: 0)
-        x = numpy.asarray(x, dtype=numpy.float32)
+        x = numpy.asarray(x, dtype=numpy.int32)
     # Make the jaxpr that corresponds to the flax layer
     jaxpr = make_symbolic_jaxpr(flax_layer, x)
     # Replace the dummy numeric weights with the actual weights in the jaxpr

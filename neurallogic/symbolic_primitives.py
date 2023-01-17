@@ -211,7 +211,7 @@ def symbolic_xor(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_xor(*args, **kwargs)
     else:
-        return binary_infix_operator("^", *args, **kwargs)
+        return binary_infix_operator("^", *args, **kwargs, bracket=False)
 
 
 

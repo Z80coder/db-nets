@@ -186,28 +186,29 @@ def test_symbolic_and():
     # Check that the symbolic result is the same as the hard result
     assert numpy.array_equal(symbolic_output, hard_result)
 
-    # Compute symbolic result with symbolic inputs and non-symbolic weights
-    symbolic_input = ['x1', 'x2']
-    symbolic_output = symbolic.apply(hard_weights, symbolic_input)
-    # Check the form of the symbolic expression
-    assert numpy.array_equal(symbolic_output, ['True and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or False) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True)',
- 'True and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or False) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True)',
- 'True and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or False) != 0.0 or True) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True)',
- 'True and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or False) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False)'])
-
-    # Compute symbolic result with symbolic inputs and symbolic weights
-    symbolic_weights = symbolic_generation.make_symbolic(hard_weights)
-    symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
-    # Check the form of the symbolic expression
-    assert numpy.array_equal(symbolic_output, ['True and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(True != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0))',
- 'True and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(True != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0))',
- 'True and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(True != 0.0)) != 0.0 or not(False != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0))',
- 'True and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(True != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(True != 0.0))'])
-
     # Compute symbolic result with symbolic inputs and symbolic weights, but where the symbols can be evaluated
     symbolic_input = ['True', 'False']
+    symbolic_weights = symbolic_generation.make_symbolic(hard_weights)
     symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
     symbolic_output = symbolic_generation.eval_symbolic_expression(symbolic_output)
     # Check that the symbolic result is the same as the hard result
     assert numpy.array_equal(symbolic_output, hard_result)
+
+    # Compute symbolic result with symbolic inputs and non-symbolic weights
+    symbolic_input = ['x1', 'x2']
+    symbolic_output = symbolic.apply(hard_weights, symbolic_input)
+    # Check the form of the symbolic expression
+    assert numpy.array_equal(symbolic_output, ['True and (True and (x1 != 0 or False) and (x2 != 0 or True) != 0 or True) and (True and (x1 != 0 or False) and (x2 != 0 or False) != 0 or False) and (True and (x1 != 0 or False) and (x2 != 0 or True) != 0 or False) and (True and (x1 != 0 or False) and (x2 != 0 or True) != 0 or True)',
+ 'True and (True and (x1 != 0 or False) and (x2 != 0 or True) != 0 or False) and (True and (x1 != 0 or False) and (x2 != 0 or False) != 0 or False) and (True and (x1 != 0 or False) and (x2 != 0 or True) != 0 or False) and (True and (x1 != 0 or False) and (x2 != 0 or True) != 0 or True)',
+ 'True and (True and (x1 != 0 or False) and (x2 != 0 or True) != 0 or True) and (True and (x1 != 0 or False) and (x2 != 0 or False) != 0 or True) and (True and (x1 != 0 or False) and (x2 != 0 or True) != 0 or False) and (True and (x1 != 0 or False) and (x2 != 0 or True) != 0 or True)',
+ 'True and (True and (x1 != 0 or False) and (x2 != 0 or True) != 0 or True) and (True and (x1 != 0 or False) and (x2 != 0 or False) != 0 or False) and (True and (x1 != 0 or False) and (x2 != 0 or True) != 0 or False) and (True and (x1 != 0 or False) and (x2 != 0 or True) != 0 or False)'])
+
+    # Compute symbolic result with symbolic inputs and symbolic weights
+    symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
+    # Check the form of the symbolic expression
+    assert numpy.array_equal(symbolic_output, ['True and (True and (x1 != 0 or not(True != 0)) and (x2 != 0 or not(False != 0)) != 0 or not(False != 0)) and (True and (x1 != 0 or not(True != 0)) and (x2 != 0 or not(True != 0)) != 0 or not(True != 0)) and (True and (x1 != 0 or not(True != 0)) and (x2 != 0 or not(False != 0)) != 0 or not(True != 0)) and (True and (x1 != 0 or not(True != 0)) and (x2 != 0 or not(False != 0)) != 0 or not(False != 0))',
+ 'True and (True and (x1 != 0 or not(True != 0)) and (x2 != 0 or not(False != 0)) != 0 or not(True != 0)) and (True and (x1 != 0 or not(True != 0)) and (x2 != 0 or not(True != 0)) != 0 or not(True != 0)) and (True and (x1 != 0 or not(True != 0)) and (x2 != 0 or not(False != 0)) != 0 or not(True != 0)) and (True and (x1 != 0 or not(True != 0)) and (x2 != 0 or not(False != 0)) != 0 or not(False != 0))',
+ 'True and (True and (x1 != 0 or not(True != 0)) and (x2 != 0 or not(False != 0)) != 0 or not(False != 0)) and (True and (x1 != 0 or not(True != 0)) and (x2 != 0 or not(True != 0)) != 0 or not(False != 0)) and (True and (x1 != 0 or not(True != 0)) and (x2 != 0 or not(False != 0)) != 0 or not(True != 0)) and (True and (x1 != 0 or not(True != 0)) and (x2 != 0 or not(False != 0)) != 0 or not(False != 0))',
+ 'True and (True and (x1 != 0 or not(True != 0)) and (x2 != 0 or not(False != 0)) != 0 or not(False != 0)) and (True and (x1 != 0 or not(True != 0)) and (x2 != 0 or not(True != 0)) != 0 or not(True != 0)) and (True and (x1 != 0 or not(True != 0)) and (x2 != 0 or not(False != 0)) != 0 or not(True != 0)) and (True and (x1 != 0 or not(True != 0)) and (x2 != 0 or not(False != 0)) != 0 or not(True != 0))'])
+
     
