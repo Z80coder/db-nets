@@ -6,7 +6,7 @@ from jax import random
 import numpy
 import typing
 
-from neurallogic import hard_and, harden, neural_logic_net, primitives, sym_gen, symbolic_primitives
+from neurallogic import hard_and, harden, neural_logic_net, sym_gen
 
 
 def check_consistency(soft: typing.Callable, hard: typing.Callable, expected, *args):
