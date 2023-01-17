@@ -13,6 +13,10 @@ def harden(x: float):
     return harden_float(x)
 
 @dispatch
+def harden(x: list):
+    return symbolic_primitives.map_at_elements(x, harden_float)
+
+@dispatch
 def harden(x: numpy.ndarray):
     return symbolic_primitives.map_at_elements(x, harden_float)
 
@@ -25,6 +29,10 @@ def harden(x: dict):
     return symbolic_primitives.map_at_elements(x, harden_float)
 
 @dispatch
+def harden(x: flax.core.FrozenDict):
+    return flax.core.FrozenDict(symbolic_primitives.map_at_elements(x.unfreeze(), harden_float))
+
+@dispatch
 def harden(*args):
     if len(args) == 1:
         return harden(args[0])
@@ -34,9 +42,5 @@ def harden(*args):
 def map_keys_nested(f, d: dict) -> dict:
     return {f(k): map_keys_nested(f, v) if isinstance(v, dict) else v for k, v in d.items()}
 
-
 def hard_weights(weights):
-    unfrozen_weights = weights.unfreeze()
-    hard_weights = harden(unfrozen_weights)
-    return flax.core.FrozenDict(map_keys_nested(lambda str: str.replace("Soft", "Hard"), hard_weights))
-
+    return flax.core.FrozenDict(map_keys_nested(lambda str: str.replace("Soft", "Hard"), harden(weights.unfreeze())))
