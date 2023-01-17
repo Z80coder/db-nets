@@ -83,6 +83,8 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
         safe_map(write, jaxpr.invars, args)
         safe_map(write, jaxpr.constvars, consts)
     safe_map(symbolic_write, jaxpr.invars, args)
+    print(f'jaxpr.constvars: {jaxpr.constvars} of type {type(jaxpr.constvars)}')
+    print(f'consts: {consts} of type {type(consts)}')
     safe_map(symbolic_write, jaxpr.constvars, consts)
 
     def eval_jaxpr_impl(jaxpr):
@@ -165,7 +167,7 @@ def make_symbolic(x: jax.numpy.ndarray):
     return symbolic_primitives.map_at_elements(convert_jax_to_numpy_arrays(x), symbolic_primitives.to_boolean_value_string)
 @dispatch
 def make_numeric(x: jax.numpy.ndarray):
-    return symbolic_primitives.map_at_elements(convert_jax_to_numpy_arrays(x), symbolic_primitives.to_numeric_value)
+    return symbolic_primitives.map_at_elements(x, symbolic_primitives.to_numeric_value)
 
 
 @dispatch
@@ -207,7 +209,8 @@ def make_symbolic(x: flax.core.FrozenDict):
     return flax.core.FrozenDict(make_symbolic(x))
 @dispatch
 def make_numeric(x: flax.core.FrozenDict):
-    x = convert_jax_to_numpy_arrays(x.unfreeze())
+    #x = convert_jax_to_numpy_arrays(x.unfreeze())
+    x = x.unfreeze()
     return flax.core.FrozenDict(make_numeric(x))
 
 
@@ -224,12 +227,14 @@ def eval_symbolic(symbolic_function, *args):
 
 def symbolic_expression(jaxpr, *args):
     if hasattr(jaxpr, 'literals'):
-        symbolic_jaxpr_literals = safe_map(
-            lambda x: numpy.array(x, dtype=object), jaxpr.literals)
-        symbolic_jaxpr_literals = make_symbolic(
-            symbolic_jaxpr_literals)
+        #symbolic_jaxpr_literals = safe_map(
+        #    lambda x: numpy.array(x, dtype=object), jaxpr.literals)
+        #symbolic_jaxpr_literals = make_symbolic(
+        #    symbolic_jaxpr_literals)
+        #sym_expr = eval_jaxpr(True, jaxpr.jaxpr,
+        #                      symbolic_jaxpr_literals, *args)
         sym_expr = eval_jaxpr(True, jaxpr.jaxpr,
-                              symbolic_jaxpr_literals, *args)
+                              jaxpr.literals, *args)
     else:
         sym_expr = eval_jaxpr(True, jaxpr.jaxpr, [], *args)
     return sym_expr

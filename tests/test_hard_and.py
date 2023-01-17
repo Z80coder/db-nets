@@ -1,5 +1,4 @@
 import jax
-import jax.numpy as jnp
 import optax
 from flax import linen as nn
 from flax.training import train_state
@@ -16,6 +15,7 @@ def check_consistency(soft: typing.Callable, hard: typing.Callable,  symbolic: t
 
     # Check that the hard function performs as expected
     hard_args = harden.harden(*args)
+    print(f'hard_args={hard_args} of type {type(hard_args)}')
     hard_expected = harden.harden(expected)
     assert numpy.allclose(hard(*hard_args), hard_expected)
 
@@ -68,7 +68,7 @@ def test_neuron():
             return hard(weights, input)
 
         check_consistency(soft, hard, symbolic, expected,
-                          numpy.array(weights), numpy.array(input))
+                          jax.numpy.array(weights), jax.numpy.array(input))
 
 
 def test_layer():
@@ -94,8 +94,8 @@ def test_layer():
         def symbolic(weights, input):
             return hard(weights, input)
 
-        check_consistency(soft, hard, symbolic, expected,
-                          numpy.array(weights), numpy.array(input))
+        check_consistency(soft, hard, symbolic, jax.numpy.array(expected),
+                          jax.numpy.array(weights), jax.numpy.array(input))
 
 
 def test_and():
@@ -106,6 +106,7 @@ def test_and():
 
     soft, hard, jaxpr, symbolic = neural_logic_net.net(test_net)
     weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
+    print(f'Weights: {weights} of type {type(weights)}')
     hard_weights = harden.hard_weights(weights)
 
     test_data = [
@@ -128,22 +129,22 @@ def test_and():
     ]
     for input, expected in test_data:
         # Check that the soft function performs as expected
-        assert jnp.allclose(soft.apply(
-            weights, jnp.array(input)), jnp.array(expected))
+        assert jax.numpy.allclose(soft.apply(
+            weights, jax.numpy.array(input)), jax.numpy.array(expected))
 
         # Check that the hard function performs as expected
-        hard_input = harden.harden(jnp.array(input))
-        hard_expected = harden.harden(jnp.array(expected))
+        hard_input = harden.harden(jax.numpy.array(input))
+        hard_expected = harden.harden(jax.numpy.array(expected))
         hard_output = hard.apply(hard_weights, hard_input)
-        assert jnp.allclose(hard_output, hard_expected)
+        assert jax.numpy.allclose(hard_output, hard_expected)
 
         # Check that the jaxpr expression performs as expected
         jaxpr_output = jaxpr.apply(hard_weights, hard_input)
         assert numpy.allclose(jaxpr_output, hard_expected)
 
-        # Check that the symbolic function, when evaluted with symbolic inputs, performs as expected
-        symbolic_expression = symbolic.apply(hard_weights, hard_input)
-        symbolic_output = sym_gen.eval_symbolic_expression(symbolic_expression)
+        # Check that the symbolic function performs as expected
+        symbolic_output = symbolic.apply(hard_weights, hard_input)
+        print(f'Symbolic output: {symbolic_output} of type {type(symbolic_output)}')
         assert numpy.allclose(symbolic_output, hard_expected)
 
 
@@ -166,15 +167,15 @@ def test_train_and():
         [1.0, 1.0, 1.0, 1.0],
         [0.0, 1.0, 1.0, 1.0]
     ]
-    input = jnp.array(x)
-    output = jnp.array(y)
+    input = jax.numpy.array(x)
+    output = jax.numpy.array(y)
 
     # Train the and layer
     tx = optax.sgd(0.1)
     state = train_state.TrainState.create(apply_fn=jax.vmap(
         soft.apply, in_axes=(None, 0)), params=soft_weights, tx=tx)
     grad_fn = jax.jit(jax.value_and_grad(lambda params, x,
-                      y: jnp.mean((state.apply_fn(params, x) - y) ** 2)))
+                      y: jax.numpy.mean((state.apply_fn(params, x) - y) ** 2)))
     for epoch in range(1, 100):
         loss, grads = grad_fn(state.params, input, output)
         state = state.apply_gradients(grads=grads)
@@ -184,13 +185,12 @@ def test_train_and():
     hard_weights = harden.hard_weights(soft_weights)
 
     for input, expected in zip(x, y):
-        hard_input = harden.harden_array(harden.harden(jnp.array(input)))
-        hard_expected = harden.harden_array(harden.harden(jnp.array(expected)))
+        hard_input = harden.harden(jax.numpy.array(input))
+        hard_expected = harden.harden(jax.numpy.array(expected))
         hard_result = hard.apply(hard_weights, hard_input)
-        assert jnp.allclose(hard_result, hard_expected)
-        symbolic_expression = symbolic.apply(hard_weights, hard_input)
-        symbolic_output = sym_gen.eval_symbolic_expression(symbolic_expression)
-        assert jnp.array_equal(symbolic_output, hard_expected)
+        assert jax.numpy.allclose(hard_result, hard_expected)
+        symbolic_output = symbolic.apply(hard_weights, hard_input)
+        assert jax.numpy.array_equal(symbolic_output, hard_expected)
 
 
 def test_symbolic_and():
@@ -202,38 +202,51 @@ def test_symbolic_and():
     soft, hard, jaxpr, symbolic = neural_logic_net.net(test_net)
 
     # Compute soft result
-    soft_input = [0.6, 0.45]
+    soft_input = jax.numpy.array([0.6, 0.45])
     soft_weights = soft.init(random.PRNGKey(0), soft_input)
     soft_result = soft.apply(soft_weights, numpy.array(soft_input))
     
     # Compute hard result
     hard_weights = harden.hard_weights(soft_weights)
     hard_input = harden.harden(soft_input)
+    print(f'hard_input: {hard_input} of type {type(hard_input)}')
     hard_result = hard.apply(hard_weights, numpy.array(hard_input))
     # Check that the hard result is the same as the soft result
     assert numpy.array_equal(harden.harden(soft_result), hard_result)
 
-    # Compute symbolic result with evaluable inputs
-    symbolic_input = ['True', 'False']
-    symbolic_expression = symbolic.apply(hard_weights, symbolic_input)
-    symbolic_output = sym_gen.eval_symbolic_expression(symbolic_expression)
+    # Compute symbolic result with non-symbolic inputs
+    symbolic_output = symbolic.apply(hard_weights, hard_input)
     # Check that the symbolic result is the same as the hard result
     assert numpy.array_equal(symbolic_output, hard_result)
 
-    # Compute symbolic result with symbolic inputs
+    # Compute symbolic result with symbolic inputs and non-symbolic weights
     symbolic_input = ['x1', 'x2']
-    symbolic_expression = symbolic.apply(hard_weights, symbolic_input)
+    symbolic_output = symbolic.apply(hard_weights, symbolic_input)
     # Check the form of the symbolic expression
-    assert symbolic_expression.tolist() == ['True and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(True)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False))',
-                                        'True and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(True)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False))',
-                                        'True and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(True)) != 0.0 or not(False)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False))',
-                                        'True and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(False)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(True)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True)) and (True and (x1 != 0.0 or not(True)) and (x2 != 0.0 or not(False)) != 0.0 or not(True))']
+    #print(f'Symbolic output: {symbolic_output} of type {type(symbolic_output)}')
+    assert numpy.array_equal(symbolic_output, ['True and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or False) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True)',
+ 'True and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or False) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True)',
+ 'True and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or False) != 0.0 or True) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True)',
+ 'True and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or False) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False)'])
 
     # Compute symbolic result with symbolic inputs and symbolic weights
-    #symbolic_weights = sym_gen.make_symbolic(hard_weights)
-    #symbolic_expression = symbolic.apply(symbolic_weights, symbolic_input)
-    #symbolic_output = sym_gen.eval_symbolic_expression(symbolic_expression)
-    #print(f'symbolic_output = {symbolic_output}')
+    symbolic_weights = sym_gen.make_symbolic(hard_weights)
+    symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
     # Check the form of the symbolic expression
-    # TODO
+    #print(f'Symbolic output: {symbolic_output} of type {type(symbolic_output)}')
+    assert numpy.array_equal(symbolic_output, ['True and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(True != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0))',
+ 'True and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(True != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0))',
+ 'True and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(True != 0.0)) != 0.0 or not(False != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0))',
+ 'True and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(True != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(True != 0.0))'])
 
+    # Compute symbolic result with symbolic inputs and symbolic weights, but where the symbols can be evaluated
+    symbolic_input = ['True', 'False']
+    symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
+    #print(f'symbolic_output = {symbolic_output} of type {type(symbolic_output)}')
+    symbolic_output = sym_gen.eval_symbolic_expression(symbolic_output)
+    #print(f'symbolic_output = {symbolic_output} of type {type(symbolic_output)}')
+    # Check that the symbolic result is the same as the hard result
+    print(f'symbolic_output = {symbolic_output} of type {type(symbolic_output)}')
+    print(f'hard_result = {hard_result} of type {type(hard_result)}')
+    assert numpy.array_equal(symbolic_output, hard_result)
+    

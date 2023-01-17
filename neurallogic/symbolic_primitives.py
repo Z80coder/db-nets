@@ -68,12 +68,15 @@ def map_at_elements(x: numpy.ndarray, func: typing.Callable):
 def map_at_elements(x: jax.numpy.ndarray, func: typing.Callable):
     if x.ndim == 0:
         return func(x.item())
-    return jax.numpy.array([map_at_elements(item, func) for item in x], dtype=object)
+    return jax.numpy.array([map_at_elements(item, func) for item in x])
 
 @dispatch
 def map_at_elements(x: dict, func: typing.Callable):
     return {k: map_at_elements(v, func) for k, v in x.items()}
 
+@dispatch
+def map_at_elements(x: tuple, func: typing.Callable):
+    return tuple(map_at_elements(list(x), func))
 
 
 @dispatch
@@ -107,7 +110,14 @@ def to_boolean_value_string(x: str):
 
 @dispatch
 def to_numeric_value(x):
-    return 1.0
+    if x == 'True' or x:
+        return 1
+    elif x == 'False' or not x:
+        return 0
+    elif isinstance(x, int) or isinstance(x, float):
+        return x
+    else:
+        return 0
 
 
 @dispatch
