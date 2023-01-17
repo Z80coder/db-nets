@@ -8,6 +8,8 @@ from neurallogic import symbolic_primitives
 def harden_float(x: float) -> bool:
     return x > 0.5
 
+harden_array = jax.vmap(harden_float, 0, 0)
+
 @dispatch
 def harden(x: float):
     return harden_float(x)
@@ -18,11 +20,11 @@ def harden(x: list):
 
 @dispatch
 def harden(x: numpy.ndarray):
-    return symbolic_primitives.map_at_elements(x, harden_float)
+    return harden_array(x)
 
 @dispatch
 def harden(x: jax.numpy.ndarray):
-    return symbolic_primitives.map_at_elements(x, harden_float)
+    return harden_array(x)
 
 @dispatch
 def harden(x: dict):

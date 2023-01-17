@@ -15,7 +15,7 @@ def convert_element_type(x, dtype):
         dtype = "float"
     else:
         raise NotImplementedError(
-                f"Symbolic conversion of type {type(x)} to {dtype} not implemented")
+            f"Symbolic conversion of type {type(x)} to {dtype} not implemented")
 
     def convert(x):
         return f"{dtype}({x})"
@@ -30,25 +30,31 @@ def convert_element_type(x, dtype):
 def map_at_elements(x: str, func: typing.Callable):
     return func(x)
 
+
 @dispatch
 def map_at_elements(x: bool, func: typing.Callable):
     return func(x)
+
 
 @dispatch
 def map_at_elements(x: numpy.bool_, func: typing.Callable):
     return func(x)
 
+
 @dispatch
 def map_at_elements(x: float, func: typing.Callable):
     return func(x)
+
 
 @dispatch
 def map_at_elements(x: list, func: typing.Callable):
     return [map_at_elements(item, func) for item in x]
 
+
 @dispatch
 def map_at_elements(x: numpy.ndarray, func: typing.Callable):
     return numpy.array([map_at_elements(item, func) for item in x], dtype=object)
+
 
 @dispatch
 def map_at_elements(x: jax.numpy.ndarray, func: typing.Callable):
@@ -56,9 +62,11 @@ def map_at_elements(x: jax.numpy.ndarray, func: typing.Callable):
         return func(x.item())
     return jax.numpy.array([map_at_elements(item, func) for item in x])
 
+
 @dispatch
 def map_at_elements(x: dict, func: typing.Callable):
     return {k: map_at_elements(v, func) for k, v in x.items()}
+
 
 @dispatch
 def map_at_elements(x: tuple, func: typing.Callable):
@@ -93,6 +101,7 @@ def to_boolean_value_string(x: str):
         return 'False'
     else:
         return x
+
 
 @dispatch
 def to_numeric_value(x):
@@ -145,22 +154,25 @@ def binary_infix_operator(operator: str, a: numpy.ndarray, b: list):
 def binary_infix_operator(operator: str, a: str, b: int):
     return binary_infix_operator(operator, a, str(b))
 
+
 @dispatch
 def binary_infix_operator(operator: str, a: numpy.ndarray, b: float):
     return binary_infix_operator(operator, a, str(b))
+
 
 @dispatch
 def binary_infix_operator(operator: str, a: str, b: float):
     return binary_infix_operator(operator, a, str(b))
 
+
 @dispatch
 def binary_infix_operator(operator: str, a: numpy.ndarray, b: jax.numpy.ndarray):
     return binary_infix_operator(operator, a, numpy.array(b))
 
+
 @dispatch
 def binary_infix_operator(operator: str, a: bool, b: str):
     return binary_infix_operator(operator, str(a), b)
-
 
 
 def all_concrete_values(data):
@@ -190,11 +202,13 @@ def symbolic_ne(*args, **kwargs):
     else:
         return "(" + binary_infix_operator("!=", *args, **kwargs) + ")"
 
+
 def symbolic_gt(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.greater(*args, **kwargs)
     else:
         return binary_infix_operator(">", *args, **kwargs)
+
 
 def symbolic_and(*args, **kwargs):
     if all_concrete_values([*args]):
@@ -215,7 +229,6 @@ def symbolic_xor(*args, **kwargs):
         return numpy.logical_xor(*args, **kwargs)
     else:
         return binary_infix_operator("^", *args, **kwargs)
-
 
 
 def symbolic_sum(*args, **kwargs):

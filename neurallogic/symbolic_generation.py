@@ -200,11 +200,6 @@ def make_symbolic(x: str):
 
 
 @dispatch
-def make_symbolic(*args):
-    return tuple([make_symbolic(arg) for arg in args])
-
-
-@dispatch
 def convert_jax_to_numpy_arrays(x: jax.numpy.ndarray):
     return numpy.asarray(x)
 
@@ -219,6 +214,9 @@ def make_symbolic(x: flax.core.FrozenDict):
     x = convert_jax_to_numpy_arrays(x.unfreeze())
     return flax.core.FrozenDict(make_symbolic(x))
 
+@dispatch
+def make_symbolic(*args):
+    return tuple([make_symbolic(arg) for arg in args])
 
 @dispatch
 def make_symbolic_jaxpr(func: typing.Callable, *args):
@@ -247,11 +245,9 @@ def eval_symbolic_expression(x: str):
 
 @dispatch
 def eval_symbolic_expression(x: numpy.ndarray):
-    # Returns a numpy array of the same shape as x, where each element is the result of evaluating the string in that element
     return numpy.vectorize(eval)(x)
 
 
 @dispatch
 def eval_symbolic_expression(x: list):
-    # Returns a numpy array of the same shape as x, where each element is the result of evaluating the string in that element
     return numpy.vectorize(eval)(x)
