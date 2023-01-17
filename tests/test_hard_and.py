@@ -6,7 +6,7 @@ from jax import random
 import numpy
 import typing
 
-from neurallogic import hard_and, harden, neural_logic_net, sym_gen
+from neurallogic import hard_and, harden, neural_logic_net, symbolic_generation
 
 
 def check_consistency(soft: typing.Callable, hard: typing.Callable, expected, *args):
@@ -19,8 +19,8 @@ def check_consistency(soft: typing.Callable, hard: typing.Callable, expected, *a
     assert numpy.allclose(hard(*hard_args), hard_expected)
 
     # Check that the jaxpr performs as expected
-    symbolic_f = sym_gen.make_symbolic_jaxpr(hard, *hard_args)
-    assert numpy.allclose(sym_gen.eval_symbolic(
+    symbolic_f = symbolic_generation.make_symbolic_jaxpr(hard, *hard_args)
+    assert numpy.allclose(symbolic_generation.eval_symbolic(
         symbolic_f, *hard_args), hard_expected)
 
 
@@ -209,7 +209,7 @@ def test_symbolic_and():
  'True and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or False) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False)'])
 
     # Compute symbolic result with symbolic inputs and symbolic weights
-    symbolic_weights = sym_gen.make_symbolic(hard_weights)
+    symbolic_weights = symbolic_generation.make_symbolic(hard_weights)
     symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
     # Check the form of the symbolic expression
     assert numpy.array_equal(symbolic_output, ['True and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(True != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0))',
@@ -220,7 +220,7 @@ def test_symbolic_and():
     # Compute symbolic result with symbolic inputs and symbolic weights, but where the symbols can be evaluated
     symbolic_input = ['True', 'False']
     symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
-    symbolic_output = sym_gen.eval_symbolic_expression(symbolic_output)
+    symbolic_output = symbolic_generation.eval_symbolic_expression(symbolic_output)
     # Check that the symbolic result is the same as the hard result
     assert numpy.array_equal(symbolic_output, hard_result)
     

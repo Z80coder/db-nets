@@ -6,7 +6,7 @@ from flax import linen as nn
 from typing import Callable
 
 
-from neurallogic import neural_logic_net, sym_gen
+from neurallogic import neural_logic_net, symbolic_generation
 
 
 def soft_and_include(w: float, x: float) -> float:
@@ -100,8 +100,8 @@ class SymbolicAndLayer:
         self.hard_and_layer = HardAndLayer(self.layer_size)
 
     def __call__(self, x):
-        jaxpr = sym_gen.make_symbolic_flax_jaxpr(self.hard_and_layer, x)
-        return sym_gen.symbolic_expression(jaxpr, x)
+        jaxpr = symbolic_generation.make_symbolic_flax_jaxpr(self.hard_and_layer, x)
+        return symbolic_generation.symbolic_expression(jaxpr, x)
 
 
 and_layer = neural_logic_net.select(

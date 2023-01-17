@@ -10,7 +10,7 @@ from flax.metrics import tensorboard
 from flax.training import train_state
 import ml_collections
 from neurallogic import (hard_not, hard_or, harden, harden_layer,
-                         neural_logic_net, primitives)
+                         neural_logic_net)
 import optax
 
 
