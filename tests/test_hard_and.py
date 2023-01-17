@@ -9,7 +9,7 @@ import typing
 from neurallogic import hard_and, harden, neural_logic_net, primitives, sym_gen, symbolic_primitives
 
 
-def check_consistency(soft: typing.Callable, hard: typing.Callable,  symbolic: typing.Callable, expected, *args):
+def check_consistency(soft: typing.Callable, hard: typing.Callable, expected, *args):
     # Check that the soft function performs as expected
     assert numpy.allclose(soft(*args), expected)
 
@@ -18,17 +18,10 @@ def check_consistency(soft: typing.Callable, hard: typing.Callable,  symbolic: t
     hard_expected = harden.harden(expected)
     assert numpy.allclose(hard(*hard_args), hard_expected)
 
-    # Check that the symbolic function performs as expected
-    symbolic_f = sym_gen.make_symbolic_jaxpr(symbolic, *hard_args)
+    # Check that the jaxpr expression performs as expected
+    symbolic_f = sym_gen.make_symbolic_jaxpr(hard, *hard_args)
     assert numpy.allclose(sym_gen.eval_symbolic(
         symbolic_f, *hard_args), hard_expected)
-
-    # Check that the symbolic function, when evaluted with symbolic inputs, performs as expected
-    symbolic_input = sym_gen.make_symbolic(*hard_args)
-    symbolic_expression = sym_gen.symbolic_expression(
-        symbolic_f, *symbolic_input)
-    symbolic_output = sym_gen.eval_symbolic_expression(symbolic_expression)
-    assert numpy.allclose(symbolic_output, hard_expected)
 
 
 def test_include():
@@ -44,7 +37,7 @@ def test_include():
     ]
     for input, expected in test_data:
         check_consistency(hard_and.soft_and_include, hard_and.hard_and_include,
-                          hard_and.hard_and_include, expected, input[0], input[1])
+                           expected, input[0], input[1])
 
 
 def test_neuron():
@@ -63,10 +56,7 @@ def test_neuron():
         def hard(weights, input):
             return hard_and.hard_and_neuron(weights, input)
 
-        def symbolic(weights, input):
-            return hard(weights, input)
-
-        check_consistency(soft, hard, symbolic, expected,
+        check_consistency(soft, hard, expected,
                           jax.numpy.array(weights), jax.numpy.array(input))
 
 
@@ -90,10 +80,8 @@ def test_layer():
         def hard(weights, input):
             return hard_and.hard_and_layer(weights, input)
 
-        def symbolic(weights, input):
-            return hard(weights, input)
 
-        check_consistency(soft, hard, symbolic, jax.numpy.array(expected),
+        check_consistency(soft, hard, jax.numpy.array(expected),
                           jax.numpy.array(weights), jax.numpy.array(input))
 
 

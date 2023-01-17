@@ -4,7 +4,7 @@ import jax._src.lax_reference as lax_reference
 from jax import core
 from jax._src.util import safe_map
 import flax
-from neurallogic import symbolic_primitives, harden
+from neurallogic import symbolic_primitives
 from plum import dispatch
 import typing
 
