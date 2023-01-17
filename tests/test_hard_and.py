@@ -121,7 +121,7 @@ def test_train_and():
         return hard_and.and_layer(type)(4, nn.initializers.uniform(1.0))(x)
 
     soft, hard, symbolic = neural_logic_net.net(test_net)
-    soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
+    weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
 
     x = [
         [1.0, 1.0],
@@ -141,7 +141,7 @@ def test_train_and():
     # Train the and layer
     tx = optax.sgd(0.1)
     state = train_state.TrainState.create(apply_fn=jax.vmap(
-        soft.apply, in_axes=(None, 0)), params=soft_weights, tx=tx)
+        soft.apply, in_axes=(None, 0)), params=weights, tx=tx)
     grad_fn = jax.jit(jax.value_and_grad(lambda params, x,
                       y: jax.numpy.mean((state.apply_fn(params, x) - y) ** 2)))
     for epoch in range(1, 100):
@@ -149,8 +149,8 @@ def test_train_and():
         state = state.apply_gradients(grads=grads)
 
     # Test that the and layer (both soft and hard variants) correctly predicts y
-    soft_weights = state.params
-    hard_weights = harden.hard_weights(soft_weights)
+    weights = state.params
+    hard_weights = harden.hard_weights(weights)
 
     for input, expected in zip(x, y):
         hard_input = harden.harden(jax.numpy.array(input))
@@ -171,11 +171,11 @@ def test_symbolic_and():
 
     # Compute soft result
     soft_input = jax.numpy.array([0.6, 0.45])
-    soft_weights = soft.init(random.PRNGKey(0), soft_input)
-    soft_result = soft.apply(soft_weights, numpy.array(soft_input))
+    weights = soft.init(random.PRNGKey(0), soft_input)
+    soft_result = soft.apply(weights, numpy.array(soft_input))
     
     # Compute hard result
-    hard_weights = harden.hard_weights(soft_weights)
+    hard_weights = harden.hard_weights(weights)
     hard_input = harden.harden(soft_input)
     hard_result = hard.apply(hard_weights, numpy.array(hard_input))
     # Check that the hard result is the same as the soft result
