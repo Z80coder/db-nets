@@ -15,7 +15,6 @@ def check_consistency(soft: typing.Callable, hard: typing.Callable,  symbolic: t
 
     # Check that the hard function performs as expected
     hard_args = harden.harden(*args)
-    print(f'hard_args={hard_args} of type {type(hard_args)}')
     hard_expected = harden.harden(expected)
     assert numpy.allclose(hard(*hard_args), hard_expected)
 
@@ -106,7 +105,6 @@ def test_and():
 
     soft, hard, jaxpr, symbolic = neural_logic_net.net(test_net)
     weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
-    print(f'Weights: {weights} of type {type(weights)}')
     hard_weights = harden.hard_weights(weights)
 
     test_data = [
@@ -144,7 +142,6 @@ def test_and():
 
         # Check that the symbolic function performs as expected
         symbolic_output = symbolic.apply(hard_weights, hard_input)
-        print(f'Symbolic output: {symbolic_output} of type {type(symbolic_output)}')
         assert numpy.allclose(symbolic_output, hard_expected)
 
 
@@ -209,7 +206,6 @@ def test_symbolic_and():
     # Compute hard result
     hard_weights = harden.hard_weights(soft_weights)
     hard_input = harden.harden(soft_input)
-    print(f'hard_input: {hard_input} of type {type(hard_input)}')
     hard_result = hard.apply(hard_weights, numpy.array(hard_input))
     # Check that the hard result is the same as the soft result
     assert numpy.array_equal(harden.harden(soft_result), hard_result)
@@ -223,7 +219,6 @@ def test_symbolic_and():
     symbolic_input = ['x1', 'x2']
     symbolic_output = symbolic.apply(hard_weights, symbolic_input)
     # Check the form of the symbolic expression
-    #print(f'Symbolic output: {symbolic_output} of type {type(symbolic_output)}')
     assert numpy.array_equal(symbolic_output, ['True and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or False) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True)',
  'True and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or False) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True)',
  'True and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or False) != 0.0 or True) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or False) and (True and (x1 != 0.0 or False) and (x2 != 0.0 or True) != 0.0 or True)',
@@ -233,7 +228,6 @@ def test_symbolic_and():
     symbolic_weights = sym_gen.make_symbolic(hard_weights)
     symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
     # Check the form of the symbolic expression
-    #print(f'Symbolic output: {symbolic_output} of type {type(symbolic_output)}')
     assert numpy.array_equal(symbolic_output, ['True and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(True != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0))',
  'True and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(True != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0))',
  'True and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(True != 0.0)) != 0.0 or not(False != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(True != 0.0)) and (True and (x1 != 0.0 or not(True != 0.0)) and (x2 != 0.0 or not(False != 0.0)) != 0.0 or not(False != 0.0))',
@@ -242,11 +236,7 @@ def test_symbolic_and():
     # Compute symbolic result with symbolic inputs and symbolic weights, but where the symbols can be evaluated
     symbolic_input = ['True', 'False']
     symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
-    #print(f'symbolic_output = {symbolic_output} of type {type(symbolic_output)}')
     symbolic_output = sym_gen.eval_symbolic_expression(symbolic_output)
-    #print(f'symbolic_output = {symbolic_output} of type {type(symbolic_output)}')
     # Check that the symbolic result is the same as the hard result
-    print(f'symbolic_output = {symbolic_output} of type {type(symbolic_output)}')
-    print(f'hard_result = {hard_result} of type {type(hard_result)}')
     assert numpy.array_equal(symbolic_output, hard_result)
     

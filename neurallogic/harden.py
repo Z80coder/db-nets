@@ -71,7 +71,6 @@ def harden(x: dict):
 
 @dispatch
 def harden(*args):
-    print(f'harden: {args} of type {type(args)} with length {len(args)}')
     if len(args) == 1:
         return harden(args[0])
     return tuple([harden(arg) for arg in args])
@@ -83,8 +82,6 @@ def map_keys_nested(f, d: dict) -> dict:
 
 def hard_weights(weights):
     unfrozen_weights = weights.unfreeze()
-    print(f'Unfrozen weights: {unfrozen_weights} of type {type(unfrozen_weights)}')
     hard_weights = harden(unfrozen_weights)
-    print(f'Hard weights: {hard_weights} of type {type(hard_weights)}')
     return flax.core.FrozenDict(map_keys_nested(lambda str: str.replace("Soft", "Hard"), hard_weights))
 

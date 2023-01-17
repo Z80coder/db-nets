@@ -171,20 +171,9 @@ class JaxprAndLayer:
 
 
 def my_scope_put_variable(self, col: str, name: str, value: Any):
-    """Updates the value of the given variable if it is mutable, or an error otherwise.
-
-    Args:
-      col: the collection of the variable.
-      name: the name of the variable.
-      value: the new value of the given variable.
-    """
     self._check_valid()
     self._validate_trace_level()
-    #if not self.is_mutable_collection(col):
-    #    raise errors.ModifyScopeVariableError(col, name, self.path_text)
-    #variables = self._mutable_collection(col)
     variables = self._collection(col)
-    # Make sure reference sharing of child variable dictionaries isn't broken
 
     def put(target, key, val):
         if (key in target and isinstance(target[key], dict) and
@@ -198,25 +187,10 @@ def my_scope_put_variable(self, col: str, name: str, value: Any):
 
 
 def my_put_variable(self, col: str, name: str, value: Any):
-    """Sets the value of a Variable.
-
-    Args:
-        col: the variable collection.
-        name: the name of the variable.
-        value: the new value of the variable.
-
-    Returns:
-
-    """
     if self.scope is None:
         raise ValueError("Can't access variables on unbound modules")
-    mutable_variables = self.scope.variables().unfreeze()
-    self.scope._variables = mutable_variables
-    #mutated_self = my_scope_put_variable(self.scope, col, name, value)
-    #self.scope.put_variable(col, name, value)
+    self.scope._variables = self.scope.variables().unfreeze()
     my_scope_put_variable(self.scope, col, name, value)
-    #immutable_scope = self.scope.variables.freeze()
-    #return immutable_scope
 
 
 class SymbolicAndLayer:
@@ -226,52 +200,18 @@ class SymbolicAndLayer:
 
     def __call__(self, x):
         symbolic_weights = self.hard_and_layer.get_variable("params", "weights")
-        print(f'symbolic_weights: {symbolic_weights} of type {type(symbolic_weights)}')
-        if isinstance(symbolic_weights, list) or (isinstance(symbolic_weights, numpy.ndarray) and symbolic_weights.dtype == numpy.object):
+        if isinstance(symbolic_weights, list) or (isinstance(symbolic_weights, numpy.ndarray) and symbolic_weights.dtype == object):
             symbolic_weights_n = symbolic_primitives.map_at_elements(symbolic_weights, lambda x: 0)
             symbolic_weights_n = numpy.asarray(symbolic_weights_n, dtype=numpy.float32)
             my_put_variable(self.hard_and_layer, "params", "weights", symbolic_weights_n)
-            print(f'converted to symbolic_weights_n: {symbolic_weights_n} of type {type(symbolic_weights_n)}')
-
-        #print(
-        #    f'symbolic_weights: {symbolic_weights} of type {type(symbolic_weights)}')
-        # Convert the symbolic inputs to numeric inputs so that we can generate a jaxpr
-        #numeric_weights = sym_gen.make_numeric(symbolic_weights)
-        #print(
-        #    f'numeric_weights: {numeric_weights} of type {type(numeric_weights)}')
-        #numeric_input = numpy.array(
-        #    sym_gen.make_numeric(x), dtype=numpy.float32)
-        #print(f'numeric_input: {numeric_input} of type {type(numeric_input)}')
-        # Overwrite the supplied weights with the temporary numeric weights
-        #my_put_variable(self.hard_and_layer, "params", "weights", symbolic_weights_n)
-        # Generate the jaxpr for this layer
-        #jaxpr = sym_gen.make_symbolic_jaxpr(self.hard_and_layer, numeric_input)
-        print(f'x: {x} of type {type(x)}')
-        if isinstance(x, numpy.ndarray):
-            print(f'x is a numpy array with dtype = {x.dtype}')
-        if isinstance(x, jax.numpy.ndarray):
-            print(f'x is a jax.numpy array with dtype = {x.dtype}')
-        #xn = sym_gen.make_numeric(x)
-        #print(f'converted to xn: {xn} of type {type(xn)}')
-        if isinstance(x, list) or (isinstance(x, numpy.ndarray) and x.dtype == numpy.object):
-            # x = numpy.zeros_like(list)
-            #x = numpy.asarray(x, dtype=numpy.float32)
+        if isinstance(x, list) or (isinstance(x, numpy.ndarray) and x.dtype == object):
             xn = symbolic_primitives.map_at_elements(x, lambda x: 0)
             xn = numpy.asarray(xn, dtype=numpy.float32)
         else:
             xn = x
-        print(f'converted to xn: {xn} of type {type(xn)}')
         jaxpr = sym_gen.make_symbolic_jaxpr(self.hard_and_layer, xn)
-        print(f'jaxpr consts: {jaxpr.consts} of type {type(jaxpr.consts)}')
-        print(f'jaxpr: {jaxpr}')
         # Swap out the numeric consts (that represent the weights) for the symbolic weights
         jaxpr.consts = [symbolic_weights]
-        #print(
-        #    f'symbolic jaxpr consts: {jaxpr.consts} of type {type(jaxpr.consts)}')
-        #symbolic_input = sym_gen.make_symbolic(x)
-        #print(
-        #    f'symbolic_input: {symbolic_input} of type {type(symbolic_input)}')
-        print(f'x: {x} of type {type(x)}')
         return sym_gen.symbolic_expression(jaxpr, x)
 
 
