@@ -22,20 +22,6 @@ def convert_element_type(x, dtype):
     return map_at_elements(x, convert)
 
 
-# TODO: remove me
-def convert_iterable_type(x: list, new_type):
-    if new_type == list:
-        return x
-    elif new_type == numpy.ndarray:
-        return numpy.array(x, dtype=object)
-    elif new_type == jax.numpy.ndarray:
-        return jax.numpy.array(x, dtype=object)
-    elif new_type == jaxlib.xla_extension.DeviceArray:
-        return jax.numpy.array(x, dtype=object)
-    else:
-        raise NotImplementedError(
-            f"Cannot convert type {type(x)} to type {new_type}")
-
 # TODO: allow func callable to control the type of the numpy.array or jax.numpy.array
 
 # map_at_elements should alter the elements but not the type of the container
