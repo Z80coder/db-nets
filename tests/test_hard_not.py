@@ -170,7 +170,7 @@ def test_symbolic_not():
     soft, hard, symbolic = neural_logic_net.net(test_net)
 
     # Compute soft result
-    soft_input = jax.numpy.array([0.0, 0.0])
+    soft_input = jax.numpy.array([1.0, 0.0])
     weights = soft.init(random.PRNGKey(0), soft_input)
     soft_result = soft.apply(weights, numpy.array(soft_input))
     
@@ -186,92 +186,86 @@ def test_symbolic_not():
     # Check that the symbolic result is the same as the hard result
     assert numpy.array_equal(symbolic_output, hard_result)
 
+    # Compute symbolic result with symbolic inputs and symbolic weights, but where the symbols can be evaluated
+    symbolic_input = ['True', 'False']
+    symbolic_weights = symbolic_generation.make_symbolic(hard_weights)
+    symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
+    symbolic_output = symbolic_generation.eval_symbolic_expression(symbolic_output)
+    # Check that the symbolic result is the same as the hard result
+    assert numpy.array_equal(symbolic_output, hard_result)
+
     # Compute symbolic result with symbolic inputs and non-symbolic weights
     symbolic_input = ['x1', 'x2']
     symbolic_output = symbolic.apply(hard_weights, symbolic_input)
     # Check the form of the symbolic expression
-    """
-        assert numpy.array_equal(symbolic_output, ['not(not(x1 != 0 ^ True) != 0 ^ True)',
-    'not(not(x2 != 0 ^ True) != 0 ^ True)',
-    'not(not(x1 != 0 ^ False) != 0 ^ False)',
-    'not(not(x2 != 0 ^ False) != 0 ^ False)',
-    'not(not(x1 != 0 ^ True) != 0 ^ False)',
-    'not(not(x2 != 0 ^ True) != 0 ^ True)',
-    'not(not(x1 != 0 ^ False) != 0 ^ False)',
-    'not(not(x2 != 0 ^ False) != 0 ^ False)',
-    'not(not(x1 != 0 ^ True) != 0 ^ True)',
-    'not(not(x2 != 0 ^ True) != 0 ^ False)',
-    'not(not(x1 != 0 ^ False) != 0 ^ True)',
-    'not(not(x2 != 0 ^ False) != 0 ^ True)',
-    'not(not(x1 != 0 ^ True) != 0 ^ False)',
-    'not(not(x2 != 0 ^ True) != 0 ^ False)',
-    'not(not(x1 != 0 ^ False) != 0 ^ True)',
-    'not(not(x2 != 0 ^ False) != 0 ^ True)',
-    'not(not(x1 != 0 ^ True) != 0 ^ False)',
-    'not(not(x2 != 0 ^ True) != 0 ^ True)',
-    'not(not(x1 != 0 ^ False) != 0 ^ False)',
-    'not(not(x2 != 0 ^ False) != 0 ^ False)',
-    'not(not(x1 != 0 ^ True) != 0 ^ True)',
-    'not(not(x2 != 0 ^ True) != 0 ^ True)',
-    'not(not(x1 != 0 ^ False) != 0 ^ False)',
-    'not(not(x2 != 0 ^ False) != 0 ^ True)',
-    'not(not(x1 != 0 ^ True) != 0 ^ True)',
-    'not(not(x2 != 0 ^ True) != 0 ^ False)',
-    'not(not(x1 != 0 ^ False) != 0 ^ False)',
-    'not(not(x2 != 0 ^ False) != 0 ^ False)',
-    'not(not(x1 != 0 ^ True) != 0 ^ False)',
-    'not(not(x2 != 0 ^ True) != 0 ^ True)',
-    'not(not(x1 != 0 ^ False) != 0 ^ False)',
-    'not(not(x2 != 0 ^ False) != 0 ^ False)'])
-    """
+    assert numpy.array_equal(symbolic_output, ['not((not((x1 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x2 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x1 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x1 != 0) ^ True) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x1 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x1 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x2 != 0) ^ True) != 0) ^ False)',
+ 'not((not((x1 != 0) ^ False) != 0) ^ True)',
+ 'not((not((x2 != 0) ^ False) != 0) ^ True)',
+ 'not((not((x1 != 0) ^ True) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ True) != 0) ^ False)',
+ 'not((not((x1 != 0) ^ False) != 0) ^ True)',
+ 'not((not((x2 != 0) ^ False) != 0) ^ True)',
+ 'not((not((x1 != 0) ^ True) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x1 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x1 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x2 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x1 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ False) != 0) ^ True)',
+ 'not((not((x1 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x2 != 0) ^ True) != 0) ^ False)',
+ 'not((not((x1 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x1 != 0) ^ True) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x1 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ False) != 0) ^ False)'])
 
     # Compute symbolic result with symbolic inputs and symbolic weights
-    symbolic_weights = symbolic_generation.make_symbolic(hard_weights)
     symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
     # Check the form of the symbolic expression
-    """
-        assert numpy.array_equal(symbolic_output, ['not(not(x1 != 0 ^ True != 0) != 0 ^ True != 0)',
-    'not(not(x2 != 0 ^ True != 0) != 0 ^ True != 0)',
-    'not(not(x1 != 0 ^ False != 0) != 0 ^ False != 0)',
-    'not(not(x2 != 0 ^ False != 0) != 0 ^ False != 0)',
-    'not(not(x1 != 0 ^ True != 0) != 0 ^ False != 0)',
-    'not(not(x2 != 0 ^ True != 0) != 0 ^ True != 0)',
-    'not(not(x1 != 0 ^ False != 0) != 0 ^ False != 0)',
-    'not(not(x2 != 0 ^ False != 0) != 0 ^ False != 0)',
-    'not(not(x1 != 0 ^ True != 0) != 0 ^ True != 0)',
-    'not(not(x2 != 0 ^ True != 0) != 0 ^ False != 0)',
-    'not(not(x1 != 0 ^ False != 0) != 0 ^ True != 0)',
-    'not(not(x2 != 0 ^ False != 0) != 0 ^ True != 0)',
-    'not(not(x1 != 0 ^ True != 0) != 0 ^ False != 0)',
-    'not(not(x2 != 0 ^ True != 0) != 0 ^ False != 0)',
-    'not(not(x1 != 0 ^ False != 0) != 0 ^ True != 0)',
-    'not(not(x2 != 0 ^ False != 0) != 0 ^ True != 0)',
-    'not(not(x1 != 0 ^ True != 0) != 0 ^ False != 0)',
-    'not(not(x2 != 0 ^ True != 0) != 0 ^ True != 0)',
-    'not(not(x1 != 0 ^ False != 0) != 0 ^ False != 0)',
-    'not(not(x2 != 0 ^ False != 0) != 0 ^ False != 0)',
-    'not(not(x1 != 0 ^ True != 0) != 0 ^ True != 0)',
-    'not(not(x2 != 0 ^ True != 0) != 0 ^ True != 0)',
-    'not(not(x1 != 0 ^ False != 0) != 0 ^ False != 0)',
-    'not(not(x2 != 0 ^ False != 0) != 0 ^ True != 0)',
-    'not(not(x1 != 0 ^ True != 0) != 0 ^ True != 0)',
-    'not(not(x2 != 0 ^ True != 0) != 0 ^ False != 0)',
-    'not(not(x1 != 0 ^ False != 0) != 0 ^ False != 0)',
-    'not(not(x2 != 0 ^ False != 0) != 0 ^ False != 0)',
-    'not(not(x1 != 0 ^ True != 0) != 0 ^ False != 0)',
-    'not(not(x2 != 0 ^ True != 0) != 0 ^ True != 0)',
-    'not(not(x1 != 0 ^ False != 0) != 0 ^ False != 0)',
-    'not(not(x2 != 0 ^ False != 0) != 0 ^ False != 0)'])
-    """
+    assert numpy.array_equal(symbolic_output, ['not((not((x1 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
+ 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (True != 0))',
+ 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (True != 0))',
+ 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
+ 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (True != 0))',
+ 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (True != 0))',
+ 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (True != 0))',
+ 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
+ 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))'])
 
-    # Compute symbolic result with symbolic inputs and symbolic weights, but where the symbols can be evaluated
-    symbolic_input = ['True', 'False']
-    symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
-    print(f'symbolic_output = {symbolic_output}')
-    symbolic_output = symbolic_generation.eval_symbolic_expression(symbolic_output)
-    # Check that the symbolic result is the same as the hard result
-    print(f'symbolic_output = {symbolic_output}')
-    print(f'hard_result = {hard_result}')
-    assert numpy.array_equal(symbolic_output, hard_result)
     
 

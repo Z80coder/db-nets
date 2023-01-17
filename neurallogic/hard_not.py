@@ -19,6 +19,7 @@ def soft_not(w: float, x: float) -> float:
 
 
 def hard_not(w: bool, x: bool) -> bool:
+    # ~(x ^ w)
     return jax.numpy.logical_not(jax.numpy.logical_xor(x, w))
 
 

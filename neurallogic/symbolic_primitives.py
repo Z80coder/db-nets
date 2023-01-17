@@ -122,42 +122,40 @@ def unary_operator(operator: str, x: list):
 
 
 @dispatch
-def binary_infix_operator(operator: str, a: str, b: str, bracket: bool = False) -> str:
-    if bracket:
-        return f"({a} {operator} {b})"
+def binary_infix_operator(operator: str, a: str, b: str) -> str:
     return f"{a} {operator} {b}"
 
 
 @dispatch
-def binary_infix_operator(operator: str, a: numpy.ndarray, b: numpy.ndarray, bracket: bool = False):
-    return numpy.vectorize(binary_infix_operator, otypes=[object])(operator, a, b, bracket)
+def binary_infix_operator(operator: str, a: numpy.ndarray, b: numpy.ndarray):
+    return numpy.vectorize(binary_infix_operator, otypes=[object])(operator, a, b)
 
 
 @dispatch
-def binary_infix_operator(operator: str, a: list, b: numpy.ndarray, bracket: bool = False):
-    return binary_infix_operator(operator, numpy.array(a), b, bracket)
+def binary_infix_operator(operator: str, a: list, b: numpy.ndarray):
+    return binary_infix_operator(operator, numpy.array(a), b)
 
 
 @dispatch
-def binary_infix_operator(operator: str, a: numpy.ndarray, b: list, bracket: bool = False):
-    return binary_infix_operator(operator, a, numpy.array(b), bracket)
+def binary_infix_operator(operator: str, a: numpy.ndarray, b: list):
+    return binary_infix_operator(operator, a, numpy.array(b))
 
 
 @dispatch
-def binary_infix_operator(operator: str, a: str, b: int, bracket: bool = False):
-    return binary_infix_operator(operator, a, str(b), bracket)
+def binary_infix_operator(operator: str, a: str, b: int):
+    return binary_infix_operator(operator, a, str(b))
 
 @dispatch
-def binary_infix_operator(operator: str, a: numpy.ndarray, b: float, bracket: bool = False):
-    return binary_infix_operator(operator, a, str(b), bracket)
+def binary_infix_operator(operator: str, a: numpy.ndarray, b: float):
+    return binary_infix_operator(operator, a, str(b))
 
 @dispatch
-def binary_infix_operator(operator: str, a: str, b: float, bracket: bool = False):
-    return binary_infix_operator(operator, a, str(b), bracket)
+def binary_infix_operator(operator: str, a: str, b: float):
+    return binary_infix_operator(operator, a, str(b))
 
 @dispatch
-def binary_infix_operator(operator: str, a: numpy.ndarray, b: jax.numpy.ndarray, bracket: bool = False):
-    return binary_infix_operator(operator, a, numpy.array(b), bracket)
+def binary_infix_operator(operator: str, a: numpy.ndarray, b: jax.numpy.ndarray):
+    return binary_infix_operator(operator, a, numpy.array(b))
 
 
 def all_concrete_values(data):
@@ -185,7 +183,7 @@ def symbolic_ne(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.not_equal(*args, **kwargs)
     else:
-        return binary_infix_operator("!=", *args, **kwargs)
+        return "(" + binary_infix_operator("!=", *args, **kwargs) + ")"
 
 def symbolic_gt(*args, **kwargs):
     if all_concrete_values([*args]):
@@ -204,14 +202,14 @@ def symbolic_or(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_or(*args, **kwargs)
     else:
-        return binary_infix_operator("or", *args, **kwargs, bracket=True)
+        return "(" + binary_infix_operator("or", *args, **kwargs) + ")"
 
 
 def symbolic_xor(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_xor(*args, **kwargs)
     else:
-        return binary_infix_operator("^", *args, **kwargs, bracket=False)
+        return binary_infix_operator("^", *args, **kwargs)
 
 
 
