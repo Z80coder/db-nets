@@ -50,6 +50,24 @@ def put_variable(self, col: str, name: str, value: Any):
     self.scope._variables = self.scope.variables().unfreeze()
     scope_put_variable(self.scope, col, name, value)
 
+def make_symbolic_flax_jaxpr(flax_layer, x):
+    actual_weights = flax_layer.get_variable("params", "weights")
+    # Convert actual weights to dummy numeric weights (if needed)
+    if isinstance(actual_weights, list) or (isinstance(actual_weights, numpy.ndarray) and actual_weights.dtype == object):
+        numeric_weights = symbolic_primitives.map_at_elements(actual_weights, lambda x: 0)
+        numeric_weights = numpy.asarray(numeric_weights, dtype=numpy.float32)
+        put_variable(flax_layer, "params", "weights", numeric_weights)
+    # Convert input to dummy numeric input (if needed)
+    if isinstance(x, list) or (isinstance(x, numpy.ndarray) and x.dtype == object):
+        x = symbolic_primitives.map_at_elements(x, lambda x: 0)
+        x = numpy.asarray(x, dtype=numpy.float32)
+    # Make the jaxpr that corresponds to the flax layer
+    jaxpr = make_symbolic_jaxpr(flax_layer, x)
+    # Replace the dummy numeric weights with the actual weights in the jaxpr
+    jaxpr.consts = [actual_weights]
+    return jaxpr
+
+
 def eval_jaxpr(symbolic, jaxpr, consts, *args):
     """Evaluates a jaxpr by interpreting it as Python code.
 

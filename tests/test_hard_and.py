@@ -18,7 +18,7 @@ def check_consistency(soft: typing.Callable, hard: typing.Callable, expected, *a
     hard_expected = harden.harden(expected)
     assert numpy.allclose(hard(*hard_args), hard_expected)
 
-    # Check that the jaxpr expression performs as expected
+    # Check that the jaxpr performs as expected
     symbolic_f = sym_gen.make_symbolic_jaxpr(hard, *hard_args)
     assert numpy.allclose(sym_gen.eval_symbolic(
         symbolic_f, *hard_args), hard_expected)
@@ -91,7 +91,7 @@ def test_and():
         x = x.ravel()
         return x
 
-    soft, hard, jaxpr, symbolic = neural_logic_net.net(test_net)
+    soft, hard, symbolic = neural_logic_net.net(test_net)
     weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
     hard_weights = harden.hard_weights(weights)
 
@@ -124,10 +124,6 @@ def test_and():
         hard_output = hard.apply(hard_weights, hard_input)
         assert jax.numpy.allclose(hard_output, hard_expected)
 
-        # Check that the jaxpr expression performs as expected
-        jaxpr_output = jaxpr.apply(hard_weights, hard_input)
-        assert numpy.allclose(jaxpr_output, hard_expected)
-
         # Check that the symbolic function performs as expected
         symbolic_output = symbolic.apply(hard_weights, hard_input)
         assert numpy.allclose(symbolic_output, hard_expected)
@@ -137,7 +133,7 @@ def test_train_and():
     def test_net(type, x):
         return hard_and.and_layer(type)(4, nn.initializers.uniform(1.0))(x)
 
-    soft, hard, jaxpr, symbolic = neural_logic_net.net(test_net)
+    soft, hard, symbolic = neural_logic_net.net(test_net)
     soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
 
     x = [
@@ -184,7 +180,7 @@ def test_symbolic_and():
         x = hard_and.and_layer(type)(4, nn.initializers.uniform(1.0))(x)
         return x
 
-    soft, hard, jaxpr, symbolic = neural_logic_net.net(test_net)
+    soft, hard, symbolic = neural_logic_net.net(test_net)
 
     # Compute soft result
     soft_input = jax.numpy.array([0.6, 0.45])
