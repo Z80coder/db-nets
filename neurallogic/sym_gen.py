@@ -7,6 +7,7 @@ import flax
 from neurallogic import symbolic_primitives
 from plum import dispatch
 import typing
+from typing import (Any, Callable)
 
 # TODO: rename this file to symbolic.py
 
@@ -31,6 +32,23 @@ def symbolic_bind(prim, *args, **params):
     }[prim.name](*args, **params)
     return symbolic_outvals
 
+def scope_put_variable(self, col: str, name: str, value: Any):
+    variables = self._collection(col)
+
+    def put(target, key, val):
+        if (key in target and isinstance(target[key], dict) and
+                isinstance(val, Mapping)):
+            for k, v in val.items():
+                put(target[key], k, v)
+        else:
+            target[key] = val
+
+    put(variables, name, value)
+
+
+def put_variable(self, col: str, name: str, value: Any):
+    self.scope._variables = self.scope.variables().unfreeze()
+    scope_put_variable(self.scope, col, name, value)
 
 def eval_jaxpr(symbolic, jaxpr, consts, *args):
     """Evaluates a jaxpr by interpreting it as Python code.

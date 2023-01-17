@@ -1,10 +1,10 @@
 from typing import Any
-from functools import reduce
-from typing import (Callable, Mapping)
 
 import numpy
 import jax
 from flax import linen as nn
+from typing import Callable
+
 
 from neurallogic import neural_logic_net, sym_gen, symbolic_primitives
 
@@ -105,40 +105,17 @@ class JaxprAndLayer:
         return sym_gen.eval_symbolic(jaxpr, x)
 
 
-def my_scope_put_variable(self, col: str, name: str, value: Any):
-    self._check_valid()
-    self._validate_trace_level()
-    variables = self._collection(col)
-
-    def put(target, key, val):
-        if (key in target and isinstance(target[key], dict) and
-                isinstance(val, Mapping)):
-            for k, v in val.items():
-                put(target[key], k, v)
-        else:
-            target[key] = val
-
-    put(variables, name, value)
-
-
-def my_put_variable(self, col: str, name: str, value: Any):
-    if self.scope is None:
-        raise ValueError("Can't access variables on unbound modules")
-    self.scope._variables = self.scope.variables().unfreeze()
-    my_scope_put_variable(self.scope, col, name, value)
-
-
 class SymbolicAndLayer:
     def __init__(self, layer_size):
         self.layer_size = layer_size
         self.hard_and_layer = HardAndLayer(self.layer_size)
 
     def __call__(self, x):
-        symbolic_weights = self.hard_and_layer.get_variable("params", "weights")
-        if isinstance(symbolic_weights, list) or (isinstance(symbolic_weights, numpy.ndarray) and symbolic_weights.dtype == object):
-            symbolic_weights_n = symbolic_primitives.map_at_elements(symbolic_weights, lambda x: 0)
-            symbolic_weights_n = numpy.asarray(symbolic_weights_n, dtype=numpy.float32)
-            my_put_variable(self.hard_and_layer, "params", "weights", symbolic_weights_n)
+        actual_weights = self.hard_and_layer.get_variable("params", "weights")
+        if isinstance(actual_weights, list) or (isinstance(actual_weights, numpy.ndarray) and actual_weights.dtype == object):
+            numeric_weights = symbolic_primitives.map_at_elements(actual_weights, lambda x: 0)
+            numeric_weights = numpy.asarray(numeric_weights, dtype=numpy.float32)
+            sym_gen.put_variable(self.hard_and_layer, "params", "weights", numeric_weights)
         if isinstance(x, list) or (isinstance(x, numpy.ndarray) and x.dtype == object):
             xn = symbolic_primitives.map_at_elements(x, lambda x: 0)
             xn = numpy.asarray(xn, dtype=numpy.float32)
@@ -146,7 +123,7 @@ class SymbolicAndLayer:
             xn = x
         jaxpr = sym_gen.make_symbolic_jaxpr(self.hard_and_layer, xn)
         # Swap out the numeric consts (that represent the weights) for the symbolic weights
-        jaxpr.consts = [symbolic_weights]
+        jaxpr.consts = [actual_weights]
         return sym_gen.symbolic_expression(jaxpr, x)
 
 
