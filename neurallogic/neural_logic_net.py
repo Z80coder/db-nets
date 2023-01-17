@@ -26,3 +26,4 @@ def net(f):
         def __call__(self, x):
             return f(NetType.Symbolic, x)
     return SoftNet(), HardNet(), SymbolicNet()
+

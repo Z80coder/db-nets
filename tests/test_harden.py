@@ -12,26 +12,26 @@ def test_harden_float():
 
 
 def test_harden_list():
-    assert harden.harden_list([0.5, 0.6, 0.4, 0.0, 1.0]) == [
+    assert harden.harden([0.5, 0.6, 0.4, 0.0, 1.0]) == [
         False, True, False, False, True]
 
 
 def test_harden_array():
-    assert jnp.array_equal(harden.harden_array(
+    assert jnp.array_equal(harden.harden(
         jnp.array([0.5, 0.6, 0.4, 0.0, 1.0])), [False, True, False, False, True])
 
 
 def test_harden_dict():
     dict = {'a': 0.5, 'b': 0.6, 'c': 0.4, 'd': 0.0, 'e': 1.0}
     expected_dict = {'a': False, 'b': True, 'c': False, 'd': False, 'e': True}
-    assert harden.harden_dict(dict) == expected_dict
+    assert harden.harden(dict) == expected_dict
 
 
 def test_harden_frozen_dict():
     dict = flax.core.frozen_dict.FrozenDict(
         {'a': 0.5, 'b': 0.6, 'c': 0.4, 'd': 0.0, 'e': 1.0})
     expected_dict = {'a': False, 'b': True, 'c': False, 'd': False, 'e': True}
-    assert harden.harden_dict(dict) == expected_dict
+    assert harden.harden(dict) == expected_dict
 
 
 def test_harden():

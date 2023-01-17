@@ -3,9 +3,10 @@ import jax.numpy as jnp
 import optax
 from flax.training import train_state
 from jax import random
+import numpy
 
-from neurallogic import hard_not, harden, neural_logic_net, primitives
-
+from neurallogic import hard_not, harden, neural_logic_net, symbolic_generation
+from tests import utils
 
 def test_activation():
     test_data = [
@@ -19,14 +20,8 @@ def test_activation():
         [[-0.1, 1.0], 0.0]
     ]
     for input, expected in test_data:
-        assert hard_not.soft_not(*input) == expected
-        assert hard_not.hard_not(*harden.harden(input)
-                                 ) == harden.harden(expected)
-        assert eval(str(hard_not.symbolic_not(*harden.harden(input)))
-                    ) == harden.harden(expected)
-        symbolic_output = hard_not.symbolic_not(*harden.harden(input))
-        assert symbolic_output == harden.harden(expected)
-
+        utils.check_consistency(hard_not.soft_not, hard_not.hard_not,
+                           expected, input[0], input[1])
 
 def test_neuron():
     test_data = [
@@ -38,13 +33,14 @@ def test_neuron():
         [[0.0, 1.0], [1.0, 1.0], [0.0, 1.0]]
     ]
     for input, weights, expected in test_data:
-        assert jnp.allclose(hard_not.soft_not_neuron(
-            jnp.array(weights), jnp.array(input)), jnp.array(expected))
-        assert jnp.allclose(hard_not.hard_not_neuron(harden.harden(jnp.array(
-            weights)), harden.harden(jnp.array(input))), harden.harden(jnp.array(expected)))
-        symbolic_output = hard_not.symbolic_not_neuron(
-            harden.harden(weights), harden.harden(input))
-        assert jnp.array_equal(symbolic_output, harden.harden(expected))
+        def soft(weights, input):
+            return hard_not.hard_not_neuron(weights, input)
+
+        def hard(weights, input):
+            return hard_not.hard_not_neuron(weights, input)
+
+        utils.check_consistency(soft, hard, expected,
+                          jax.numpy.array(weights), jax.numpy.array(input))
 
 
 def test_not_layer():
@@ -59,30 +55,27 @@ def test_not_layer():
             [[0.0, 0.99], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]]]
     ]
     for input, weights, expected in test_data:
-        assert jnp.allclose(hard_not.soft_not_layer(
-            jnp.array(weights), jnp.array(input)), jnp.array(expected))
-        assert jnp.allclose(hard_not.hard_not_layer(harden.harden(jnp.array(
-            weights)), harden.harden(jnp.array(input))), harden.harden(jnp.array(expected)))
-        # Now test they symbolic layer
-        symbolic_weights = harden.harden(jnp.array(weights)).tolist()
-        symbolic_input = harden.harden(jnp.array(input)).tolist()
-        assert jnp.array_equal(eval(str(hard_not.symbolic_not_layer(
-            symbolic_weights, symbolic_input))), harden.harden(jnp.array(expected)))
-        symbolic_output = hard_not.symbolic_not_layer(
-            symbolic_weights, symbolic_input)
-        assert jnp.array_equal(symbolic_output, harden.harden(expected))
+        def soft(weights, input):
+            return hard_not.soft_not_layer(weights, input)
+
+        def hard(weights, input):
+            return hard_not.hard_not_layer(weights, input)
+
+
+        utils.check_consistency(soft, hard, jax.numpy.array(expected),
+                          jax.numpy.array(weights), jax.numpy.array(input))
 
 
 def test_not():
     def test_net(type, x):
         x = hard_not.not_layer(type)(4)(x)
-        x = primitives.nl_ravel(type)(x)
+        x = x.ravel()
         return x
 
     soft, hard, symbolic = neural_logic_net.net(test_net)
-    soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
-    hard_weights = harden.hard_weights(soft_weights)
-    symbolic_weights = harden.symbolic_weights(soft_weights)
+    weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
+    hard_weights = harden.hard_weights(weights)
+
     test_data = [
         [
             [1.0, 1.0],
@@ -106,16 +99,19 @@ def test_not():
         ]
     ]
     for input, expected in test_data:
-        soft_input = jnp.array(input)
-        soft_expected = jnp.array(expected)
-        soft_result = soft.apply(soft_weights, soft_input)
-        assert jnp.allclose(soft_result, soft_expected)
-        hard_input = harden.harden(soft_input)
-        hard_expected = harden.harden(soft_expected)
-        hard_result = hard.apply(hard_weights, hard_input)
-        assert jnp.allclose(hard_result, hard_expected)
-        symbolic_result = symbolic.apply(symbolic_weights, hard_input.tolist())
-        assert jnp.array_equal(symbolic_result, hard_expected)
+        # Check that the soft function performs as expected
+        assert jax.numpy.allclose(soft.apply(
+            weights, jax.numpy.array(input)), jax.numpy.array(expected))
+
+        # Check that the hard function performs as expected
+        hard_input = harden.harden(jax.numpy.array(input))
+        hard_expected = harden.harden(jax.numpy.array(expected))
+        hard_output = hard.apply(hard_weights, hard_input)
+        assert jax.numpy.allclose(hard_output, hard_expected)
+
+        # Check that the symbolic function performs as expected
+        symbolic_output = symbolic.apply(hard_weights, hard_input)
+        assert numpy.allclose(symbolic_output, hard_expected)
 
 
 def test_train_not():
@@ -123,7 +119,8 @@ def test_train_not():
         return hard_not.not_layer(type)(4)(x)
 
     soft, hard, symbolic = neural_logic_net.net(test_net)
-    soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
+    weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
+
     x = [
         [1.0, 1.0],
         [1.0, 0.0],
@@ -136,44 +133,139 @@ def test_train_not():
         [[0.0, 0.0], [1.0, 1.0], [1.0, 0.0], [1.0, 1.0]],
         [[0.0, 1.0], [1.0, 0.0], [1.0, 1.0], [1.0, 0.0]]
     ]
-    input = jnp.array(x)
-    output = jnp.array(y)
+    input = jax.numpy.array(x)
+    output = jax.numpy.array(y)
 
-    # Train the not layer
+    # Train the and layer
     tx = optax.sgd(0.1)
     state = train_state.TrainState.create(apply_fn=jax.vmap(
-        soft.apply, in_axes=(None, 0)), params=soft_weights, tx=tx)
+        soft.apply, in_axes=(None, 0)), params=weights, tx=tx)
     grad_fn = jax.jit(jax.value_and_grad(lambda params, x,
-                      y: jnp.mean((state.apply_fn(params, x) - y) ** 2)))
+                      y: jax.numpy.mean((state.apply_fn(params, x) - y) ** 2)))
     for epoch in range(1, 100):
         loss, grads = grad_fn(state.params, input, output)
         state = state.apply_gradients(grads=grads)
 
-    # Test that the not layer (both soft and hard variants) correctly predicts y
-    soft_weights = state.params
-    hard_weights = harden.hard_weights(soft_weights)
-    symbolic_weights = harden.symbolic_weights(soft_weights)
+    # Test that the and layer (both soft and hard variants) correctly predicts y
+    weights = state.params
+    hard_weights = harden.hard_weights(weights)
+
     for input, expected in zip(x, y):
-        hard_input = harden.harden_array(harden.harden(jnp.array(input)))
-        hard_expected = harden.harden_array(harden.harden(jnp.array(expected)))
+        hard_input = harden.harden(jax.numpy.array(input))
+        hard_expected = harden.harden(jax.numpy.array(expected))
         hard_result = hard.apply(hard_weights, hard_input)
-        assert jnp.allclose(hard_result, hard_expected)
-        symbolic_result = symbolic.apply(symbolic_weights, hard_input.tolist())
-        assert jnp.array_equal(symbolic_result, hard_expected)
+        assert jax.numpy.allclose(hard_result, hard_expected)
+        symbolic_output = symbolic.apply(hard_weights, hard_input)
+        assert jax.numpy.array_equal(symbolic_output, hard_expected)
 
 
 def test_symbolic_not():
     def test_net(type, x):
         x = hard_not.not_layer(type)(4)(x)
-        x = primitives.nl_ravel(type)(x)
+        x = x.ravel()
         x = hard_not.not_layer(type)(4)(x)
-        x = primitives.nl_ravel(type)(x)
+        x = x.ravel()
         return x
 
     soft, hard, symbolic = neural_logic_net.net(test_net)
-    soft_weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
-    symbolic_weights = harden.symbolic_weights(soft_weights)
+
+    # Compute soft result
+    soft_input = jax.numpy.array([1.0, 0.0])
+    weights = soft.init(random.PRNGKey(0), soft_input)
+    soft_result = soft.apply(weights, numpy.array(soft_input))
+    
+    # Compute hard result
+    hard_weights = harden.hard_weights(weights)
+    hard_input = harden.harden(soft_input)
+    hard_result = hard.apply(hard_weights, numpy.array(hard_input))
+    # Check that the hard result is the same as the soft result
+    assert numpy.array_equal(harden.harden(soft_result), hard_result)
+
+    # Compute symbolic result with non-symbolic inputs
+    symbolic_output = symbolic.apply(hard_weights, hard_input)
+    # Check that the symbolic result is the same as the hard result
+    assert numpy.array_equal(symbolic_output, hard_result)
+
+    # Compute symbolic result with symbolic inputs and symbolic weights, but where the symbols can be evaluated
+    symbolic_input = ['True', 'False']
+    symbolic_weights = symbolic_generation.make_symbolic(hard_weights)
+    symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
+    symbolic_output = symbolic_generation.eval_symbolic_expression(symbolic_output)
+    # Check that the symbolic result is the same as the hard result
+    assert numpy.array_equal(symbolic_output, hard_result)
+
+    # Compute symbolic result with symbolic inputs and non-symbolic weights
     symbolic_input = ['x1', 'x2']
-    symbolic_result = symbolic.apply(symbolic_weights, symbolic_input)
-    assert (symbolic_result == ['(not((not(x1 ^ True)) ^ True))', '(not((not(x2 ^ True)) ^ True))', '(not((not(x1 ^ False)) ^ False))', '(not((not(x2 ^ False)) ^ False))', '(not((not(x1 ^ True)) ^ False))', '(not((not(x2 ^ True)) ^ True))', '(not((not(x1 ^ False)) ^ False))', '(not((not(x2 ^ False)) ^ False))', '(not((not(x1 ^ True)) ^ True))', '(not((not(x2 ^ True)) ^ False))', '(not((not(x1 ^ False)) ^ True))', '(not((not(x2 ^ False)) ^ True))', '(not((not(x1 ^ True)) ^ False))', '(not((not(x2 ^ True)) ^ False))', '(not((not(x1 ^ False)) ^ True))', '(not((not(x2 ^ False)) ^ True))',
-            '(not((not(x1 ^ True)) ^ False))', '(not((not(x2 ^ True)) ^ True))', '(not((not(x1 ^ False)) ^ False))', '(not((not(x2 ^ False)) ^ False))', '(not((not(x1 ^ True)) ^ True))', '(not((not(x2 ^ True)) ^ True))', '(not((not(x1 ^ False)) ^ False))', '(not((not(x2 ^ False)) ^ True))', '(not((not(x1 ^ True)) ^ True))', '(not((not(x2 ^ True)) ^ False))', '(not((not(x1 ^ False)) ^ False))', '(not((not(x2 ^ False)) ^ False))', '(not((not(x1 ^ True)) ^ False))', '(not((not(x2 ^ True)) ^ True))', '(not((not(x1 ^ False)) ^ False))', '(not((not(x2 ^ False)) ^ False))'])
+    symbolic_output = symbolic.apply(hard_weights, symbolic_input)
+    # Check the form of the symbolic expression
+    assert numpy.array_equal(symbolic_output, ['not((not((x1 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x2 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x1 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x1 != 0) ^ True) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x1 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x1 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x2 != 0) ^ True) != 0) ^ False)',
+ 'not((not((x1 != 0) ^ False) != 0) ^ True)',
+ 'not((not((x2 != 0) ^ False) != 0) ^ True)',
+ 'not((not((x1 != 0) ^ True) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ True) != 0) ^ False)',
+ 'not((not((x1 != 0) ^ False) != 0) ^ True)',
+ 'not((not((x2 != 0) ^ False) != 0) ^ True)',
+ 'not((not((x1 != 0) ^ True) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x1 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x1 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x2 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x1 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ False) != 0) ^ True)',
+ 'not((not((x1 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x2 != 0) ^ True) != 0) ^ False)',
+ 'not((not((x1 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x1 != 0) ^ True) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ True) != 0) ^ True)',
+ 'not((not((x1 != 0) ^ False) != 0) ^ False)',
+ 'not((not((x2 != 0) ^ False) != 0) ^ False)'])
+
+    # Compute symbolic result with symbolic inputs and symbolic weights
+    symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
+    # Check the form of the symbolic expression
+    assert numpy.array_equal(symbolic_output, ['not((not((x1 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
+ 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (True != 0))',
+ 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (True != 0))',
+ 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
+ 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (True != 0))',
+ 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (True != 0))',
+ 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (True != 0))',
+ 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
+ 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
+ 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
+ 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))'])
+
+    
+

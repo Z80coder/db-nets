@@ -6,36 +6,25 @@ import jax._src.lax_reference as lax_reference
 import jaxlib
 
 
-def convert_iterable_type(x: list, new_type):
-    if new_type == list:
-        return x
-    elif new_type == numpy.ndarray:
-        return numpy.array(x, dtype=object)
-    elif new_type == jax.numpy.ndarray:
-        return jax.numpy.array(x, dtype=object)
-    elif new_type == jaxlib.xla_extension.DeviceArray:
-        return jax.numpy.array(x, dtype=object)
+def convert_element_type(x, dtype):
+    if dtype == numpy.int32 or dtype == numpy.int64:
+        dtype = "int"
+    elif dtype == bool:
+        dtype = "bool"
+    elif dtype == numpy.float32:
+        dtype = "float"
     else:
         raise NotImplementedError(
-            f"Cannot convert type {type(x)} to type {new_type}")
+            f"Symbolic conversion of type {type(x)} to {dtype} not implemented")
+
+    def convert(x):
+        return f"{dtype}({x})"
+    return map_at_elements(x, convert)
 
 
-@dispatch
-def map_at_elements(x: list, func: typing.Callable):
-    return convert_iterable_type([map_at_elements(item, func) for item in x], type(x))
+# TODO: allow func callable to control the type of the numpy.array or jax.numpy.array
 
-
-@dispatch
-def map_at_elements(x: numpy.ndarray, func: typing.Callable):
-    return convert_iterable_type([map_at_elements(item, func) for item in x], type(x))
-
-
-@dispatch
-def map_at_elements(x: jax.numpy.ndarray, func: typing.Callable):
-    if x.ndim == 0:
-        return func(x.item())
-    return convert_iterable_type([map_at_elements(item, func) for item in x], type(x))
-
+# map_at_elements should alter the elements but not the type of the container
 
 @dispatch
 def map_at_elements(x: str, func: typing.Callable):
@@ -43,8 +32,45 @@ def map_at_elements(x: str, func: typing.Callable):
 
 
 @dispatch
-def map_at_elements(x, func: typing.Callable):
+def map_at_elements(x: bool, func: typing.Callable):
     return func(x)
+
+
+@dispatch
+def map_at_elements(x: numpy.bool_, func: typing.Callable):
+    return func(x)
+
+
+@dispatch
+def map_at_elements(x: float, func: typing.Callable):
+    return func(x)
+
+
+@dispatch
+def map_at_elements(x: list, func: typing.Callable):
+    return [map_at_elements(item, func) for item in x]
+
+
+@dispatch
+def map_at_elements(x: numpy.ndarray, func: typing.Callable):
+    return numpy.array([map_at_elements(item, func) for item in x], dtype=object)
+
+
+@dispatch
+def map_at_elements(x: jax.numpy.ndarray, func: typing.Callable):
+    if x.ndim == 0:
+        return func(x.item())
+    return jax.numpy.array([map_at_elements(item, func) for item in x])
+
+
+@dispatch
+def map_at_elements(x: dict, func: typing.Callable):
+    return {k: map_at_elements(v, func) for k, v in x.items()}
+
+
+@dispatch
+def map_at_elements(x: tuple, func: typing.Callable):
+    return tuple(map_at_elements(list(x), func))
 
 
 @dispatch
@@ -59,12 +85,12 @@ def to_boolean_value_string(x: numpy.bool_):
 
 @dispatch
 def to_boolean_value_string(x: int):
-    return 'True' if x == 1.0 else 'False'
+    return 'True' if x >= 1 else 'False'
 
 
 @dispatch
 def to_boolean_value_string(x: float):
-    return 'True' if x == 1.0 else 'False'
+    return 'True' if x >= 1.0 else 'False'
 
 
 @dispatch
@@ -77,8 +103,16 @@ def to_boolean_value_string(x: str):
         return x
 
 
-def to_boolean_symbolic_values(x):
-    return map_at_elements(x, to_boolean_value_string)
+@dispatch
+def to_numeric_value(x):
+    if x == 'True' or x:
+        return 1
+    elif x == 'False' or not x:
+        return 0
+    elif isinstance(x, int) or isinstance(x, float):
+        return x
+    else:
+        return 0
 
 
 @dispatch
@@ -97,30 +131,48 @@ def unary_operator(operator: str, x: list):
 
 
 @dispatch
-def binary_infix_operator(operator: str, a: str, b: str, bracket: bool = False) -> str:
-    if bracket:
-        return f"({a}) {operator} ({b})"
+def binary_infix_operator(operator: str, a: str, b: str) -> str:
     return f"{a} {operator} {b}"
 
 
 @dispatch
-def binary_infix_operator(operator: str, a: numpy.ndarray, b: numpy.ndarray, bracket: bool = False):
-    return numpy.vectorize(binary_infix_operator, otypes=[object])(operator, a, b, bracket)
+def binary_infix_operator(operator: str, a: numpy.ndarray, b: numpy.ndarray):
+    return numpy.vectorize(binary_infix_operator, otypes=[object])(operator, a, b)
 
 
 @dispatch
-def binary_infix_operator(operator: str, a: list, b: numpy.ndarray, bracket: bool = False):
-    return binary_infix_operator(operator, numpy.array(a), b, bracket)
+def binary_infix_operator(operator: str, a: list, b: numpy.ndarray):
+    return binary_infix_operator(operator, numpy.array(a), b)
 
 
 @dispatch
-def binary_infix_operator(operator: str, a: numpy.ndarray, b: list, bracket: bool = False):
-    return binary_infix_operator(operator, a, numpy.array(b), bracket)
+def binary_infix_operator(operator: str, a: numpy.ndarray, b: list):
+    return binary_infix_operator(operator, a, numpy.array(b))
 
 
-def symbolic_eval(x):
-    # Returns a numpy array of the same shape as x, where each element is the result of evaluating the string in that element
-    return numpy.vectorize(eval)(x)
+@dispatch
+def binary_infix_operator(operator: str, a: str, b: int):
+    return binary_infix_operator(operator, a, str(b))
+
+
+@dispatch
+def binary_infix_operator(operator: str, a: numpy.ndarray, b: float):
+    return binary_infix_operator(operator, a, str(b))
+
+
+@dispatch
+def binary_infix_operator(operator: str, a: str, b: float):
+    return binary_infix_operator(operator, a, str(b))
+
+
+@dispatch
+def binary_infix_operator(operator: str, a: numpy.ndarray, b: jax.numpy.ndarray):
+    return binary_infix_operator(operator, a, numpy.array(b))
+
+
+@dispatch
+def binary_infix_operator(operator: str, a: bool, b: str):
+    return binary_infix_operator(operator, str(a), b)
 
 
 def all_concrete_values(data):
@@ -137,13 +189,6 @@ def all_concrete_values(data):
     return True
 
 
-def symbolic_and(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return numpy.logical_and(*args, **kwargs)
-    else:
-        return binary_infix_operator("and", *args, **kwargs)
-
-
 def symbolic_not(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_not(*args, **kwargs)
@@ -151,18 +196,39 @@ def symbolic_not(*args, **kwargs):
         return unary_operator("not", *args, **kwargs)
 
 
-def symbolic_xor(*args, **kwargs):
+def symbolic_ne(*args, **kwargs):
     if all_concrete_values([*args]):
-        return numpy.logical_xor(*args, **kwargs)
+        return numpy.not_equal(*args, **kwargs)
     else:
-        return binary_infix_operator("^", *args, **kwargs, bracket=True)
+        return "(" + binary_infix_operator("!=", *args, **kwargs) + ")"
+
+
+def symbolic_gt(*args, **kwargs):
+    if all_concrete_values([*args]):
+        return numpy.greater(*args, **kwargs)
+    else:
+        return binary_infix_operator(">", *args, **kwargs)
+
+
+def symbolic_and(*args, **kwargs):
+    if all_concrete_values([*args]):
+        return numpy.logical_and(*args, **kwargs)
+    else:
+        return binary_infix_operator("and", *args, **kwargs)
 
 
 def symbolic_or(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_or(*args, **kwargs)
     else:
-        return binary_infix_operator("or", *args, **kwargs)
+        return "(" + binary_infix_operator("or", *args, **kwargs) + ")"
+
+
+def symbolic_xor(*args, **kwargs):
+    if all_concrete_values([*args]):
+        return numpy.logical_xor(*args, **kwargs)
+    else:
+        return binary_infix_operator("^", *args, **kwargs)
 
 
 def symbolic_sum(*args, **kwargs):
@@ -178,15 +244,6 @@ def symbolic_broadcast_in_dim(*args, **kwargs):
     return lax_reference.broadcast_in_dim(*args, **kwargs)
 
 
-def symbolic_convert_element_type_impl(x, dtype):
-    if dtype == numpy.int32 or dtype == numpy.int64:
-        dtype = "int"
-
-    def convert(x):
-        return f"{dtype}({x})"
-    return map_at_elements(x, convert)
-
-
 # TODO: add a test for this
 def symbolic_convert_element_type(*args, **kwargs):
     # Check if all the boolean arguments are True or False
@@ -195,9 +252,7 @@ def symbolic_convert_element_type(*args, **kwargs):
         return lax_reference.convert_element_type(*args, dtype=kwargs['new_dtype'])
     else:
         # Otherwise, we use the symbolic implementation
-        return symbolic_convert_element_type_impl(*args, dtype=kwargs['new_dtype'])
-
-
+        return convert_element_type(*args, dtype=kwargs['new_dtype'])
 
 
 def make_symbolic_reducer(py_binop, init_val):
@@ -228,6 +283,13 @@ def make_symbolic_reducer(py_binop, init_val):
 def symbolic_reduce(operand, init_value, computation, dimensions):
     reducer = make_symbolic_reducer(computation, init_value)
     return reducer(operand, tuple(dimensions)).astype(operand.dtype)
+
+
+def symbolic_reduce_and(*args, **kwargs):
+    if all_concrete_values([*args]):
+        return lax_reference.reduce(*args, init_value=True, computation=numpy.logical_and, dimensions=kwargs['axes'])
+    else:
+        return symbolic_reduce(*args, init_value='True', computation=symbolic_and, dimensions=kwargs['axes'])
 
 
 def symbolic_reduce_or(*args, **kwargs):
