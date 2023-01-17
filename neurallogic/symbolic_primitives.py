@@ -157,6 +157,11 @@ def binary_infix_operator(operator: str, a: str, b: float):
 def binary_infix_operator(operator: str, a: numpy.ndarray, b: jax.numpy.ndarray):
     return binary_infix_operator(operator, a, numpy.array(b))
 
+@dispatch
+def binary_infix_operator(operator: str, a: bool, b: str):
+    return binary_infix_operator(operator, str(a), b)
+
+
 
 def all_concrete_values(data):
     if isinstance(data, str):

@@ -26,12 +26,11 @@ def nln(type, x, width):
     x = hard_or.or_layer(type)(width, nn.initializers.uniform(
         1.0), dtype=jnp.float32)(x)  # >=1700 need for >98% accuracy
     x = hard_not.not_layer(type)(10, dtype=jnp.float32)(x)
-    x = primitives.nl_ravel(type)(x)  # flatten the outputs of the not layer
+    x = x.ravel()  # flatten the outputs of the not layer
     # harden the outputs of the not layer
     x = harden_layer.harden_layer(type)(x)
-    x = primitives.nl_reshape(type)((10, width))(
-        x)  # reshape to 10 ports, 100 bits each
-    x = primitives.nl_sum(type)(-1)(x)  # sum the 100 bits in each port
+    x = x.reshape((10, width))  # reshape to 10 ports, 100 bits each
+    x = x.sum(-1)  # sum the 100 bits in each port
     return x
 
 
