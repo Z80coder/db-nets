@@ -7,21 +7,8 @@ import numpy
 import typing
 
 from neurallogic import hard_and, harden, neural_logic_net, symbolic_generation
+from tests import utils
 
-
-def check_consistency(soft: typing.Callable, hard: typing.Callable, expected, *args):
-    # Check that the soft function performs as expected
-    assert numpy.allclose(soft(*args), expected)
-
-    # Check that the hard function performs as expected
-    hard_args = harden.harden(*args)
-    hard_expected = harden.harden(expected)
-    assert numpy.allclose(hard(*hard_args), hard_expected)
-
-    # Check that the jaxpr performs as expected
-    symbolic_f = symbolic_generation.make_symbolic_jaxpr(hard, *hard_args)
-    assert numpy.allclose(symbolic_generation.eval_symbolic(
-        symbolic_f, *hard_args), hard_expected)
 
 
 def test_include():
@@ -36,7 +23,7 @@ def test_include():
         [[-0.1, 1.0], 1.0]
     ]
     for input, expected in test_data:
-        check_consistency(hard_and.soft_and_include, hard_and.hard_and_include,
+        utils.check_consistency(hard_and.soft_and_include, hard_and.hard_and_include,
                            expected, input[0], input[1])
 
 
@@ -56,7 +43,7 @@ def test_neuron():
         def hard(weights, input):
             return hard_and.hard_and_neuron(weights, input)
 
-        check_consistency(soft, hard, expected,
+        utils.check_consistency(soft, hard, expected,
                           jax.numpy.array(weights), jax.numpy.array(input))
 
 
@@ -81,7 +68,7 @@ def test_layer():
             return hard_and.hard_and_layer(weights, input)
 
 
-        check_consistency(soft, hard, jax.numpy.array(expected),
+        utils.check_consistency(soft, hard, jax.numpy.array(expected),
                           jax.numpy.array(weights), jax.numpy.array(input))
 
 

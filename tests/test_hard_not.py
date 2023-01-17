@@ -19,6 +19,10 @@ def test_activation():
         [[-0.1, 1.0], 0.0]
     ]
     for input, expected in test_data:
+        check_consistency(hard_and.soft_and_include, hard_and.hard_and_include,
+                           expected, input[0], input[1])
+
+    for input, expected in test_data:
         assert hard_not.soft_not(*input) == expected
         assert hard_not.hard_not(*harden.harden(input)
                                  ) == harden.harden(expected)
