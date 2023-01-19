@@ -195,7 +195,7 @@ def get_config():
     # Always commit with num_epochs = 1 for short test time
     config.momentum = 0.9
     config.batch_size = 128
-    config.num_epochs = 1000
+    config.num_epochs = 2
     return config
 
 
