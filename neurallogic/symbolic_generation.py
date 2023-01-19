@@ -1,15 +1,12 @@
 import numpy
 import jax
-import jax._src.lax_reference as lax_reference
 from jax import core
 from jax._src.util import safe_map
 import flax
 from neurallogic import symbolic_primitives
 from plum import dispatch
 import typing
-from typing import (Any, Mapping)
-
-# TODO: rename this file to symbolic.py
+from typing import Any, Mapping
 
 
 def symbolic_bind(prim, *args, **params):
@@ -17,27 +14,38 @@ def symbolic_bind(prim, *args, **params):
     # print("args: ", args)
     # print("params: ", params)
     symbolic_outvals = {
-        'broadcast_in_dim': symbolic_primitives.symbolic_broadcast_in_dim,
-        'reshape': lax_reference.reshape,
-        'convert_element_type': symbolic_primitives.symbolic_convert_element_type,
-        'and': symbolic_primitives.symbolic_and,
-        'or': symbolic_primitives.symbolic_or,
-        'xor': symbolic_primitives.symbolic_xor,
-        'not': symbolic_primitives.symbolic_not,
-        'ne': symbolic_primitives.symbolic_ne,
-        'gt': symbolic_primitives.symbolic_gt,
-        'reduce_and': symbolic_primitives.symbolic_reduce_and,
-        'reduce_or': symbolic_primitives.symbolic_reduce_or,
-        'reduce_sum': symbolic_primitives.symbolic_reduce_sum,
+        "broadcast_in_dim": symbolic_primitives.symbolic_broadcast_in_dim,
+        "reshape": symbolic_primitives.symbolic_reshape,
+        "transpose": symbolic_primitives.symbolic_transpose,
+        "convert_element_type": symbolic_primitives.symbolic_convert_element_type,
+        "eq": symbolic_primitives.symbolic_eq,
+        "ne": symbolic_primitives.symbolic_ne,
+        "le": symbolic_primitives.symbolic_le,
+        "lt": symbolic_primitives.symbolic_lt,
+        "gt": symbolic_primitives.symbolic_gt,
+        "add": symbolic_primitives.symbolic_add,
+        "sub": symbolic_primitives.symbolic_sub,
+        "mul": symbolic_primitives.symbolic_mul,
+        "div": symbolic_primitives.symbolic_div,
+        "max": symbolic_primitives.symbolic_max,
+        "min": symbolic_primitives.symbolic_min,
+        "and": symbolic_primitives.symbolic_and,
+        "or": symbolic_primitives.symbolic_or,
+        "xor": symbolic_primitives.symbolic_xor,
+        "not": symbolic_primitives.symbolic_not,
+        "reduce_and": symbolic_primitives.symbolic_reduce_and,
+        "reduce_or": symbolic_primitives.symbolic_reduce_or,
+        "reduce_sum": symbolic_primitives.symbolic_reduce_sum,
+        "select_n": symbolic_primitives.symbolic_select_n,
     }[prim.name](*args, **params)
     return symbolic_outvals
+
 
 def scope_put_variable(self, col: str, name: str, value: Any):
     variables = self._collection(col)
 
     def put(target, key, val):
-        if (key in target and isinstance(target[key], dict) and
-                isinstance(val, Mapping)):
+        if key in target and isinstance(target[key], dict) and isinstance(val, Mapping):
             for k, v in val.items():
                 put(target[key], k, v)
         else:
@@ -50,11 +58,16 @@ def put_variable(self, col: str, name: str, value: Any):
     self.scope._variables = self.scope.variables().unfreeze()
     scope_put_variable(self.scope, col, name, value)
 
+
 def make_symbolic_flax_jaxpr(flax_layer, x):
     actual_weights = flax_layer.get_variable("params", "weights")
     # Convert actual weights to dummy numeric weights (if needed)
-    if isinstance(actual_weights, list) or (isinstance(actual_weights, numpy.ndarray) and actual_weights.dtype == object):
-        numeric_weights = symbolic_primitives.map_at_elements(actual_weights, lambda x: 0)
+    if isinstance(actual_weights, list) or (
+        isinstance(actual_weights, numpy.ndarray) and actual_weights.dtype == object
+    ):
+        numeric_weights = symbolic_primitives.map_at_elements(
+            actual_weights, lambda x: 0
+        )
         numeric_weights = numpy.asarray(numeric_weights, dtype=numpy.int32)
         put_variable(flax_layer, "params", "weights", numeric_weights)
     # Convert input to dummy numeric input (if needed)
@@ -130,24 +143,27 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
             symbolic_invals = safe_map(symbolic_read, eqn.invars)
             prim = eqn.primitive
             if type(prim) is jax.core.CallPrimitive:
-                call_jaxpr = eqn.params['call_jaxpr']
+                call_jaxpr = eqn.params["call_jaxpr"]
                 if not symbolic:
                     safe_map(write, call_jaxpr.invars, map(read, eqn.invars))
                 try:
-                    safe_map(symbolic_write, call_jaxpr.invars,
-                             map(symbolic_read, eqn.invars))
+                    safe_map(
+                        symbolic_write,
+                        call_jaxpr.invars,
+                        map(symbolic_read, eqn.invars),
+                    )
                 except:
                     pass
                 eval_jaxpr_impl(call_jaxpr)
                 if not symbolic:
                     safe_map(write, eqn.outvars, map(read, call_jaxpr.outvars))
-                safe_map(symbolic_write, eqn.outvars, map(
-                    symbolic_read, call_jaxpr.outvars))
+                safe_map(
+                    symbolic_write, eqn.outvars, map(symbolic_read, call_jaxpr.outvars)
+                )
             else:
                 if not symbolic:
                     outvals = prim.bind(*invals, **eqn.params)
-                symbolic_outvals = symbolic_bind(
-                    prim, *symbolic_invals, **eqn.params)
+                symbolic_outvals = symbolic_bind(prim, *symbolic_invals, **eqn.params)
                 # Primitives may return multiple outputs or not
                 if not prim.multiple_results:
                     if not symbolic:
@@ -155,8 +171,12 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
                     symbolic_outvals = [symbolic_outvals]
                 if not symbolic:
                     # Check that the concrete and symbolic values are equal
-                    assert numpy.array_equal(
-                        numpy.array(outvals), symbolic_outvals)
+                    #print(
+                    #    f"outvals: {outvals} and symbolic_outvals: {symbolic_outvals}"
+                    #)
+                    assert numpy.allclose(
+                        numpy.array(outvals), symbolic_outvals, equal_nan=True
+                    )
                 # Write the results of the primitive into the environment
                 if not symbolic:
                     safe_map(write, eqn.outvars, outvals)
@@ -169,24 +189,36 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
     else:
         return safe_map(symbolic_read, jaxpr.outvars)[0]
 
+
 # TODO: parameterise these functions by the element conversion function
 
 # TODO: use union types to consolidate these functions
 @dispatch
 def make_symbolic(x: dict):
-    return symbolic_primitives.map_at_elements(x, symbolic_primitives.to_boolean_value_string)
+    return symbolic_primitives.map_at_elements(
+        x, symbolic_primitives.to_boolean_value_string
+    )
+
 
 @dispatch
 def make_symbolic(x: list):
-    return symbolic_primitives.map_at_elements(x, symbolic_primitives.to_boolean_value_string)
+    return symbolic_primitives.map_at_elements(
+        x, symbolic_primitives.to_boolean_value_string
+    )
+
 
 @dispatch
 def make_symbolic(x: numpy.ndarray):
-    return symbolic_primitives.map_at_elements(x, symbolic_primitives.to_boolean_value_string)
+    return symbolic_primitives.map_at_elements(
+        x, symbolic_primitives.to_boolean_value_string
+    )
+
 
 @dispatch
 def make_symbolic(x: jax.numpy.ndarray):
-    return symbolic_primitives.map_at_elements(convert_jax_to_numpy_arrays(x), symbolic_primitives.to_boolean_value_string)
+    return symbolic_primitives.map_at_elements(
+        convert_jax_to_numpy_arrays(x), symbolic_primitives.to_boolean_value_string
+    )
 
 
 @dispatch
@@ -214,9 +246,11 @@ def make_symbolic(x: flax.core.FrozenDict):
     x = convert_jax_to_numpy_arrays(x.unfreeze())
     return flax.core.FrozenDict(make_symbolic(x))
 
+
 @dispatch
 def make_symbolic(*args):
     return tuple([make_symbolic(arg) for arg in args])
+
 
 @dispatch
 def make_symbolic_jaxpr(func: typing.Callable, *args):
@@ -224,15 +258,16 @@ def make_symbolic_jaxpr(func: typing.Callable, *args):
 
 
 def eval_symbolic(symbolic_function, *args):
-    if hasattr(symbolic_function, 'literals'):
-        return eval_jaxpr(False, symbolic_function.jaxpr, symbolic_function.literals, *args)
+    if hasattr(symbolic_function, "literals"):
+        return eval_jaxpr(
+            False, symbolic_function.jaxpr, symbolic_function.literals, *args
+        )
     return eval_jaxpr(False, symbolic_function.jaxpr, [], *args)
 
 
 def symbolic_expression(jaxpr, *args):
-    if hasattr(jaxpr, 'literals'):
-        sym_expr = eval_jaxpr(True, jaxpr.jaxpr,
-                              jaxpr.literals, *args)
+    if hasattr(jaxpr, "literals"):
+        sym_expr = eval_jaxpr(True, jaxpr.jaxpr, jaxpr.literals, *args)
     else:
         sym_expr = eval_jaxpr(True, jaxpr.jaxpr, [], *args)
     return sym_expr

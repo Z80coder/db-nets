@@ -8,10 +8,13 @@ from neurallogic import symbolic_primitives
 def harden_float(x: float) -> bool:
     return x > 0.5
 
+
 harden_array = jax.vmap(harden_float, 0, 0)
 
 @dispatch
 def harden(x: float):
+    if numpy.isnan(x):
+        return x
     return harden_float(x)
 
 @dispatch

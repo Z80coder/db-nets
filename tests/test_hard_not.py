@@ -8,6 +8,7 @@ import numpy
 from neurallogic import hard_not, harden, neural_logic_net, symbolic_generation
 from tests import utils
 
+
 def test_activation():
     test_data = [
         [[1.0, 1.0], 1.0],
@@ -17,11 +18,13 @@ def test_activation():
         [[1.1, 1.0], 1.0],
         [[1.1, 0.0], 0.0],
         [[-0.1, 0.0], 1.0],
-        [[-0.1, 1.0], 0.0]
+        [[-0.1, 1.0], 0.0],
     ]
     for input, expected in test_data:
-        utils.check_consistency(hard_not.soft_not, hard_not.hard_not,
-                           expected, input[0], input[1])
+        utils.check_consistency(
+            hard_not.soft_not, hard_not.hard_not, expected, input[0], input[1]
+        )
+
 
 def test_neuron():
     test_data = [
@@ -30,40 +33,59 @@ def test_neuron():
         [[1.0, 0.0], [0.0, 1.0], [0.0, 0.0]],
         [[0.0, 1.0], [1.0, 0.0], [0.0, 0.0]],
         [[0.0, 1.0], [0.0, 0.0], [1.0, 0.0]],
-        [[0.0, 1.0], [1.0, 1.0], [0.0, 1.0]]
+        [[0.0, 1.0], [1.0, 1.0], [0.0, 1.0]],
     ]
     for input, weights, expected in test_data:
+
         def soft(weights, input):
             return hard_not.hard_not_neuron(weights, input)
 
         def hard(weights, input):
             return hard_not.hard_not_neuron(weights, input)
 
-        utils.check_consistency(soft, hard, expected,
-                          jax.numpy.array(weights), jax.numpy.array(input))
+        utils.check_consistency(
+            soft, hard, expected, jax.numpy.array(weights), jax.numpy.array(input)
+        )
 
 
-def test_not_layer():
+def test_layer():
     test_data = [
-        [[1.0, 0.0], [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0], [0.0, 0.2]],
-            [[1.0, 0.0], [0.0, 0.0], [1.0, 1.0], [0.0, 0.8]]],
-        [[1.0, 0.4], [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0], [0.0, 0.0]],
-            [[1.0, 0.4], [0.0, 0.4], [1.0, 0.6], [0.0, 0.6]]],
-        [[0.0, 1.0], [[1.0, 1.0], [0.0, 0.8], [1.0, 0.0], [0.0, 0.0]],
-            [[0.0, 1.0], [1.0, 0.8], [0.0, 0.0], [1.0, 0.0]]],
-        [[0.0, 0.0], [[1.0, 0.01], [0.0, 1.0], [1.0, 0.0], [0.0, 0.0]],
-            [[0.0, 0.99], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]]]
+        [
+            [1.0, 0.0],
+            [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0], [0.0, 0.2]],
+            [[1.0, 0.0], [0.0, 0.0], [1.0, 1.0], [0.0, 0.8]],
+        ],
+        [
+            [1.0, 0.4],
+            [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0], [0.0, 0.0]],
+            [[1.0, 0.4], [0.0, 0.4], [1.0, 0.6], [0.0, 0.6]],
+        ],
+        [
+            [0.0, 1.0],
+            [[1.0, 1.0], [0.0, 0.8], [1.0, 0.0], [0.0, 0.0]],
+            [[0.0, 1.0], [1.0, 0.8], [0.0, 0.0], [1.0, 0.0]],
+        ],
+        [
+            [0.0, 0.0],
+            [[1.0, 0.01], [0.0, 1.0], [1.0, 0.0], [0.0, 0.0]],
+            [[0.0, 0.99], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]],
+        ],
     ]
     for input, weights, expected in test_data:
+
         def soft(weights, input):
             return hard_not.soft_not_layer(weights, input)
 
         def hard(weights, input):
             return hard_not.hard_not_layer(weights, input)
 
-
-        utils.check_consistency(soft, hard, jax.numpy.array(expected),
-                          jax.numpy.array(weights), jax.numpy.array(input))
+        utils.check_consistency(
+            soft,
+            hard,
+            jax.numpy.array(expected),
+            jax.numpy.array(weights),
+            jax.numpy.array(input),
+        )
 
 
 def test_not():
@@ -79,29 +101,62 @@ def test_not():
     test_data = [
         [
             [1.0, 1.0],
-            [0.9469013, 0.679816, 0.3194083, 0.41585994,
-                0.7815013, 0.9580679, 0.2925768, 0.02594423]
+            [
+                0.9469013,
+                0.679816,
+                0.3194083,
+                0.41585994,
+                0.7815013,
+                0.9580679,
+                0.2925768,
+                0.02594423,
+            ],
         ],
         [
             [1.0, 0.0],
-            [0.9469013, 0.320184, 0.3194083, 0.58414006,
-                0.7815013, 0.04193211, 0.2925768, 0.97405577]
+            [
+                0.9469013,
+                0.320184,
+                0.3194083,
+                0.58414006,
+                0.7815013,
+                0.04193211,
+                0.2925768,
+                0.97405577,
+            ],
         ],
         [
             [0.0, 1.0],
-            [0.05309868, 0.679816, 0.6805917, 0.41585994,
-                0.2184987, 0.9580679, 0.7074232, 0.02594423]
+            [
+                0.05309868,
+                0.679816,
+                0.6805917,
+                0.41585994,
+                0.2184987,
+                0.9580679,
+                0.7074232,
+                0.02594423,
+            ],
         ],
         [
             [0.0, 0.0],
-            [0.05309868, 0.320184, 0.6805917, 0.58414006,
-                0.2184987, 0.04193211, 0.7074232, 0.97405577]
-        ]
+            [
+                0.05309868,
+                0.320184,
+                0.6805917,
+                0.58414006,
+                0.2184987,
+                0.04193211,
+                0.7074232,
+                0.97405577,
+            ],
+        ],
     ]
     for input, expected in test_data:
         # Check that the soft function performs as expected
-        assert jax.numpy.allclose(soft.apply(
-            weights, jax.numpy.array(input)), jax.numpy.array(expected))
+        assert jax.numpy.allclose(
+            soft.apply(weights, jax.numpy.array(input)), jax.numpy.array(expected)
+        )
 
         # Check that the hard function performs as expected
         hard_input = harden.harden(jax.numpy.array(input))
@@ -131,17 +186,21 @@ def test_train_not():
         [[1.0, 0.0], [0.0, 1.0], [0.0, 0.0], [0.0, 1.0]],
         [[1.0, 1.0], [0.0, 0.0], [0.0, 1.0], [0.0, 0.0]],
         [[0.0, 0.0], [1.0, 1.0], [1.0, 0.0], [1.0, 1.0]],
-        [[0.0, 1.0], [1.0, 0.0], [1.0, 1.0], [1.0, 0.0]]
+        [[0.0, 1.0], [1.0, 0.0], [1.0, 1.0], [1.0, 0.0]],
     ]
     input = jax.numpy.array(x)
     output = jax.numpy.array(y)
 
     # Train the and layer
     tx = optax.sgd(0.1)
-    state = train_state.TrainState.create(apply_fn=jax.vmap(
-        soft.apply, in_axes=(None, 0)), params=weights, tx=tx)
-    grad_fn = jax.jit(jax.value_and_grad(lambda params, x,
-                      y: jax.numpy.mean((state.apply_fn(params, x) - y) ** 2)))
+    state = train_state.TrainState.create(
+        apply_fn=jax.vmap(soft.apply, in_axes=(None, 0)), params=weights, tx=tx
+    )
+    grad_fn = jax.jit(
+        jax.value_and_grad(
+            lambda params, x, y: jax.numpy.mean((state.apply_fn(params, x) - y) ** 2)
+        )
+    )
     for epoch in range(1, 100):
         loss, grads = grad_fn(state.params, input, output)
         state = state.apply_gradients(grads=grads)
@@ -173,7 +232,7 @@ def test_symbolic_not():
     soft_input = jax.numpy.array([1.0, 0.0])
     weights = soft.init(random.PRNGKey(0), soft_input)
     soft_result = soft.apply(weights, numpy.array(soft_input))
-    
+
     # Compute hard result
     hard_weights = harden.hard_weights(weights)
     hard_input = harden.harden(soft_input)
@@ -187,7 +246,7 @@ def test_symbolic_not():
     assert numpy.array_equal(symbolic_output, hard_result)
 
     # Compute symbolic result with symbolic inputs and symbolic weights, but where the symbols can be evaluated
-    symbolic_input = ['True', 'False']
+    symbolic_input = ["True", "False"]
     symbolic_weights = symbolic_generation.make_symbolic(hard_weights)
     symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
     symbolic_output = symbolic_generation.eval_symbolic_expression(symbolic_output)
@@ -195,77 +254,84 @@ def test_symbolic_not():
     assert numpy.array_equal(symbolic_output, hard_result)
 
     # Compute symbolic result with symbolic inputs and non-symbolic weights
-    symbolic_input = ['x1', 'x2']
+    symbolic_input = ["x1", "x2"]
     symbolic_output = symbolic.apply(hard_weights, symbolic_input)
     # Check the form of the symbolic expression
-    assert numpy.array_equal(symbolic_output, ['not((not((x1 != 0) ^ True) != 0) ^ True)',
- 'not((not((x2 != 0) ^ True) != 0) ^ True)',
- 'not((not((x1 != 0) ^ False) != 0) ^ False)',
- 'not((not((x2 != 0) ^ False) != 0) ^ False)',
- 'not((not((x1 != 0) ^ True) != 0) ^ False)',
- 'not((not((x2 != 0) ^ True) != 0) ^ True)',
- 'not((not((x1 != 0) ^ False) != 0) ^ False)',
- 'not((not((x2 != 0) ^ False) != 0) ^ False)',
- 'not((not((x1 != 0) ^ True) != 0) ^ True)',
- 'not((not((x2 != 0) ^ True) != 0) ^ False)',
- 'not((not((x1 != 0) ^ False) != 0) ^ True)',
- 'not((not((x2 != 0) ^ False) != 0) ^ True)',
- 'not((not((x1 != 0) ^ True) != 0) ^ False)',
- 'not((not((x2 != 0) ^ True) != 0) ^ False)',
- 'not((not((x1 != 0) ^ False) != 0) ^ True)',
- 'not((not((x2 != 0) ^ False) != 0) ^ True)',
- 'not((not((x1 != 0) ^ True) != 0) ^ False)',
- 'not((not((x2 != 0) ^ True) != 0) ^ True)',
- 'not((not((x1 != 0) ^ False) != 0) ^ False)',
- 'not((not((x2 != 0) ^ False) != 0) ^ False)',
- 'not((not((x1 != 0) ^ True) != 0) ^ True)',
- 'not((not((x2 != 0) ^ True) != 0) ^ True)',
- 'not((not((x1 != 0) ^ False) != 0) ^ False)',
- 'not((not((x2 != 0) ^ False) != 0) ^ True)',
- 'not((not((x1 != 0) ^ True) != 0) ^ True)',
- 'not((not((x2 != 0) ^ True) != 0) ^ False)',
- 'not((not((x1 != 0) ^ False) != 0) ^ False)',
- 'not((not((x2 != 0) ^ False) != 0) ^ False)',
- 'not((not((x1 != 0) ^ True) != 0) ^ False)',
- 'not((not((x2 != 0) ^ True) != 0) ^ True)',
- 'not((not((x1 != 0) ^ False) != 0) ^ False)',
- 'not((not((x2 != 0) ^ False) != 0) ^ False)'])
+    assert numpy.array_equal(
+        symbolic_output,
+        [
+            "not((not((x1 != 0) ^ True) != 0) ^ True)",
+            "not((not((x2 != 0) ^ True) != 0) ^ True)",
+            "not((not((x1 != 0) ^ False) != 0) ^ False)",
+            "not((not((x2 != 0) ^ False) != 0) ^ False)",
+            "not((not((x1 != 0) ^ True) != 0) ^ False)",
+            "not((not((x2 != 0) ^ True) != 0) ^ True)",
+            "not((not((x1 != 0) ^ False) != 0) ^ False)",
+            "not((not((x2 != 0) ^ False) != 0) ^ False)",
+            "not((not((x1 != 0) ^ True) != 0) ^ True)",
+            "not((not((x2 != 0) ^ True) != 0) ^ False)",
+            "not((not((x1 != 0) ^ False) != 0) ^ True)",
+            "not((not((x2 != 0) ^ False) != 0) ^ True)",
+            "not((not((x1 != 0) ^ True) != 0) ^ False)",
+            "not((not((x2 != 0) ^ True) != 0) ^ False)",
+            "not((not((x1 != 0) ^ False) != 0) ^ True)",
+            "not((not((x2 != 0) ^ False) != 0) ^ True)",
+            "not((not((x1 != 0) ^ True) != 0) ^ False)",
+            "not((not((x2 != 0) ^ True) != 0) ^ True)",
+            "not((not((x1 != 0) ^ False) != 0) ^ False)",
+            "not((not((x2 != 0) ^ False) != 0) ^ False)",
+            "not((not((x1 != 0) ^ True) != 0) ^ True)",
+            "not((not((x2 != 0) ^ True) != 0) ^ True)",
+            "not((not((x1 != 0) ^ False) != 0) ^ False)",
+            "not((not((x2 != 0) ^ False) != 0) ^ True)",
+            "not((not((x1 != 0) ^ True) != 0) ^ True)",
+            "not((not((x2 != 0) ^ True) != 0) ^ False)",
+            "not((not((x1 != 0) ^ False) != 0) ^ False)",
+            "not((not((x2 != 0) ^ False) != 0) ^ False)",
+            "not((not((x1 != 0) ^ True) != 0) ^ False)",
+            "not((not((x2 != 0) ^ True) != 0) ^ True)",
+            "not((not((x1 != 0) ^ False) != 0) ^ False)",
+            "not((not((x2 != 0) ^ False) != 0) ^ False)",
+        ],
+    )
 
     # Compute symbolic result with symbolic inputs and symbolic weights
     symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
     # Check the form of the symbolic expression
-    assert numpy.array_equal(symbolic_output, ['not((not((x1 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
- 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
- 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
- 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
- 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
- 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
- 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
- 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
- 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
- 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
- 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (True != 0))',
- 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (True != 0))',
- 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
- 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
- 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (True != 0))',
- 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (True != 0))',
- 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
- 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
- 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
- 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
- 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
- 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
- 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
- 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (True != 0))',
- 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
- 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
- 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
- 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
- 'not((not((x1 != 0) ^ (True != 0)) != 0) ^ (False != 0))',
- 'not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))',
- 'not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))',
- 'not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))'])
-
-    
-
+    assert numpy.array_equal(
+        symbolic_output,
+        [
+            "not((not((x1 != 0) ^ (True != 0)) != 0) ^ (True != 0))",
+            "not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))",
+            "not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))",
+            "not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))",
+            "not((not((x1 != 0) ^ (True != 0)) != 0) ^ (False != 0))",
+            "not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))",
+            "not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))",
+            "not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))",
+            "not((not((x1 != 0) ^ (True != 0)) != 0) ^ (True != 0))",
+            "not((not((x2 != 0) ^ (True != 0)) != 0) ^ (False != 0))",
+            "not((not((x1 != 0) ^ (False != 0)) != 0) ^ (True != 0))",
+            "not((not((x2 != 0) ^ (False != 0)) != 0) ^ (True != 0))",
+            "not((not((x1 != 0) ^ (True != 0)) != 0) ^ (False != 0))",
+            "not((not((x2 != 0) ^ (True != 0)) != 0) ^ (False != 0))",
+            "not((not((x1 != 0) ^ (False != 0)) != 0) ^ (True != 0))",
+            "not((not((x2 != 0) ^ (False != 0)) != 0) ^ (True != 0))",
+            "not((not((x1 != 0) ^ (True != 0)) != 0) ^ (False != 0))",
+            "not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))",
+            "not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))",
+            "not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))",
+            "not((not((x1 != 0) ^ (True != 0)) != 0) ^ (True != 0))",
+            "not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))",
+            "not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))",
+            "not((not((x2 != 0) ^ (False != 0)) != 0) ^ (True != 0))",
+            "not((not((x1 != 0) ^ (True != 0)) != 0) ^ (True != 0))",
+            "not((not((x2 != 0) ^ (True != 0)) != 0) ^ (False != 0))",
+            "not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))",
+            "not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))",
+            "not((not((x1 != 0) ^ (True != 0)) != 0) ^ (False != 0))",
+            "not((not((x2 != 0) ^ (True != 0)) != 0) ^ (True != 0))",
+            "not((not((x1 != 0) ^ (False != 0)) != 0) ^ (False != 0))",
+            "not((not((x2 != 0) ^ (False != 0)) != 0) ^ (False != 0))",
+        ],
+    )
