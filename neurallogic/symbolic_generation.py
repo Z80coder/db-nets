@@ -23,6 +23,7 @@ def symbolic_bind(prim, *args, **params):
         "le": symbolic_primitives.symbolic_le,
         "lt": symbolic_primitives.symbolic_lt,
         "gt": symbolic_primitives.symbolic_gt,
+        "abs": symbolic_primitives.symbolic_abs,
         "add": symbolic_primitives.symbolic_add,
         "sub": symbolic_primitives.symbolic_sub,
         "mul": symbolic_primitives.symbolic_mul,

@@ -234,6 +234,13 @@ def symbolic_gt(*args, **kwargs):
         return binary_infix_operator(">", *args, **kwargs)
 
 
+def symbolic_abs(*args, **kwargs):
+    if all_concrete_values([*args]):
+        return lax_reference.abs(*args, **kwargs)
+    else:
+        return unary_operator("np.absolute", *args, **kwargs)
+
+
 def symbolic_add(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.add(*args, **kwargs)

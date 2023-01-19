@@ -1,9 +1,16 @@
 from typing import Callable
-import numpy
+
 import jax
+from jax.config import config
+import numpy
+import optax
+from flax.training import train_state
 from jax import random
 
-from neurallogic import harden, real_encoder, symbolic_generation, neural_logic_net
+from neurallogic import harden, neural_logic_net, real_encoder, symbolic_generation
+
+
+config.update("jax_debug_nans", True)
 
 
 def check_consistency(soft: Callable, hard: Callable, expected, *args):
@@ -123,10 +130,7 @@ def test_real_encoder():
     test_data = [
         [
             [1.0, 0.8],
-            [
-                [1.0, 1.0, 1.0],
-                [0.47898874, 0.4623352,  0.6924789]
-            ],
+            [[1.0, 1.0, 1.0], [0.47898874, 0.4623352, 0.6924789]],
         ],
         [
             [0.6, 0.0],
@@ -145,7 +149,7 @@ def test_real_encoder():
         [
             [0.4, 0.6],
             [
-                [0.6766343,  0.67865026, 0.21029726],
+                [0.6766343, 0.67865026, 0.21029726],
                 [0.35924158, 0.34675142, 0.4445637],
             ],
         ],
@@ -164,3 +168,51 @@ def test_real_encoder():
         # Check that the symbolic function performs as expected
         symbolic_output = symbolic.apply(hard_weights, jax.numpy.array(input))
         assert numpy.allclose(symbolic_output, hard_expected)
+
+
+def test_train_real_encoder():
+    def test_net(type, x):
+        return real_encoder.real_encoder_layer(type)(3)(x)
+
+    soft, hard, symbolic = neural_logic_net.net(test_net)
+    weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
+
+    x = [
+        [0.8, 0.9],
+        [0.85, 0.1],
+        [0.2, 0.8],
+        [0.3, 0.7],
+    ]
+    y = [
+        [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]],
+        [[1.0, 1.0, 1.0], [0.0, 0.0, 0.0]],
+        [[1.0, 1.0, 0.0], [1.0, 1.0, 1.0]],
+        [[1.0, 1.0, 0.0], [1.0, 0.0, 1.0]],
+    ]
+    input = jax.numpy.array(x)
+    output = jax.numpy.array(y)
+
+    # Train the real_encoder layer
+    tx = optax.sgd(0.1)
+    state = train_state.TrainState.create(
+        apply_fn=jax.vmap(soft.apply, in_axes=(None, 0)), params=weights, tx=tx
+    )
+    grad_fn = jax.jit(
+        jax.value_and_grad(
+            lambda params, x, y: jax.numpy.mean((state.apply_fn(params, x) - y) ** 2)
+        )
+    )
+    for epoch in range(1, 100):
+        loss, grads = grad_fn(state.params, input, output)
+        state = state.apply_gradients(grads=grads)
+
+    # Test that the real_encoder layer (both soft and hard variants) correctly predicts y
+    weights = state.params
+    hard_weights = harden.hard_weights(weights)
+
+    for input, expected in zip(x, y):
+        hard_expected = harden.harden(jax.numpy.array(expected))
+        hard_result = hard.apply(hard_weights, jax.numpy.array(input))
+        assert jax.numpy.allclose(hard_result, hard_expected)
+        symbolic_output = symbolic.apply(hard_weights, jax.numpy.array(input))
+        assert jax.numpy.array_equal(symbolic_output, hard_expected)
