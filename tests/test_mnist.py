@@ -269,7 +269,7 @@ def test_mnist():
 
     # Define the model.
     # soft = CNN()
-    width = 1000
+    width = 10
     soft, _, _ = neural_logic_net.net(lambda type, x: batch_nln(type, x, width))
 
     # Get the MNIST dataset.
