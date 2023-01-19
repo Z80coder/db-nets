@@ -8,18 +8,18 @@ import jaxlib
 
 def convert_element_type(x, dtype):
     if dtype == numpy.int32 or dtype == numpy.int64:
-        dtype = 'int'
+        dtype = "int"
     elif dtype == bool:
-        dtype = 'bool'
+        dtype = "bool"
     elif dtype == numpy.float32:
-        dtype = 'float'
+        dtype = "float"
     else:
         raise NotImplementedError(
-            f'Symbolic conversion of type {type(x)} to {dtype} not implemented'
+            f"Symbolic conversion of type {type(x)} to {dtype} not implemented"
         )
 
     def convert(x):
-        return f'{dtype}({x})'
+        return f"{dtype}({x})"
 
     return map_at_elements(x, convert)
 
@@ -78,39 +78,39 @@ def map_at_elements(x: tuple, func: typing.Callable):
 
 @dispatch
 def to_boolean_value_string(x: bool):
-    return 'True' if x else 'False'
+    return "True" if x else "False"
 
 
 @dispatch
 def to_boolean_value_string(x: numpy.bool_):
-    return 'True' if x else 'False'
+    return "True" if x else "False"
 
 
 @dispatch
 def to_boolean_value_string(x: int):
-    return 'True' if x >= 1 else 'False'
+    return "True" if x >= 1 else "False"
 
 
 @dispatch
 def to_boolean_value_string(x: float):
-    return 'True' if x >= 1.0 else 'False'
+    return "True" if x >= 1.0 else "False"
 
 
 @dispatch
 def to_boolean_value_string(x: str):
-    if x == '1' or x == '1.0' or x == 'True':
-        return 'True'
-    elif x == '0' or x == '0.0' or x == 'False':
-        return 'False'
+    if x == "1" or x == "1.0" or x == "True":
+        return "True"
+    elif x == "0" or x == "0.0" or x == "False":
+        return "False"
     else:
         return x
 
 
 @dispatch
 def to_numeric_value(x):
-    if x == 'True' or x:
+    if x == "True" or x:
         return 1
-    elif x == 'False' or not x:
+    elif x == "False" or not x:
         return 0
     elif isinstance(x, int) or isinstance(x, float):
         return x
@@ -120,7 +120,7 @@ def to_numeric_value(x):
 
 @dispatch
 def unary_operator(operator: str, x: str) -> str:
-    return f'{operator}({x})'
+    return f"{operator}({x})"
 
 
 @dispatch
@@ -135,7 +135,7 @@ def unary_operator(operator: str, x: list):
 
 @dispatch
 def binary_infix_operator(operator: str, a: str, b: str) -> str:
-    return f'{a} {operator} {b}'
+    return f"{a} {operator} {b}"
 
 
 @dispatch
@@ -196,92 +196,92 @@ def symbolic_not(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_not(*args, **kwargs)
     else:
-        return unary_operator('not', *args, **kwargs)
+        return unary_operator("not", *args, **kwargs)
 
 
 def symbolic_eq(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.eq(*args, **kwargs)
     else:
-        return '(' + binary_infix_operator('==', *args, **kwargs) + ')'
+        return "(" + binary_infix_operator("==", *args, **kwargs) + ")"
 
 
 def symbolic_ne(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.ne(*args, **kwargs)
     else:
-        return '(' + binary_infix_operator('!=', *args, **kwargs) + ')'
+        return "(" + binary_infix_operator("!=", *args, **kwargs) + ")"
 
 
 def symbolic_le(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.le(*args, **kwargs)
     else:
-        return '(' + binary_infix_operator('<=', *args, **kwargs) + ')'
+        return "(" + binary_infix_operator("<=", *args, **kwargs) + ")"
 
 
 def symbolic_lt(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.lt(*args, **kwargs)
     else:
-        return '(' + binary_infix_operator('<', *args, **kwargs) + ')'
+        return "(" + binary_infix_operator("<", *args, **kwargs) + ")"
 
 
 def symbolic_gt(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.gt(*args, **kwargs)
     else:
-        return binary_infix_operator('>', *args, **kwargs)
+        return binary_infix_operator(">", *args, **kwargs)
 
 
 def symbolic_add(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.add(*args, **kwargs)
     else:
-        return unary_operator('np.add', *args, **kwargs)
+        return unary_operator("np.add", *args, **kwargs)
 
 
 def symbolic_sub(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.sub(*args, **kwargs)
     else:
-        return unary_operator('np.subtract', *args, **kwargs)
+        return unary_operator("np.subtract", *args, **kwargs)
 
 
 def symbolic_mul(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.mul(*args, **kwargs)
     else:
-        return unary_operator('np.multiply', *args, **kwargs)
+        return unary_operator("np.multiply", *args, **kwargs)
 
 
 def symbolic_div(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.div(*args, **kwargs)
     else:
-        return unary_operator('div', *args, **kwargs)
+        return unary_operator("div", *args, **kwargs)
 
 
 def symbolic_max(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.max(*args, **kwargs)
     else:
-        return unary_operator('np.maximum', *args, **kwargs)
+        return unary_operator("np.maximum", *args, **kwargs)
 
 
 def symbolic_min(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.min(*args, **kwargs)
     else:
-        return unary_operator('np.minimum', *args, **kwargs)
+        return unary_operator("np.minimum", *args, **kwargs)
 
 
 def symbolic_select_n(*args, **kwargs):
-    '''
+    """
     Important comment from lax.py
     # Caution! The select_n_p primitive has the *opposite* order of arguments to
     # select(). This is because it implements `select_n`.
-    '''
+    """
     pred = args[0]
     on_true = args[1]
     on_false = args[2]
@@ -290,35 +290,35 @@ def symbolic_select_n(*args, **kwargs):
         return lax_reference.select(pred, on_false, on_true)
     else:
         # swap order of on_true and on_false
-        return unary_operator('np.where', pred, on_false, on_true)
+        return unary_operator("np.where", pred, on_false, on_true)
 
 
 def symbolic_and(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_and(*args, **kwargs)
     else:
-        return binary_infix_operator('and', *args, **kwargs)
+        return binary_infix_operator("and", *args, **kwargs)
 
 
 def symbolic_or(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_or(*args, **kwargs)
     else:
-        return '(' + binary_infix_operator('or', *args, **kwargs) + ')'
+        return "(" + binary_infix_operator("or", *args, **kwargs) + ")"
 
 
 def symbolic_xor(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_xor(*args, **kwargs)
     else:
-        return binary_infix_operator('^', *args, **kwargs)
+        return binary_infix_operator("^", *args, **kwargs)
 
 
 def symbolic_sum(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.sum(*args, **kwargs)
     else:
-        return binary_infix_operator('+', *args, **kwargs)
+        return binary_infix_operator("+", *args, **kwargs)
 
 
 def symbolic_broadcast_in_dim(*args, **kwargs):
@@ -330,17 +330,17 @@ def symbolic_reshape(*args, **kwargs):
 
 
 def symbolic_transpose(*args, **kwargs):
-    return lax_reference.transpose(*args, axes=kwargs['permutation'])
+    return lax_reference.transpose(*args, axes=kwargs["permutation"])
 
 
 def symbolic_convert_element_type(*args, **kwargs):
     # Check if all the boolean arguments are True or False
     if all_concrete_values([*args]):
         # If so, we can use the lax reference implementation
-        return lax_reference.convert_element_type(*args, dtype=kwargs['new_dtype'])
+        return lax_reference.convert_element_type(*args, dtype=kwargs["new_dtype"])
     else:
         # Otherwise, we use the symbolic implementation
-        return convert_element_type(*args, dtype=kwargs['new_dtype'])
+        return convert_element_type(*args, dtype=kwargs["new_dtype"])
 
 
 def make_symbolic_reducer(py_binop, init_val):
@@ -383,14 +383,14 @@ def symbolic_reduce_and(*args, **kwargs):
             *args,
             init_value=True,
             computation=numpy.logical_and,
-            dimensions=kwargs['axes'],
+            dimensions=kwargs["axes"],
         )
     else:
         return symbolic_reduce(
             *args,
-            init_value='True',
+            init_value="True",
             computation=symbolic_and,
-            dimensions=kwargs['axes'],
+            dimensions=kwargs["axes"],
         )
 
 
@@ -400,23 +400,23 @@ def symbolic_reduce_or(*args, **kwargs):
             *args,
             init_value=False,
             computation=numpy.logical_or,
-            dimensions=kwargs['axes'],
+            dimensions=kwargs["axes"],
         )
     else:
         return symbolic_reduce(
             *args,
-            init_value='False',
+            init_value="False",
             computation=symbolic_or,
-            dimensions=kwargs['axes'],
+            dimensions=kwargs["axes"],
         )
 
 
 def symbolic_reduce_sum(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.reduce(
-            *args, init_value=0, computation=numpy.add, dimensions=kwargs['axes']
+            *args, init_value=0, computation=numpy.add, dimensions=kwargs["axes"]
         )
     else:
         return symbolic_reduce(
-            *args, init_value='0', computation=symbolic_sum, dimensions=kwargs['axes']
+            *args, init_value="0", computation=symbolic_sum, dimensions=kwargs["axes"]
         )

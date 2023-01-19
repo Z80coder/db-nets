@@ -66,6 +66,7 @@ class SymbolicRealEncoderLayer:
         jaxpr = symbolic_generation.make_symbolic_flax_jaxpr(
             self.hard_real_encoder_layer, x
         )
+        print(f'SymbolicRealEncoderLayer: jaxpr:\n{jaxpr}')
         return symbolic_generation.symbolic_expression(jaxpr, x)
 
 

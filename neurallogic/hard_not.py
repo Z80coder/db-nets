@@ -41,7 +41,7 @@ class SoftNotLayer(nn.Module):
     @nn.compact
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
-        weights = self.param("weights", self.weights_init, weights_shape, self.dtype)
+        weights = self.param("bit_weights", self.weights_init, weights_shape, self.dtype)
         x = jax.numpy.asarray(x, self.dtype)
         return soft_not_layer(weights, x)
 
@@ -52,7 +52,7 @@ class HardNotLayer(nn.Module):
     @nn.compact
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
-        weights = self.param("weights", nn.initializers.constant(0.0), weights_shape)
+        weights = self.param("bit_weights", nn.initializers.constant(0.0), weights_shape)
         return hard_not_layer(weights, x)
 
 

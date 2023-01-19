@@ -60,7 +60,7 @@ def put_variable(self, col: str, name: str, value: Any):
 
 
 def make_symbolic_flax_jaxpr(flax_layer, x):
-    actual_weights = flax_layer.get_variable("params", "weights")
+    actual_weights = flax_layer.get_variable("params", "bit_weights")
     # Convert actual weights to dummy numeric weights (if needed)
     if isinstance(actual_weights, list) or (
         isinstance(actual_weights, numpy.ndarray) and actual_weights.dtype == object
@@ -69,7 +69,7 @@ def make_symbolic_flax_jaxpr(flax_layer, x):
             actual_weights, lambda x: 0
         )
         numeric_weights = numpy.asarray(numeric_weights, dtype=numpy.int32)
-        put_variable(flax_layer, "params", "weights", numeric_weights)
+        put_variable(flax_layer, "params", "bit_weights", numeric_weights)
     # Convert input to dummy numeric input (if needed)
     if isinstance(x, list) or (isinstance(x, numpy.ndarray) and x.dtype == object):
         x = symbolic_primitives.map_at_elements(x, lambda x: 0)
@@ -171,9 +171,9 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
                     symbolic_outvals = [symbolic_outvals]
                 if not symbolic:
                     # Check that the concrete and symbolic values are equal
-                    #print(
+                    # print(
                     #    f"outvals: {outvals} and symbolic_outvals: {symbolic_outvals}"
-                    #)
+                    # )
                     assert numpy.allclose(
                         numpy.array(outvals), symbolic_outvals, equal_nan=True
                     )

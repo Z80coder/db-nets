@@ -36,14 +36,20 @@ def harden(x: jax.numpy.ndarray):
 
 @dispatch
 def harden(x: dict):
-    return symbolic_primitives.map_at_elements(x, harden)
+    # Only harden parameters that explicitly represent bits
+    def conditional_harden(k, v):
+        if k.startswith("bit_"):
+            return symbolic_primitives.map_at_elements(v, harden)
+        elif isinstance(v, dict) or isinstance(v, flax.core.FrozenDict) or isinstance(v, list):
+            return harden(v)
+        return v
+
+    return {k: conditional_harden(k, v) for k, v in x.items()}
 
 
 @dispatch
 def harden(x: flax.core.FrozenDict):
-    return flax.core.FrozenDict(
-        symbolic_primitives.map_at_elements(x.unfreeze(), harden)
-    )
+    return harden(x.unfreeze())
 
 
 @dispatch
