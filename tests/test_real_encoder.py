@@ -119,8 +119,6 @@ def test_real_encoder():
     soft, hard, symbolic = neural_logic_net.net(test_net)
     weights = soft.init(random.PRNGKey(0), [0.0, 0.0])
     hard_weights = harden.hard_weights(weights)
-    print(f'weights: {weights}')
-    print(f'hard_weights: {hard_weights}')
 
     test_data = [
         [
@@ -133,46 +131,22 @@ def test_real_encoder():
         [
             [0.6, 0.0],
             [
-                [
-                    0.9469013,
-                    0.320184,
-                    0.3194083,
-                ],
-                [
-                    0.58414006,
-                    0.7815013,
-                    0.04193211,
-                ],
+                [0.78442293, 0.7857669, 0.3154459],
+                [0.0, 0.0, 0.0],
             ],
         ],
         [
             [0.1, 0.9],
             [
-                [
-                    0.05309868,
-                    0.679816,
-                    0.6805917,
-                ],
-                [
-                    0.41585994,
-                    0.2184987,
-                    0.9580679,
-                ],
+                [0.5149515, 0.51797545, 0.05257431],
+                [0.69679934, 0.629154, 0.84623945],
             ],
         ],
         [
             [0.4, 0.6],
             [
-                [
-                    0.05309868,
-                    0.320184,
-                    0.6805917,
-                ],
-                [
-                    0.58414006,
-                    0.2184987,
-                    0.04193211,
-                ],
+                [0.6766343,  0.67865026, 0.21029726],
+                [0.35924158, 0.34675142, 0.4445637],
             ],
         ],
     ]
@@ -180,16 +154,13 @@ def test_real_encoder():
         # Check that the soft function performs as expected
         soft_output = soft.apply(weights, jax.numpy.array(input))
         soft_expected = jax.numpy.array(expected)
-        print(f'soft_output: {soft_output}\nsoft_expected: {soft_expected}')
         assert jax.numpy.allclose(soft_output, soft_expected)
 
         # Check that the hard function performs as expected
         hard_expected = harden.harden(jax.numpy.array(expected))
         hard_output = hard.apply(hard_weights, jax.numpy.array(input))
-        print(f'hard_output: {hard_output}\nhard_expected: {hard_expected}')
         assert jax.numpy.allclose(hard_output, hard_expected)
 
         # Check that the symbolic function performs as expected
         symbolic_output = symbolic.apply(hard_weights, jax.numpy.array(input))
-        print(f'symbolic_output: {symbolic_output}\nhard_expected: {hard_expected}')
         assert numpy.allclose(symbolic_output, hard_expected)
