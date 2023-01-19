@@ -59,8 +59,11 @@ def put_variable(self, col: str, name: str, value: Any):
     scope_put_variable(self.scope, col, name, value)
 
 
-def make_symbolic_flax_jaxpr(flax_layer, x):
-    actual_weights = flax_layer.get_variable("params", "bit_weights")
+# TODO: make this robust and general over multiple types of param names
+
+
+def convert_to_numeric_params(flax_layer, param_names: str):
+    actual_weights = flax_layer.get_variable("params", param_names)
     # Convert actual weights to dummy numeric weights (if needed)
     if isinstance(actual_weights, list) or (
         isinstance(actual_weights, numpy.ndarray) and actual_weights.dtype == object
@@ -69,15 +72,23 @@ def make_symbolic_flax_jaxpr(flax_layer, x):
             actual_weights, lambda x: 0
         )
         numeric_weights = numpy.asarray(numeric_weights, dtype=numpy.int32)
-        put_variable(flax_layer, "params", "bit_weights", numeric_weights)
+        put_variable(flax_layer, "params", param_names, numeric_weights)
+    return flax_layer, actual_weights
+
+
+def make_symbolic_flax_jaxpr(flax_layer, x):
+    flax_layer, bit_weights = convert_to_numeric_params(flax_layer, "bit_weights")
+    flax_layer, thresholds = convert_to_numeric_params(flax_layer, "thresholds")
     # Convert input to dummy numeric input (if needed)
     if isinstance(x, list) or (isinstance(x, numpy.ndarray) and x.dtype == object):
         x = symbolic_primitives.map_at_elements(x, lambda x: 0)
         x = numpy.asarray(x, dtype=numpy.int32)
     # Make the jaxpr that corresponds to the flax layer
     jaxpr = make_symbolic_jaxpr(flax_layer, x)
+    # Make a list of bit_weights and thresholds but only include each if they are not None
+    bit_weights_and_thresholds = [x for x in [bit_weights, thresholds] if x is not None]
     # Replace the dummy numeric weights with the actual weights in the jaxpr
-    jaxpr.consts = [actual_weights]
+    jaxpr.consts = bit_weights_and_thresholds
     return jaxpr
 
 
