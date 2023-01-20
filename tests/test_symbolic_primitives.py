@@ -4,7 +4,7 @@ from neurallogic import symbolic_primitives, symbolic_generation
 
 
 def test_unary_operator_str():
-    output = symbolic_primitives.unary_operator("not", "True")
+    output = symbolic_primitives.symbolic_operator("not", "True")
     expected = "not(True)"
     assert output == expected
     eval_output = symbolic_generation.eval_symbolic_expression(output)
@@ -14,7 +14,7 @@ def test_unary_operator_str():
 
 def test_unary_operator_vector():
     x = numpy.array(["True", "False"])
-    output = symbolic_primitives.unary_operator("not", x)
+    output = symbolic_primitives.symbolic_operator("not", x)
     expected = numpy.array(["not(True)", "not(False)"])
     assert numpy.array_equal(output, expected)
     eval_output = symbolic_generation.eval_symbolic_expression(output)
@@ -24,7 +24,7 @@ def test_unary_operator_vector():
 
 def test_unary_operator_matrix():
     x = numpy.array([["True", "False"], ["False", "True"]])
-    output = symbolic_primitives.unary_operator("not", x)
+    output = symbolic_primitives.symbolic_operator("not", x)
     expected = numpy.array(
         [["not(True)", "not(False)"], ["not(False)", "not(True)"]])
     assert numpy.array_equal(output, expected)
@@ -34,7 +34,7 @@ def test_unary_operator_matrix():
 
 
 def test_binary_operator_str_str():
-    output = symbolic_primitives.binary_infix_operator("+", "1", "2")
+    output = symbolic_primitives.symbolic_infix_operator("+", "1", "2")
     expected = "1 + 2"
     assert output == expected
     eval_output = symbolic_generation.eval_symbolic_expression(output)
@@ -46,7 +46,7 @@ def test_binary_operator_str_str():
 def test_binary_operator_vector_vector():
     x1 = numpy.array(["1", "2"])
     x2 = numpy.array(["3", "4"])
-    output = symbolic_primitives.binary_infix_operator("+", x1, x2)
+    output = symbolic_primitives.symbolic_infix_operator("+", x1, x2)
     expected = numpy.array(["1 + 3", "2 + 4"])
     assert numpy.array_equal(output, expected)
     eval_output = symbolic_generation.eval_symbolic_expression(output)
@@ -58,7 +58,7 @@ def test_binary_operator_vector_vector():
 def test_binary_operator_matrix_vector():
     x1 = numpy.array([["1", "2"], ["3", "4"]])
     x2 = numpy.array(["5", "6"])
-    output = symbolic_primitives.binary_infix_operator("+", x1, x2)
+    output = symbolic_primitives.symbolic_infix_operator("+", x1, x2)
     expected = numpy.array([["1 + 5", "2 + 6"], ["3 + 5", "4 + 6"]])
     assert numpy.array_equal(output, expected)
     eval_output = symbolic_generation.eval_symbolic_expression(output)
@@ -70,7 +70,7 @@ def test_binary_operator_matrix_vector():
 def test_binary_operator_vector_matrix():
     x1 = numpy.array(["1", "2"])
     x2 = numpy.array([["3", "4"], ["5", "6"]])
-    output = symbolic_primitives.binary_infix_operator("+", x1, x2)
+    output = symbolic_primitives.symbolic_infix_operator("+", x1, x2)
     expected = numpy.array([["1 + 3", "2 + 4"], ["1 + 5", "2 + 6"]])
     assert numpy.array_equal(output, expected)
     eval_output = symbolic_generation.eval_symbolic_expression(output)
@@ -82,7 +82,7 @@ def test_binary_operator_vector_matrix():
 def test_binary_operator_matrix_matrix():
     x1 = numpy.array([["1", "2"], ["3", "4"]])
     x2 = numpy.array([["5", "6"], ["7", "8"]])
-    output = symbolic_primitives.binary_infix_operator("+", x1, x2)
+    output = symbolic_primitives.symbolic_infix_operator("+", x1, x2)
     expected = numpy.array([["1 + 5", "2 + 6"], ["3 + 7", "4 + 8"]])
     assert numpy.array_equal(output, expected)
     eval_output = symbolic_generation.eval_symbolic_expression(output)
@@ -96,7 +96,7 @@ def test_binary_operator_matrix_matrix_2():
     x1 = numpy.array([["1", "2", "3", "4"]])
     # x2 is a (10, 4) matrix
     x2 = numpy.array([["5", "6", "7", "8"] for _ in range(10)])
-    output = symbolic_primitives.binary_infix_operator("+", x1, x2)
+    output = symbolic_primitives.symbolic_infix_operator("+", x1, x2)
     expected = numpy.array(
         [["1 + 5", "2 + 6", "3 + 7", "4 + 8"] for _ in range(10)])
     assert numpy.array_equal(output, expected)
