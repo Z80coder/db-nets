@@ -1,6 +1,6 @@
 import jax.numpy as jnp
 
-from neurallogic import harden_layer, harden
+from neurallogic import harden, harden_layer
 
 
 def test_harden_layer():

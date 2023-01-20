@@ -1,8 +1,11 @@
-from neurallogic import neural_logic_net, harden, harden_layer, hard_or, hard_not, symbolic_generation, symbolic_primitives
-from tests import test_mnist
-import numpy
 import jax
 import jax.numpy as jnp
+import numpy
+
+from neurallogic import (hard_not, hard_or, harden, harden_layer,
+                         neural_logic_net, symbolic_generation,
+                         symbolic_primitives)
+from tests import test_mnist, utils
 
 
 def nln(type, x, width):
@@ -45,7 +48,7 @@ def test_symbolic_generation():
     assert numpy.array_equal(symbolic_output, hard_output)
 
     # Check the standard evaluation of the network equals the non-standard symbolic evaluation
-    symbolic_mock_input = symbolic_generation.make_symbolic(hard_mock_input)
+    symbolic_mock_input = utils.make_symbolic(hard_mock_input)
     symbolic_output = symbolic.apply(hard_weights, symbolic_mock_input)
     assert numpy.array_equal(hard_output.shape, symbolic_output.shape)
 

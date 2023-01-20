@@ -28,12 +28,9 @@ soft_not_neuron = jax.vmap(soft_not, 0, 0)
 hard_not_neuron = jax.vmap(hard_not, 0, 0)
 
 
-
 soft_not_layer = jax.vmap(soft_not_neuron, (0, None), 0)
 
 hard_not_layer = jax.vmap(hard_not_neuron, (0, None), 0)
-
-
 
 
 class SoftNotLayer(nn.Module):
@@ -44,8 +41,7 @@ class SoftNotLayer(nn.Module):
     @nn.compact
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
-        weights = self.param('weights', self.weights_init,
-                             weights_shape, self.dtype)
+        weights = self.param("bit_weights", self.weights_init, weights_shape, self.dtype)
         x = jax.numpy.asarray(x, self.dtype)
         return soft_not_layer(weights, x)
 
@@ -56,8 +52,7 @@ class HardNotLayer(nn.Module):
     @nn.compact
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
-        weights = self.param(
-            'weights', nn.initializers.constant(0.0), weights_shape)
+        weights = self.param("bit_weights", nn.initializers.constant(0.0), weights_shape)
         return hard_not_layer(weights, x)
 
 
@@ -73,7 +68,12 @@ class SymbolicNotLayer:
 
 not_layer = neural_logic_net.select(
     lambda layer_size, weights_init=nn.initializers.uniform(
-        1.0), dtype=jax.numpy.float32: SoftNotLayer(layer_size, weights_init, dtype),
+        1.0
+    ), dtype=jax.numpy.float32: SoftNotLayer(layer_size, weights_init, dtype),
     lambda layer_size, weights_init=nn.initializers.uniform(
-        1.0), dtype=jax.numpy.float32: HardNotLayer(layer_size),
-    lambda layer_size, weights_init=nn.initializers.uniform(1.0), dtype=jax.numpy.float32: SymbolicNotLayer(layer_size))
+        1.0
+    ), dtype=jax.numpy.float32: HardNotLayer(layer_size),
+    lambda layer_size, weights_init=nn.initializers.uniform(
+        1.0
+    ), dtype=jax.numpy.float32: SymbolicNotLayer(layer_size),
+)

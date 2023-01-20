@@ -1,6 +1,5 @@
 from typing import Any
 
-import numpy
 import jax
 from flax import linen as nn
 from typing import Callable
@@ -70,7 +69,7 @@ class SoftAndLayer(nn.Module):
     @nn.compact
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
-        weights = self.param('weights', self.weights_init,
+        weights = self.param('bit_weights', self.weights_init,
                              weights_shape, self.dtype)
         x = jax.numpy.asarray(x, self.dtype)
         return soft_and_layer(weights, x)
@@ -90,7 +89,7 @@ class HardAndLayer(nn.Module):
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
         weights = self.param(
-            'weights', nn.initializers.constant(0.0), weights_shape)
+            'bit_weights', nn.initializers.constant(0.0), weights_shape)
         return hard_and_layer(weights, x)
 
 
