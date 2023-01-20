@@ -1,156 +1,8 @@
-import typing
-
 import jax
 import jax._src.lax_reference as lax_reference
 import numpy
-from plum import dispatch
 
-
-# TODO: allow func callable to control the type of the numpy.array or jax.numpy.array
-
-# map_at_elements should alter the elements but not the type of the container
-
-
-@dispatch
-def map_at_elements(x: str, func: typing.Callable):
-    return func(x)
-
-
-@dispatch
-def map_at_elements(x: bool, func: typing.Callable):
-    return func(x)
-
-
-@dispatch
-def map_at_elements(x: numpy.bool_, func: typing.Callable):
-    return func(x)
-
-
-@dispatch
-def map_at_elements(x: float, func: typing.Callable):
-    return func(x)
-
-
-@dispatch
-def map_at_elements(x: numpy.float32, func: typing.Callable):
-    return func(x)
-
-
-@dispatch
-def map_at_elements(x: list, func: typing.Callable):
-    return [map_at_elements(item, func) for item in x]
-
-
-@dispatch
-def map_at_elements(x: numpy.ndarray, func: typing.Callable):
-    return numpy.array([map_at_elements(item, func) for item in x], dtype=object)
-
-
-@dispatch
-def map_at_elements(x: jax.numpy.ndarray, func: typing.Callable):
-    if x.ndim == 0:
-        return func(x.item())
-    return jax.numpy.array([map_at_elements(item, func) for item in x])
-
-
-@dispatch
-def map_at_elements(x: dict, func: typing.Callable):
-    return {k: map_at_elements(v, func) for k, v in x.items()}
-
-
-@dispatch
-def map_at_elements(x: tuple, func: typing.Callable):
-    return tuple(map_at_elements(list(x), func))
-
-
-@dispatch
-def symbolic_representation(x: numpy.ndarray):
-    return repr(x).replace('array', 'numpy.array').replace('\n', '').replace('float32', 'numpy.float32').replace('\'', '')
-
-
-@dispatch
-def symbolic_representation(x: str):
-    return x.replace('\'', '')
-
-
-@dispatch
-def symbolic_operator(operator: str, x: str) -> str:
-    return f'{operator}({x})'.replace('\'', '')
-
-
-@dispatch
-def symbolic_operator(operator: str, x: float, y: str):
-    return symbolic_operator(operator, str(x), y)
-
-
-@dispatch
-def symbolic_operator(operator: str, x: str, y: float):
-    return symbolic_operator(operator, x, str(y))
-
-
-@dispatch
-def symbolic_operator(operator: str, x: float, y: numpy.ndarray):
-    return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
-
-
-@dispatch
-def symbolic_operator(operator: str, x: numpy.ndarray, y: numpy.ndarray):
-    return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
-
-
-@dispatch
-def symbolic_operator(operator: str, x: str, y: str):
-    return f'{operator}({x}, {y})'.replace('\'', '')
-
-
-@dispatch
-def symbolic_operator(operator: str, x: numpy.ndarray, y: float):
-    return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
-
-
-@dispatch
-def symbolic_operator(operator: str, x: list, y: float):
-    return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
-
-
-@dispatch
-def symbolic_operator(operator: str, x: list, y: list):
-    return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
-
-
-@dispatch
-def symbolic_operator(operator: str, x: bool, y: str):
-    return symbolic_operator(operator, str(x), y)
-
-
-@dispatch
-def symbolic_operator(operator: str, x: str, y: numpy.ndarray):
-    return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
-
-
-@dispatch
-def symbolic_operator(operator: str, x: str, y: int):
-    return symbolic_operator(operator, x, str(y))
-
-
-@dispatch
-def symbolic_operator(operator: str, x: list, y: numpy.ndarray):
-    return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
-
-
-@dispatch
-def symbolic_operator(operator: str, x: numpy.ndarray, y: jax.numpy.ndarray):
-    return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
-
-
-@dispatch
-def symbolic_operator(operator: str, x: numpy.ndarray):
-    return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x)
-
-
-@dispatch
-def symbolic_operator(operator: str, x: list):
-    return symbolic_operator(operator, numpy.array(x))
+from neurallogic import symbolic_operator, symbolic_representation
 
 
 def all_concrete_values(data):
@@ -171,84 +23,84 @@ def symbolic_not(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_not(*args, **kwargs)
     else:
-        return symbolic_operator('numpy.logical_not', *args, **kwargs)
+        return symbolic_operator.symbolic_operator('numpy.logical_not', *args, **kwargs)
 
 
 def symbolic_eq(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.eq(*args, **kwargs)
     else:
-        return symbolic_operator('lax_reference.eq', *args, **kwargs)
+        return symbolic_operator.symbolic_operator('lax_reference.eq', *args, **kwargs)
 
 
 def symbolic_ne(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.ne(*args, **kwargs)
     else:
-        return symbolic_operator('lax_reference.ne', *args, **kwargs)
+        return symbolic_operator.symbolic_operator('lax_reference.ne', *args, **kwargs)
 
 
 def symbolic_le(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.le(*args, **kwargs)
     else:
-        return symbolic_operator('lax_reference.le', *args, **kwargs)
+        return symbolic_operator.symbolic_operator('lax_reference.le', *args, **kwargs)
 
 
 def symbolic_lt(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.lt(*args, **kwargs)
     else:
-        return symbolic_operator('lax_reference.lt', *args, **kwargs)
+        return symbolic_operator.symbolic_operator('lax_reference.lt', *args, **kwargs)
 
 
 def symbolic_gt(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.gt(*args, **kwargs)
     else:
-        return symbolic_operator('lax_reference.gt', *args, **kwargs)
+        return symbolic_operator.symbolic_operator('lax_reference.gt', *args, **kwargs)
 
 
 def symbolic_abs(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.abs(*args, **kwargs)
     else:
-        return symbolic_operator('numpy.absolute', *args, **kwargs)
+        return symbolic_operator.symbolic_operator('numpy.absolute', *args, **kwargs)
 
 
 def symbolic_add(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.add(*args, **kwargs)
     else:
-        return symbolic_operator('numpy.add', *args, **kwargs)
+        return symbolic_operator.symbolic_operator('numpy.add', *args, **kwargs)
 
 
 def symbolic_sub(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.sub(*args, **kwargs)
     else:
-        return symbolic_operator('numpy.subtract', *args, **kwargs)
+        return symbolic_operator.symbolic_operator('numpy.subtract', *args, **kwargs)
 
 
 def symbolic_mul(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.mul(*args, **kwargs)
     else:
-        return symbolic_operator('numpy.multiply', *args, **kwargs)
+        return symbolic_operator.symbolic_operator('numpy.multiply', *args, **kwargs)
 
 
 def symbolic_div(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.div(*args, **kwargs)
     else:
-        return symbolic_operator('lax_reference.div', *args, **kwargs)
+        return symbolic_operator.symbolic_operator('lax_reference.div', *args, **kwargs)
 
 
 def symbolic_max(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.max(*args, **kwargs)
     else:
-        r = symbolic_operator('numpy.maximum', *args, **kwargs)
+        r = symbolic_operator.symbolic_operator('numpy.maximum', *args, **kwargs)
         return r
 
 
@@ -256,7 +108,7 @@ def symbolic_min(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.min(*args, **kwargs)
     else:
-        return symbolic_operator('numpy.minimum', *args, **kwargs)
+        return symbolic_operator.symbolic_operator('numpy.minimum', *args, **kwargs)
 
 
 def symbolic_select_n(*args, **kwargs):
@@ -274,9 +126,9 @@ def symbolic_select_n(*args, **kwargs):
     else:
         # swap order of on_true and on_false
         # TODO: need a more general solution to unquoting symbolic strings
-        evaluable_pred = symbolic_representation(pred)
-        evaluable_on_true = symbolic_representation(on_true)
-        evaluable_on_false = symbolic_representation(on_false)
+        evaluable_pred = symbolic_representation.symbolic_representation(pred)
+        evaluable_on_true = symbolic_representation.symbolic_representation(on_true)
+        evaluable_on_false = symbolic_representation.symbolic_representation(on_false)
         return f'lax_reference.select({evaluable_pred}, {evaluable_on_false}, {evaluable_on_true})'
 
 
@@ -284,28 +136,28 @@ def symbolic_and(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_and(*args, **kwargs)
     else:
-        return symbolic_operator('numpy.logical_and', *args, **kwargs)
+        return symbolic_operator.symbolic_operator('numpy.logical_and', *args, **kwargs)
 
 
 def symbolic_or(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_or(*args, **kwargs)
     else:
-        return symbolic_operator('numpy.logical_or', *args, **kwargs)
+        return symbolic_operator.symbolic_operator('numpy.logical_or', *args, **kwargs)
 
 
 def symbolic_xor(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_xor(*args, **kwargs)
     else:
-        return symbolic_operator('numpy.logical_xor', *args, **kwargs)
+        return symbolic_operator.symbolic_operator('numpy.logical_xor', *args, **kwargs)
 
 
 def symbolic_sum(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.sum(*args, **kwargs)
     else:
-        return symbolic_operator('lax_reference.sum', *args, **kwargs)
+        return symbolic_operator.symbolic_operator('lax_reference.sum', *args, **kwargs)
 
 
 def symbolic_broadcast_in_dim(*args, **kwargs):

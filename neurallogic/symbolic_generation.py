@@ -7,7 +7,7 @@ from jax import core
 from jax._src.util import safe_map
 from plum import dispatch
 
-from neurallogic import symbolic_primitives
+from neurallogic import symbolic_primitives, map_at_elements
 
 # Imports required for evaluating symbolic expressions with eval()
 import jax._src.lax_reference as lax_reference
@@ -74,7 +74,7 @@ def convert_to_numeric_params(flax_layer, param_names: str):
     if isinstance(actual_weights, list) or (
         isinstance(actual_weights, numpy.ndarray) and actual_weights.dtype == object
     ):
-        numeric_weights = symbolic_primitives.map_at_elements(
+        numeric_weights = map_at_elements.map_at_elements(
             actual_weights, lambda x: 0
         )
         numeric_weights = numpy.asarray(numeric_weights, dtype=numpy.int32)
@@ -87,7 +87,7 @@ def make_symbolic_flax_jaxpr(flax_layer, x):
     flax_layer, thresholds = convert_to_numeric_params(flax_layer, 'thresholds')
     # Convert input to dummy numeric input (if needed)
     if isinstance(x, list) or (isinstance(x, numpy.ndarray) and x.dtype == object):
-        x = symbolic_primitives.map_at_elements(x, lambda x: 0)
+        x = map_at_elements.map_at_elements(x, lambda x: 0)
         x = numpy.asarray(x, dtype=numpy.int32)
     # Make the jaxpr that corresponds to the flax layer
     jaxpr = make_symbolic_jaxpr(flax_layer, x)

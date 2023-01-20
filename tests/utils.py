@@ -5,7 +5,7 @@ import jax
 import numpy
 from plum import dispatch
 
-from neurallogic import harden, symbolic_generation, symbolic_primitives
+from neurallogic import harden, symbolic_generation, map_at_elements
 
 
 def to_string(x):
@@ -14,28 +14,28 @@ def to_string(x):
 
 @dispatch
 def make_symbolic(x: dict):
-    return symbolic_primitives.map_at_elements(
+    return map_at_elements.map_at_elements(
         x, to_string
     )
 
 
 @dispatch
 def make_symbolic(x: list):
-    return symbolic_primitives.map_at_elements(
+    return map_at_elements.map_at_elements(
         x, to_string
     )
 
 
 @dispatch
 def make_symbolic(x: numpy.ndarray):
-    return symbolic_primitives.map_at_elements(
+    return map_at_elements.map_at_elements(
         x, to_string
     )
 
 
 @dispatch
 def make_symbolic(x: jax.numpy.ndarray):
-    return symbolic_primitives.map_at_elements(
+    return map_at_elements.map_at_elements(
         convert_jax_to_numpy_arrays(x), to_string
     )
 

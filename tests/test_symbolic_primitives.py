@@ -1,12 +1,12 @@
 import jax
 import numpy
 
-from neurallogic import symbolic_generation, symbolic_primitives
+from neurallogic import symbolic_generation, symbolic_primitives, symbolic_operator
 from tests import utils
 
 
 def test_symbolic_expression():
-    output = symbolic_primitives.symbolic_operator("not", "True")
+    output = symbolic_operator.symbolic_operator("not", "True")
     expected = "not(True)"
     assert output == expected
     eval_output = symbolic_generation.eval_symbolic_expression(output)
@@ -16,7 +16,7 @@ def test_symbolic_expression():
 
 def test_symbolic_expression_vector():
     x = numpy.array(["True", "False"])
-    output = symbolic_primitives.symbolic_operator("not", x)
+    output = symbolic_operator.symbolic_operator("not", x)
     expected = numpy.array(["not(True)", "not(False)"])
     assert numpy.array_equal(output, expected)
     eval_output = symbolic_generation.eval_symbolic_expression(output)
@@ -26,7 +26,7 @@ def test_symbolic_expression_vector():
 
 def test_symbolic_expression_matrix():
     x = numpy.array([["True", "False"], ["False", "True"]])
-    output = symbolic_primitives.symbolic_operator("not", x)
+    output = symbolic_operator.symbolic_operator("not", x)
     expected = numpy.array(
         [["not(True)", "not(False)"], ["not(False)", "not(True)"]])
     assert numpy.array_equal(output, expected)

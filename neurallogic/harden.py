@@ -2,7 +2,8 @@ import flax
 import jax
 import numpy
 from plum import dispatch
-from neurallogic import symbolic_primitives
+
+from neurallogic import map_at_elements
 
 
 def harden_float(x: float) -> bool:
@@ -21,7 +22,7 @@ def harden(x: float):
 
 @dispatch
 def harden(x: list):
-    return symbolic_primitives.map_at_elements(x, harden_float)
+    return map_at_elements.map_at_elements(x, harden_float)
 
 
 @dispatch
@@ -39,7 +40,7 @@ def harden(x: dict):
     # Only harden parameters that explicitly represent bits
     def conditional_harden(k, v):
         if k.startswith("bit_"):
-            return symbolic_primitives.map_at_elements(v, harden)
+            return map_at_elements.map_at_elements(v, harden)
         elif isinstance(v, dict) or isinstance(v, flax.core.FrozenDict) or isinstance(v, list):
             return harden(v)
         return v

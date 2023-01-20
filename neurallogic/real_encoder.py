@@ -5,6 +5,7 @@ from flax import linen as nn
 
 from neurallogic import neural_logic_net, symbolic_generation
 
+
 def soft_real_encoder(t: float, x: float) -> float:
     eps = 0.0000001
     # x should be in [0, 1]
@@ -44,7 +45,8 @@ class SoftRealEncoderLayer(nn.Module):
     @nn.compact
     def __call__(self, x):
         thresholds_shape = (jax.numpy.shape(x)[-1], self.bits_per_real)
-        thresholds = self.param("thresholds", self.thresholds_init, thresholds_shape, self.dtype)
+        thresholds = self.param(
+            "thresholds", self.thresholds_init, thresholds_shape, self.dtype)
         x = jax.numpy.asarray(x, self.dtype)
         return soft_real_encoder_layer(thresholds, x)
 
@@ -55,7 +57,8 @@ class HardRealEncoderLayer(nn.Module):
     @nn.compact
     def __call__(self, x):
         thresholds_shape = (jax.numpy.shape(x)[-1], self.bits_per_real)
-        thresholds = self.param("thresholds", nn.initializers.constant(0.0), thresholds_shape)
+        thresholds = self.param(
+            "thresholds", nn.initializers.constant(0.0), thresholds_shape)
         return hard_real_encoder_layer(thresholds, x)
 
 
