@@ -1,8 +1,9 @@
-import numpy
-from plum import dispatch
 import typing
+
 import jax
 import jax._src.lax_reference as lax_reference
+import numpy
+from plum import dispatch
 
 
 # TODO: remove me?
@@ -175,6 +176,15 @@ def symbolic_operator(operator: str, x: bool, y: str):
 @dispatch
 def symbolic_operator(operator: str, x: str, y: numpy.ndarray):
     return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
+@dispatch
+def symbolic_operator(operator: str, x: str, y: int):
+    return symbolic_operator(operator, x, str(y))
+@dispatch
+def symbolic_operator(operator: str, x: list, y: numpy.ndarray):
+    return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
+@dispatch
+def symbolic_operator(operator: str, x: numpy.ndarray, y: jax.numpy.ndarray):
+    return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
 # XXX
 
 
@@ -188,6 +198,7 @@ def symbolic_operator(operator: str, x: list):
     return symbolic_operator(operator, numpy.array(x))
 
 
+# TODO: remove infix_operator?
 @dispatch
 def symbolic_infix_operator(operator: str, a: str, b: str) -> str:
     return f'{a} {operator} {b}'.replace('\'', '')

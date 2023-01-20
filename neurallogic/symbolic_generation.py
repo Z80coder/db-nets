@@ -308,9 +308,9 @@ def eval_symbolic_expression(x: str):
     return eval(eval_str)
 
 
-#@dispatch
-#def eval_symbolic_expression(x: numpy.ndarray):
-#    return numpy.vectorize(eval)(x)
+@dispatch
+def eval_symbolic_expression(x: numpy.ndarray):
+    return numpy.vectorize(eval_symbolic_expression)(x)
 
 
 #@dispatch
