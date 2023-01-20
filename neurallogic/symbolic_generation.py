@@ -121,8 +121,8 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
     out : tuple
         The result of evaluating the jaxpr.
     '''
-    if symbolic:
-        numpy.set_printoptions(threshold=sys.maxsize)
+    #if symbolic:
+    #    numpy.set_printoptions(threshold=sys.maxsize)
 
     # Mapping from variable -> value
     env = {}
@@ -313,7 +313,7 @@ def eval_symbolic_expression(x: numpy.ndarray):
     return numpy.vectorize(eval_symbolic_expression)(x)
 
 
-#@dispatch
-#def eval_symbolic_expression(x: list):
-#    return numpy.vectorize(eval)(x)
+@dispatch
+def eval_symbolic_expression(x: list):
+    return numpy.vectorize(eval)(x)
 

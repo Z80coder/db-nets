@@ -8,6 +8,7 @@ from plum import dispatch
 
 # TODO: remove me?
 def convert_element_type(x, dtype):
+    return x
     if dtype == numpy.int32 or dtype == numpy.int64:
         #dtype = 'int'
         return x
@@ -199,6 +200,7 @@ def symbolic_operator(operator: str, x: list):
 
 
 # TODO: remove infix_operator?
+"""
 @dispatch
 def symbolic_infix_operator(operator: str, a: str, b: str) -> str:
     return f'{a} {operator} {b}'.replace('\'', '')
@@ -248,7 +250,7 @@ def symbolic_infix_operator(operator: str, a: list, b: list):
 @dispatch
 def symbolic_infix_operator(operator: str, a: bool, b: str):
     return symbolic_infix_operator(operator, str(a), b)
-
+"""
 
 def all_concrete_values(data):
     if isinstance(data, str):
@@ -275,7 +277,6 @@ def symbolic_eq(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.eq(*args, **kwargs)
     else:
-        #return '(' + symbolic_infix_operator('==', *args, **kwargs) + ')'
         return symbolic_operator('lax_reference.eq', *args, **kwargs)
 
 
@@ -283,7 +284,6 @@ def symbolic_ne(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.ne(*args, **kwargs)
     else:
-        #return '(' + symbolic_infix_operator('!=', *args, **kwargs) + ')'
         return symbolic_operator('lax_reference.ne', *args, **kwargs)
 
 
@@ -291,7 +291,6 @@ def symbolic_le(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.le(*args, **kwargs)
     else:
-        #return '(' + symbolic_infix_operator('<=', *args, **kwargs) + ')'
         return symbolic_operator('lax_reference.le', *args, **kwargs)
 
 
@@ -299,7 +298,6 @@ def symbolic_lt(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.lt(*args, **kwargs)
     else:
-        #return '(' + symbolic_infix_operator('<', *args, **kwargs) + ')'
         return symbolic_operator('lax_reference.lt', *args, **kwargs)
 
 
@@ -307,7 +305,6 @@ def symbolic_gt(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.gt(*args, **kwargs)
     else:
-        #return symbolic_infix_operator('>', *args, **kwargs)
         return symbolic_operator('lax_reference.gt', *args, **kwargs)
 
 
@@ -393,7 +390,6 @@ def symbolic_and(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_and(*args, **kwargs)
     else:
-        #return symbolic_infix_operator('and', *args, **kwargs)
         return symbolic_operator('numpy.logical_and', *args, **kwargs)
         
 
@@ -402,7 +398,6 @@ def symbolic_or(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_or(*args, **kwargs)
     else:
-        #return '(' + symbolic_infix_operator('or', *args, **kwargs) + ')'
         return symbolic_operator('numpy.logical_or', *args, **kwargs)
 
 
@@ -410,7 +405,6 @@ def symbolic_xor(*args, **kwargs):
     if all_concrete_values([*args]):
         return numpy.logical_xor(*args, **kwargs)
     else:
-        #return symbolic_infix_operator('^', *args, **kwargs)
         return symbolic_operator('numpy.logical_xor', *args, **kwargs)
 
 
@@ -418,17 +412,13 @@ def symbolic_sum(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.sum(*args, **kwargs)
     else:
-        #return symbolic_infix_operator('+', *args, **kwargs)
         return symbolic_operator('lax_reference.sum', *args, **kwargs)
 
 
 def symbolic_broadcast_in_dim(*args, **kwargs):
-    assert len(args) == 1
-    arg = args[0]
-    if isinstance(args, (list, tuple)):
-        # reference implementation demands a numpy array
-        arg = numpy.array(arg)
-    return lax_reference.broadcast_in_dim(arg, **kwargs)
+    # broadcast_in_dim requires numpy arrays not lists
+    args = tuple([numpy.array(arg) if isinstance(arg, list) else arg for arg in args])
+    return lax_reference.broadcast_in_dim(*args, **kwargs)
 
 
 def symbolic_reshape(*args, **kwargs):
