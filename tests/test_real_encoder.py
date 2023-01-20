@@ -224,11 +224,7 @@ def test_train_real_encoder():
 
 def test_symbolic_real_encoder():
     def test_net(type, x):
-        x = real_encoder.real_encoder_layer(type)(3)(x)
-        # x = x.ravel()
-        # x = real_encoder.real_encoder_layer(type)(4)(x)
-        # x = x.ravel()
-        return x
+        return real_encoder.real_encoder_layer(type)(3)(x)
 
     soft, hard, symbolic = neural_logic_net.net(test_net)
 
