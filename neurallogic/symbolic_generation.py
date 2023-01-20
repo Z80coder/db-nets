@@ -121,8 +121,6 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
     out : tuple
         The result of evaluating the jaxpr.
     '''
-    #if symbolic:
-    #    numpy.set_printoptions(threshold=sys.maxsize)
 
     # Mapping from variable -> value
     env = {}
@@ -297,14 +295,8 @@ def symbolic_expression(jaxpr, *args):
 
 @dispatch
 def eval_symbolic_expression(x: str):
-    # Setting up python evaluation context
     # TODO: distinguish python code-gen from other possible code-gen
-    #eval_str = 'import numpy\n'
-    #eval_str = 'import jax._src.lax_reference as lax_reference\n'
     eval_str = x.replace('inf', 'numpy.inf')
-    #print(f'evaluating\n{eval_str}')
-    #return exec(eval_str, globals(), locals())
-    #print(f'attempting to evaluate\n{eval_str}')
     return eval(eval_str)
 
 

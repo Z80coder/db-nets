@@ -6,31 +6,6 @@ import numpy
 from plum import dispatch
 
 
-# TODO: remove me?
-def convert_element_type(x, dtype):
-    return x
-    if dtype == numpy.int32 or dtype == numpy.int64:
-        #dtype = 'int'
-        return x
-    elif dtype == bool:
-        #dtype = 'bool'
-        #dtype = 'numpy.all'
-        # Don't force to bool because sometimes x is a tensor that is used in a numpy.where clause
-        return x
-    elif dtype == numpy.float32:
-        #dtype = 'float'
-        return x
-    else:
-        raise NotImplementedError(
-            f'Symbolic conversion of type {type(x)} to {dtype} not implemented'
-        )
-
-    def convert(x):
-        return f'{dtype}({x})'
-
-    return map_at_elements(x, convert)
-
-
 # TODO: allow func callable to control the type of the numpy.array or jax.numpy.array
 
 # map_at_elements should alter the elements but not the type of the container
@@ -88,49 +63,6 @@ def map_at_elements(x: tuple, func: typing.Callable):
     return tuple(map_at_elements(list(x), func))
 
 
-'''
-@dispatch
-def to_boolean_value_string(x: bool):
-    return 'True' if x else 'False'
-
-
-@dispatch
-def to_boolean_value_string(x: numpy.bool_):
-    return 'True' if x else 'False'
-
-
-@dispatch
-def to_boolean_value_string(x: int):
-    return 'True' if x >= 1 else 'False'
-
-
-@dispatch
-def to_boolean_value_string(x: float):
-    return 'True' if x >= 1.0 else 'False'
-
-
-@dispatch
-def to_boolean_value_string(x: str):
-    if x == '1' or x == '1.0' or x == 'True':
-        return 'True'
-    elif x == '0' or x == '0.0' or x == 'False':
-        return 'False'
-    else:
-        return x
-
-@dispatch
-def to_numeric_value(x):
-    if x == 'True' or x:
-        return 1
-    elif x == 'False' or not x:
-        return 0
-    elif isinstance(x, int) or isinstance(x, float):
-        return x
-    else:
-        return 0
-'''
-
-# TODO: add tests, and handle more cases
 @dispatch
 def symbolic_representation(x: numpy.ndarray):
     return repr(x).replace('array', 'numpy.array').replace('\n', '').replace('float32', 'numpy.float32').replace('\'', '')
@@ -146,47 +78,69 @@ def symbolic_operator(operator: str, x: str) -> str:
     return f'{operator}({x})'.replace('\'', '')
 
 
-# XXX
 @dispatch
 def symbolic_operator(operator: str, x: float, y: str):
     return symbolic_operator(operator, str(x), y)
+
+
 @dispatch
 def symbolic_operator(operator: str, x: str, y: float):
     return symbolic_operator(operator, x, str(y))
+
+
 @dispatch
 def symbolic_operator(operator: str, x: float, y: numpy.ndarray):
     return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
+
+
 @dispatch
 def symbolic_operator(operator: str, x: numpy.ndarray, y: numpy.ndarray):
     return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
+
+
 @dispatch
 def symbolic_operator(operator: str, x: str, y: str):
     return f'{operator}({x}, {y})'.replace('\'', '')
+
+
 @dispatch
 def symbolic_operator(operator: str, x: numpy.ndarray, y: float):
     return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
+
+
 @dispatch
 def symbolic_operator(operator: str, x: list, y: float):
     return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
+
+
 @dispatch
 def symbolic_operator(operator: str, x: list, y: list):
     return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
+
+
 @dispatch
 def symbolic_operator(operator: str, x: bool, y: str):
     return symbolic_operator(operator, str(x), y)
+
+
 @dispatch
 def symbolic_operator(operator: str, x: str, y: numpy.ndarray):
     return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
+
+
 @dispatch
 def symbolic_operator(operator: str, x: str, y: int):
     return symbolic_operator(operator, x, str(y))
+
+
 @dispatch
 def symbolic_operator(operator: str, x: list, y: numpy.ndarray):
     return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
+
+
 @dispatch
 def symbolic_operator(operator: str, x: numpy.ndarray, y: jax.numpy.ndarray):
     return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
-# XXX
 
 
 @dispatch
@@ -198,59 +152,6 @@ def symbolic_operator(operator: str, x: numpy.ndarray):
 def symbolic_operator(operator: str, x: list):
     return symbolic_operator(operator, numpy.array(x))
 
-
-# TODO: remove infix_operator?
-"""
-@dispatch
-def symbolic_infix_operator(operator: str, a: str, b: str) -> str:
-    return f'{a} {operator} {b}'.replace('\'', '')
-
-
-@dispatch
-def symbolic_infix_operator(operator: str, a: numpy.ndarray, b: numpy.ndarray):
-    return numpy.vectorize(symbolic_infix_operator, otypes=[object])(operator, a, b)
-
-
-@dispatch
-def symbolic_infix_operator(operator: str, a: list, b: numpy.ndarray):
-    return symbolic_infix_operator(operator, numpy.array(a), b)
-
-
-@dispatch
-def symbolic_infix_operator(operator: str, a: numpy.ndarray, b: list):
-    return symbolic_infix_operator(operator, a, numpy.array(b))
-
-
-@dispatch
-def symbolic_infix_operator(operator: str, a: str, b: int):
-    return symbolic_infix_operator(operator, a, str(b))
-
-
-@dispatch
-def symbolic_infix_operator(operator: str, a: numpy.ndarray, b: float):
-    return symbolic_infix_operator(operator, a, str(b))
-
-
-@dispatch
-def symbolic_infix_operator(operator: str, a: str, b: float):
-    return symbolic_infix_operator(operator, a, str(b))
-
-
-@dispatch
-def symbolic_infix_operator(operator: str, a: numpy.ndarray, b: jax.numpy.ndarray):
-    return symbolic_infix_operator(operator, a, numpy.array(b))
-
-
-# XXXX
-@dispatch
-def symbolic_infix_operator(operator: str, a: list, b: list):
-    return symbolic_infix_operator(operator, numpy.array(a), numpy.array(b))
-# XXXX
-
-@dispatch
-def symbolic_infix_operator(operator: str, a: bool, b: str):
-    return symbolic_infix_operator(operator, str(a), b)
-"""
 
 def all_concrete_values(data):
     if isinstance(data, str):
@@ -308,7 +209,6 @@ def symbolic_gt(*args, **kwargs):
         return symbolic_operator('lax_reference.gt', *args, **kwargs)
 
 
-
 def symbolic_abs(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.abs(*args, **kwargs)
@@ -359,7 +259,6 @@ def symbolic_min(*args, **kwargs):
         return symbolic_operator('numpy.minimum', *args, **kwargs)
 
 
-
 def symbolic_select_n(*args, **kwargs):
     '''
     Important comment from lax.py
@@ -375,14 +274,9 @@ def symbolic_select_n(*args, **kwargs):
     else:
         # swap order of on_true and on_false
         # TODO: need a more general solution to unquoting symbolic strings
-        #return f'numpy.where({repr(pred)}, {repr(on_false)}, {repr(on_true)})'.replace('\'', '')
-        #return f'numpy.where({repr(pred)}, {repr(on_false)}, {repr(on_true)})'
         evaluable_pred = symbolic_representation(pred)
-        #print(f'evaluable_pred: {evaluable_pred}')
         evaluable_on_true = symbolic_representation(on_true)
-        #print(f'evaluable_on_true: {evaluable_on_true}')
         evaluable_on_false = symbolic_representation(on_false)
-        #print(f'evaluable_on_false: {evaluable_on_false}')
         return f'lax_reference.select({evaluable_pred}, {evaluable_on_false}, {evaluable_on_true})'
 
 
@@ -391,7 +285,6 @@ def symbolic_and(*args, **kwargs):
         return numpy.logical_and(*args, **kwargs)
     else:
         return symbolic_operator('numpy.logical_and', *args, **kwargs)
-        
 
 
 def symbolic_or(*args, **kwargs):
@@ -417,7 +310,8 @@ def symbolic_sum(*args, **kwargs):
 
 def symbolic_broadcast_in_dim(*args, **kwargs):
     # broadcast_in_dim requires numpy arrays not lists
-    args = tuple([numpy.array(arg) if isinstance(arg, list) else arg for arg in args])
+    args = tuple([numpy.array(arg) if isinstance(
+        arg, list) else arg for arg in args])
     return lax_reference.broadcast_in_dim(*args, **kwargs)
 
 
@@ -435,7 +329,9 @@ def symbolic_convert_element_type(*args, **kwargs):
         # If so, we can use the lax reference implementation
         return lax_reference.convert_element_type(*args, dtype=kwargs['new_dtype'])
     else:
-        # Otherwise, we use the symbolic implementation
+        # Otherwise, we nop
+        def convert_element_type(x, dtype):
+            return x
         return convert_element_type(*args, dtype=kwargs['new_dtype'])
 
 
