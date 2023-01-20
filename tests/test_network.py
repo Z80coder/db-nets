@@ -9,6 +9,7 @@ from jax.config import config
 
 from neurallogic import (hard_and, hard_not, hard_or, harden, harden_layer,
                          neural_logic_net, symbolic_generation)
+from tests import utils
 
 config.update("jax_enable_x64", True)
 
@@ -70,7 +71,7 @@ def test_train_network():
         hard_result = hard.apply(hard_weights, hard_input)
         assert jnp.array_equal(hard_result, hard_expected)
 
-        symbolic_weights = symbolic_generation.make_symbolic(hard_weights)
+        symbolic_weights = utils.make_symbolic(hard_weights)
         symbolic_result = symbolic.apply(symbolic_weights, hard_input)
         symbolic_result = symbolic_generation.eval_symbolic_expression(
             symbolic_result)

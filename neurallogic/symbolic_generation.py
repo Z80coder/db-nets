@@ -1,8 +1,6 @@
-import sys
 import typing
 from typing import Any, Mapping
 
-import flax
 import jax
 import numpy
 from jax import core
@@ -209,70 +207,6 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
         return safe_map(symbolic_read, jaxpr.outvars)[0]
 
 
-def to_string(x):
-    return str(x)
-
-# TODO: use union types to consolidate these functions
-@dispatch
-def make_symbolic(x: dict):
-    return symbolic_primitives.map_at_elements(
-        x, to_string
-    )
-
-
-@dispatch
-def make_symbolic(x: list):
-    return symbolic_primitives.map_at_elements(
-        x, to_string
-    )
-
-
-@dispatch
-def make_symbolic(x: numpy.ndarray):
-    return symbolic_primitives.map_at_elements(
-        x, to_string
-    )
-
-
-@dispatch
-def make_symbolic(x: jax.numpy.ndarray):
-    return symbolic_primitives.map_at_elements(
-        convert_jax_to_numpy_arrays(x), to_string
-    )
-
-
-@dispatch
-def make_symbolic(x: bool):
-    return to_string(x)
-
-
-@dispatch
-def make_symbolic(x: str):
-    return to_string(x)
-
-
-@dispatch
-def convert_jax_to_numpy_arrays(x: jax.numpy.ndarray):
-    return numpy.asarray(x)
-
-
-@dispatch
-def convert_jax_to_numpy_arrays(x: dict):
-    return {k: convert_jax_to_numpy_arrays(v) for k, v in x.items()}
-
-
-@dispatch
-def make_symbolic(x: flax.core.FrozenDict):
-    x = convert_jax_to_numpy_arrays(x.unfreeze())
-    return flax.core.FrozenDict(make_symbolic(x))
-
-
-@dispatch
-def make_symbolic(*args):
-    return tuple([make_symbolic(arg) for arg in args])
-
-
-@dispatch
 def make_symbolic_jaxpr(func: typing.Callable, *args):
     return jax.make_jaxpr(lambda *args: func(*args))(*args)
 

@@ -1,17 +1,18 @@
-from tqdm import tqdm
-from matplotlib import pyplot as plt
-import tensorflow as tf
-import tensorflow_datasets as tfds
 import jax
 import jax.numpy as jnp
+import ml_collections
 import numpy as np
+import optax
+import tensorflow as tf
+import tensorflow_datasets as tfds
 from flax import linen as nn
 from flax.metrics import tensorboard
 from flax.training import train_state
-import ml_collections
-from neurallogic import hard_not, hard_or, harden, harden_layer, neural_logic_net
-import optax
+from matplotlib import pyplot as plt
+from tqdm import tqdm
 
+from neurallogic import (hard_not, hard_or, harden, harden_layer,
+                         neural_logic_net)
 
 """
 MNIST test.

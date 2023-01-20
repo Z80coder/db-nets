@@ -9,6 +9,7 @@ from jax.config import config
 
 from neurallogic import (harden, neural_logic_net, real_encoder,
                          symbolic_generation)
+from tests import utils
 
 # Uncomment to debug NaNs
 # config.update("jax_debug_nans", True)
@@ -249,7 +250,7 @@ def test_symbolic_real_encoder():
 
     # Compute symbolic result with symbolic inputs and symbolic weights, but where the symbols can be evaluated
     symbolic_input = ['1.0', '0.0']
-    symbolic_weights = symbolic_generation.make_symbolic(hard_weights)
+    symbolic_weights = utils.make_symbolic(hard_weights)
     symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
     symbolic_output = symbolic_generation.eval_symbolic_expression(
         symbolic_output)

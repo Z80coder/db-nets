@@ -1,6 +1,7 @@
-import jax.numpy as jnp
-from neurallogic import harden
 import flax
+import jax.numpy as jnp
+
+from neurallogic import harden
 
 
 def test_harden_float():

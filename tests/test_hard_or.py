@@ -1,10 +1,10 @@
 import jax
 import jax.numpy as jnp
+import numpy
 import optax
 from flax import linen as nn
 from flax.training import train_state
 from jax import random
-import numpy
 
 from neurallogic import hard_or, harden, neural_logic_net, symbolic_generation
 from tests import utils
@@ -184,7 +184,7 @@ def test_symbolic_or():
 
     # Compute symbolic result with symbolic inputs and symbolic weights, but where the symbols can be evaluated
     symbolic_input = ['True', 'False']
-    symbolic_weights = symbolic_generation.make_symbolic(hard_weights)
+    symbolic_weights = utils.make_symbolic(hard_weights)
     symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
     symbolic_output = symbolic_generation.eval_symbolic_expression(
         symbolic_output)
