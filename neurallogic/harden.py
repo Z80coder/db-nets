@@ -21,17 +21,26 @@ def harden(x: float):
 
 
 @dispatch
+def harden(x: bool):
+    return x
+
+
+@dispatch
 def harden(x: list):
     return map_at_elements.map_at_elements(x, harden_float)
 
 
 @dispatch
 def harden(x: numpy.ndarray):
+    if x.ndim == 0:
+        return harden(x.item())
     return harden_array(x)
 
 
 @dispatch
 def harden(x: jax.numpy.ndarray):
+    if x.ndim == 0:
+        return harden(x.item())
     return harden_array(x)
 
 
