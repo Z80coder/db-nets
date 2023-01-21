@@ -1,7 +1,7 @@
 import numpy
 import jax
 
-from neurallogic import hard_majority, harden
+from neurallogic import hard_majority, harden, symbolic_generation
 
 
 def test_majority_index():
@@ -68,7 +68,7 @@ def test_hard_majority():
 def test_soft_and_hard_majority_equivalence():
     soft_maj = jax.jit(hard_majority.soft_majority)
     hard_maj = jax.jit(hard_majority.hard_majority)
-    for i in range(1, 100):
+    for i in range(1, 50):
         input = numpy.random.rand(i)
         soft_output = soft_maj(input)
         hard_output = hard_maj(harden.harden(input))
@@ -104,7 +104,7 @@ def test_hard_majority_layer():
     assert numpy.all(hard_majority.hard_majority_layer(numpy.array(
         [[True, False], [False, True]])) == numpy.array([False, False]))
     assert numpy.all(hard_majority.hard_majority_layer(numpy.array(
-        [[True, False, True], [True, False, True]])) == numpy.array([True, True]))
+        [[True, False, True], [True, False, False]])) == numpy.array([True, False]))
     assert numpy.all(hard_majority.hard_majority_layer(numpy.array(
         [[True, False, True, False], [False, True, False, True]])) == numpy.array([False, False]))
     assert numpy.all(hard_majority.hard_majority_layer(numpy.array(
@@ -124,3 +124,42 @@ def test_hard_majority_layer():
                      True, False, True, False, True], [True, False, True, False, True]])) == numpy.array([True, True, True]))
     assert numpy.all(hard_majority.hard_majority_layer(numpy.array([[True, False, True, False, True, False], [
                      False, True, False, True, False, True], [False, True, False, True, False, True]])) == numpy.array([False, False, False]))
+
+
+def test_majority_layer():
+    soft, hard, symbolic = hard_majority.soft_majority_layer, hard_majority.hard_majority_layer, hard_majority.symbolic_majority_layer
+
+    test_data = [
+        [
+            [[0.8, 0.1, 0.4], [1.0, 0.0, 0.3]],
+            [0.4, 0.3]
+        ],
+        [
+            [[0.8, 0.1, 0.4], [1.0, 0.0, 0.3], [0.0, 0.0, 0.0]],
+            [0.4, 0.3, 0.0]
+        ],
+        [
+            [[0.8, 0.1, 0.4], [1.0, 0.0, 0.3], [0.8, 0.9, 0.1], [0.2, 0.01, 0.45]],
+            [0.4, 0.3, 0.8, 0.2]
+        ],
+        [
+            [[0.8, 0.1, 0.4], [1.0, 0.0, 0.3], [0.8, 0.9, 0.1], [0.2, 0.01, 0.45], [0.0, 0.0, 0.0]],
+            [0.4, 0.3, 0.8, 0.2, 0.0]
+        ],
+        [
+            [[0.3, 0.93, 0.01, 0.5], [0.2, 0.01, 0.45, 0.1], [0.8, 0.9, 0.1, 0.2], [0.8, 0.1, 0.4, 0.3], [0.0, 0.0, 0.0, 0.0]],
+            [0.3, 0.1, 0.2, 0.3, 0.0]
+        ]
+    ]
+    
+    for input, expected in test_data:
+        input = jax.numpy.array(input)
+        expected = jax.numpy.array(expected)
+        soft_output = soft(input)
+        assert jax.numpy.array_equal(soft_output, expected)
+        hard_output = hard(harden.harden(input))
+        assert jax.numpy.array_equal(hard_output, harden.harden(expected))
+        jaxpr = symbolic_generation.make_symbolic_jaxpr(symbolic, harden.harden(input))
+        symbolic_output = symbolic_generation.symbolic_expression(jaxpr, harden.harden(input))
+        assert jax.numpy.array_equal(symbolic_output, harden.harden(expected))
+

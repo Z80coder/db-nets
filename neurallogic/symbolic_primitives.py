@@ -54,6 +54,13 @@ def symbolic_lt(*args, **kwargs):
         return symbolic_operator.symbolic_operator('lax_reference.lt', *args, **kwargs)
 
 
+def symbolic_ge(*args, **kwargs):
+    if all_concrete_values([*args]):
+        return lax_reference.ge(*args, **kwargs)
+    else:
+        return symbolic_operator.symbolic_operator('lax_reference.ge', *args, **kwargs)
+
+
 def symbolic_gt(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.gt(*args, **kwargs)

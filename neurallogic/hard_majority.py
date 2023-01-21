@@ -1,5 +1,6 @@
 import jax
 
+from neurallogic import neural_logic_net
 
 
 def majority_index(input_size: int) -> int:
@@ -20,3 +21,11 @@ def hard_majority(x: jax.numpy.array) -> bool:
 soft_majority_layer = jax.vmap(soft_majority, in_axes=0)
 
 hard_majority_layer = jax.vmap(hard_majority, in_axes=0)
+
+
+def symbolic_majority_layer(x):
+    return hard_majority_layer(x)
+
+
+majority_layer = neural_logic_net.select(
+    soft_majority_layer, hard_majority_layer, symbolic_majority_layer)

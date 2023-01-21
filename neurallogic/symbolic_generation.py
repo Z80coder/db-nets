@@ -26,6 +26,7 @@ def symbolic_bind(prim, *args, **params):
         'ne': symbolic_primitives.symbolic_ne,
         'le': symbolic_primitives.symbolic_le,
         'lt': symbolic_primitives.symbolic_lt,
+        'ge': symbolic_primitives.symbolic_ge,
         'gt': symbolic_primitives.symbolic_gt,
         'abs': symbolic_primitives.symbolic_abs,
         'add': symbolic_primitives.symbolic_add,
