@@ -163,3 +163,4 @@ def test_majority_layer():
         symbolic_output = symbolic_generation.symbolic_expression(jaxpr, harden.harden(input))
         assert jax.numpy.array_equal(symbolic_output, harden.harden(expected))
 
+# TODO: test training the hard majority layer

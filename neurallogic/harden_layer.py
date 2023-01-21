@@ -18,6 +18,7 @@ soft_harden_layer = jax.vmap(straight_through_harden_element)
 def hard_harden_layer(x):
     return x
 
+#TODO: can we harden arbitrary tensors?
 #TODO: is this correct?
 def symbolic_harden_layer(x):
     return x
