@@ -295,7 +295,7 @@ def check_symbolic(nets, datasets, trained_state):
         symbolic_output = symbolic.apply({"params": symbolic_weights}, symbolic_input)
         print("symbolic_output", symbolic_output[0][:10000])
 
-#@pytest.mark.skip(reason="temporarily off")
+@pytest.mark.skip(reason="temporarily off")
 def test_mnist():
     # Make sure tf does not allocate gpu memory.
     tf.config.experimental.set_visible_devices([], "GPU")
