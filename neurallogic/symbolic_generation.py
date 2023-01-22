@@ -41,6 +41,7 @@ def symbolic_bind(prim, *args, **params):
         'not': symbolic_primitives.symbolic_not,
         'reduce_and': symbolic_primitives.symbolic_reduce_and,
         'reduce_or': symbolic_primitives.symbolic_reduce_or,
+        'reduce_xor': symbolic_primitives.symbolic_reduce_xor,
         'reduce_sum': symbolic_primitives.symbolic_reduce_sum,
         'select_n': symbolic_primitives.symbolic_select_n,
     }[prim.name](*args, **params)

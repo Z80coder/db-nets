@@ -262,6 +262,23 @@ def symbolic_reduce_or(*args, **kwargs):
         )
 
 
+def symbolic_reduce_xor(*args, **kwargs):
+    if all_concrete_values([*args]):
+        return lax_reference.reduce(
+            *args,
+            init_value=False,
+            computation=numpy.logical_xor,
+            dimensions=kwargs['axes'],
+        )
+    else:
+        return symbolic_reduce(
+            *args,
+            init_value='False',
+            computation=symbolic_xor,
+            dimensions=kwargs['axes'],
+        )
+
+
 def symbolic_reduce_sum(*args, **kwargs):
     if all_concrete_values([*args]):
         return lax_reference.reduce(

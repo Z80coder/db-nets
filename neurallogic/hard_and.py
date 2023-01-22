@@ -89,7 +89,7 @@ class HardAndLayer(nn.Module):
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
         weights = self.param(
-            'bit_weights', nn.initializers.constant(0.0), weights_shape)
+            'bit_weights', nn.initializers.constant(True), weights_shape)
         return hard_and_layer(weights, x)
 
 
@@ -105,5 +105,5 @@ class SymbolicAndLayer:
 
 and_layer = neural_logic_net.select(
     lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: SoftAndLayer(layer_size, weights_init, dtype),
-    lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: HardAndLayer(layer_size),
-    lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: SymbolicAndLayer(layer_size))
+    lambda layer_size, weights_init=nn.initializers.constant(True), dtype=jax.numpy.float32: HardAndLayer(layer_size),
+    lambda layer_size, weights_init=nn.initializers.constant(True), dtype=jax.numpy.float32: SymbolicAndLayer(layer_size))

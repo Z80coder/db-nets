@@ -45,19 +45,20 @@ def nln(type, x, width):
 """
 
 def nln(type, x, width):
-    majority_size = 3
-    n = int(width / majority_size)
-    not_size = 200
+    my_width = 600
+    not_size = 5
+    #majority_size = 3
     num_classes = 10
 
-    x = hard_or.or_layer(type)(width, nn.initializers.uniform(1.0), dtype=jax.numpy.float16)(x) # width number of or neurons
-    x = x.reshape((n, majority_size)) # reshape to (n, majority_size)
-    x = hard_majority.majority_layer(type)(x) # reduce to (n,)
-    x = hard_not.not_layer(type)(not_size, dtype=jax.numpy.float16)(x) # (not_size, n)
-    x = x.ravel()  # flatten the outputs of the not layer (not_size * n,)
-    x = harden_layer.harden_layer(type)(x) # (not_size * n,)
-    x = x.reshape((num_classes, int(not_size * n / num_classes))) # reshape to num_classes ports (num_classes, (not_size * n) / num_classes)
-    x = x.sum(-1)  # sum the bits in each port
+    x = hard_or.or_layer(type)(my_width, nn.initializers.uniform(1.0), dtype=jax.numpy.float16)(x) # width number of or neurons
+    x = hard_and.and_layer(type)(int(my_width), dtype=jax.numpy.float16)(x)
+    x = hard_not.not_layer(type)(not_size, dtype=jax.numpy.float16)(x)
+    x = x.ravel() 
+    #x = x.reshape((int(width * not_size / majority_size), majority_size))
+    #x = hard_majority.majority_layer(type)(x)
+    x = harden_layer.harden_layer(type)(x) 
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes))) 
+    x = x.sum(-1) 
     return x
 
 
@@ -169,7 +170,9 @@ def create_train_state(net, rng, config):
     # for NLN
     mock_input = jnp.ones([1, 28 * 28])
     soft_weights = net.init(rng, mock_input)["params"]
-    tx = optax.sgd(config.learning_rate, config.momentum)
+    #tx = optax.sgd(config.learning_rate, config.momentum)
+    #tx = optax.noisy_sgd(config.learning_rate, config.momentum)
+    tx = optax.yogi(config.learning_rate)
     return train_state.TrainState.create(apply_fn=net.apply, params=soft_weights, tx=tx)
 
 
@@ -292,7 +295,7 @@ def check_symbolic(nets, datasets, trained_state):
         symbolic_output = symbolic.apply({"params": symbolic_weights}, symbolic_input)
         print("symbolic_output", symbolic_output[0][:10000])
 
-@pytest.mark.skip(reason="temporarily off")
+#@pytest.mark.skip(reason="temporarily off")
 def test_mnist():
     # Make sure tf does not allocate gpu memory.
     tf.config.experimental.set_visible_devices([], "GPU")
@@ -302,8 +305,8 @@ def test_mnist():
 
     # Define the model.
     # soft = CNN()
-    width = 1599
-    soft, _, _ = neural_logic_net.net(lambda type, x: batch_nln(type, x, width))
+    width = 800
+    soft, hard, _ = neural_logic_net.net(lambda type, x: batch_nln(type, x, width))
 
     # Get the MNIST dataset.
     train_ds, test_ds = get_datasets()
@@ -312,6 +315,8 @@ def test_mnist():
     test_ds["image"] = jnp.reshape(test_ds["image"], (test_ds["image"].shape[0], -1))
 
     print(soft.tabulate(jax.random.PRNGKey(0), train_ds["image"][0:1]))
+    # TODO: fix the size of this
+    #print(hard.tabulate(jax.random.PRNGKey(0), harden.harden(train_ds["image"][0:1])))
 
     # Train and evaluate the model.
     trained_state = train_and_evaluate(
