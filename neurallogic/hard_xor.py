@@ -25,20 +25,11 @@ def hard_xor_include(w, x):
 def soft_xor_neuron(w, x):
     # Conditionally include input bits, according to weights
     x = jax.vmap(soft_xor_include, 0, 0)(w, x)
-    # Compute the most sensitive bit
-    margins = jax.vmap(lambda x: jax.numpy.abs(0.5 - x))(x)
-    sensitive_bit_index = jax.numpy.argmin(margins)
-    sensitive_bit = jax.numpy.take(x, sensitive_bit_index)
-    # Compute the logical xor of the bits
-    hard_x = jax.vmap(lambda x: jax.numpy.where(x > 0.5, True, False))(x)
-    logical_xor = jax.lax.reduce(hard_x, False, jax.numpy.logical_xor, (0,))
-    # Compute the representative bit
-    hard_sensitive_bit = jax.numpy.where(sensitive_bit > 0.5, True, False)
-    representative_bit = jax.numpy.where(logical_xor == hard_sensitive_bit,
-                                         sensitive_bit,
-                                         1.0 - sensitive_bit
-                                         )
-    return representative_bit
+
+    def xor(x, y):
+        return jax.numpy.minimum(jax.numpy.maximum(x, y), 1.0 - jax.numpy.minimum(x, y))
+    x = jax.lax.reduce(x, jax.numpy.float16(0.0), xor, (0,))
+    return x
 
 
 def hard_xor_neuron(w, x):
