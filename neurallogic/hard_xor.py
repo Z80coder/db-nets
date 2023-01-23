@@ -28,7 +28,7 @@ def soft_xor_neuron(w, x):
 
     def xor(x, y):
         return jax.numpy.minimum(jax.numpy.maximum(x, y), 1.0 - jax.numpy.minimum(x, y))
-    x = jax.lax.reduce(x, jax.numpy.float16(0.0), xor, (0,))
+    x = jax.lax.reduce(x, jax.numpy.array(0.0), xor, (0,))
     return x
 
 
