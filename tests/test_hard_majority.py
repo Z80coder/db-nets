@@ -2,6 +2,7 @@ import numpy
 import jax
 
 from neurallogic import hard_majority, harden, symbolic_generation
+from tests import utils
 
 
 def test_majority_index():
@@ -126,9 +127,7 @@ def test_hard_majority_layer():
                      False, True, False, True, False, True], [False, True, False, True, False, True]])) == numpy.array([False, False, False]))
 
 
-def test_majority_layer():
-    soft, hard, symbolic = hard_majority.soft_majority_layer, hard_majority.hard_majority_layer, hard_majority.symbolic_majority_layer
-
+def test_layer():
     test_data = [
         [
             [[0.8, 0.1, 0.4], [1.0, 0.0, 0.3]],
@@ -151,16 +150,15 @@ def test_majority_layer():
             [0.3, 0.1, 0.2, 0.3, 0.0]
         ]
     ]
-    
+
     for input, expected in test_data:
-        input = jax.numpy.array(input)
-        expected = jax.numpy.array(expected)
-        soft_output = soft(input)
-        assert jax.numpy.array_equal(soft_output, expected)
-        hard_output = hard(harden.harden(input))
-        assert jax.numpy.array_equal(hard_output, harden.harden(expected))
-        jaxpr = symbolic_generation.make_symbolic_jaxpr(symbolic, harden.harden(input))
-        symbolic_output = symbolic_generation.symbolic_expression(jaxpr, harden.harden(input))
-        assert jax.numpy.array_equal(symbolic_output, harden.harden(expected))
+        def soft(input):
+            return hard_majority.soft_majority_layer(input)
+
+        def hard(input):
+            return hard_majority.hard_majority_layer(input)
+
+        utils.check_consistency(soft, hard, jax.numpy.array(expected), jax.numpy.array(input))
+
 
 # TODO: test training the hard majority layer

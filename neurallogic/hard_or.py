@@ -61,7 +61,7 @@ class SoftOrLayer(nn.Module):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
         weights = self.param(
             'bit_weights', self.weights_init, weights_shape, self.dtype)
-        x = jax.numpy.asarray(x, self.dtype)
+        x = jax.numpy.asarray(x, self.dtype) # TODO: remove me?
         return soft_or_layer(weights, x)
 
 

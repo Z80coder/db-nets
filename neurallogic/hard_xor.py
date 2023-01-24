@@ -28,7 +28,7 @@ def soft_xor_neuron(w, x):
 
     def xor(x, y):
         return jax.numpy.minimum(jax.numpy.maximum(x, y), 1.0 - jax.numpy.minimum(x, y))
-    x = jax.lax.reduce(x, jax.numpy.array(0.0), xor, (0,))
+    x = jax.lax.reduce(x, jax.numpy.array(0, dtype=x.dtype), xor, (0,))
     return x
 
 
@@ -39,13 +39,13 @@ def hard_xor_neuron(w, x):
 
 soft_xor_layer = jax.vmap(soft_xor_neuron, (0, None), 0)
 
+
 hard_xor_layer = jax.vmap(hard_xor_neuron, (0, None), 0)
 
 
 class SoftXorLayer(nn.Module):
     layer_size: int
-    weights_init: Callable = nn.initializers.uniform(
-        1.0)  # TODO: investigate better initialization
+    weights_init: Callable = nn.initializers.uniform(1.0)
     dtype: jax.numpy.dtype = jax.numpy.float32
 
     @nn.compact
@@ -53,7 +53,7 @@ class SoftXorLayer(nn.Module):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
         weights = self.param(
             'bit_weights', self.weights_init, weights_shape, self.dtype)
-        x = jax.numpy.asarray(x, self.dtype)
+        x = jax.numpy.asarray(x, self.dtype)  # TODO is this needed?
         return soft_xor_layer(weights, x)
 
 

@@ -1,5 +1,6 @@
 from enum import Enum
 from flax import linen as nn
+from neurallogic import symbolic_generation
 
 NetType = Enum('NetType', ['Soft', 'Hard', 'Symbolic'])
 

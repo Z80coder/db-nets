@@ -62,12 +62,16 @@ def harden(x: flax.core.FrozenDict):
     return harden(x.unfreeze())
 
 
+"""
 @dispatch
 def harden(*args):
     if len(args) == 1:
-        return harden(args[0])
+        print(f'args = {args} of type {type(args)}')
+        arg = args[0]
+        print(f'args[0] = {arg}')
+        return tuple(harden(arg))
     return tuple([harden(arg) for arg in args])
-
+"""
 
 @dispatch
 def map_keys_nested(f, d: dict) -> dict:

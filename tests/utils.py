@@ -79,7 +79,7 @@ def check_consistency(soft: Callable, hard: Callable, expected, *args):
     assert numpy.allclose(soft_output, expected, equal_nan=True)
 
     # Check that the hard function performs as expected
-    hard_args = harden.harden(*args)
+    hard_args = tuple([harden.harden(arg) for arg in args])
     hard_expected = harden.harden(expected)
     hard_output = hard(*hard_args)
     #print(f'Expected: {hard_expected}, Actual hard_output: {hard_output}')

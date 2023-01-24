@@ -100,6 +100,7 @@ def make_symbolic_flax_jaxpr(flax_layer, x):
     return jaxpr
 
 
+
 def eval_jaxpr(symbolic, jaxpr, consts, *args):
     '''Evaluates a jaxpr by interpreting it as Python code.
 
@@ -212,15 +213,15 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
 def make_symbolic_jaxpr(func: typing.Callable, *args):
     return jax.make_jaxpr(lambda *args: func(*args))(*args)
 
-
-def eval_symbolic(symbolic_function, *args):
-    if hasattr(symbolic_function, 'literals'):
+# TODO: better name
+def eval_symbolic(jaxpr, *args):
+    if hasattr(jaxpr, 'literals'):
         return eval_jaxpr(
-            False, symbolic_function.jaxpr, symbolic_function.literals, *args
+            False, jaxpr.jaxpr, jaxpr.literals, *args
         )
-    return eval_jaxpr(False, symbolic_function.jaxpr, [], *args)
+    return eval_jaxpr(False, jaxpr.jaxpr, [], *args)
 
-
+# TODO: better name
 def symbolic_expression(jaxpr, *args):
     if hasattr(jaxpr, 'literals'):
         sym_expr = eval_jaxpr(True, jaxpr.jaxpr, jaxpr.literals, *args)

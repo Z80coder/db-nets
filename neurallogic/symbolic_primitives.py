@@ -21,83 +21,86 @@ def all_concrete_values(data):
     return True
 
 
-def symbolic_f(concrete_f: Callable, symbolic_f_name: str, *args, **kwargs):
+def symbolic(concrete_function: Callable, symbolic_function: str, *args, **kwargs):
     if all_concrete_values([*args]):
-        return concrete_f(*args, **kwargs)
+        # We can directly evaluate the function
+        return concrete_function(*args, **kwargs)
     else:
-        return symbolic_operator.symbolic_operator(symbolic_f_name, *args, **kwargs)
+        # We need to return a symbolic representation
+        return symbolic_operator.symbolic_operator(symbolic_function, *args, **kwargs)
 
 
 def symbolic_not(*args, **kwargs):
-    return symbolic_f(numpy.logical_not, 'numpy.logical_not', *args, **kwargs)
+    return symbolic(numpy.logical_not, 'numpy.logical_not', *args, **kwargs)
 
 
 def symbolic_eq(*args, **kwargs):
-    return symbolic_f(lax_reference.eq, 'lax_reference.eq', *args, **kwargs)
+    return symbolic(lax_reference.eq, 'lax_reference.eq', *args, **kwargs)
 
 
 def symbolic_ne(*args, **kwargs):
-    return symbolic_f(lax_reference.ne, 'lax_reference.ne', *args, **kwargs)
+    return symbolic(lax_reference.ne, 'lax_reference.ne', *args, **kwargs)
 
 
 def symbolic_le(*args, **kwargs):
-    return symbolic_f(lax_reference.le, 'lax_reference.le', *args, **kwargs)
+    return symbolic(lax_reference.le, 'lax_reference.le', *args, **kwargs)
 
 
 def symbolic_lt(*args, **kwargs):
-    return symbolic_f(lax_reference.lt, 'lax_reference.lt', *args, **kwargs)
+    return symbolic(lax_reference.lt, 'lax_reference.lt', *args, **kwargs)
 
 
 def symbolic_ge(*args, **kwargs):
-    return symbolic_f(lax_reference.ge, 'lax_reference.ge', *args, **kwargs)
+    return symbolic(lax_reference.ge, 'lax_reference.ge', *args, **kwargs)
 
 
 def symbolic_gt(*args, **kwargs):
-    return symbolic_f(lax_reference.gt, 'lax_reference.gt', *args, **kwargs)
+    return symbolic(lax_reference.gt, 'lax_reference.gt', *args, **kwargs)
 
 
 def symbolic_abs(*args, **kwargs):
-    return symbolic_f(lax_reference.abs, 'numpy.absolute', *args, **kwargs)
+    return symbolic(lax_reference.abs, 'numpy.absolute', *args, **kwargs)
 
 
 def symbolic_add(*args, **kwargs):
-    return symbolic_f(lax_reference.add, 'numpy.add', *args, **kwargs)
+    return symbolic(lax_reference.add, 'numpy.add', *args, **kwargs)
 
 
 def symbolic_sub(*args, **kwargs):
-    return symbolic_f(lax_reference.sub, 'numpy.subtract', *args, **kwargs)
+    return symbolic(lax_reference.sub, 'numpy.subtract', *args, **kwargs)
 
 
 def symbolic_mul(*args, **kwargs):
-    return symbolic_f(lax_reference.mul, 'numpy.multiply', *args, **kwargs)
+    return symbolic(lax_reference.mul, 'numpy.multiply', *args, **kwargs)
 
 
 def symbolic_div(*args, **kwargs):
-    return symbolic_f(lax_reference.div, 'lax_reference.div', *args, **kwargs)
+    return symbolic(lax_reference.div, 'lax_reference.div', *args, **kwargs)
 
 
 def symbolic_max(*args, **kwargs):
-    return symbolic_f(lax_reference.max, 'numpy.maximum', *args, **kwargs)
+    return symbolic(lax_reference.max, 'numpy.maximum', *args, **kwargs)
 
 
 def symbolic_min(*args, **kwargs):
-    return symbolic_f(lax_reference.min, 'numpy.minimum', *args, **kwargs)
+    return symbolic(lax_reference.min, 'numpy.minimum', *args, **kwargs)
 
 
 def symbolic_and(*args, **kwargs):
-    return symbolic_f(numpy.logical_and, 'numpy.logical_and', *args, **kwargs)
+    return symbolic(numpy.logical_and, 'numpy.logical_and', *args, **kwargs)
 
 
 def symbolic_or(*args, **kwargs):
-    return symbolic_f(numpy.logical_or, 'numpy.logical_or', *args, **kwargs)
+    return symbolic(numpy.logical_or, 'numpy.logical_or', *args, **kwargs)
 
 
 def symbolic_xor(*args, **kwargs):
-    return symbolic_f(numpy.logical_xor, 'numpy.logical_xor', *args, **kwargs)
+    return symbolic(numpy.logical_xor, 'numpy.logical_xor', *args, **kwargs)
 
 
 def symbolic_sum(*args, **kwargs):
-    return symbolic_f(lax_reference.sum, 'lax_reference.sum', *args, **kwargs)
+    # N.B. We pass the tuple directly because we're summing over all args
+    return symbolic(lax_reference.sum, 'lax_reference.sum', args, **kwargs)
 
 
 def symbolic_broadcast_in_dim(*args, **kwargs):

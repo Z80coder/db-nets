@@ -1,6 +1,7 @@
 import jax
+from flax import linen as nn
 
-from neurallogic import neural_logic_net
+from neurallogic import neural_logic_net, symbolic_generation
 
 
 def majority_index(input_size: int) -> int:
@@ -23,9 +24,40 @@ soft_majority_layer = jax.vmap(soft_majority, in_axes=0)
 hard_majority_layer = jax.vmap(hard_majority, in_axes=0)
 
 
-def symbolic_majority_layer(x):
-    return hard_majority_layer(x)
+class SoftMajorityLayer(nn.Module):
+    """
+    A soft-bit MAJORITY layer than transforms its inputs along the last dimension.
+
+    Attributes:
+        layer_size: The number of neurons in the layer.
+        weights_init: The initializer function for the weight matrix.
+    """
+    dtype: jax.numpy.dtype = jax.numpy.float32
+
+    @nn.compact
+    def __call__(self, x):
+        x = jax.numpy.asarray(x, self.dtype)  # TODO: remove me?
+        return soft_majority_layer(x)
+
+
+class HardMajorityLayer(nn.Module):
+    @nn.compact
+    def __call__(self, x):
+        return hard_majority_layer(x)
+
+
+class SymbolicMajorityLayer:
+    def __init__(self):
+        self.hard_majority_layer = HardMajorityLayer()
+
+    def __call__(self, x):
+        jaxpr = symbolic_generation.make_symbolic_flax_jaxpr(
+            self.hard_majority_layer, x)
+        return symbolic_generation.symbolic_expression(jaxpr, x)
 
 
 majority_layer = neural_logic_net.select(
-    soft_majority_layer, hard_majority_layer, symbolic_majority_layer)
+    lambda dtype=jax.numpy.float32: SoftMajorityLayer(dtype),
+    lambda dtype=jax.numpy.float32: HardMajorityLayer(),
+    lambda dtype=jax.numpy.float32: SymbolicMajorityLayer()
+)

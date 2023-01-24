@@ -13,7 +13,7 @@ from jax.config import config
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-from neurallogic import (hard_and, hard_majority, hard_not, hard_or, harden,
+from neurallogic import (hard_and, hard_majority, hard_not, hard_or, hard_xor, harden,
                          harden_layer, neural_logic_net, real_encoder)
 
 # Uncomment to debug NaNs
@@ -44,26 +44,20 @@ def nln(type, x, width):
     return x
 """
 
-def nln(type, x, width):
-    my_width = 600
-    not_size = 5
-    #majority_size = 3
+def nln(type, x):
     num_classes = 10
 
-    x = hard_or.or_layer(type)(my_width, nn.initializers.uniform(1.0), dtype=jax.numpy.float16)(x) # width number of or neurons
-    x = hard_and.and_layer(type)(int(my_width), dtype=jax.numpy.float16)(x)
-    x = hard_not.not_layer(type)(not_size, dtype=jax.numpy.float16)(x)
-    x = x.ravel() 
-    #x = x.reshape((int(width * not_size / majority_size), majority_size))
-    #x = hard_majority.majority_layer(type)(x)
+    x = hard_or.or_layer(type)(1000, nn.initializers.uniform(1.0), dtype=jax.numpy.float16)(x)
+    x = hard_not.not_layer(type)(num_classes)(x)
+    x = x.ravel()
     x = harden_layer.harden_layer(type)(x) 
     x = x.reshape((num_classes, int(x.shape[0] / num_classes))) 
     x = x.sum(-1) 
     return x
 
 
-def batch_nln(type, x, width):
-    return jax.vmap(lambda x: nln(type, x, width))(x)
+def batch_nln(type, x):
+    return jax.vmap(lambda x: nln(type, x))(x)
 
 
 class CNN(nn.Module):
@@ -305,8 +299,8 @@ def test_mnist():
 
     # Define the model.
     # soft = CNN()
-    width = 800
-    soft, hard, _ = neural_logic_net.net(lambda type, x: batch_nln(type, x, width))
+    # width = 800
+    soft, hard, _ = neural_logic_net.net(lambda type, x: batch_nln(type, x))
 
     # Get the MNIST dataset.
     train_ds, test_ds = get_datasets()
@@ -324,5 +318,5 @@ def test_mnist():
     )
 
     # Check symbolic net
-    #_, hard, symbolic = neural_logic_net.net(lambda type, x: nln(type, x, width))
+    #_, hard, symbolic = neural_logic_net.net(lambda type, x: nln(type, x))
     #check_symbolic((soft, hard, symbolic), (train_ds, test_ds), trained_state)
