@@ -32,11 +32,8 @@ class SoftMajorityLayer(nn.Module):
         layer_size: The number of neurons in the layer.
         weights_init: The initializer function for the weight matrix.
     """
-    dtype: jax.numpy.dtype = jax.numpy.float32
-
     @nn.compact
     def __call__(self, x):
-        x = jax.numpy.asarray(x, self.dtype)  # TODO: remove me?
         return soft_majority_layer(x)
 
 
@@ -57,7 +54,7 @@ class SymbolicMajorityLayer:
 
 
 majority_layer = neural_logic_net.select(
-    lambda dtype=jax.numpy.float32: SoftMajorityLayer(dtype),
-    lambda dtype=jax.numpy.float32: HardMajorityLayer(),
-    lambda dtype=jax.numpy.float32: SymbolicMajorityLayer()
+    lambda: SoftMajorityLayer(),
+    lambda: HardMajorityLayer(),
+    lambda: SymbolicMajorityLayer()
 )

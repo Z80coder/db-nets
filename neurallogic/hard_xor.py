@@ -53,7 +53,7 @@ class SoftXorLayer(nn.Module):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
         weights = self.param(
             'bit_weights', self.weights_init, weights_shape, self.dtype)
-        x = jax.numpy.asarray(x, self.dtype)  # TODO is this needed?
+        x = jax.numpy.asarray(x, self.dtype) 
         return soft_xor_layer(weights, x)
 
 
