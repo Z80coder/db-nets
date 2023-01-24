@@ -21,17 +21,26 @@ def harden(x: float):
 
 
 @dispatch
+def harden(x: bool):
+    return x
+
+
+@dispatch
 def harden(x: list):
     return map_at_elements.map_at_elements(x, harden_float)
 
 
 @dispatch
 def harden(x: numpy.ndarray):
+    if x.ndim == 0:
+        return harden(x.item())
     return harden_array(x)
 
 
 @dispatch
 def harden(x: jax.numpy.ndarray):
+    if x.ndim == 0:
+        return harden(x.item())
     return harden_array(x)
 
 
@@ -51,13 +60,6 @@ def harden(x: dict):
 @dispatch
 def harden(x: flax.core.FrozenDict):
     return harden(x.unfreeze())
-
-
-@dispatch
-def harden(*args):
-    if len(args) == 1:
-        return harden(args[0])
-    return tuple([harden(arg) for arg in args])
 
 
 @dispatch

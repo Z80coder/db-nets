@@ -64,6 +64,11 @@ def symbolic_operator(operator: str, x: str, y: int):
 
 
 @dispatch
+def symbolic_operator(operator: str, x: tuple):
+    return symbolic_operator(operator, str(x))
+
+
+@dispatch
 def symbolic_operator(operator: str, x: list, y: numpy.ndarray):
     return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
 

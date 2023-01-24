@@ -26,6 +26,7 @@ def symbolic_bind(prim, *args, **params):
         'ne': symbolic_primitives.symbolic_ne,
         'le': symbolic_primitives.symbolic_le,
         'lt': symbolic_primitives.symbolic_lt,
+        'ge': symbolic_primitives.symbolic_ge,
         'gt': symbolic_primitives.symbolic_gt,
         'abs': symbolic_primitives.symbolic_abs,
         'add': symbolic_primitives.symbolic_add,
@@ -40,6 +41,7 @@ def symbolic_bind(prim, *args, **params):
         'not': symbolic_primitives.symbolic_not,
         'reduce_and': symbolic_primitives.symbolic_reduce_and,
         'reduce_or': symbolic_primitives.symbolic_reduce_or,
+        'reduce_xor': symbolic_primitives.symbolic_reduce_xor,
         'reduce_sum': symbolic_primitives.symbolic_reduce_sum,
         'select_n': symbolic_primitives.symbolic_select_n,
     }[prim.name](*args, **params)
@@ -96,6 +98,7 @@ def make_symbolic_flax_jaxpr(flax_layer, x):
     # Replace the dummy numeric weights with the actual weights in the jaxpr
     jaxpr.consts = bit_weights_and_thresholds
     return jaxpr
+
 
 
 def eval_jaxpr(symbolic, jaxpr, consts, *args):
@@ -210,15 +213,15 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
 def make_symbolic_jaxpr(func: typing.Callable, *args):
     return jax.make_jaxpr(lambda *args: func(*args))(*args)
 
-
-def eval_symbolic(symbolic_function, *args):
-    if hasattr(symbolic_function, 'literals'):
+# TODO: better name
+def eval_symbolic(jaxpr, *args):
+    if hasattr(jaxpr, 'literals'):
         return eval_jaxpr(
-            False, symbolic_function.jaxpr, symbolic_function.literals, *args
+            False, jaxpr.jaxpr, jaxpr.literals, *args
         )
-    return eval_jaxpr(False, symbolic_function.jaxpr, [], *args)
+    return eval_jaxpr(False, jaxpr.jaxpr, [], *args)
 
-
+# TODO: better name
 def symbolic_expression(jaxpr, *args):
     if hasattr(jaxpr, 'literals'):
         sym_expr = eval_jaxpr(True, jaxpr.jaxpr, jaxpr.literals, *args)

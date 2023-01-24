@@ -1,5 +1,4 @@
 import jax
-import jax.numpy as jnp
 import numpy
 import optax
 from flax import linen as nn
@@ -134,7 +133,7 @@ def test_train_or():
     input = jax.numpy.array(x)
     output = jax.numpy.array(y)
 
-    # Train the and layer
+    # Train the or layer
     tx = optax.sgd(0.1)
     state = train_state.TrainState.create(apply_fn=jax.vmap(
         soft.apply, in_axes=(None, 0)), params=weights, tx=tx)

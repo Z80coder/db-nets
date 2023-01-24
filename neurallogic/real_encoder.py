@@ -5,6 +5,8 @@ from flax import linen as nn
 
 from neurallogic import neural_logic_net, symbolic_generation
 
+# TODO: perhaps this can be simplified with a simple multiplication?
+# TODO: implement a soft_real_decoder that can perhaps replace the port count approach
 
 def soft_real_encoder(t: float, x: float) -> float:
     eps = 0.0000001

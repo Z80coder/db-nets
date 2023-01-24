@@ -1,3 +1,5 @@
+from typing import Callable
+
 import jax
 import jax._src.lax_reference as lax_reference
 import numpy
@@ -19,145 +21,86 @@ def all_concrete_values(data):
     return True
 
 
-def symbolic_not(*args, **kwargs):
+def symbolic(concrete_function: Callable, symbolic_function: str, *args, **kwargs):
     if all_concrete_values([*args]):
-        return numpy.logical_not(*args, **kwargs)
+        # We can directly evaluate the function
+        return concrete_function(*args, **kwargs)
     else:
-        return symbolic_operator.symbolic_operator('numpy.logical_not', *args, **kwargs)
+        # We need to return a symbolic representation
+        return symbolic_operator.symbolic_operator(symbolic_function, *args, **kwargs)
+
+
+def symbolic_not(*args, **kwargs):
+    return symbolic(numpy.logical_not, 'numpy.logical_not', *args, **kwargs)
 
 
 def symbolic_eq(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return lax_reference.eq(*args, **kwargs)
-    else:
-        return symbolic_operator.symbolic_operator('lax_reference.eq', *args, **kwargs)
+    return symbolic(lax_reference.eq, 'lax_reference.eq', *args, **kwargs)
 
 
 def symbolic_ne(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return lax_reference.ne(*args, **kwargs)
-    else:
-        return symbolic_operator.symbolic_operator('lax_reference.ne', *args, **kwargs)
+    return symbolic(lax_reference.ne, 'lax_reference.ne', *args, **kwargs)
 
 
 def symbolic_le(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return lax_reference.le(*args, **kwargs)
-    else:
-        return symbolic_operator.symbolic_operator('lax_reference.le', *args, **kwargs)
+    return symbolic(lax_reference.le, 'lax_reference.le', *args, **kwargs)
 
 
 def symbolic_lt(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return lax_reference.lt(*args, **kwargs)
-    else:
-        return symbolic_operator.symbolic_operator('lax_reference.lt', *args, **kwargs)
+    return symbolic(lax_reference.lt, 'lax_reference.lt', *args, **kwargs)
+
+
+def symbolic_ge(*args, **kwargs):
+    return symbolic(lax_reference.ge, 'lax_reference.ge', *args, **kwargs)
 
 
 def symbolic_gt(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return lax_reference.gt(*args, **kwargs)
-    else:
-        return symbolic_operator.symbolic_operator('lax_reference.gt', *args, **kwargs)
+    return symbolic(lax_reference.gt, 'lax_reference.gt', *args, **kwargs)
 
 
 def symbolic_abs(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return lax_reference.abs(*args, **kwargs)
-    else:
-        return symbolic_operator.symbolic_operator('numpy.absolute', *args, **kwargs)
+    return symbolic(lax_reference.abs, 'numpy.absolute', *args, **kwargs)
 
 
 def symbolic_add(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return lax_reference.add(*args, **kwargs)
-    else:
-        return symbolic_operator.symbolic_operator('numpy.add', *args, **kwargs)
+    return symbolic(lax_reference.add, 'numpy.add', *args, **kwargs)
 
 
 def symbolic_sub(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return lax_reference.sub(*args, **kwargs)
-    else:
-        return symbolic_operator.symbolic_operator('numpy.subtract', *args, **kwargs)
+    return symbolic(lax_reference.sub, 'numpy.subtract', *args, **kwargs)
 
 
 def symbolic_mul(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return lax_reference.mul(*args, **kwargs)
-    else:
-        return symbolic_operator.symbolic_operator('numpy.multiply', *args, **kwargs)
+    return symbolic(lax_reference.mul, 'numpy.multiply', *args, **kwargs)
 
 
 def symbolic_div(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return lax_reference.div(*args, **kwargs)
-    else:
-        return symbolic_operator.symbolic_operator('lax_reference.div', *args, **kwargs)
+    return symbolic(lax_reference.div, 'lax_reference.div', *args, **kwargs)
 
 
 def symbolic_max(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return lax_reference.max(*args, **kwargs)
-    else:
-        r = symbolic_operator.symbolic_operator('numpy.maximum', *args, **kwargs)
-        return r
+    return symbolic(lax_reference.max, 'numpy.maximum', *args, **kwargs)
 
 
 def symbolic_min(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return lax_reference.min(*args, **kwargs)
-    else:
-        return symbolic_operator.symbolic_operator('numpy.minimum', *args, **kwargs)
-
-
-def symbolic_select_n(*args, **kwargs):
-    '''
-    Important comment from lax.py
-    # Caution! The select_n_p primitive has the *opposite* order of arguments to
-    # select(). This is because it implements `select_n`.
-    '''
-    pred = args[0]
-    on_true = args[1]
-    on_false = args[2]
-    if all_concrete_values([*args]):
-        # swap order of on_true and on_false
-        return lax_reference.select(pred, on_false, on_true)
-    else:
-        # swap order of on_true and on_false
-        # TODO: need a more general solution to unquoting symbolic strings
-        evaluable_pred = symbolic_representation.symbolic_representation(pred)
-        evaluable_on_true = symbolic_representation.symbolic_representation(on_true)
-        evaluable_on_false = symbolic_representation.symbolic_representation(on_false)
-        return f'lax_reference.select({evaluable_pred}, {evaluable_on_false}, {evaluable_on_true})'
+    return symbolic(lax_reference.min, 'numpy.minimum', *args, **kwargs)
 
 
 def symbolic_and(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return numpy.logical_and(*args, **kwargs)
-    else:
-        return symbolic_operator.symbolic_operator('numpy.logical_and', *args, **kwargs)
+    return symbolic(numpy.logical_and, 'numpy.logical_and', *args, **kwargs)
 
 
 def symbolic_or(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return numpy.logical_or(*args, **kwargs)
-    else:
-        return symbolic_operator.symbolic_operator('numpy.logical_or', *args, **kwargs)
+    return symbolic(numpy.logical_or, 'numpy.logical_or', *args, **kwargs)
 
 
 def symbolic_xor(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return numpy.logical_xor(*args, **kwargs)
-    else:
-        return symbolic_operator.symbolic_operator('numpy.logical_xor', *args, **kwargs)
+    return symbolic(numpy.logical_xor, 'numpy.logical_xor', *args, **kwargs)
 
 
 def symbolic_sum(*args, **kwargs):
-    if all_concrete_values([*args]):
-        return lax_reference.sum(*args, **kwargs)
-    else:
-        return symbolic_operator.symbolic_operator('lax_reference.sum', *args, **kwargs)
+    # N.B. We pass the tuple directly because we're summing over all args
+    return symbolic(lax_reference.sum, 'lax_reference.sum', args, **kwargs)
 
 
 def symbolic_broadcast_in_dim(*args, **kwargs):
@@ -185,6 +128,29 @@ def symbolic_convert_element_type(*args, **kwargs):
         def convert_element_type(x, dtype):
             return x
         return convert_element_type(*args, dtype=kwargs['new_dtype'])
+
+
+def symbolic_select_n(*args, **kwargs):
+    '''
+    Important comment from lax.py
+    # Caution! The select_n_p primitive has the *opposite* order of arguments to
+    # select(). This is because it implements `select_n`.
+    '''
+    pred = args[0]
+    on_true = args[1]
+    on_false = args[2]
+    if all_concrete_values([*args]):
+        # swap order of on_true and on_false
+        return lax_reference.select(pred, on_false, on_true)
+    else:
+        # swap order of on_true and on_false
+        # TODO: need a more general solution to unquoting symbolic strings
+        evaluable_pred = symbolic_representation.symbolic_representation(pred)
+        evaluable_on_true = symbolic_representation.symbolic_representation(
+            on_true)
+        evaluable_on_false = symbolic_representation.symbolic_representation(
+            on_false)
+        return f'lax_reference.select({evaluable_pred}, {evaluable_on_false}, {evaluable_on_true})'
 
 
 def make_symbolic_reducer(py_binop, init_val):
@@ -251,6 +217,23 @@ def symbolic_reduce_or(*args, **kwargs):
             *args,
             init_value='False',
             computation=symbolic_or,
+            dimensions=kwargs['axes'],
+        )
+
+
+def symbolic_reduce_xor(*args, **kwargs):
+    if all_concrete_values([*args]):
+        return lax_reference.reduce(
+            *args,
+            init_value=False,
+            computation=numpy.logical_xor,
+            dimensions=kwargs['axes'],
+        )
+    else:
+        return symbolic_reduce(
+            *args,
+            init_value='False',
+            computation=symbolic_xor,
             dimensions=kwargs['axes'],
         )
 

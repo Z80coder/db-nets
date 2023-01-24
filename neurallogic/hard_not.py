@@ -19,7 +19,6 @@ def soft_not(w: float, x: float) -> float:
 
 
 def hard_not(w: bool, x: bool) -> bool:
-    # ~(x ^ w)
     return jax.numpy.logical_not(jax.numpy.logical_xor(x, w))
 
 
@@ -48,11 +47,12 @@ class SoftNotLayer(nn.Module):
 
 class HardNotLayer(nn.Module):
     layer_size: int
+    weights_init: Callable = nn.initializers.constant(True)
 
     @nn.compact
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
-        weights = self.param("bit_weights", nn.initializers.constant(0.0), weights_shape)
+        weights = self.param("bit_weights", self.weights_init, weights_shape)
         return hard_not_layer(weights, x)
 
 
@@ -67,13 +67,7 @@ class SymbolicNotLayer:
 
 
 not_layer = neural_logic_net.select(
-    lambda layer_size, weights_init=nn.initializers.uniform(
-        1.0
-    ), dtype=jax.numpy.float32: SoftNotLayer(layer_size, weights_init, dtype),
-    lambda layer_size, weights_init=nn.initializers.uniform(
-        1.0
-    ), dtype=jax.numpy.float32: HardNotLayer(layer_size),
-    lambda layer_size, weights_init=nn.initializers.uniform(
-        1.0
-    ), dtype=jax.numpy.float32: SymbolicNotLayer(layer_size),
+    lambda layer_size, weights_init=nn.initializers.uniform(1.0), dtype=jax.numpy.float32: SoftNotLayer(layer_size, weights_init, dtype),
+    lambda layer_size, weights_init=nn.initializers.uniform(1.0), dtype=jax.numpy.float32: HardNotLayer(layer_size),
+    lambda layer_size, weights_init=nn.initializers.uniform(1.0), dtype=jax.numpy.float32: SymbolicNotLayer(layer_size),
 )

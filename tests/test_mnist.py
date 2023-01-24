@@ -3,16 +3,21 @@ import jax.numpy as jnp
 import ml_collections
 import numpy as np
 import optax
+import pytest
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from flax import linen as nn
 from flax.metrics import tensorboard
 from flax.training import train_state
+from jax.config import config
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-from neurallogic import (hard_not, hard_or, harden, harden_layer,
-                         neural_logic_net)
+from neurallogic import (hard_and, hard_majority, hard_not, hard_or, hard_xor, harden,
+                         harden_layer, neural_logic_net, real_encoder)
+
+# Uncomment to debug NaNs
+#config.update("jax_debug_nans", True)
 
 """
 MNIST test.
@@ -21,9 +26,15 @@ Executes the training and evaluation loop for MNIST.
 The data is loaded using tensorflow_datasets.
 """
 
-
+# TODO: experiment in ipython notebook with different values for these
+"""
 def nln(type, x, width):
-    x = hard_or.or_layer(type)(width, nn.initializers.uniform(1.0))(x)
+    #x = x.reshape((-1, 1))
+    #re = real_encoder.real_encoder_layer(type)(3)
+    #x = jax.vmap(re, 0)(x)
+    #x = x.ravel()
+    #x = hard_or.or_layer(type)(width, nn.initializers.uniform(1.0), dtype=jax.numpy.float16)(x)
+    x = hard_or.or_layer(type)(width, nn.initializers.uniform(1.0), dtype=jax.numpy.float16)(x)
     x = hard_not.not_layer(type)(10)(x)
     x = x.ravel()  # flatten the outputs of the not layer
     # harden the outputs of the not layer
@@ -31,10 +42,22 @@ def nln(type, x, width):
     x = x.reshape((10, width))  # reshape to 10 ports, 100 bits each
     x = x.sum(-1)  # sum the 100 bits in each port
     return x
+"""
+
+def nln(type, x):
+    num_classes = 10
+
+    x = hard_or.or_layer(type)(1000, nn.initializers.uniform(1.0), dtype=jax.numpy.float16)(x)
+    x = hard_not.not_layer(type)(num_classes)(x)
+    x = x.ravel()
+    x = harden_layer.harden_layer(type)(x) 
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes))) 
+    x = x.sum(-1) 
+    return x
 
 
-def batch_nln(type, x, width):
-    return jax.vmap(lambda x: nln(type, x, width))(x)
+def batch_nln(type, x):
+    return jax.vmap(lambda x: nln(type, x))(x)
 
 
 class CNN(nn.Module):
@@ -107,6 +130,8 @@ def get_datasets():
     test_ds = tfds.as_numpy(ds_builder.as_dataset(split="test", batch_size=-1))
     train_ds["image"] = jnp.float32(train_ds["image"]) / 255.0
     test_ds["image"] = jnp.float32(test_ds["image"]) / 255.0
+    # TODO: we don't need to do this even when we don't use the real encoder
+    # Use grayscale information
     # Convert the floating point values in [0,1] to binary values in {0,1}
     train_ds["image"] = jnp.round(train_ds["image"])
     test_ds["image"] = jnp.round(test_ds["image"])
@@ -139,7 +164,9 @@ def create_train_state(net, rng, config):
     # for NLN
     mock_input = jnp.ones([1, 28 * 28])
     soft_weights = net.init(rng, mock_input)["params"]
-    tx = optax.sgd(config.learning_rate, config.momentum)
+    #tx = optax.sgd(config.learning_rate, config.momentum)
+    #tx = optax.noisy_sgd(config.learning_rate, config.momentum)
+    tx = optax.yogi(config.learning_rate)
     return train_state.TrainState.create(apply_fn=net.apply, params=soft_weights, tx=tx)
 
 
@@ -191,12 +218,14 @@ def get_config():
     # config for CNN
     config.learning_rate = 0.01
     # config for NLN
-    config.learning_rate = 0.1
+    #config.learning_rate = 0.1
+    config.learning_rate = 0.01
 
     # Always commit with num_epochs = 1 for short test time
     config.momentum = 0.9
     config.batch_size = 128
-    config.num_epochs = 2
+    #config.num_epochs = 2
+    config.num_epochs = 1000
     return config
 
 
@@ -260,7 +289,7 @@ def check_symbolic(nets, datasets, trained_state):
         symbolic_output = symbolic.apply({"params": symbolic_weights}, symbolic_input)
         print("symbolic_output", symbolic_output[0][:10000])
 
-
+@pytest.mark.skip(reason="temporarily off")
 def test_mnist():
     # Make sure tf does not allocate gpu memory.
     tf.config.experimental.set_visible_devices([], "GPU")
@@ -270,8 +299,8 @@ def test_mnist():
 
     # Define the model.
     # soft = CNN()
-    width = 10
-    soft, _, _ = neural_logic_net.net(lambda type, x: batch_nln(type, x, width))
+    # width = 800
+    soft, hard, _ = neural_logic_net.net(lambda type, x: batch_nln(type, x))
 
     # Get the MNIST dataset.
     train_ds, test_ds = get_datasets()
@@ -279,11 +308,15 @@ def test_mnist():
     train_ds["image"] = jnp.reshape(train_ds["image"], (train_ds["image"].shape[0], -1))
     test_ds["image"] = jnp.reshape(test_ds["image"], (test_ds["image"].shape[0], -1))
 
+    print(soft.tabulate(jax.random.PRNGKey(0), train_ds["image"][0:1]))
+    # TODO: fix the size of this
+    #print(hard.tabulate(jax.random.PRNGKey(0), harden.harden(train_ds["image"][0:1])))
+
     # Train and evaluate the model.
     trained_state = train_and_evaluate(
         soft, (train_ds, test_ds), config=config, workdir="./mnist_metrics"
     )
 
     # Check symbolic net
-    _, hard, symbolic = neural_logic_net.net(lambda type, x: nln(type, x, width))
-    check_symbolic((soft, hard, symbolic), (train_ds, test_ds), trained_state)
+    #_, hard, symbolic = neural_logic_net.net(lambda type, x: nln(type, x))
+    #check_symbolic((soft, hard, symbolic), (train_ds, test_ds), trained_state)

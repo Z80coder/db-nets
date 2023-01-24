@@ -19,3 +19,4 @@ def test_harden_layer():
         symbolic_output = harden_layer.symbolic_harden_layer(
             harden.harden(input.tolist()))
         assert jnp.array_equal(symbolic_output, harden.harden(expected))
+        # TODO: test symbolic harden layer

@@ -31,6 +31,11 @@ def map_at_elements(x: numpy.float32, func: typing.Callable):
 
 
 @dispatch
+def map_at_elements(x: numpy.int32, func: typing.Callable):
+    return func(x)
+
+
+@dispatch
 def map_at_elements(x: list, func: typing.Callable):
     return [map_at_elements(item, func) for item in x]
 
@@ -55,4 +60,3 @@ def map_at_elements(x: dict, func: typing.Callable):
 @dispatch
 def map_at_elements(x: tuple, func: typing.Callable):
     return tuple(map_at_elements(list(x), func))
-
