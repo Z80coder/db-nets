@@ -4,13 +4,16 @@ import jax.numpy as jnp
 import numpy
 
 from neurallogic import (hard_and, hard_majority, hard_not, hard_or, hard_xor,
-                         harden, harden_layer, neural_logic_net,
+                         harden, harden_layer, neural_logic_net, real_encoder,
                          symbolic_generation)
 from tests import utils
 
 
 def nln(type, x, width):
-    # TODO: test real_encoder layer
+    # Can't symbolically support this layer yet since the symbolic output is an unevaluated string that
+    # lacks the correct tensor structure
+    # x = real_encoder.real_encoder_layer(type)(2)(x)
+    # x = x.ravel()
     x = hard_or.or_layer(type)(width)(x)
     x = hard_and.and_layer(type)(width)(x)
     x = hard_xor.xor_layer(type)(width)(x)

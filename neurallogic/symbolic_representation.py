@@ -1,6 +1,7 @@
 import numpy
 from plum import dispatch
 
+# TODO: need a more general solution to unquoting symbolic strings
 
 @dispatch
 def symbolic_representation(x: numpy.ndarray):

@@ -2,6 +2,7 @@ from typing import Callable
 
 import jax
 import jax._src.lax_reference as lax_reference
+import jax._src.lax.lax as lax
 import numpy
 
 from neurallogic import symbolic_operator, symbolic_representation
@@ -59,31 +60,54 @@ def symbolic_gt(*args, **kwargs):
 
 
 def symbolic_abs(*args, **kwargs):
-    return symbolic(lax_reference.abs, 'numpy.absolute', *args, **kwargs)
+    return symbolic(lax_reference.abs, 'lax_reference.abs', *args, **kwargs)
+
+
+def symbolic_floor(*args, **kwargs):
+    return symbolic(lax_reference.floor, 'lax_reference.floor', *args, **kwargs)
+
+
+def symbolic_ceil(*args, **kwargs):
+    return symbolic(lax_reference.ceil, 'lax_reference.ceil', *args, **kwargs)
+
+
+def symbolic_round(*args, **kwargs):
+    # The reference implementation only supports away from zero
+    if kwargs['rounding_method'] == lax.RoundingMethod.AWAY_FROM_ZERO:
+        return symbolic(lax_reference.round, 'lax_reference.round', *args)
+    elif kwargs['rounding_method'] == lax.RoundingMethod.TO_NEAREST_EVEN:
+        return symbolic(numpy.around, 'numpy.around', *args)
+    else:
+        raise NotImplementedError(
+            f'rounding_method {str(kwargs["rounding_method"])} not implemented')
 
 
 def symbolic_add(*args, **kwargs):
-    return symbolic(lax_reference.add, 'numpy.add', *args, **kwargs)
+    return symbolic(lax_reference.add, 'lax_reference.add', *args, **kwargs)
 
 
 def symbolic_sub(*args, **kwargs):
-    return symbolic(lax_reference.sub, 'numpy.subtract', *args, **kwargs)
+    return symbolic(lax_reference.sub, 'lax_reference.sub', *args, **kwargs)
 
 
 def symbolic_mul(*args, **kwargs):
-    return symbolic(lax_reference.mul, 'numpy.multiply', *args, **kwargs)
+    return symbolic(lax_reference.mul, 'lax_reference.mul', *args, **kwargs)
 
 
 def symbolic_div(*args, **kwargs):
     return symbolic(lax_reference.div, 'lax_reference.div', *args, **kwargs)
 
 
+def symbolic_tan(*args, **kwargs):
+    return symbolic(lax_reference.tan, 'lax_reference.tan', *args, **kwargs)
+
+
 def symbolic_max(*args, **kwargs):
-    return symbolic(lax_reference.max, 'numpy.maximum', *args, **kwargs)
+    return symbolic(lax_reference.max, 'lax_reference.max', *args, **kwargs)
 
 
 def symbolic_min(*args, **kwargs):
-    return symbolic(lax_reference.min, 'numpy.minimum', *args, **kwargs)
+    return symbolic(lax_reference.min, 'lax_reference.min', *args, **kwargs)
 
 
 def symbolic_and(*args, **kwargs):
@@ -143,8 +167,11 @@ def symbolic_select_n(*args, **kwargs):
         # swap order of on_true and on_false
         return lax_reference.select(pred, on_false, on_true)
     else:
+        # TODO: to retain tensor structure we need to push down the select to the
+        # lowest level of the symbolic expression tree. This is not currently
+        # implemented.
+        print('WARNING: symbolic_select_n is not fully implemented. This may not work as expected.')
         # swap order of on_true and on_false
-        # TODO: need a more general solution to unquoting symbolic strings
         evaluable_pred = symbolic_representation.symbolic_representation(pred)
         evaluable_on_true = symbolic_representation.symbolic_representation(
             on_true)

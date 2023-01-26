@@ -9,7 +9,17 @@ def symbolic_operator(operator: str, x: str) -> str:
 
 
 @dispatch
+def symbolic_operator(operator: str, x: str, y: str):
+    return f'{operator}({x}, {y})'.replace('\'', '')
+
+
+@dispatch
 def symbolic_operator(operator: str, x: float, y: str):
+    return symbolic_operator(operator, str(x), y)
+
+
+@dispatch
+def symbolic_operator(operator: str, x: int, y: str):
     return symbolic_operator(operator, str(x), y)
 
 
@@ -26,11 +36,6 @@ def symbolic_operator(operator: str, x: float, y: numpy.ndarray):
 @dispatch
 def symbolic_operator(operator: str, x: numpy.ndarray, y: numpy.ndarray):
     return numpy.vectorize(symbolic_operator, otypes=[object])(operator, x, y)
-
-
-@dispatch
-def symbolic_operator(operator: str, x: str, y: str):
-    return f'{operator}({x}, {y})'.replace('\'', '')
 
 
 @dispatch
@@ -86,4 +91,3 @@ def symbolic_operator(operator: str, x: numpy.ndarray):
 @dispatch
 def symbolic_operator(operator: str, x: list):
     return symbolic_operator(operator, numpy.array(x))
-
