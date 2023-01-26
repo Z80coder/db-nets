@@ -13,11 +13,20 @@ from jax.config import config
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-from neurallogic import (hard_and, hard_majority, hard_not, hard_or, hard_xor, harden,
-                         harden_layer, neural_logic_net, real_encoder)
+from neurallogic import (
+    hard_and,
+    hard_majority,
+    hard_not,
+    hard_or,
+    hard_xor,
+    harden,
+    harden_layer,
+    neural_logic_net,
+    real_encoder,
+)
 
 # Uncomment to debug NaNs
-#config.update("jax_debug_nans", True)
+# config.update("jax_debug_nans", True)
 
 """
 MNIST test.
@@ -44,15 +53,18 @@ def nln(type, x, width):
     return x
 """
 
+
 def nln(type, x):
     num_classes = 10
 
-    x = hard_or.or_layer(type)(1800, nn.initializers.uniform(1.0), dtype=jax.numpy.float16)(x)
+    x = hard_or.or_layer(type)(
+        1800, nn.initializers.uniform(1.0), dtype=jax.numpy.float16
+    )(x)
     x = hard_not.not_layer(type)(1, dtype=jax.numpy.float16)(x)
     x = x.ravel()
-    x = harden_layer.harden_layer(type)(x) 
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes))) 
-    x = x.sum(-1) 
+    x = harden_layer.harden_layer(type)(x)
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
     return x
 
 
@@ -129,13 +141,13 @@ def get_datasets():
     train_ds = tfds.as_numpy(ds_builder.as_dataset(split="train", batch_size=-1))
     test_ds = tfds.as_numpy(ds_builder.as_dataset(split="test", batch_size=-1))
     # XXXX
-    train_ds["image"] = (jnp.float32(train_ds["image"]) / 255.0)
-    test_ds["image"] = (jnp.float32(test_ds["image"]) / 255.0)
+    train_ds["image"] = jnp.float32(train_ds["image"]) / 255.0
+    test_ds["image"] = jnp.float32(test_ds["image"]) / 255.0
     # TODO: we don't need to do this even when we don't use the real encoder
     # Use grayscale information
     # Convert the floating point values in [0,1] to binary values in {0,1}
-    #train_ds["image"] = jnp.round(train_ds["image"])
-    #test_ds["image"] = jnp.round(test_ds["image"])
+    # train_ds["image"] = jnp.round(train_ds["image"])
+    # test_ds["image"] = jnp.round(test_ds["image"])
     return train_ds, test_ds
 
 
@@ -165,8 +177,8 @@ def create_train_state(net, rng, config):
     # for NLN
     mock_input = jnp.ones([1, 28 * 28])
     soft_weights = net.init(rng, mock_input)["params"]
-    #tx = optax.sgd(config.learning_rate, config.momentum)
-    #tx = optax.noisy_sgd(config.learning_rate, config.momentum)
+    # tx = optax.sgd(config.learning_rate, config.momentum)
+    # tx = optax.noisy_sgd(config.learning_rate, config.momentum)
     tx = optax.yogi(config.learning_rate)
     return train_state.TrainState.create(apply_fn=net.apply, params=soft_weights, tx=tx)
 
@@ -174,14 +186,7 @@ def create_train_state(net, rng, config):
 def train_and_evaluate(
     net, datasets, config: ml_collections.ConfigDict, workdir: str
 ) -> train_state.TrainState:
-    """Execute model training and evaluation loop.
-    Args:
-      config: Hyperparameter configuration for training and evaluation.
-      workdir: Directory where the tensorboard summaries are written to.
-    Returns:
-      The train state (which includes the `.params`).
-    """
-    train_ds, test_ds = datasets
+    train_dataset, test_dataset = datasets
     rng = jax.random.PRNGKey(0)
 
     summary_writer = tensorboard.SummaryWriter(workdir)
@@ -193,10 +198,10 @@ def train_and_evaluate(
     for epoch in range(1, config.num_epochs + 1):
         rng, input_rng = jax.random.split(rng)
         state, train_loss, train_accuracy = train_epoch(
-            state, train_ds, config.batch_size, input_rng
+            state, train_dataset, config.batch_size, input_rng
         )
         _, test_loss, test_accuracy = apply_model_with_grad(
-            state, test_ds["image"], test_ds["label"]
+            state, test_dataset["image"], test_dataset["label"]
         )
 
         print(
@@ -219,13 +224,13 @@ def get_config():
     # config for CNN
     config.learning_rate = 0.01
     # config for NLN
-    #config.learning_rate = 0.1
+    # config.learning_rate = 0.1
     config.learning_rate = 0.01
 
     # Always commit with num_epochs = 1 for short test time
     config.momentum = 0.9
     config.batch_size = 128
-    #config.num_epochs = 2
+    # config.num_epochs = 2
     config.num_epochs = 1000
     return config
 
@@ -290,6 +295,7 @@ def check_symbolic(nets, datasets, trained_state):
         symbolic_output = symbolic.apply({"params": symbolic_weights}, symbolic_input)
         print("symbolic_output", symbolic_output[0][:10000])
 
+
 @pytest.mark.skip(reason="temporarily off")
 def test_mnist():
     # Make sure tf does not allocate gpu memory.
@@ -311,7 +317,7 @@ def test_mnist():
 
     print(soft.tabulate(jax.random.PRNGKey(0), train_ds["image"][0:1]))
     # TODO: fix the size of this
-    #print(hard.tabulate(jax.random.PRNGKey(0), harden.harden(train_ds["image"][0:1])))
+    # print(hard.tabulate(jax.random.PRNGKey(0), harden.harden(train_ds["image"][0:1])))
 
     # Train and evaluate the model.
     trained_state = train_and_evaluate(
@@ -319,5 +325,5 @@ def test_mnist():
     )
 
     # Check symbolic net
-    #_, hard, symbolic = neural_logic_net.net(lambda type, x: nln(type, x))
-    #check_symbolic((soft, hard, symbolic), (train_ds, test_ds), trained_state)
+    # _, hard, symbolic = neural_logic_net.net(lambda type, x: nln(type, x))
+    # check_symbolic((soft, hard, symbolic), (train_ds, test_ds), trained_state)
