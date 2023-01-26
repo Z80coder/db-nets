@@ -28,13 +28,17 @@ def symbolic_bind(prim, *args, **params):
         'lt': symbolic_primitives.symbolic_lt,
         'ge': symbolic_primitives.symbolic_ge,
         'gt': symbolic_primitives.symbolic_gt,
-        'abs': symbolic_primitives.symbolic_abs,
         'add': symbolic_primitives.symbolic_add,
         'sub': symbolic_primitives.symbolic_sub,
         'mul': symbolic_primitives.symbolic_mul,
         'div': symbolic_primitives.symbolic_div,
+        'tan': symbolic_primitives.symbolic_tan,
         'max': symbolic_primitives.symbolic_max,
         'min': symbolic_primitives.symbolic_min,
+        'abs': symbolic_primitives.symbolic_abs,
+        'round': symbolic_primitives.symbolic_round,
+        'floor': symbolic_primitives.symbolic_floor,
+        'ceil': symbolic_primitives.symbolic_ceil,
         'and': symbolic_primitives.symbolic_and,
         'or': symbolic_primitives.symbolic_or,
         'xor': symbolic_primitives.symbolic_xor,
@@ -190,10 +194,9 @@ def eval_jaxpr(symbolic, jaxpr, consts, *args):
                         outvals = [outvals]
                     symbolic_outvals = [symbolic_outvals]
                 if not symbolic:
-                    # Check that the concrete and symbolic values are equal
-                    # print(
-                    #    f'outvals: {outvals} and symbolic_outvals: {symbolic_outvals}'
-                    # )
+                    # Always check that the symbolic binding generates the same values as the
+                    # standard jax binding in order to detect bugs early.
+                    # print(f'outvals: {outvals} and symbolic_outvals: {symbolic_outvals}')
                     assert numpy.allclose(
                         numpy.array(outvals), symbolic_outvals, equal_nan=True
                     )
