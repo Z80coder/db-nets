@@ -97,10 +97,11 @@ def make_symbolic_flax_jaxpr(flax_layer, x):
         x = numpy.asarray(x, dtype=numpy.int32)
     # Make the jaxpr that corresponds to the flax layer
     jaxpr = make_symbolic_jaxpr(flax_layer, x)
-    # Make a list of bit_weights and thresholds but only include each if they are not None
-    bit_weights_and_thresholds = [x for x in [bit_weights, thresholds] if x is not None]
-    # Replace the dummy numeric weights with the actual weights in the jaxpr
-    jaxpr.consts = bit_weights_and_thresholds
+    if hasattr(jaxpr, '_consts'):
+        # Make a list of bit_weights and thresholds but only include each if they are not None
+        bit_weights_and_thresholds = [x for x in [bit_weights, thresholds] if x is not None]
+        # Replace the dummy numeric weights with the actual weights in the jaxpr
+        jaxpr.__setattr__('_consts', bit_weights_and_thresholds)
     return jaxpr
 
 
