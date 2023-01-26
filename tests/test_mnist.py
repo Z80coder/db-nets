@@ -47,8 +47,8 @@ def nln(type, x, width):
 def nln(type, x):
     num_classes = 10
 
-    x = hard_or.or_layer(type)(1000, nn.initializers.uniform(1.0), dtype=jax.numpy.float16)(x)
-    x = hard_not.not_layer(type)(num_classes)(x)
+    x = hard_or.or_layer(type)(1800, nn.initializers.uniform(1.0), dtype=jax.numpy.float16)(x)
+    x = hard_not.not_layer(type)(1, dtype=jax.numpy.float16)(x)
     x = x.ravel()
     x = harden_layer.harden_layer(type)(x) 
     x = x.reshape((num_classes, int(x.shape[0] / num_classes))) 
@@ -128,13 +128,14 @@ def get_datasets():
     ds_builder.download_and_prepare()
     train_ds = tfds.as_numpy(ds_builder.as_dataset(split="train", batch_size=-1))
     test_ds = tfds.as_numpy(ds_builder.as_dataset(split="test", batch_size=-1))
-    train_ds["image"] = jnp.float32(train_ds["image"]) / 255.0
-    test_ds["image"] = jnp.float32(test_ds["image"]) / 255.0
+    # XXXX
+    train_ds["image"] = (jnp.float32(train_ds["image"]) / 255.0)
+    test_ds["image"] = (jnp.float32(test_ds["image"]) / 255.0)
     # TODO: we don't need to do this even when we don't use the real encoder
     # Use grayscale information
     # Convert the floating point values in [0,1] to binary values in {0,1}
-    train_ds["image"] = jnp.round(train_ds["image"])
-    test_ds["image"] = jnp.round(test_ds["image"])
+    #train_ds["image"] = jnp.round(train_ds["image"])
+    #test_ds["image"] = jnp.round(test_ds["image"])
     return train_ds, test_ds
 
 

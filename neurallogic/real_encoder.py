@@ -5,22 +5,22 @@ from flax import linen as nn
 
 from neurallogic import neural_logic_net, symbolic_generation
 
-# TODO: perhaps this can be simplified with a simple multiplication?
 # TODO: implement a soft_real_decoder that can perhaps replace the port count approach
+
 
 def soft_real_encoder(t: float, x: float) -> float:
     eps = 0.0000001
     # x should be in [0, 1]
-    t = jax.numpy.clip(t, 0.0, 1.0)
+    t = jax.numpy.clip(t, 0, 1)
     return jax.numpy.where(
         jax.numpy.isclose(t, x),
         0.5,
         # t != x
         jax.numpy.where(
             x < t,
-            (1.0 / (2.0 * t + eps)) * x,
+            (x / (2 * t + eps)),
             # x > t
-            (1.0 / (2.0 * (1.0 - t) + eps)) * (x + 1.0 - 2.0 * t)
+            (x + 1 - 2 * t) / (2 * (1 - t) + eps)
         )
     )
 
