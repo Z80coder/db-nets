@@ -325,5 +325,5 @@ def test_mnist():
     )
 
     # Check symbolic net
-    # _, hard, symbolic = neural_logic_net.net(lambda type, x: nln(type, x))
-    # check_symbolic((soft, hard, symbolic), (train_ds, test_ds), trained_state)
+    _, hard, symbolic = neural_logic_net.net(lambda type, x: nln(type, x))
+    check_symbolic((soft, hard, symbolic), (train_ds, test_ds), trained_state)
