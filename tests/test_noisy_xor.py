@@ -1,14 +1,10 @@
 from pathlib import Path
-from typing import Optional, Sequence
 
 import jax
-import jax.numpy as jnp
 import ml_collections
 import numpy
 import optax
-from flax import linen as nn
 from flax.training import train_state
-from jax import lax, random
 from tqdm import tqdm
 
 from neurallogic import (
@@ -17,6 +13,7 @@ from neurallogic import (
     hard_not,
     hard_or,
     hard_xor,
+    hard_dropout,
     harden,
     harden_layer,
     neural_logic_net,
@@ -60,71 +57,6 @@ def check_symbolic(nets, data, trained_state):
         print("symbolic_output", symbolic_output[0][:10000])
 
 
-class BinaryDropout(nn.Module):
-    """Create a dropout layer.
-
-    Note: When using :meth:`Module.apply() <flax.linen.Module.apply>`, make sure
-    to include an RNG seed named `'dropout'`. For example::
-
-      model.apply({'params': params}, inputs=inputs, train=True, rngs={'dropout': dropout_rng})`
-
-    Attributes:
-      rate: the dropout probability.  (_not_ the keep rate!)
-      broadcast_dims: dimensions that will share the same dropout mask
-      deterministic: if false the inputs are scaled by `1 / (1 - rate)` and
-        masked, whereas if true, no mask is applied and the inputs are returned
-        as is.
-      rng_collection: the rng collection name to use when requesting an rng key.
-    """
-
-    rate: float
-    broadcast_dims: Sequence[int] = ()
-    deterministic: Optional[bool] = None
-    rng_collection: str = "dropout"
-
-    @nn.compact
-    def __call__(self, inputs, deterministic: Optional[bool] = None):
-        """Applies a random dropout mask to the input.
-
-        Args:
-          inputs: the inputs that should be randomly masked.
-          Masking means setting the input bits to 0.5.
-          deterministic: if false the inputs are masked,
-          whereas if true, no mask is applied and the inputs are returned
-          as is.
-
-        Returns:
-          The masked inputs
-        """
-        deterministic = nn.merge_param(
-            "deterministic", self.deterministic, deterministic
-        )
-
-        if (self.rate == 0.0) or deterministic:
-            return inputs
-
-        # Prevent gradient NaNs in 1.0 edge-case.
-        if self.rate == 1.0:
-            return jnp.zeros_like(inputs)
-
-        keep_prob = 1.0 - self.rate
-        rng = self.make_rng(self.rng_collection)
-        broadcast_shape = list(inputs.shape)
-        for dim in self.broadcast_dims:
-            broadcast_shape[dim] = 1
-        mask = random.bernoulli(rng, p=keep_prob, shape=broadcast_shape)
-        mask = jnp.broadcast_to(mask, inputs.shape)
-        # masked_values = jnp.ones_like(inputs, dtype=float) / 2.0
-        masked_values = jnp.zeros_like(inputs, dtype=float)
-        # masked_values = jnp.ones_like(inputs, dtype=float)
-        # print(f"mask {mask.shape} {mask.dtype} {mask}")
-        # print(
-        #    f"masked_values {masked_values.shape} {masked_values.dtype} {masked_values}"
-        # )
-        # print(f"inputs {inputs.shape} {inputs.dtype} {inputs}")
-        return lax.select(mask, inputs, masked_values)
-
-
 num_features = 12
 num_classes = 2
 
@@ -144,7 +76,7 @@ def get_data():
 
 
 # 100% test accuracy
-def nln_100(type, x):
+def nln(type, x, training: bool):
     x = hard_and.and_layer(type)(20)(x)
     x = hard_not.not_layer(type)(4)(x)
     x = x.ravel()
@@ -155,12 +87,15 @@ def nln_100(type, x):
     return x
 
 
-# 100% test accuracy
-def nln(type, x, training: bool):
-    x = hard_xor.xor_layer(type)(40)(x)
-    # x = hard_not.not_layer(type)(1)(x)
-    x = BinaryDropout(rate=0.5, deterministic=not training)(x)
-    # x = x.ravel()
+def nln_experimental(type, x, training: bool):
+    not_x = jax.numpy.logical_not(x)
+    input = jax.numpy.concatenate([x, not_x], axis=0)
+    x = hard_xor.xor_layer(type)(100)(input)
+    # x = hard_not.not_layer(type)(4)(x)
+    x = x.ravel()
+    x = hard_dropout.hard_dropout(type)(
+        rate=0.5, dropout_value=0.0, deterministic=not training
+    )(x)
     ########################################################
     x = harden_layer.harden_layer(type)(x)
     x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
@@ -280,18 +215,18 @@ def train_and_evaluate(
         )
         if train_accuracy > best_train_accuracy:
             best_train_accuracy = train_accuracy
-            print(f"best_train_accuracy: {best_train_accuracy * 100:.2f}")
+            # print(f"best_train_accuracy: {best_train_accuracy * 100:.2f}")
             if test_accuracy >= best_test_accuracy:
                 best_test_accuracy = test_accuracy
-                print(f"best_test_accuracy: {best_test_accuracy * 100:.2f}")
-            else:
-                print(f"test_accuracy: {test_accuracy * 100:.2f}")
-            print("\n")
+                # print(f"best_test_accuracy: {best_test_accuracy * 100:.2f}")
+            # else:
+            # print(f"test_accuracy: {test_accuracy * 100:.2f}")
+            # print("\n")
 
-        print(
-            "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f"
-            % (epoch, train_loss, train_accuracy * 100, test_loss, test_accuracy * 100)
-        )
+        # print(
+        #    "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f"
+        #    % (epoch, train_loss, train_accuracy * 100, test_loss, test_accuracy * 100)
+        # )
 
     return state
 
@@ -320,7 +255,7 @@ def get_config():
     config.learning_rate = 0.01
     config.momentum = 0.9
     config.batch_size = 256
-    config.num_epochs = 1000
+    config.num_epochs = 500
     return config
 
 
