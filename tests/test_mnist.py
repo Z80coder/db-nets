@@ -18,6 +18,7 @@ from neurallogic import (
     hard_not,
     hard_or,
     hard_xor,
+    hard_masks,
     harden,
     harden_layer,
     neural_logic_net,
@@ -89,7 +90,7 @@ def check_symbolic(nets, datasets, trained_state, dropout_rng):
         print("symbolic_output", symbolic_output[0][:10000])
 
 
-def nln(type, x, training: bool):
+def nln_1(type, x, training: bool):
     num_classes = 10
 
     x = hard_or.or_layer(type)(
@@ -120,6 +121,23 @@ def nln_experimental(type, x, training: bool):
     x = x.ravel()
     ##############################
     x = harden_layer.harden_layer(type)(x)
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+
+def nln(type, x, training: bool):
+    input_size = 784
+    mask_layer_size = 10
+    dtype = jax.numpy.float32
+    x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype)(x)
+    x = x.reshape((int(mask_layer_size * 98), int(input_size / 98)))
+    x = hard_majority.majority_layer(type)()(x)
+    x = hard_not.not_layer(type)(20, dtype=dtype)(x)
+    x = x.ravel()
+    ##############################
+    x = harden_layer.harden_layer(type)(x)
+    num_classes = 10
     x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
     x = x.sum(-1)
     return x
@@ -299,12 +317,14 @@ def apply_hard_model_to_images(state, images, labels):
 def get_config():
     config = ml_collections.ConfigDict()
     # config for CNN: config.learning_rate = 0.01
-    config.learning_rate = 0.1
+    config.learning_rate = 0.01
     config.momentum = 0.9
     config.batch_size = 128
     config.num_epochs = 2
     return config
 
+
+# TODO: check my use of rng
 
 # @pytest.mark.skip(reason="temporarily off")
 def test_mnist():
