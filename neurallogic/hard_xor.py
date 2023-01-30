@@ -3,28 +3,13 @@ from typing import Callable
 import jax
 from flax import linen as nn
 
-from neurallogic import neural_logic_net, symbolic_generation, hard_and
+from neurallogic import neural_logic_net, symbolic_generation, hard_masks
 
 
-def soft_xor_include(w: float, x: float) -> float:
-    """
-    w > 0.5 implies the and operation is active, else inactive
-
-    Assumes x is in [0, 1]
-
-    Corresponding hard logic: b AND w
-    """
-    w = jax.numpy.clip(w, 0.0, 1.0)
-    return 1.0 - jax.numpy.maximum(1.0 - x, 1.0 - w)
-
-
-def hard_xor_include(w, x):
-    return jax.numpy.logical_and(x, w)
-
-
+# TODO: seperate out the mask from the xor operation
 def soft_xor_neuron(w, x):
     # Conditionally include input bits, according to weights
-    x = jax.vmap(soft_xor_include, 0, 0)(w, x)
+    x = jax.vmap(hard_masks.soft_mask_to_false, 0, 0)(w, x)
 
     def xor(x, y):
         return jax.numpy.minimum(jax.numpy.maximum(x, y), 1.0 - jax.numpy.minimum(x, y))
@@ -34,7 +19,7 @@ def soft_xor_neuron(w, x):
 
 
 def hard_xor_neuron(w, x):
-    x = jax.vmap(hard_xor_include, 0, 0)(w, x)
+    x = jax.vmap(hard_masks.hard_mask_to_false, 0, 0)(w, x)
     return jax.lax.reduce(x, False, jax.lax.bitwise_xor, [0])
 
 
@@ -48,8 +33,8 @@ class SoftXorLayer(nn.Module):
     layer_size: int
     weights_init: Callable = (
         nn.initializers.uniform(1.0)
-        #hard_and.initialize_near_to_zero()
-    )  
+        # hard_and.initialize_near_to_zero()
+    )
     dtype: jax.numpy.dtype = jax.numpy.float32
 
     @nn.compact
