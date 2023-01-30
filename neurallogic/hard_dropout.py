@@ -31,6 +31,7 @@ class SoftHardDropout(nn.Module):
     deterministic: Optional[bool] = None
     rng_collection: str = "dropout"
     dropout_value: float = 0.0
+    dtype: jax.numpy.dtype = jax.numpy.float32
 
     @nn.compact
     def __call__(self, inputs, deterministic: Optional[bool] = None):
@@ -64,7 +65,9 @@ class SoftHardDropout(nn.Module):
             broadcast_shape[dim] = 1
         mask = random.bernoulli(rng, p=keep_prob, shape=broadcast_shape)
         mask = jax.numpy.broadcast_to(mask, inputs.shape)
-        masked_values = jax.numpy.full_like(inputs, self.dropout_value, dtype=float)
+        masked_values = jax.numpy.full_like(
+            inputs, self.dropout_value, dtype=self.dtype
+        )
         return lax.select(mask, inputs, masked_values)
 
 

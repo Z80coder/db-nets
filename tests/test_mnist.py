@@ -23,53 +23,11 @@ from neurallogic import (
     harden_layer,
     neural_logic_net,
     real_encoder,
+    hard_dropout,
 )
 
 # Uncomment to debug NaNs
 # config.update("jax_debug_nans", True)
-
-"""
-MNIST test.
-
-Executes the training and evaluation loop for MNIST.
-The data is loaded using tensorflow_datasets.
-"""
-
-# TODO: experiment in ipython notebook with different values for these
-"""
-def nln(type, x, width):
-    #x = x.reshape((-1, 1))
-    #re = real_encoder.real_encoder_layer(type)(3)
-    #x = jax.vmap(re, 0)(x)
-    #x = x.ravel()
-    #x = hard_or.or_layer(type)(width, nn.initializers.uniform(1.0), dtype=jax.numpy.float16)(x)
-    x = hard_or.or_layer(type)(width, nn.initializers.uniform(1.0), dtype=jax.numpy.float16)(x)
-    x = hard_not.not_layer(type)(10)(x)
-    x = x.ravel()  # flatten the outputs of the not layer
-    # harden the outputs of the not layer
-    x = harden_layer.harden_layer(type)(x)
-    x = x.reshape((10, width))  # reshape to 10 ports, 100 bits each
-    x = x.sum(-1)  # sum the 100 bits in each port
-    return x
-"""
-
-
-def nln(type, x):
-    num_classes = 10
-
-    x = hard_or.or_layer(type)(
-        1800, nn.initializers.uniform(1.0), dtype=jax.numpy.float16
-    )(x)
-    x = hard_not.not_layer(type)(1, dtype=jax.numpy.float16)(x)
-    x = x.ravel()
-    x = harden_layer.harden_layer(type)(x)
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
-    x = x.sum(-1)
-    return x
-
-
-def batch_nln(type, x):
-    return jax.vmap(lambda x: nln(type, x))(x)
 
 
 class CNN(nn.Module):
@@ -90,175 +48,11 @@ class CNN(nn.Module):
         return x
 
 
-@jax.jit
-def apply_model_with_grad(state, images, labels):
-    """Computes gradients, loss and accuracy for a single batch."""
-
-    def loss_fn(params):
-        logits = state.apply_fn({"params": params}, images)
-        one_hot = jax.nn.one_hot(labels, 10)
-        loss = jnp.mean(optax.softmax_cross_entropy(logits=logits, labels=one_hot))
-        return loss, logits
-
-    grad_fn = jax.value_and_grad(loss_fn, has_aux=True)
-    (loss, logits), grads = grad_fn(state.params)
-    accuracy = jnp.mean(jnp.argmax(logits, -1) == labels)
-    return grads, loss, accuracy
-
-
-@jax.jit
-def update_model(state, grads):
-    return state.apply_gradients(grads=grads)
-
-
-def train_epoch(state, train_ds, batch_size, rng):
-    """Train for a single epoch."""
-    train_ds_size = len(train_ds["image"])
-    steps_per_epoch = train_ds_size // batch_size
-
-    perms = jax.random.permutation(rng, len(train_ds["image"]))
-    perms = perms[: steps_per_epoch * batch_size]  # skip incomplete batch
-    perms = perms.reshape((steps_per_epoch, batch_size))
-
-    epoch_loss = []
-    epoch_accuracy = []
-
-    for perm in perms:
-        batch_images = train_ds["image"][perm, ...]
-        batch_labels = train_ds["label"][perm, ...]
-        grads, loss, accuracy = apply_model_with_grad(state, batch_images, batch_labels)
-        state = update_model(state, grads)
-        epoch_loss.append(loss)
-        epoch_accuracy.append(accuracy)
-    train_loss = np.mean(epoch_loss)
-    train_accuracy = np.mean(epoch_accuracy)
-    return state, train_loss, train_accuracy
-
-
-def get_datasets():
-    ds_builder = tfds.builder("mnist")
-    ds_builder.download_and_prepare()
-    train_ds = tfds.as_numpy(ds_builder.as_dataset(split="train", batch_size=-1))
-    test_ds = tfds.as_numpy(ds_builder.as_dataset(split="test", batch_size=-1))
-    # XXXX
-    train_ds["image"] = jnp.float32(train_ds["image"]) / 255.0
-    test_ds["image"] = jnp.float32(test_ds["image"]) / 255.0
-    # TODO: we don't need to do this even when we don't use the real encoder
-    # Use grayscale information
-    # Convert the floating point values in [0,1] to binary values in {0,1}
-    # train_ds["image"] = jnp.round(train_ds["image"])
-    # test_ds["image"] = jnp.round(test_ds["image"])
-    return train_ds, test_ds
-
-
-def show_img(img, ax=None, title=None):
-    """Shows a single image."""
-    if ax is None:
-        ax = plt.gca()
-    ax.imshow(img.reshape(28, 28), cmap="gray")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    if title:
-        ax.set_title(title)
-
-
-def show_img_grid(imgs, titles):
-    """Shows a grid of images."""
-    n = int(np.ceil(len(imgs) ** 0.5))
-    _, axs = plt.subplots(n, n, figsize=(3 * n, 3 * n))
-    for i, (img, title) in enumerate(zip(imgs, titles)):
-        show_img(img, axs[i // n][i % n], title)
-
-
-def create_train_state(net, rng, config):
-    """Creates initial `TrainState`."""
-    # for CNN
-    # mock_input = jnp.ones([1, 28, 28, 1])
-    # for NLN
-    mock_input = jnp.ones([1, 28 * 28])
-    soft_weights = net.init(rng, mock_input)["params"]
-    # tx = optax.sgd(config.learning_rate, config.momentum)
-    # tx = optax.noisy_sgd(config.learning_rate, config.momentum)
-    tx = optax.yogi(config.learning_rate)
-    return train_state.TrainState.create(apply_fn=net.apply, params=soft_weights, tx=tx)
-
-
-def train_and_evaluate(
-    net, datasets, config: ml_collections.ConfigDict, workdir: str
-) -> train_state.TrainState:
-    train_dataset, test_dataset = datasets
-    rng = jax.random.PRNGKey(0)
-
-    summary_writer = tensorboard.SummaryWriter(workdir)
-    summary_writer.hparams(dict(config))
-
-    rng, init_rng = jax.random.split(rng)
-    state = create_train_state(net, init_rng, config)
-
-    for epoch in range(1, config.num_epochs + 1):
-        rng, input_rng = jax.random.split(rng)
-        state, train_loss, train_accuracy = train_epoch(
-            state, train_dataset, config.batch_size, input_rng
-        )
-        _, test_loss, test_accuracy = apply_model_with_grad(
-            state, test_dataset["image"], test_dataset["label"]
-        )
-
-        print(
-            "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f"
-            % (epoch, train_loss, train_accuracy * 100, test_loss, test_accuracy * 100)
-        )
-
-        summary_writer.scalar("train_loss", train_loss, epoch)
-        summary_writer.scalar("train_accuracy", train_accuracy, epoch)
-        summary_writer.scalar("test_loss", test_loss, epoch)
-        summary_writer.scalar("test_accuracy", test_accuracy, epoch)
-
-    return state
-
-
-def get_config():
-    """Get the default hyperparameter configuration."""
-    config = ml_collections.ConfigDict()
-
-    # config for CNN
-    config.learning_rate = 0.01
-    # config for NLN
-    # config.learning_rate = 0.1
-    config.learning_rate = 0.01
-
-    # Always commit with num_epochs = 1 for short test time
-    config.momentum = 0.9
-    config.batch_size = 128
-    # config.num_epochs = 2
-    config.num_epochs = 1000
-    return config
-
-
-def apply_hard_model(state, image, label):
-    def logits_fn(params):
-        return state.apply_fn({"params": params}, image)
-
-    logits = logits_fn(state.params)
-    if isinstance(logits, list):
-        logits = jnp.array(logits)
-    logits *= 1.0
-    accuracy = jnp.mean(jnp.argmax(logits, -1) == label)
-    return accuracy
-
-
-def apply_hard_model_to_images(state, images, labels):
-    accuracy = 0
-    for (image, label) in tqdm(zip(images, labels), total=len(images)):
-        accuracy += apply_hard_model(state, image, label)
-    return accuracy / len(images)
-
-
-def check_symbolic(nets, datasets, trained_state):
+def check_symbolic(nets, datasets, trained_state, dropout_rng):
     _, test_ds = datasets
     _, hard, symbolic = nets
     _, test_loss, test_accuracy = apply_model_with_grad(
-        trained_state, test_ds["image"], test_ds["label"]
+        trained_state, test_ds["image"], test_ds["label"], dropout_rng
     )
     print(
         "soft_net: final test_loss: %.4f, final test_accuracy: %.2f"
@@ -296,34 +90,255 @@ def check_symbolic(nets, datasets, trained_state):
         print("symbolic_output", symbolic_output[0][:10000])
 
 
-@pytest.mark.skip(reason="temporarily off")
+def nln(type, x, training: bool):
+    num_classes = 10
+
+    x = hard_or.or_layer(type)(
+        100, nn.initializers.uniform(1.0), dtype=jax.numpy.float16
+    )(x)
+    x = hard_not.not_layer(type)(1, dtype=jax.numpy.float16)(x)
+    x = x.ravel()
+    ##############################
+    x = harden_layer.harden_layer(type)(x)
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+
+def nln_experimental(type, x, training: bool):
+    num_classes = 10
+
+    x = hard_or.or_layer(type)(
+        1800, nn.initializers.uniform(1.0), dtype=jax.numpy.float16
+    )(x)
+    x = hard_dropout.hard_dropout(type)(
+        rate=0.01,
+        dropout_value=0.0,
+        deterministic=not training,
+        dtype=jax.numpy.float16,
+    )(x)
+    x = hard_not.not_layer(type)(1, dtype=jax.numpy.float16)(x)
+    x = x.ravel()
+    ##############################
+    x = harden_layer.harden_layer(type)(x)
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+
+def batch_nln(type, x, training: bool):
+    return jax.vmap(lambda x: nln(type, x, training))(x)
+
+
+def apply_model_with_grad_impl(state, images, labels, dropout_rng, training: bool):
+    dropout_train_rng = jax.random.fold_in(key=dropout_rng, data=state.step)
+
+    def loss_fn(params):
+        logits = state.apply_fn(
+            {"params": params},
+            images,
+            training=training,
+            rngs={"dropout": dropout_train_rng},
+        )
+        one_hot = jax.nn.one_hot(labels, 10)
+        loss = jnp.mean(optax.softmax_cross_entropy(logits=logits, labels=one_hot))
+        return loss, logits
+
+    grad_fn = jax.value_and_grad(loss_fn, has_aux=True)
+    (loss, logits), grads = grad_fn(state.params)
+    accuracy = jnp.mean(jnp.argmax(logits, -1) == labels)
+    return grads, loss, accuracy
+
+
+@jax.jit
+def apply_model_with_grad_and_training(state, images, labels, dropout_rng):
+    return apply_model_with_grad_impl(state, images, labels, dropout_rng, training=True)
+
+
+@jax.jit
+def apply_model_with_grad(state, images, labels, dropout_rng):
+    return apply_model_with_grad_impl(
+        state, images, labels, dropout_rng, training=False
+    )
+
+
+@jax.jit
+def update_model(state, grads):
+    return state.apply_gradients(grads=grads)
+
+
+def train_epoch(state, train_ds, batch_size, rng, dropout_rng):
+    """Train for a single epoch."""
+    train_ds_size = len(train_ds["image"])
+    steps_per_epoch = train_ds_size // batch_size
+
+    perms = jax.random.permutation(rng, len(train_ds["image"]))
+    perms = perms[: steps_per_epoch * batch_size]  # skip incomplete batch
+    perms = perms.reshape((steps_per_epoch, batch_size))
+
+    epoch_loss = []
+    epoch_accuracy = []
+
+    for perm in perms:
+        batch_images = train_ds["image"][perm, ...]
+        batch_labels = train_ds["label"][perm, ...]
+        grads, loss, accuracy = apply_model_with_grad_and_training(
+            state, batch_images, batch_labels, dropout_rng
+        )
+        state = update_model(state, grads)
+        epoch_loss.append(loss)
+        epoch_accuracy.append(accuracy)
+    train_loss = np.mean(epoch_loss)
+    train_accuracy = np.mean(epoch_accuracy)
+    return state, train_loss, train_accuracy
+
+
+def get_datasets():
+    ds_builder = tfds.builder("mnist")
+    ds_builder.download_and_prepare()
+    train_ds = tfds.as_numpy(ds_builder.as_dataset(split="train", batch_size=-1))
+    test_ds = tfds.as_numpy(ds_builder.as_dataset(split="test", batch_size=-1))
+    train_ds["image"] = jnp.float32(train_ds["image"]) / 255.0
+    test_ds["image"] = jnp.float32(test_ds["image"]) / 255.0
+    # Convert the floating point values in [0,1] to binary values in {0,1}
+    # This is essential for the hard-net to learn properly.
+    train_ds["image"] = jnp.round(train_ds["image"])
+    test_ds["image"] = jnp.round(test_ds["image"])
+    return train_ds, test_ds
+
+
+def show_img(img, ax=None, title=None):
+    """Shows a single image."""
+    if ax is None:
+        ax = plt.gca()
+    ax.imshow(img.reshape(28, 28), cmap="gray")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    if title:
+        ax.set_title(title)
+
+
+def show_img_grid(imgs, titles):
+    """Shows a grid of images."""
+    n = int(np.ceil(len(imgs) ** 0.5))
+    _, axs = plt.subplots(n, n, figsize=(3 * n, 3 * n))
+    for i, (img, title) in enumerate(zip(imgs, titles)):
+        show_img(img, axs[i // n][i % n], title)
+
+
+class TrainState(train_state.TrainState):
+    dropout_rng: jax.random.KeyArray
+
+
+def create_train_state(net, rng, dropout_rng, config):
+    # for CNN: mock_input = jnp.ones([1, 28, 28, 1])
+    mock_input = jnp.ones([1, 28 * 28])
+    soft_weights = net.init(rng, mock_input, training=False)["params"]
+    # tx = optax.sgd(config.learning_rate, config.momentum)
+    tx = optax.yogi(config.learning_rate)
+    # tx = optax.adam(config.learning_rate)
+    return TrainState.create(
+        apply_fn=net.apply, params=soft_weights, tx=tx, dropout_rng=dropout_rng
+    )
+
+
+def train_and_evaluate(
+    init_rng,
+    dropout_rng,
+    net,
+    datasets,
+    config: ml_collections.ConfigDict,
+    workdir: str,
+):
+    state = create_train_state(net, init_rng, dropout_rng, config)
+    train_dataset, test_dataset = datasets
+
+    summary_writer = tensorboard.SummaryWriter(workdir)
+    summary_writer.hparams(dict(config))
+
+    for epoch in range(1, config.num_epochs + 1):
+        init_rng, input_rng = jax.random.split(init_rng)
+        state, train_loss, train_accuracy = train_epoch(
+            state, train_dataset, config.batch_size, input_rng, dropout_rng
+        )
+        _, test_loss, test_accuracy = apply_model_with_grad(
+            state, test_dataset["image"], test_dataset["label"], dropout_rng
+        )
+
+        print(
+            "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f"
+            % (epoch, train_loss, train_accuracy * 100, test_loss, test_accuracy * 100)
+        )
+
+        summary_writer.scalar("train_loss", train_loss, epoch)
+        summary_writer.scalar("train_accuracy", train_accuracy, epoch)
+        summary_writer.scalar("test_loss", test_loss, epoch)
+        summary_writer.scalar("test_accuracy", test_accuracy, epoch)
+
+    return state
+
+
+def apply_hard_model(state, image, label):
+    def logits_fn(params):
+        return state.apply_fn({"params": params}, image)
+
+    logits = logits_fn(state.params)
+    if isinstance(logits, list):
+        logits = jnp.array(logits)
+    logits *= 1.0
+    accuracy = jnp.mean(jnp.argmax(logits, -1) == label)
+    return accuracy
+
+
+def apply_hard_model_to_images(state, images, labels):
+    accuracy = 0
+    for (image, label) in tqdm(zip(images, labels), total=len(images)):
+        accuracy += apply_hard_model(state, image, label)
+    return accuracy / len(images)
+
+
+def get_config():
+    config = ml_collections.ConfigDict()
+    # config for CNN: config.learning_rate = 0.01
+    config.learning_rate = 0.1
+    config.momentum = 0.9
+    config.batch_size = 128
+    config.num_epochs = 2
+    return config
+
+
+# @pytest.mark.skip(reason="temporarily off")
 def test_mnist():
     # Make sure tf does not allocate gpu memory.
     tf.config.experimental.set_visible_devices([], "GPU")
 
-    # Define training configuration.
-    config = get_config()
+    rng = jax.random.PRNGKey(0)
+    rng, int_rng, dropout_rng = jax.random.split(rng, 3)
 
-    # Define the model.
     # soft = CNN()
-    # width = 800
-    soft, hard, _ = neural_logic_net.net(lambda type, x: batch_nln(type, x))
+    soft, hard, symbolic = neural_logic_net.net(
+        lambda type, x, training: batch_nln(type, x, training)
+    )
 
-    # Get the MNIST dataset.
     train_ds, test_ds = get_datasets()
     # If we're using a NLN then flatten the images
     train_ds["image"] = jnp.reshape(train_ds["image"], (train_ds["image"].shape[0], -1))
     test_ds["image"] = jnp.reshape(test_ds["image"], (test_ds["image"].shape[0], -1))
 
-    print(soft.tabulate(jax.random.PRNGKey(0), train_ds["image"][0:1]))
-    # TODO: fix the size of this
-    # print(hard.tabulate(jax.random.PRNGKey(0), harden.harden(train_ds["image"][0:1])))
+    print(soft.tabulate(rng, train_ds["image"][0:1], training=False))
 
     # Train and evaluate the model.
     trained_state = train_and_evaluate(
-        soft, (train_ds, test_ds), config=config, workdir="./mnist_metrics"
+        int_rng,
+        dropout_rng,
+        soft,
+        (train_ds, test_ds),
+        config=get_config(),
+        workdir="./mnist_metrics",
     )
 
     # Check symbolic net
-    _, hard, symbolic = neural_logic_net.net(lambda type, x: nln(type, x))
-    check_symbolic((soft, hard, symbolic), (train_ds, test_ds), trained_state)
+    _, hard, symbolic = neural_logic_net.net(lambda type, x: nln(type, x, False))
+    check_symbolic(
+        (soft, hard, symbolic), (train_ds, test_ds), trained_state, dropout_rng
+    )
