@@ -1,5 +1,4 @@
 import jax
-import jax.numpy as jnp
 import numpy
 import optax
 from flax.training import train_state
@@ -38,14 +37,13 @@ def test_neuron():
     for input, weights, expected in test_data:
 
         def soft(weights, input):
-            return hard_not.hard_not_neuron(weights, input)
+            return hard_not.soft_not_neuron(weights, input)
 
         def hard(weights, input):
             return hard_not.hard_not_neuron(weights, input)
 
         utils.check_consistency(
-            soft, hard, expected, jax.numpy.array(
-                weights), jax.numpy.array(input)
+            soft, hard, expected, jax.numpy.array(weights), jax.numpy.array(input)
         )
 
 
@@ -156,8 +154,7 @@ def test_not():
     for input, expected in test_data:
         # Check that the soft function performs as expected
         assert jax.numpy.allclose(
-            soft.apply(weights, jax.numpy.array(
-                input)), jax.numpy.array(expected)
+            soft.apply(weights, jax.numpy.array(input)), jax.numpy.array(expected)
         )
 
         # Check that the hard function performs as expected
@@ -200,8 +197,7 @@ def test_train_not():
     )
     grad_fn = jax.jit(
         jax.value_and_grad(
-            lambda params, x, y: jax.numpy.mean(
-                (state.apply_fn(params, x) - y) ** 2)
+            lambda params, x, y: jax.numpy.mean((state.apply_fn(params, x) - y) ** 2)
         )
     )
     for epoch in range(1, 100):
@@ -252,8 +248,7 @@ def test_symbolic_not():
     symbolic_input = ["True", "False"]
     symbolic_weights = utils.make_symbolic(hard_weights)
     symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
-    symbolic_output = symbolic_generation.eval_symbolic_expression(
-        symbolic_output)
+    symbolic_output = symbolic_generation.eval_symbolic_expression(symbolic_output)
     # Check that the symbolic result is the same as the hard result
     assert numpy.array_equal(symbolic_output, hard_result)
 
@@ -262,38 +257,41 @@ def test_symbolic_not():
     symbolic_output = symbolic.apply(hard_weights, symbolic_input)
     # Check the form of the symbolic expression
     assert numpy.array_equal(
-        symbolic_output, ['numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), True)), 0), True))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), True)), 0), True))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), False)), 0), False))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), False)), 0), False))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), True)), 0), False))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), True)), 0), True))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), False)), 0), False))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), False)), 0), False))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), True)), 0), True))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), True)), 0), False))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), False)), 0), True))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), False)), 0), True))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), True)), 0), False))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), True)), 0), False))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), False)), 0), True))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), False)), 0), True))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), True)), 0), False))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), True)), 0), True))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), False)), 0), False))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), False)), 0), False))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), True)), 0), True))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), True)), 0), True))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), False)), 0), False))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), False)), 0), True))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), True)), 0), True))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), True)), 0), False))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), False)), 0), False))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), False)), 0), False))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), True)), 0), False))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), True)), 0), True))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), False)), 0), False))',
-                          'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), False)), 0), False))']
+        symbolic_output,
+        [
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), True)), 0), True))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), True)), 0), True))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), False)), 0), False))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), False)), 0), False))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), True)), 0), False))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), True)), 0), True))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), False)), 0), False))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), False)), 0), False))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), True)), 0), True))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), True)), 0), False))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), False)), 0), True))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), False)), 0), True))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), True)), 0), False))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), True)), 0), False))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), False)), 0), True))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), False)), 0), True))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), True)), 0), False))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), True)), 0), True))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), False)), 0), False))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), False)), 0), False))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), True)), 0), True))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), True)), 0), True))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), False)), 0), False))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), False)), 0), True))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), True)), 0), True))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), True)), 0), False))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), False)), 0), False))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), False)), 0), False))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), True)), 0), False))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), True)), 0), True))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), False)), 0), False))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), False)), 0), False))",
+        ],
     )
 
     # Compute symbolic result with symbolic inputs and symbolic weights
@@ -301,36 +299,38 @@ def test_symbolic_not():
     # Check the form of the symbolic expression
     assert numpy.array_equal(
         symbolic_output,
-        ['numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(False, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(False, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(True, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(True, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(False, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(False, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(True, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(True, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(False, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(True, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(False, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(False, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))',
-         'numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))']
+        [
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(False, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(False, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(True, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(True, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(False, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(False, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(True, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(True, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(False, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(True, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(False, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(False, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(True, 0))), 0), lax_reference.ne(True, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x1, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))",
+            "numpy.logical_not(numpy.logical_xor(lax_reference.ne(numpy.logical_not(numpy.logical_xor(lax_reference.ne(x2, 0), lax_reference.ne(False, 0))), 0), lax_reference.ne(False, 0)))",
+        ],
     )

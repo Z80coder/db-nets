@@ -1,38 +1,19 @@
-from typing import Any
+from typing import Callable
 
 import jax
 from flax import linen as nn
-from typing import Callable
+
+from neurallogic import hard_masks, neural_logic_net, symbolic_generation
 
 
-from neurallogic import neural_logic_net, symbolic_generation
-
-
-def soft_and_include(w: float, x: float) -> float:
-    """
-    w > 0.5 implies the and operation is active, else inactive
-
-    Assumes x is in [0, 1]
-
-    Corresponding hard logic: x OR ! w
-    """
-    w = jax.numpy.clip(w, 0.0, 1.0)
-    return jax.numpy.maximum(x, 1.0 - w)
-
-
-
-def hard_and_include(w, x):
-    return jax.numpy.logical_or(x, jax.numpy.logical_not(w))
-
-
-
+# TODO: seperate and operation from mask operation
 def soft_and_neuron(w, x):
-    x = jax.vmap(soft_and_include, 0, 0)(w, x)
+    x = jax.vmap(hard_masks.soft_mask_to_true, 0, 0)(w, x)
     return jax.numpy.min(x)
 
 
 def hard_and_neuron(w, x):
-    x = jax.vmap(hard_and_include, 0, 0)(w, x)
+    x = jax.vmap(hard_masks.hard_mask_to_true, 0, 0)(w, x)
     return jax.lax.reduce(x, True, jax.lax.bitwise_and, [0])
 
 
@@ -41,6 +22,7 @@ soft_and_layer = jax.vmap(soft_and_neuron, (0, None), 0)
 hard_and_layer = jax.vmap(hard_and_neuron, (0, None), 0)
 
 
+# TODO: move initialization to separate file
 def initialize_near_to_zero():
     # TODO: investigate better initialization
     def init(key, shape, dtype):
@@ -51,6 +33,7 @@ def initialize_near_to_zero():
         x = 0.5 * x - 1
         x = jax.numpy.clip(x, 0.001, 0.999)
         return x
+
     return init
 
 
@@ -62,6 +45,7 @@ class SoftAndLayer(nn.Module):
         layer_size: The number of neurons in the layer.
         weights_init: The initializer function for the weight matrix.
     """
+
     layer_size: int
     weights_init: Callable = initialize_near_to_zero()
     dtype: jax.numpy.dtype = jax.numpy.float32
@@ -69,8 +53,9 @@ class SoftAndLayer(nn.Module):
     @nn.compact
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
-        weights = self.param('bit_weights', self.weights_init,
-                             weights_shape, self.dtype)
+        weights = self.param(
+            "bit_weights", self.weights_init, weights_shape, self.dtype
+        )
         x = jax.numpy.asarray(x, self.dtype)
         return soft_and_layer(weights, x)
 
@@ -83,13 +68,15 @@ class HardAndLayer(nn.Module):
     Attributes:
         layer_size: The number of neurons in the layer.
     """
+
     layer_size: int
 
     @nn.compact
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
         weights = self.param(
-            'bit_weights', nn.initializers.constant(True), weights_shape)
+            "bit_weights", nn.initializers.constant(True), weights_shape
+        )
         return hard_and_layer(weights, x)
 
 
@@ -104,6 +91,13 @@ class SymbolicAndLayer:
 
 
 and_layer = neural_logic_net.select(
-    lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: SoftAndLayer(layer_size, weights_init, dtype),
-    lambda layer_size, weights_init=nn.initializers.constant(True), dtype=jax.numpy.float32: HardAndLayer(layer_size),
-    lambda layer_size, weights_init=nn.initializers.constant(True), dtype=jax.numpy.float32: SymbolicAndLayer(layer_size))
+    lambda layer_size, weights_init=initialize_near_to_zero(), dtype=jax.numpy.float32: SoftAndLayer(
+        layer_size, weights_init, dtype
+    ),
+    lambda layer_size, weights_init=nn.initializers.constant(
+        True
+    ), dtype=jax.numpy.float32: HardAndLayer(layer_size),
+    lambda layer_size, weights_init=nn.initializers.constant(
+        True
+    ), dtype=jax.numpy.float32: SymbolicAndLayer(layer_size),
+)

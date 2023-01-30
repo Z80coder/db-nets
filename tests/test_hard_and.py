@@ -9,22 +9,6 @@ from neurallogic import hard_and, harden, neural_logic_net, symbolic_generation
 from tests import utils
 
 
-def test_include():
-    test_data = [
-        [[1.0, 1.0], 1.0],
-        [[1.0, 0.0], 0.0],
-        [[0.0, 0.0], 1.0],
-        [[0.0, 1.0], 1.0],
-        [[1.1, 1.0], 1.0],
-        [[1.1, 0.0], 0.0],
-        [[-0.1, 0.0], 1.0],
-        [[-0.1, 1.0], 1.0]
-    ]
-    for input, expected in test_data:
-        utils.check_consistency(hard_and.soft_and_include, hard_and.hard_and_include,
-                                expected, input[0], input[1])
-
-
 def test_neuron():
     test_data = [
         [[1.0, 1.0], [1.0, 1.0], 1.0],
@@ -32,41 +16,64 @@ def test_neuron():
         [[1.0, 0.0], [0.0, 1.0], 0.0],
         [[0.0, 1.0], [1.0, 0.0], 0.0],
         [[0.0, 1.0], [0.0, 0.0], 1.0],
-        [[0.0, 1.0], [1.0, 1.0], 0.0]
+        [[0.0, 1.0], [1.0, 1.0], 0.0],
     ]
     for input, weights, expected in test_data:
+
         def soft(weights, input):
             return hard_and.soft_and_neuron(weights, input)
 
         def hard(weights, input):
             return hard_and.hard_and_neuron(weights, input)
 
-        utils.check_consistency(soft, hard, expected,
-                                jax.numpy.array(weights), jax.numpy.array(input))
+        utils.check_consistency(
+            soft, hard, expected, jax.numpy.array(weights), jax.numpy.array(input)
+        )
 
 
 def test_layer():
     test_data = [
-        [[1.0, 0.0], [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0],
-                      [0.0, 0.0]], [0.0, 0.0, 1.0, 1.0]],
-        [[1.0, 0.0], [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0],
-                      [0.0, 0.2]], [0.0, 0.0, 1.0, 0.8]],
-        [[1.0, 0.4], [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0],
-                      [0.0, 0.0]], [0.4, 0.4, 1.0, 1.0]],
-        [[0.0, 1.0], [[1.0, 1.0], [0.0, 0.8], [1.0, 0.0],
-                      [0.0, 0.0]], [0.0, 1.0, 0.0, 1.0]],
-        [[0.0, 0.0], [[1.0, 0.01], [0.0, 1.0], [
-            1.0, 0.0], [0.0, 0.0]], [0.0, 0.0, 0.0, 1.0]]
+        [
+            [1.0, 0.0],
+            [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0], [0.0, 0.0]],
+            [0.0, 0.0, 1.0, 1.0],
+        ],
+        [
+            [1.0, 0.0],
+            [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0], [0.0, 0.2]],
+            [0.0, 0.0, 1.0, 0.8],
+        ],
+        [
+            [1.0, 0.4],
+            [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0], [0.0, 0.0]],
+            [0.4, 0.4, 1.0, 1.0],
+        ],
+        [
+            [0.0, 1.0],
+            [[1.0, 1.0], [0.0, 0.8], [1.0, 0.0], [0.0, 0.0]],
+            [0.0, 1.0, 0.0, 1.0],
+        ],
+        [
+            [0.0, 0.0],
+            [[1.0, 0.01], [0.0, 1.0], [1.0, 0.0], [0.0, 0.0]],
+            [0.0, 0.0, 0.0, 1.0],
+        ],
     ]
     for input, weights, expected in test_data:
+
         def soft(weights, input):
             return hard_and.soft_and_layer(weights, input)
 
         def hard(weights, input):
             return hard_and.hard_and_layer(weights, input)
 
-        utils.check_consistency(soft, hard, jax.numpy.array(expected),
-                                jax.numpy.array(weights), jax.numpy.array(input))
+        utils.check_consistency(
+            soft,
+            hard,
+            jax.numpy.array(expected),
+            jax.numpy.array(weights),
+            jax.numpy.array(input),
+        )
 
 
 def test_and():
@@ -80,27 +87,16 @@ def test_and():
     hard_weights = harden.hard_weights(weights)
 
     test_data = [
-        [
-            [1.0, 1.0],
-            [1.0, 1.0, 1.0, 1.0]
-        ],
-        [
-            [1.0, 0.0],
-            [0.53707814, 0.13892889, 0.7197356, 0.62835324]
-        ],
-        [
-            [0.0, 1.0],
-            [0.35097015, 0.34810758, 0.04889798, 0.43687034]
-        ],
-        [
-            [0.0, 0.0],
-            [0.35097015, 0.13892889, 0.04889798, 0.43687034]
-        ]
+        [[1.0, 1.0], [1.0, 1.0, 1.0, 1.0]],
+        [[1.0, 0.0], [0.53707814, 0.13892889, 0.7197356, 0.62835324]],
+        [[0.0, 1.0], [0.35097015, 0.34810758, 0.04889798, 0.43687034]],
+        [[0.0, 0.0], [0.35097015, 0.13892889, 0.04889798, 0.43687034]],
     ]
     for input, expected in test_data:
         # Check that the soft function performs as expected
-        assert jax.numpy.allclose(soft.apply(
-            weights, jax.numpy.array(input)), jax.numpy.array(expected))
+        assert jax.numpy.allclose(
+            soft.apply(weights, jax.numpy.array(input)), jax.numpy.array(expected)
+        )
 
         # Check that the hard function performs as expected
         hard_input = harden.harden(jax.numpy.array(input))
@@ -130,17 +126,21 @@ def test_train_and():
         [1.0, 1.0, 1.0, 1.0],
         [0.0, 1.0, 1.0, 1.0],
         [1.0, 1.0, 1.0, 1.0],
-        [0.0, 1.0, 1.0, 1.0]
+        [0.0, 1.0, 1.0, 1.0],
     ]
     input = jax.numpy.array(x)
     output = jax.numpy.array(y)
 
     # Train the and layer
     tx = optax.sgd(0.1)
-    state = train_state.TrainState.create(apply_fn=jax.vmap(
-        soft.apply, in_axes=(None, 0)), params=weights, tx=tx)
-    grad_fn = jax.jit(jax.value_and_grad(lambda params, x,
-                      y: jax.numpy.mean((state.apply_fn(params, x) - y) ** 2)))
+    state = train_state.TrainState.create(
+        apply_fn=jax.vmap(soft.apply, in_axes=(None, 0)), params=weights, tx=tx
+    )
+    grad_fn = jax.jit(
+        jax.value_and_grad(
+            lambda params, x, y: jax.numpy.mean((state.apply_fn(params, x) - y) ** 2)
+        )
+    )
     for epoch in range(1, 100):
         loss, grads = grad_fn(state.params, input, output)
         state = state.apply_gradients(grads=grads)
@@ -184,27 +184,36 @@ def test_symbolic_and():
     assert numpy.array_equal(symbolic_output, hard_result)
 
     # Compute symbolic result with symbolic inputs and symbolic weights, but where the symbols can be evaluated
-    symbolic_input = ['True', 'False']
+    symbolic_input = ["True", "False"]
     symbolic_weights = utils.make_symbolic(hard_weights)
     symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
-    symbolic_output = symbolic_generation.eval_symbolic_expression(
-        symbolic_output)
+    symbolic_output = symbolic_generation.eval_symbolic_expression(symbolic_output)
     # Check that the symbolic result is the same as the hard result
     assert numpy.array_equal(symbolic_output, hard_result)
 
     # Compute symbolic result with symbolic inputs and non-symbolic weights
-    symbolic_input = ['x1', 'x2']
+    symbolic_input = ["x1", "x2"]
     symbolic_output = symbolic.apply(hard_weights, symbolic_input)
     # Check the form of the symbolic expression
-    assert numpy.array_equal(symbolic_output, ['numpy.logical_and(numpy.logical_and(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), True)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), False)), 0), False)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), False)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), True))',
-                                               'numpy.logical_and(numpy.logical_and(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), False)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), False)), 0), False)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), False)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), True))',
-                                               'numpy.logical_and(numpy.logical_and(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), True)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), False)), 0), True)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), False)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), True))',
-                                               'numpy.logical_and(numpy.logical_and(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), True)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), False)), 0), False)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), False)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), False))'])
+    assert numpy.array_equal(
+        symbolic_output,
+        [
+            "numpy.logical_and(numpy.logical_and(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), True)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), False)), 0), False)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), False)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), True))",
+            "numpy.logical_and(numpy.logical_and(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), False)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), False)), 0), False)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), False)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), True))",
+            "numpy.logical_and(numpy.logical_and(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), True)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), False)), 0), True)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), False)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), True))",
+            "numpy.logical_and(numpy.logical_and(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), True)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), False)), 0), False)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), False)), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), False)), numpy.logical_or(lax_reference.ne(x2, 0), True)), 0), False))",
+        ],
+    )
 
     # Compute symbolic result with symbolic inputs and symbolic weights
     symbolic_output = symbolic.apply(symbolic_weights, symbolic_input)
     # Check the form of the symbolic expression
-    assert numpy.array_equal(symbolic_output, ['numpy.logical_and(numpy.logical_and(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(False, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(True, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(False, 0))))',
-                                               'numpy.logical_and(numpy.logical_and(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(True, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(False, 0))))',
-                                               'numpy.logical_and(numpy.logical_and(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(False, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(True, 0)))), 0), numpy.logical_not(lax_reference.ne(False, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(False, 0))))',
-                                               'numpy.logical_and(numpy.logical_and(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(False, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(True, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0))))'])
+    assert numpy.array_equal(
+        symbolic_output,
+        [
+            "numpy.logical_and(numpy.logical_and(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(False, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(True, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(False, 0))))",
+            "numpy.logical_and(numpy.logical_and(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(True, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(False, 0))))",
+            "numpy.logical_and(numpy.logical_and(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(False, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(True, 0)))), 0), numpy.logical_not(lax_reference.ne(False, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(False, 0))))",
+            "numpy.logical_and(numpy.logical_and(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(False, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(True, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(numpy.logical_and(numpy.logical_and(True, numpy.logical_or(lax_reference.ne(x1, 0), numpy.logical_not(lax_reference.ne(True, 0)))), numpy.logical_or(lax_reference.ne(x2, 0), numpy.logical_not(lax_reference.ne(False, 0)))), 0), numpy.logical_not(lax_reference.ne(True, 0))))",
+        ],
+    )
