@@ -24,7 +24,7 @@ from tests import utils
 
 
 def check_symbolic(nets, data, trained_state):
-    x_training, y_training, x_test, y_test = get_train_and_test_data(data)
+    x_training, y_training, x_test, y_test = data
     _, hard, symbolic = nets
     _, test_loss, test_accuracy = apply_model_with_grad(trained_state, x_test, y_test)
     print(
@@ -217,13 +217,13 @@ def train_and_evaluate(
         )
         if train_accuracy > best_train_accuracy:
             best_train_accuracy = train_accuracy
-            # print(f"best_train_accuracy: {best_train_accuracy * 100:.2f}")
+            print(f"best_train_accuracy: {best_train_accuracy * 100:.2f}")
             if test_accuracy >= best_test_accuracy:
                 best_test_accuracy = test_accuracy
-            #    print(f"best_test_accuracy: {best_test_accuracy * 100:.2f}")
-            # else:
-            #    print(f"test_accuracy: {test_accuracy * 100:.2f}")
-            #    print("\n")
+                print(f"best_test_accuracy: {best_test_accuracy * 100:.2f}")
+            else:
+                print(f"test_accuracy: {test_accuracy * 100:.2f}")
+                print("\n")
 
         # print(
         #    "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f"
@@ -299,4 +299,4 @@ def test_iris():
 
     # Check symbolic net
     # _, hard, symbolic = neural_logic_net.net(lambda type, x: nln(type, x))
-    # check_symbolic((soft, hard, symbolic), (training_data, test_data), trained_state)
+    # check_symbolic((soft, hard, symbolic), (x_training, y_training, x_test, y_test), trained_state)
