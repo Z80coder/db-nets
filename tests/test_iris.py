@@ -126,13 +126,62 @@ def nln_iris(type, x, training: bool):
     return x
 
 
-def nln_binary_iris(type, x, training: bool):
+def nln_binary_iris_95_27(type, x, training: bool):
     dtype = jax.numpy.float32
-    mask_layer_size = 100
+    mask_layer_size = 90
     x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype)(x)
     x = hard_majority.majority_layer(type)()(x)
-    x = hard_not.not_layer(type)(9)(x)
     x = x.ravel()
+    ########################################################
+    x = harden_layer.harden_layer(type)(x)
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+
+def nln_binary_iris_95_6(type, x, training: bool):
+    dtype = jax.numpy.float32
+    mask_layer_size = 120
+    x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype)(x)
+    x = hard_majority.majority_layer(type)()(x)
+    x = x.ravel()
+    ########################################################
+    x = harden_layer.harden_layer(type)(x)
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+
+def nln_binary_iris_95_53(type, x, training: bool):
+    dtype = jax.numpy.float32
+    mask_layer_size = 150
+    x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype)(x)
+    x = hard_majority.majority_layer(type)()(x)
+    x = x.ravel()
+    ########################################################
+    x = harden_layer.harden_layer(type)(x)
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+
+def nln_binary_iris_95_7(type, x, training: bool):
+    dtype = jax.numpy.float32
+    mask_layer_size = 900
+    x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype)(x)
+    x = hard_majority.majority_layer(type)()(x)
+    ########################################################
+    x = harden_layer.harden_layer(type)(x)
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+
+def nln_binary_iris(type, x, training: bool):
+    dtype = jax.numpy.float32
+    mask_layer_size = 120
+    x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype)(x)
+    x = hard_majority.majority_layer(type)()(x)
     ########################################################
     x = harden_layer.harden_layer(type)(x)
     x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
@@ -244,21 +293,22 @@ def train_and_evaluate(
         )
         if train_accuracy > best_train_accuracy:
             best_train_accuracy = train_accuracy
-            print(f"eopch: {epoch}")
-            print(f"\tbest_train_accuracy: {best_train_accuracy * 100:.2f}")
+            # print(f"epoch: {epoch}")
+            # print(f"\tbest_train_accuracy: {best_train_accuracy * 100:.2f}")
             if test_accuracy >= best_test_accuracy:
                 best_test_accuracy = test_accuracy
-                print(f"\tbest_test_accuracy: {best_test_accuracy * 100:.2f}")
-            else:
-                print(f"\ttest_accuracy: {test_accuracy * 100:.2f}")
-            print("\n")
+                # print(f"\tbest_test_accuracy: {best_test_accuracy * 100:.2f}")
+            # else:
+            #    print(f"\ttest_accuracy: {test_accuracy * 100:.2f}")
+            # print("\n")
 
         # print(
         #    "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f"
         #    % (epoch, train_loss, train_accuracy * 100, test_loss, test_accuracy * 100)
         # )
 
-    return state
+    # return trained state and final test_accuracy
+    return state, test_accuracy
 
 
 def apply_hard_model(state, features, label):
@@ -285,7 +335,7 @@ def get_config():
     config.learning_rate = 0.01
     config.momentum = 0.9
     config.batch_size = 120
-    config.num_epochs = 2  # 400
+    config.num_epochs = 400
     return config
 
 
@@ -303,8 +353,6 @@ def train_test_split(features, labels, rng, test_size=0.2):
 
 
 def test_iris():
-    rng = jax.random.PRNGKey(0)
-    rng, int_rng, dropout_rng = jax.random.split(rng, 3)
     # Train net
     if binary_iris:
         features, labels = get_binary_iris_data()
@@ -317,19 +365,30 @@ def test_iris():
             lambda type, x, training: batch_nln_iris(type, x, training)
         )
 
+    rng = jax.random.PRNGKey(0)
     print(soft.tabulate(rng, features[0:1], training=False))
 
-    # Split features and labels into 80% training and 20% test
-    x_training, x_test, y_training, y_test = train_test_split(
-        features, labels, rng, test_size=0.2
-    )
+    num_experiments = 25
+    final_test_accuracies = []
+    for i in range(num_experiments):
+        # Split features and labels into 80% training and 20% test
+        rng, int_rng, dropout_rng = jax.random.split(rng, 3)
+        x_training, x_test, y_training, y_test = train_test_split(
+            features, labels, rng, test_size=0.2
+        )
+        trained_state, final_test_accuracy = train_and_evaluate(
+            int_rng,
+            dropout_rng,
+            soft,
+            (x_training, y_training, x_test, y_test),
+            get_config(),
+        )
+        final_test_accuracies.append(final_test_accuracy)
+        print(f"{i}: final test accuracy: {final_test_accuracy * 100:.2f}")
 
-    trained_state = train_and_evaluate(
-        int_rng,
-        dropout_rng,
-        soft,
-        (x_training, y_training, x_test, y_test),
-        get_config(),
+    # print mean, min, max, lowest 5%, highest 5% of final test accuracies
+    print(
+        f"mean: {numpy.mean(final_test_accuracies) * 100:.2f}, min: {numpy.min(final_test_accuracies) * 100:.2f}, max: {numpy.max(final_test_accuracies) * 100:.2f}, lowest 5%: {numpy.quantile(final_test_accuracies, 0.05) * 100:.2f}, highest 5%: {numpy.quantile(final_test_accuracies, 0.95) * 100:.2f}"
     )
 
     # Check symbolic net
