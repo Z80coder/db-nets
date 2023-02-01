@@ -59,11 +59,12 @@ def check_symbolic(nets, data, trained_state):
         print("symbolic_output", symbolic_output[0][:10000])
 
 
-num_features = 4
+binary_iris = True
+num_features = 16 if binary_iris else 4
 num_classes = 3
 
 
-def get_data():
+def get_iris_data():
     data_dir = Path(__file__).parent.parent / "tests" / "data"
     data = numpy.loadtxt(
         data_dir / "iris.data",
@@ -97,8 +98,16 @@ def get_data():
     return features, labels
 
 
+def get_binary_iris_data():
+    data_dir = Path(__file__).parent.parent / "tests" / "data"
+    data = numpy.loadtxt(data_dir / "BinaryIrisData.txt").astype(dtype=numpy.int32)
+    features = data[:, 0:num_features]  # Input features
+    labels = data[:, num_features]  # Target value
+    return features, labels
+
+
 # overfitting model: 100% training accuracy
-def nln(type, x, training: bool):
+def nln_iris(type, x, training: bool):
     input_size = x.shape[0]
     bits_per_feature = 10
     x = real_encoder.real_encoder_layer(type)(bits_per_feature)(x)
@@ -117,8 +126,26 @@ def nln(type, x, training: bool):
     return x
 
 
-def batch_nln(type, x, training: bool):
-    return jax.vmap(lambda x: nln(type, x, training))(x)
+def nln_binary_iris(type, x, training: bool):
+    dtype = jax.numpy.float32
+    mask_layer_size = 100
+    x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype)(x)
+    x = hard_majority.majority_layer(type)()(x)
+    x = hard_not.not_layer(type)(9)(x)
+    x = x.ravel()
+    ########################################################
+    x = harden_layer.harden_layer(type)(x)
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+
+def batch_nln_iris(type, x, training: bool):
+    return jax.vmap(lambda x: nln_iris(type, x, training))(x)
+
+
+def batch_nln_binary_iris(type, x, training: bool):
+    return jax.vmap(lambda x: nln_binary_iris(type, x, training))(x)
 
 
 class TrainState(train_state.TrainState):
@@ -217,13 +244,14 @@ def train_and_evaluate(
         )
         if train_accuracy > best_train_accuracy:
             best_train_accuracy = train_accuracy
-            print(f"best_train_accuracy: {best_train_accuracy * 100:.2f}")
+            print(f"eopch: {epoch}")
+            print(f"\tbest_train_accuracy: {best_train_accuracy * 100:.2f}")
             if test_accuracy >= best_test_accuracy:
                 best_test_accuracy = test_accuracy
-                print(f"best_test_accuracy: {best_test_accuracy * 100:.2f}")
+                print(f"\tbest_test_accuracy: {best_test_accuracy * 100:.2f}")
             else:
-                print(f"test_accuracy: {test_accuracy * 100:.2f}")
-                print("\n")
+                print(f"\ttest_accuracy: {test_accuracy * 100:.2f}")
+            print("\n")
 
         # print(
         #    "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f"
@@ -257,7 +285,7 @@ def get_config():
     config.learning_rate = 0.01
     config.momentum = 0.9
     config.batch_size = 120
-    config.num_epochs = 2
+    config.num_epochs = 2  # 400
     return config
 
 
@@ -278,10 +306,17 @@ def test_iris():
     rng = jax.random.PRNGKey(0)
     rng, int_rng, dropout_rng = jax.random.split(rng, 3)
     # Train net
-    soft, hard, symbolic = neural_logic_net.net(
-        lambda type, x, training: batch_nln(type, x, training)
-    )
-    features, labels = get_data()
+    if binary_iris:
+        features, labels = get_binary_iris_data()
+        soft, hard, symbolic = neural_logic_net.net(
+            lambda type, x, training: batch_nln_binary_iris(type, x, training)
+        )
+    else:
+        features, labels = get_iris_data()
+        soft, hard, symbolic = neural_logic_net.net(
+            lambda type, x, training: batch_nln_iris(type, x, training)
+        )
+
     print(soft.tabulate(rng, features[0:1], training=False))
 
     # Split features and labels into 80% training and 20% test
