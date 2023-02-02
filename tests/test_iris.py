@@ -4,21 +4,22 @@ import jax
 import ml_collections
 import numpy
 import optax
+import scipy
 from flax.training import train_state
 from tqdm import tqdm
 
 from neurallogic import (
     hard_and,
+    hard_dropout,
     hard_majority,
+    hard_masks,
     hard_not,
     hard_or,
     hard_xor,
-    hard_dropout,
-    hard_masks,
-    real_encoder,
     harden,
     harden_layer,
     neural_logic_net,
+    real_encoder,
 )
 from tests import utils
 
@@ -126,62 +127,29 @@ def nln_iris(type, x, training: bool):
     return x
 
 
-def nln_binary_iris_95_27(type, x, training: bool):
-    dtype = jax.numpy.float32
-    mask_layer_size = 90
-    x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype)(x)
-    x = hard_majority.majority_layer(type)()(x)
-    x = x.ravel()
-    ########################################################
-    x = harden_layer.harden_layer(type)(x)
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
-    x = x.sum(-1)
-    return x
+"""
+| Technique/Accuracy | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
+| ------------------ | -------------- | ------- | ------- | ------ | ------ |
+| Tsetlin            | 95.0 +/- 0.2   | 86.7    | 100.0   | 80.0   | 100.0  |
+| dB                 | 94.2 +/- 0.1   | 86.7    | 100.0   | 80.0   | 100.0  |
+| Neural network     | 93.8 +/- 0.2   | 86.7    | 100.0   | 80.0   | 100.0  |
+| SVM                | 93.6 +/- 0.3   | 86.7    | 100.0   | 76.7   | 100.0  |
+| Naive Bayes        | 91.6 +/- 0.3   | 83.3    | 96.7    | 70.0   | 100.0  |
 
+Source: https://arxiv.org/pdf/1804.01508.pdf
+"""
 
-def nln_binary_iris_95_6(type, x, training: bool):
-    dtype = jax.numpy.float32
-    mask_layer_size = 120
-    x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype)(x)
-    x = hard_majority.majority_layer(type)()(x)
-    x = x.ravel()
-    ########################################################
-    x = harden_layer.harden_layer(type)(x)
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
-    x = x.sum(-1)
-    return x
-
-
-def nln_binary_iris_95_53(type, x, training: bool):
-    dtype = jax.numpy.float32
-    mask_layer_size = 150
-    x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype)(x)
-    x = hard_majority.majority_layer(type)()(x)
-    x = x.ravel()
-    ########################################################
-    x = harden_layer.harden_layer(type)(x)
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
-    x = x.sum(-1)
-    return x
-
-
-def nln_binary_iris_95_7(type, x, training: bool):
-    dtype = jax.numpy.float32
-    mask_layer_size = 900
-    x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype)(x)
-    x = hard_majority.majority_layer(type)()(x)
-    ########################################################
-    x = harden_layer.harden_layer(type)(x)
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
-    x = x.sum(-1)
-    return x
-
-
+# mean: 94.18, sem: 0.13, min: 80.00, max: 100.00, 5%: 86.67, 95%: 100.00
 def nln_binary_iris(type, x, training: bool):
     dtype = jax.numpy.float32
-    mask_layer_size = 120
-    x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype)(x)
+    x = hard_masks.mask_to_true_layer(type)(120, dtype=dtype)(x)
     x = hard_majority.majority_layer(type)()(x)
+    x = hard_dropout.hard_dropout(type)(
+        rate=0.25,
+        dropout_value=0.0,
+        deterministic=not training,
+        dtype=dtype,
+    )(x)
     ########################################################
     x = harden_layer.harden_layer(type)(x)
     x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
@@ -302,10 +270,10 @@ def train_and_evaluate(
             #    print(f"\ttest_accuracy: {test_accuracy * 100:.2f}")
             # print("\n")
 
-        # print(
-        #    "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f"
-        #    % (epoch, train_loss, train_accuracy * 100, test_loss, test_accuracy * 100)
-        # )
+        print(
+            "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f"
+            % (epoch, train_loss, train_accuracy * 100, test_loss, test_accuracy * 100)
+        )
 
     # return trained state and final test_accuracy
     return state, test_accuracy
@@ -335,7 +303,7 @@ def get_config():
     config.learning_rate = 0.01
     config.momentum = 0.9
     config.batch_size = 120
-    config.num_epochs = 400
+    config.num_epochs = 2  # 500 for paper
     return config
 
 
@@ -368,7 +336,7 @@ def test_iris():
     rng = jax.random.PRNGKey(0)
     print(soft.tabulate(rng, features[0:1], training=False))
 
-    num_experiments = 25
+    num_experiments = 1  # 1000 for paper
     final_test_accuracies = []
     for i in range(num_experiments):
         # Split features and labels into 80% training and 20% test
@@ -385,11 +353,15 @@ def test_iris():
         )
         final_test_accuracies.append(final_test_accuracy)
         print(f"{i}: final test accuracy: {final_test_accuracy * 100:.2f}")
-
-    # print mean, min, max, lowest 5%, highest 5% of final test accuracies
-    print(
-        f"mean: {numpy.mean(final_test_accuracies) * 100:.2f}, min: {numpy.min(final_test_accuracies) * 100:.2f}, max: {numpy.max(final_test_accuracies) * 100:.2f}, lowest 5%: {numpy.quantile(final_test_accuracies, 0.05) * 100:.2f}, highest 5%: {numpy.quantile(final_test_accuracies, 0.95) * 100:.2f}"
-    )
+        # print mean, standard error of the mean, min, max, lowest 5%, highest 5% of final test accuracies
+        print(
+            f"mean: {numpy.mean(final_test_accuracies) * 100:.2f}, "
+            f"sem: {scipy.stats.sem(final_test_accuracies) * 100:.2f}, "
+            f"min: {numpy.min(final_test_accuracies) * 100:.2f}, "
+            f"max: {numpy.max(final_test_accuracies) * 100:.2f}, "
+            f"5%: {numpy.percentile(final_test_accuracies, 5) * 100:.2f}, "
+            f"95%: {numpy.percentile(final_test_accuracies, 95) * 100:.2f}"
+        )
 
     # Check symbolic net
     # _, hard, symbolic = neural_logic_net.net(lambda type, x: nln(type, x))
