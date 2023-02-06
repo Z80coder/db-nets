@@ -21,12 +21,12 @@ def net(f):
 
     class HardNet(nn.Module):
         @nn.compact
-        def __call__(self, x):
-            return f(NetType.Hard, x)
+        def __call__(self, x, **kwargs):
+            return f(NetType.Hard, x, **kwargs)
 
     class SymbolicNet(nn.Module):
         @nn.compact
-        def __call__(self, x):
-            return f(NetType.Symbolic, x)
+        def __call__(self, x, **kwargs):
+            return f(NetType.Symbolic, x, **kwargs)
 
     return SoftNet(), HardNet(), SymbolicNet()

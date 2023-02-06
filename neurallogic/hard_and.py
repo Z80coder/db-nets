@@ -23,14 +23,15 @@ hard_and_layer = jax.vmap(hard_and_neuron, (0, None), 0)
 
 
 # TODO: move initialization to separate file
-def initialize_near_to_zero():
+# TODO: simplify initialization to avoid the need to specify a guassian mean and std
+def initialize_near_to_zero(mean=-1, std=0.5):
     # TODO: investigate better initialization
     def init(key, shape, dtype):
         dtype = jax.dtypes.canonicalize_dtype(dtype)
         # Sample from standard normal distribution (zero mean, unit variance)
         x = jax.random.normal(key, shape, dtype)
         # Transform to a normal distribution with mean -1 and standard deviation 0.5
-        x = 0.5 * x - 1
+        x = std * x + mean
         x = jax.numpy.clip(x, 0.001, 0.999)
         return x
 

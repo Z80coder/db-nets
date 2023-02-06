@@ -139,6 +139,7 @@ def nln_iris(type, x, training: bool):
 Source: https://arxiv.org/pdf/1804.01508.pdf
 """
 
+
 # mean: 94.18, sem: 0.13, min: 80.00, max: 100.00, 5%: 86.67, 95%: 100.00
 def nln_binary_iris(type, x, training: bool):
     dtype = jax.numpy.float32
