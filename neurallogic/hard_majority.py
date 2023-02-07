@@ -32,6 +32,7 @@ class SoftMajorityLayer(nn.Module):
         layer_size: The number of neurons in the layer.
         weights_init: The initializer function for the weight matrix.
     """
+
     @nn.compact
     def __call__(self, x):
         return soft_majority_layer(x)
@@ -49,12 +50,22 @@ class SymbolicMajorityLayer:
 
     def __call__(self, x):
         jaxpr = symbolic_generation.make_symbolic_flax_jaxpr(
-            self.hard_majority_layer, x)
+            self.hard_majority_layer, x
+        )
         return symbolic_generation.symbolic_expression(jaxpr, x)
 
 
 majority_layer = neural_logic_net.select(
     lambda: SoftMajorityLayer(),
     lambda: HardMajorityLayer(),
-    lambda: SymbolicMajorityLayer()
+    lambda: SymbolicMajorityLayer(),
 )
+
+# TODO: construct a majority-k generalisation of the above
+# where k is the number of high-soft bits required for a majority
+# and where k is a soft-bit parameter. Requires constructing
+# a piecewise-continuous function (as per notebook).
+
+
+# TODO: construct a soft-count layer from sorting/majority approach
+# output is 1 high-soft bit that indicates the number of high-soft bits in the input

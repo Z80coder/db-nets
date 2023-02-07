@@ -89,203 +89,47 @@ def get_data():
     return training_data, test_data
 
 
-# 100% test accuracy (at some point)
-def nln_1(type, x, training: bool):
-    x = hard_and.and_layer(type)(20)(x)
-    x = hard_not.not_layer(type)(4)(x)
-    x = x.ravel()
-    ########################################################
-    x = harden_layer.harden_layer(type)(x)
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
-    x = x.sum(-1)
-    return x
+"""
+| Technique/Accuracy  | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
+| ------------------- | -------------- | ------- | ------- | ------ | ------ |
+| Tsetlin             | 99.3 +/- 0.3   | 95.9    | 100.0   | 91.6   | 100.0  |
+| dB                  | 98.0 +/- 0.4   | 93.9    | 100.0   | 70.3   | 100.0  |
+| Neural network      | 95.4 +/- 0.5   | 90.1    | 98.6    | 88.2   | 99.9   |
+| SVM                 | 58.0 +/- 0.3   | 56.4    | 59.2    | 55.4   | 66.5   |
+| Naive Bayes         | 49.8 +/- 0.2   | 48.3    | 51.0    | 41.3   | 52.7   |
+| Logistic regression | 49.8 +/- 0.3   | 47.8    | 51.1    | 41.1   | 53.1   |
 
+Source: https://arxiv.org/pdf/1804.01508.pdf
+"""
 
-# 77.83%
-def nln_2(type, x, training: bool):
-    dtype = jax.numpy.float64
-    layer_size = 64  # 64
-    x = hard_and.and_layer(type)(layer_size)(x)
-    x = hard_or.or_layer(type)(layer_size)(x)
-    x = hard_not.not_layer(type)(4)(x)
-    x = x.ravel()
-    x = jax.numpy.array([x])
-    x = hard_majority.majority_layer(type)()(x)
-    z = 1 - x
-    x = jax.numpy.concatenate([x, z], axis=0)
-    ########################################################
-    # No need to harden here, since we're using majority for 2 classes
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
-    x = x.sum(-1)
-    return x
-
-
-# 81.24
-def nln_3(type, x, training: bool):
-    y = jax.vmap(lambda x: 1 - x)(x)
-    x = jax.numpy.concatenate([x, y], axis=0)
-    dtype = jax.numpy.float64
-    layer_size = 32  # 64
-    x = hard_and.and_layer(type)(layer_size)(x)
-    x = hard_or.or_layer(type)(layer_size)(x)
-    x = hard_not.not_layer(type)(4)(x)
-    x = x.ravel()
-    x = jax.numpy.array([x])
-    x = hard_majority.majority_layer(type)()(x)
-    z = 1 - x
-    x = jax.numpy.concatenate([x, z], axis=0)
-    ########################################################
-    # No need to harden here, since we're using majority for 2 classes
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
-    x = x.sum(-1)
-    return x
-
-
-# 82.30, but lots more high 90s
-def nln_4(type, x, training: bool):
-    y = jax.vmap(lambda x: 1 - x)(x)
-    x = jax.numpy.concatenate([x, y], axis=0)
-    dtype = jax.numpy.float64
-    layer_size = 64  # 64
-    x = hard_and.and_layer(type)(layer_size)(x)
-    x = hard_or.or_layer(type)(layer_size)(x)
-    x = hard_not.not_layer(type)(8)(x)
-    x = x.ravel()
-    x = x.reshape((64, 8))
-    x = hard_majority.majority_layer(type)()(x)
-    x = x.reshape((8, 8))
-    x = hard_majority.majority_layer(type)()(x)
-    x = x.reshape((1, 8))
-    x = hard_majority.majority_layer(type)()(x)
-    z = jax.vmap(lambda x: 1 - x)(x)
-    x = jax.numpy.concatenate([x, z], axis=0)
-    ########################################################
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
-    x = x.sum(-1)
-    return x
-
-
-# 93.26
-def nln_5(type, x, training: bool):
-    y = jax.vmap(lambda x: 1 - x)(x)
-    x = jax.numpy.concatenate([x, y], axis=0)
-    dtype = jax.numpy.float64
-    layer_size = 128  # 64
-    x = hard_and.and_layer(type)(layer_size)(x)
-    x = x.reshape((16, 8))
-    x = hard_majority.majority_layer(type)()(x)
-    x = hard_not.not_layer(type)(8)(x)
-    x = x.reshape((16, 8))
-    x = hard_majority.majority_layer(type)()(x)
-    x = hard_not.not_layer(type)(2)(x)
-    x = x.reshape((8, 4))
-    x = hard_majority.majority_layer(type)()(x)
-    x = x.reshape((8, 1))
-    x = hard_majority.majority_layer(type)()(x)
-    z = jax.vmap(lambda x: 1 - x)(x)
-    x = jax.numpy.concatenate([x, z], axis=0)
-    ########################################################
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
-    x = x.sum(-1)
-    return x
-
-
-# 93.90
-def nln_6(type, x, training: bool):
-    y = jax.vmap(lambda x: 1 - x)(x)
-    x = jax.numpy.concatenate([x, y], axis=0)
-    dtype = jax.numpy.float64
-    layer_size = 128
-    x = hard_and.and_layer(type)(layer_size)(x)
-    x = hard_not.not_layer(type)(8)(x)
-    x = x.reshape((64, 16))
-    x = hard_majority.majority_layer(type)()(x)
-    x = hard_not.not_layer(type)(4)(x)
-    x = x.reshape((16, 16))
-    x = hard_majority.majority_layer(type)()(x)
-    x = hard_not.not_layer(type)(2)(x)
-    x = x.reshape((8, 4))
-    x = hard_majority.majority_layer(type)()(x)
-    x = x.reshape((8, 1))
-    x = hard_majority.majority_layer(type)()(x)
-    z = jax.vmap(lambda x: 1 - x)(x)
-    x = jax.numpy.concatenate([x, z], axis=0)
-    ########################################################
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
-    x = x.sum(-1)
-    return x
-
-
-# 94.18 with peak_value=0.05 not 0.01
-def nln_7(type, x, training: bool):
-    y = jax.vmap(lambda x: 1 - x)(x)
-    x = jax.numpy.concatenate([x, y], axis=0)
-    dtype = jax.numpy.float64
-    layer_size = 256
-    x = hard_and.and_layer(type)(layer_size)(x)
-    x = hard_not.not_layer(type)(4)(x)
-    x = x.reshape((64, 16))
-    x = hard_majority.majority_layer(type)()(x)
-    x = hard_not.not_layer(type)(4)(x)
-    x = x.reshape((16, 16))
-    x = hard_majority.majority_layer(type)()(x)
-    x = hard_not.not_layer(type)(2)(x)
-    x = x.reshape((8, 4))
-    x = hard_majority.majority_layer(type)()(x)
-    x = x.reshape((8, 1))
-    x = hard_majority.majority_layer(type)()(x)
-    z = jax.vmap(lambda x: 1 - x)(x)
-    x = jax.numpy.concatenate([x, z], axis=0)
-    ########################################################
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
-    x = x.sum(-1)
-    return x
-
-
-# mean: 95.00, sem: 0.76, min: 68.84, max: 100.00, 5%: 75.72, 95%: 100.00
-def nln_8(type, x, training: bool):
-    y = jax.vmap(lambda x: 1 - x)(x)
-    x = jax.numpy.concatenate([x, y], axis=0)
-    dtype = jax.numpy.float64
-    layer_size = 128
-    x = hard_and.and_layer(type)(layer_size)(x)
-    x = hard_not.not_layer(type)(4)(x)
-    x = x.reshape((32, 16))
-    x = hard_majority.majority_layer(type)()(x)
-    x = hard_not.not_layer(type)(4)(x)
-    x = x.reshape((16, 8))
-    x = hard_majority.majority_layer(type)()(x)
-    x = hard_not.not_layer(type)(2)(x)
-    x = x.reshape((8, 4))
-    x = hard_majority.majority_layer(type)()(x)
-    x = x.reshape((8, 1))
-    x = hard_majority.majority_layer(type)()(x)
-    z = jax.vmap(lambda x: 1 - x)(x)
-    x = jax.numpy.concatenate([x, z], axis=0)
-    ########################################################
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
-    x = x.sum(-1)
-    return x
-
-
-# mean: 95.87, sem: 0.64, min: 64.28, max: 100.00, 5%: 80.49, 95%: 100.00
+"""
+    schedule = optax.warmup_cosine_decay_schedule(
+        init_value=0.01,
+        peak_value=0.1,
+        warmup_steps=100,
+        decay_steps=config.num_epochs - 100,
+        end_value=0.05,
+    )
+    tx = optax.chain(
+        # optax.clip(1.0),
+        #optax.adamw(learning_rate=schedule),
+        optax.adam(learning_rate=schedule),
+    )
+"""
+# mean: 98.04, sem: 0.42, min: 70.32, max: 100.00, 5%: 93.90, 95%: 100.00
 def nln(type, x, training: bool):
     y = jax.vmap(lambda x: 1 - x)(x)
     x = jax.numpy.concatenate([x, y], axis=0)
-    dtype = jax.numpy.float64
-    layer_size = 128
-    x = hard_and.and_layer(type)(layer_size)(x)
-    x = hard_not.not_layer(type)(4)(x)
-    x = x.reshape((32, 16))
+    dtype = jax.numpy.float32
+    layer_size = 48
+    x = hard_and.and_layer(type)(layer_size, dtype=dtype)(x)
+    x = hard_not.not_layer(type)(8, dtype=dtype)(x)  # 48 x 8 = 384
+    x = x.reshape((32, 12))  # 32 x 12 = 384
     x = hard_majority.majority_layer(type)()(x)
-    x = hard_not.not_layer(type)(4)(x)
-    x = x.reshape((16, 8))
+    x = x.reshape((4, 8))  # 4 x 8 = 32
     x = hard_majority.majority_layer(type)()(x)
-    x = hard_not.not_layer(type)(2)(x)
-    x = x.reshape((8, 4))
-    x = hard_majority.majority_layer(type)()(x)
-    x = hard_not.not_layer(type)(1)(x)
-    x = x.reshape((8, 1))
+    # Final majority should have reasonable width
+    x = x.reshape((4, 1))  # 4 x 1 = 4
     x = hard_majority.majority_layer(type)()(x)
     z = jax.vmap(lambda x: 1 - x)(x)
     x = jax.numpy.concatenate([x, z], axis=0)
@@ -325,14 +169,15 @@ def create_train_state(net, rng, dropout_rng, config):
     """
     schedule = optax.warmup_cosine_decay_schedule(
         init_value=0.01,
-        peak_value=0.01,
+        peak_value=0.1,
         warmup_steps=100,
         decay_steps=config.num_epochs - 100,
-        end_value=0.01,
+        end_value=0.05,
     )
     tx = optax.chain(
         # optax.clip(1.0),
-        optax.adamw(learning_rate=schedule),
+        # optax.adamw(learning_rate=schedule),
+        optax.adam(learning_rate=schedule),
     )
 
     return TrainState.create(
@@ -472,7 +317,7 @@ def get_config():
     config.learning_rate = 0.01
     config.momentum = 0.9
     config.batch_size = 5000
-    config.num_epochs = 800
+    config.num_epochs = 1000
     return config
 
 
@@ -514,8 +359,8 @@ def test_noisy_xor():
         # hard_weights = harden.hard_weights(trained_state.params)
         # print(f"trained hard weights: {repr(hard_weights)}")
 
-        """
         # Check symbolic net
+        """
         _, hard, symbolic = neural_logic_net.net(
             lambda type, x, training: nln(type, x, training)
         )
