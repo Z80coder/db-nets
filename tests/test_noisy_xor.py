@@ -90,19 +90,6 @@ def get_data():
 
 
 """
-| Technique/Accuracy  | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
-| ------------------- | -------------- | ------- | ------- | ------ | ------ |
-| Tsetlin             | 99.3 +/- 0.3   | 95.9    | 100.0   | 91.6   | 100.0  |
-| dB                  | 98.0 +/- 0.4   | 93.9    | 100.0   | 70.3   | 100.0  |
-| Neural network      | 95.4 +/- 0.5   | 90.1    | 98.6    | 88.2   | 99.9   |
-| SVM                 | 58.0 +/- 0.3   | 56.4    | 59.2    | 55.4   | 66.5   |
-| Naive Bayes         | 49.8 +/- 0.2   | 48.3    | 51.0    | 41.3   | 52.7   |
-| Logistic regression | 49.8 +/- 0.3   | 47.8    | 51.1    | 41.1   | 53.1   |
-
-Source: https://arxiv.org/pdf/1804.01508.pdf
-"""
-
-"""
     schedule = optax.warmup_cosine_decay_schedule(
         init_value=0.01,
         peak_value=0.1,
@@ -116,8 +103,12 @@ Source: https://arxiv.org/pdf/1804.01508.pdf
         optax.adam(learning_rate=schedule),
     )
 """
+# with (4,1) error:
 # mean: 98.04, sem: 0.42, min: 70.32, max: 100.00, 5%: 93.90, 95%: 100.00
-def nln(type, x, training: bool):
+
+
+# mean: 82.63, sem: 1.41, min: 48.86, max: 100.00, 5%: 59.70, 95%: 100.00
+def nln_1(type, x, training: bool):
     y = jax.vmap(lambda x: 1 - x)(x)
     x = jax.numpy.concatenate([x, y], axis=0)
     dtype = jax.numpy.float32
@@ -129,11 +120,54 @@ def nln(type, x, training: bool):
     x = x.reshape((4, 8))  # 4 x 8 = 32
     x = hard_majority.majority_layer(type)()(x)
     # Final majority should have reasonable width
-    x = x.reshape((4, 1))  # 4 x 1 = 4
+    x = x.reshape((1, 4))  # 4 x 1 = 4
     x = hard_majority.majority_layer(type)()(x)
     z = jax.vmap(lambda x: 1 - x)(x)
     x = jax.numpy.concatenate([x, z], axis=0)
     ########################################################
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+
+"""
+| Technique/Accuracy  | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
+| ------------------- | -------------- | ------- | ------- | ------ | ------ |
+| Tsetlin             | 99.3 +/- 0.3   | 95.9    | 100.0   | 91.6   | 100.0  |
+| Neural network      | 95.4 +/- 0.5   | 90.1    | 98.6    | 88.2   | 99.9   |
+| dB                  | 91.1 +/- 1.2   | 48.9    | 98.3    | 48.9   | 99.2   |
+| SVM                 | 58.0 +/- 0.3   | 56.4    | 59.2    | 55.4   | 66.5   |
+| Naive Bayes         | 49.8 +/- 0.2   | 48.3    | 51.0    | 41.3   | 52.7   |
+| Logistic regression | 49.8 +/- 0.3   | 47.8    | 51.1    | 41.1   | 53.1   |
+
+Source: https://arxiv.org/pdf/1804.01508.pdf
+"""
+
+
+"""
+SGD
+config.learning_rate = 2.0
+config.momentum = 0.9
+config.batch_size = 5000
+config.num_epochs = 2000
+"""
+# mean: 91.06, sem: 1.15, min: 48.86, max: 99.16, 5%: 48.86, 95%: 98.28
+def nln(type, x, training: bool):
+    y = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, y], axis=0)
+    dtype = jax.numpy.float32
+    layer_size = 32
+    x = hard_and.and_layer(type)(layer_size, dtype=dtype)(x)
+    x = hard_or.or_layer(type)(layer_size, dtype=dtype)(x)
+    x = hard_not.not_layer(type)(64, dtype=dtype)(x)  # 32 x 64 = 2048
+    x = x.reshape((64, 32))  # 64 x 32 = 2048
+    x = hard_majority.majority_layer(type)()(x)
+    x = x.reshape((1, 64))  # 1 x 64 = 64
+    x = hard_majority.majority_layer(type)()(x)
+    z = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, z], axis=0)
+    ########################################################
+    # x = harden_layer.harden_layer(type)(x)
     x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
     x = x.sum(-1)
     return x
@@ -169,15 +203,16 @@ def create_train_state(net, rng, dropout_rng, config):
     """
     schedule = optax.warmup_cosine_decay_schedule(
         init_value=0.01,
-        peak_value=0.1,
+        peak_value=0.01,
         warmup_steps=100,
         decay_steps=config.num_epochs - 100,
-        end_value=0.05,
+        end_value=0.01,
     )
     tx = optax.chain(
         # optax.clip(1.0),
         # optax.adamw(learning_rate=schedule),
-        optax.adam(learning_rate=schedule),
+        # optax.adam(learning_rate=schedule),
+        optax.sgd(learning_rate=config.learning_rate, momentum=config.momentum),
     )
 
     return TrainState.create(
@@ -314,10 +349,10 @@ def apply_hard_model_to_data(state, features, labels):
 
 def get_config():
     config = ml_collections.ConfigDict()
-    config.learning_rate = 0.01
+    config.learning_rate = 2.0
     config.momentum = 0.9
     config.batch_size = 5000
-    config.num_epochs = 1000
+    config.num_epochs = 2000
     return config
 
 
