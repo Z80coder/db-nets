@@ -8,10 +8,30 @@ def majority_index(input_size: int) -> int:
     return (input_size - 1) // 2
 
 
-def soft_majority(x: jax.numpy.array) -> float:
+def soft_majority_1(x: jax.numpy.array) -> float:
     index = majority_index(x.shape[-1])
     sorted_x = jax.numpy.sort(x, axis=-1)
     return jax.numpy.take(sorted_x, index, axis=-1)
+
+
+def soft_majority(x: jax.numpy.array) -> float:
+    index = majority_index(x.shape[-1])
+    sorted_x = jax.numpy.sort(x, axis=-1)
+    majority_bit = jax.numpy.take(sorted_x, index, axis=-1)
+    # print(f"majority_bit: {majority_bit}")
+    margin = jax.numpy.abs(majority_bit - 0.5)
+    # print(f"margin: {margin}")
+    mean = jax.numpy.mean(x, axis=-1)
+    # print(f"mean: {mean}")
+    margin_delta = mean * margin
+    # print(f"margin_delta: {margin_delta}")
+    representative_bit = jax.numpy.where(
+        majority_bit > 0.5,
+        0.5 + margin_delta,
+        majority_bit + margin_delta,
+    )
+    # print(f"representative_bit: {representative_bit}")
+    return representative_bit
 
 
 def hard_majority(x: jax.numpy.array) -> bool:
