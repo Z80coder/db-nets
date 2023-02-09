@@ -25,7 +25,7 @@ from neurallogic import (
 )
 from tests import utils
 
-# config.update("jax_enable_x64", True)
+config.update("jax_enable_x64", True)
 
 
 def check_symbolic(nets, data, trained_state, dropout_rng):
@@ -131,20 +131,6 @@ def nln_1(type, x, training: bool):
 
 
 """
-| Technique/Accuracy  | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
-| ------------------- | -------------- | ------- | ------- | ------ | ------ |
-| Tsetlin             | 99.3 +/- 0.3   | 95.9    | 100.0   | 91.6   | 100.0  |
-| Neural network      | 95.4 +/- 0.5   | 90.1    | 98.6    | 88.2   | 99.9   |
-| dB                  | 91.1 +/- 1.2   | 48.9    | 98.3    | 48.9   | 99.2   |
-| SVM                 | 58.0 +/- 0.3   | 56.4    | 59.2    | 55.4   | 66.5   |
-| Naive Bayes         | 49.8 +/- 0.2   | 48.3    | 51.0    | 41.3   | 52.7   |
-| Logistic regression | 49.8 +/- 0.3   | 47.8    | 51.1    | 41.1   | 53.1   |
-
-Source: https://arxiv.org/pdf/1804.01508.pdf
-"""
-
-
-"""
 SGD
 config.learning_rate = 2.0
 config.momentum = 0.9
@@ -152,7 +138,7 @@ config.batch_size = 5000
 config.num_epochs = 2000
 """
 # mean: 91.06, sem: 1.15, min: 48.86, max: 99.16, 5%: 48.86, 95%: 98.28
-def nln(type, x, training: bool):
+def nln_2(type, x, training: bool):
     y = jax.vmap(lambda x: 1 - x)(x)
     x = jax.numpy.concatenate([x, y], axis=0)
     dtype = jax.numpy.float32
@@ -167,7 +153,175 @@ def nln(type, x, training: bool):
     z = jax.vmap(lambda x: 1 - x)(x)
     x = jax.numpy.concatenate([x, z], axis=0)
     ########################################################
-    # x = harden_layer.harden_layer(type)(x)
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+
+"""
+SGD
+config.learning_rate = 2.0
+config.momentum = 0.9
+config.batch_size = 5000
+config.num_epochs = 2000
+"""
+
+# mean: 91.54, sem: 0.64, min: 48.86, max: 99.58, 5%: 83.09, 95%: 97.10
+def nln_3(type, x, training: bool):
+    y = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, y], axis=0)
+
+    dtype = jax.numpy.float32
+    layer_size = 64
+    x = hard_and.and_layer(type)(layer_size, dtype=dtype)(x)
+    x = hard_or.or_layer(type)(layer_size, dtype=dtype)(x)
+    x = hard_not.not_layer(type)(16, dtype=dtype)(x)
+
+    x = x.reshape((1, layer_size * 16))
+    x = hard_majority.majority_layer(type)()(x)
+
+    z = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, z], axis=0)
+    ########################################################
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+
+"""
+SGD
+config.learning_rate = 1.0
+config.momentum = 0.9
+config.batch_size = 5000
+config.num_epochs = 2500
+"""
+
+# mean: 91.84, sem: 0.98, min: 48.86, max: 99.66, 5%: 70.30, 95%: 98.79
+def nln_4(type, x, training: bool):
+    y = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, y], axis=0)
+
+    dtype = jax.numpy.float32
+    layer_size = 32
+    x = hard_and.and_layer(type)(layer_size, dtype=dtype)(x)
+    x = hard_or.or_layer(type)(layer_size, dtype=dtype)(x)
+    x = hard_not.not_layer(type)(16, dtype=dtype)(x)
+
+    x = x.reshape((1, layer_size * 16))
+    x = hard_majority.majority_layer(type)()(x)
+
+    z = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, z], axis=0)
+    ########################################################
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+
+# mean: 89.77, sem: 1.18, min: 48.80, max: 100.00, 5%: 67.40, 95%: 99.04
+def nln_5(type, x, training: bool):
+    y = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, y], axis=0)
+
+    dtype = jax.numpy.float32
+    layer_size = 32
+    x = hard_and.and_layer(type)(layer_size, dtype=dtype)(x)
+    x = hard_or.or_layer(type)(layer_size, dtype=dtype)(x)
+    x = hard_not.not_layer(type)(8, dtype=dtype)(x)
+
+    x = x.reshape((1, layer_size * 8))
+    x = hard_majority.majority_layer(type)()(x)
+
+    z = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, z], axis=0)
+    ########################################################
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+
+# mean: 89.19, sem: 1.42, min: 48.86, max: 100.00, 5%: 51.14, 95%: 98.86
+def nln_6(type, x, training: bool):
+    y = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, y], axis=0)
+
+    dtype = jax.numpy.float32
+    layer_size = 32
+    x = hard_and.and_layer(type)(layer_size, dtype=dtype)(x)
+    x = hard_or.or_layer(type)(layer_size, dtype=dtype)(x)
+    x = hard_not.not_layer(type)(16, dtype=dtype)(x)
+
+    x = x.reshape((16, layer_size))
+    x = hard_majority.majority_layer(type)()(x)
+
+    x = hard_not.not_layer(type)(8, dtype=dtype)(x)
+    x = x.reshape((1, 16 * 8))
+    x = hard_majority.majority_layer(type)()(x)
+
+    z = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, z], axis=0)
+    ########################################################
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+
+# mean: 89.34, sem: 0.74, min: 51.16, max: 99.28, 5%: 76.88, 95%: 96.98
+def nln_7(type, x, training: bool):
+    y = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, y], axis=0)
+
+    dtype = jax.numpy.float64
+    layer_size = 40
+    x = hard_and.and_layer(type)(layer_size, dtype=dtype)(x)
+    x = hard_or.or_layer(type)(layer_size, dtype=dtype)(x)
+    x = hard_not.not_layer(type)(20, dtype=dtype)(x)
+
+    x = x.reshape((1, layer_size * 20))
+    x = hard_majority.majority_layer(type)()(x)
+
+    z = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, z], axis=0)
+    ########################################################
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+
+"""
+| Technique/Accuracy  | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
+| ------------------- | -------------- | ------- | ------- | ------ | ------ |
+| Tsetlin             | 99.3 +/- 0.3   | 95.9    | 100.0   | 91.6   | 100.0  |
+| Neural network      | 95.4 +/- 0.5   | 90.1    | 98.6    | 88.2   | 99.9   |
+| dB                  | 94.2 +/- 0.44  | 85.1    | 99.1    | 74.6   | 100.0  |
+| SVM                 | 58.0 +/- 0.3   | 56.4    | 59.2    | 55.4   | 66.5   |
+| Naive Bayes         | 49.8 +/- 0.2   | 48.3    | 51.0    | 41.3   | 52.7   |
+| Logistic regression | 49.8 +/- 0.3   | 47.8    | 51.1    | 41.1   | 53.1   |
+
+Source: https://arxiv.org/pdf/1804.01508.pdf
+"""
+
+# mean: 94.15, sem: 0.44, min: 74.62, max: 100.00, 5%: 85.08, 95%: 99.10
+# soft_majority variant
+# optax.radam(learning_rate=0.005)
+# config.batch_size = 5000
+# config.num_epochs = 3000
+def nln(type, x, training: bool):
+    y = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, y], axis=0)
+
+    dtype = jax.numpy.float64
+    layer_size = 32
+    x = hard_and.and_layer(type)(layer_size, dtype=dtype)(x)
+    x = hard_or.or_layer(type)(layer_size, dtype=dtype)(x)
+    x = hard_not.not_layer(type)(16, dtype=dtype)(x)
+
+    x = x.reshape((1, 16 * layer_size))
+    x = hard_majority.majority_layer(type)()(x)
+
+    z = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, z], axis=0)
+    ########################################################
     x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
     x = x.sum(-1)
     return x
@@ -202,17 +356,26 @@ def create_train_state(net, rng, dropout_rng, config):
     )
     """
     schedule = optax.warmup_cosine_decay_schedule(
-        init_value=0.01,
-        peak_value=0.01,
-        warmup_steps=100,
-        decay_steps=config.num_epochs - 100,
+        init_value=0.1,
+        peak_value=2,
+        warmup_steps=0,
+        decay_steps=500,
         end_value=0.01,
     )
     tx = optax.chain(
         # optax.clip(1.0),
-        # optax.adamw(learning_rate=schedule),
-        # optax.adam(learning_rate=schedule),
-        optax.sgd(learning_rate=config.learning_rate, momentum=config.momentum),
+        # optax.adamw(learning_rate=0.01, weight_decay=0.0001),
+        # optax.adam(learning_rate=config.learning_rate),
+        # optax.adabelief(learning_rate=0.01),
+        # optax.adamax(learning_rate=0.01),
+        # optax.amsgrad(learning_rate=0.002),
+        # optax.sm3(learning_rate=0.1),
+        # optax.novograd(learning_rate=0.001),
+        # optax.optimistic_gradient_descent(learning_rate=1),
+        optax.radam(learning_rate=0.005),  # 0.02
+        # optax.sgd(
+        #    learning_rate=config.learning_rate, momentum=config.momentum, nesterov=False
+        # ),
     )
 
     return TrainState.create(
@@ -225,6 +388,15 @@ def update_model(state, grads):
     return state.apply_gradients(grads=grads)
 
 
+def my_hinge_loss(predictor_outputs, targets):
+    loss = jax.numpy.abs(predictor_outputs - targets)
+
+    def hinge(x):
+        return jax.numpy.where(x >= 0.4, x * x, 0)
+
+    return jax.vmap(hinge)(loss)
+
+
 def apply_model_with_grad_impl(state, features, labels, dropout_rng, training: bool):
     dropout_train_rng = jax.random.fold_in(key=dropout_rng, data=state.step)
 
@@ -235,9 +407,11 @@ def apply_model_with_grad_impl(state, features, labels, dropout_rng, training: b
             training=training,
             rngs={"dropout": dropout_train_rng},
         )
-        one_hot = jax.nn.one_hot(labels, num_classes)
+        one_hot = jax.nn.one_hot(labels, num_classes, dtype=jax.numpy.int32)
         loss = jax.numpy.mean(
             optax.softmax_cross_entropy(logits=logits, labels=one_hot)
+            # optax.l2_loss(predictions=logits, targets=one_hot)
+            # my_hinge_loss(logits, one_hot)
         )
         return loss, logits
 
@@ -349,10 +523,10 @@ def apply_hard_model_to_data(state, features, labels):
 
 def get_config():
     config = ml_collections.ConfigDict()
-    config.learning_rate = 2.0
+    config.learning_rate = 0.001
     config.momentum = 0.9
     config.batch_size = 5000
-    config.num_epochs = 2000
+    config.num_epochs = 3000
     return config
 
 
@@ -395,7 +569,6 @@ def test_noisy_xor():
         # print(f"trained hard weights: {repr(hard_weights)}")
 
         # Check symbolic net
-        """
         _, hard, symbolic = neural_logic_net.net(
             lambda type, x, training: nln(type, x, training)
         )
@@ -405,4 +578,3 @@ def test_noisy_xor():
             trained_state,
             dropout_rng,
         )
-        """
