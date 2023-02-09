@@ -8,7 +8,7 @@ def majority_index(input_size: int) -> int:
     return (input_size - 1) // 2
 
 
-def soft_majority_1(x: jax.numpy.array) -> float:
+def soft_majority_deprecated(x: jax.numpy.array) -> float:
     index = majority_index(x.shape[-1])
     sorted_x = jax.numpy.sort(x, axis=-1)
     return jax.numpy.take(sorted_x, index, axis=-1)
