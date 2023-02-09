@@ -3,7 +3,7 @@ from typing import Callable
 import jax
 from flax import linen as nn
 
-from neurallogic import neural_logic_net, symbolic_generation
+from neurallogic import neural_logic_net, symbolic_generation, hard_not
 
 
 def soft_mask_to_true(w: float, x: float) -> float:
@@ -16,6 +16,14 @@ def soft_mask_to_true(w: float, x: float) -> float:
     """
     w = jax.numpy.clip(w, 0.0, 1.0)
     return jax.numpy.maximum(x, 1.0 - w)
+
+
+def soft_mask_to_true_alt(w: float, b: float) -> float:
+    return jax.numpy.where(
+        w > 0.5,
+        jax.numpy.where(b > 0.5, b, (2 * w - 1) * b + 1 - w),
+        jax.numpy.where(b > 0.5, -2 * w * (1 - b) + 1, 1 - w),
+    )
 
 
 def hard_mask_to_true(w, x):
@@ -42,6 +50,11 @@ def soft_mask_to_false(w: float, x: float) -> float:
     """
     w = jax.numpy.clip(w, 0.0, 1.0)
     return 1.0 - jax.numpy.maximum(1.0 - x, 1.0 - w)
+
+
+# 1 - DifferentiableHardAND[1-b, w]
+def soft_mask_to_false_alt(w: float, b: float) -> float:
+    return 1 - soft_mask_to_true(1 - b, w)
 
 
 def hard_mask_to_false(w, x):
