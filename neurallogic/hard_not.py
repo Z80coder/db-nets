@@ -5,6 +5,10 @@ from flax import linen as nn
 
 from neurallogic import neural_logic_net, symbolic_generation
 
+# TODO: replace hard-clip in layers with this
+def logistic_clip(x):
+    return jax.scipy.special.expit(3 * (2 * x - 1))
+
 
 def soft_not(w: float, x: float) -> float:
     """
@@ -40,7 +44,9 @@ class SoftNotLayer(nn.Module):
     @nn.compact
     def __call__(self, x):
         weights_shape = (self.layer_size, jax.numpy.shape(x)[-1])
-        weights = self.param("bit_weights", self.weights_init, weights_shape, self.dtype)
+        weights = self.param(
+            "bit_weights", self.weights_init, weights_shape, self.dtype
+        )
         x = jax.numpy.asarray(x, self.dtype)
         return soft_not_layer(weights, x)
 
@@ -67,7 +73,13 @@ class SymbolicNotLayer:
 
 
 not_layer = neural_logic_net.select(
-    lambda layer_size, weights_init=nn.initializers.uniform(1.0), dtype=jax.numpy.float32: SoftNotLayer(layer_size, weights_init, dtype),
-    lambda layer_size, weights_init=nn.initializers.uniform(1.0), dtype=jax.numpy.float32: HardNotLayer(layer_size),
-    lambda layer_size, weights_init=nn.initializers.uniform(1.0), dtype=jax.numpy.float32: SymbolicNotLayer(layer_size),
+    lambda layer_size, weights_init=nn.initializers.uniform(
+        1.0
+    ), dtype=jax.numpy.float32: SoftNotLayer(layer_size, weights_init, dtype),
+    lambda layer_size, weights_init=nn.initializers.uniform(
+        1.0
+    ), dtype=jax.numpy.float32: HardNotLayer(layer_size),
+    lambda layer_size, weights_init=nn.initializers.uniform(
+        1.0
+    ), dtype=jax.numpy.float32: SymbolicNotLayer(layer_size),
 )
