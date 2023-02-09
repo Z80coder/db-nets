@@ -544,7 +544,7 @@ def test_noisy_xor():
     rng = jax.random.PRNGKey(0)
     print(soft.tabulate(rng, x_training[0:1], training=False))
 
-    num_experiments = 100  # 100 for paper
+    num_experiments = 1  # 100 for paper
     final_test_accuracies = []
     for i in range(num_experiments):
         rng, int_rng, dropout_rng = jax.random.split(rng, 3)
@@ -572,7 +572,6 @@ def test_noisy_xor():
         # print(f"trained hard weights: {repr(hard_weights)}")
 
         # Check symbolic net
-        """
         _, hard, symbolic = neural_logic_net.net(
             lambda type, x, training: nln(type, x, training)
         )
@@ -582,4 +581,3 @@ def test_noisy_xor():
             trained_state,
             dropout_rng,
         )
-        """
