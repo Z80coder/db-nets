@@ -118,37 +118,37 @@ def test_soft_and_hard_majority_equivalence():
 
 
 def test_soft_majority_layer():
-    assert numpy.all(
-        hard_majority.soft_majority_layer(numpy.array([[0.0, 1.0], [1.0, 0.0]]))
-        == numpy.array([0.25, 0.25])
+    assert numpy.allclose(
+        hard_majority.soft_majority_layer(numpy.array([[0.0, 1.0], [1.0, 0.0]])),
+        numpy.array([0.25, 0.25]),
     )
-    assert numpy.all(
+    assert numpy.allclose(
         hard_majority.soft_majority_layer(
             numpy.array([[0.0, 1.0, 1.0], [1.0, 0.0, 0.0]])
-        )
-        == numpy.array([0.8333334, 0.16666667])
+        ),
+        numpy.array([0.8333334, 0.16666667]),
     )
-    assert numpy.all(
+    assert numpy.allclose(
         hard_majority.soft_majority_layer(
             numpy.array([[1.0, 0.0, 1.0, 0.0], [1.0, 0.0, 1.0, 1.0]])
-        )
-        == numpy.array([0.25, 0.875])
+        ),
+        numpy.array([0.25, 0.875]),
     )
-    assert numpy.all(
+    assert numpy.allclose(
         hard_majority.soft_majority_layer(
             numpy.array([[0.0, 1.0, 1.0, 0.0, 0.0], [1.0, 1.0, 0.0, 1.0, 1.0]])
-        )
-        == numpy.array([0.2, 0.9])
+        ),
+        numpy.array([0.2, 0.9]),
     )
-    assert numpy.all(
+    assert numpy.allclose(
         hard_majority.soft_majority_layer(
             numpy.array(
                 [[0.0, 1.0, 0.0, 1.0, 0.0, 1.0], [1.0, 1.0, 1.0, 1.0, 1.0, 0.0]]
             )
-        )
-        == numpy.array([0.25, 0.9166667])
+        ),
+        numpy.array([0.25, 0.9166667]),
     )
-    assert numpy.all(
+    assert numpy.allclose(
         hard_majority.soft_majority_layer(
             numpy.array(
                 [
@@ -156,8 +156,8 @@ def test_soft_majority_layer():
                     [1.0, 0.9, 0.8, 0.45, 0.48, 0.51, 0.52],
                 ]
             )
-        )
-        == numpy.array([0.15714286, 0.51331425])
+        ),
+        numpy.array([0.15714286, 0.51331425]),
     )
 
 
