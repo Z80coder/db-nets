@@ -5,10 +5,6 @@ from flax import linen as nn
 
 from neurallogic import neural_logic_net, symbolic_generation
 
-# TODO: replace hard-clip in layers with this
-def logistic_clip(x):
-    return jax.scipy.special.expit(3 * (2 * x - 1))
-
 
 def soft_not(w: float, x: float) -> float:
     """
