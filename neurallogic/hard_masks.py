@@ -6,7 +6,7 @@ from flax import linen as nn
 from neurallogic import neural_logic_net, symbolic_generation, hard_and, hard_or, initialization
 
 
-def soft_mask_to_true(w: float, x: float):
+def soft_mask_to_true_deprecated(w: float, x: float):
     """
     w > 0.5 implies the mask operation is inactive, else active
 
@@ -17,7 +17,7 @@ def soft_mask_to_true(w: float, x: float):
     w = jax.numpy.clip(w, 0.0, 1.0)
     return jax.numpy.maximum(x, 1.0 - w)
 
-def soft_mask_to_true_deprecated(w: float, x: float) -> float:
+def soft_mask_to_true(w: float, x: float) -> float:
     w = jax.numpy.clip(w, 0.0, 1.0)
     return hard_or.soft_or(x, 1.0 - w)
 
@@ -37,7 +37,7 @@ soft_mask_to_true_layer = jax.vmap(soft_mask_to_true_neuron, (0, None), 0)
 hard_mask_to_true_layer = jax.vmap(hard_mask_to_true_neuron, (0, None), 0)
 
 
-def soft_mask_to_false(w: float, x: float):
+def soft_mask_to_false_deprecated(w: float, x: float):
     """
     w > 0.5 implies the mask is inactive, else active
 
@@ -49,7 +49,7 @@ def soft_mask_to_false(w: float, x: float):
     # TODO: what is this madness?
     return 1.0 - jax.numpy.maximum(1.0 - x, 1.0 - w)
 
-def soft_mask_to_false_deprecated(w: float, x: float) -> float:
+def soft_mask_to_false(w: float, x: float) -> float:
     w = jax.numpy.clip(w, 0.0, 1.0)
     return hard_and.soft_and(x, w)
 

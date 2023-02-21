@@ -293,7 +293,6 @@ def nln_7(type, x, training: bool):
     return x
 
 
-
 # mean: 94.15, sem: 0.44, min: 74.62, max: 100.00, 5%: 85.08, 95%: 99.10
 # soft_majority variant
 # optax.radam(learning_rate=0.005)
@@ -323,7 +322,6 @@ def nln_8(type, x, training: bool):
     return x
 
 
-
 # mean: 94.51, sem: 0.37, min: 70.82, max: 100.00, 5%: 89.24, 95%: 98.15
 def nln_9(type, x, training: bool):
     y = jax.vmap(lambda x: 1 - x)(x)
@@ -346,11 +344,41 @@ def nln_9(type, x, training: bool):
     return x
 
 
+
+# mean: 96.52, sem: 0.23, min: 87.86, max: 100.00, 5%: 93.16, 95%: 99.51
+def nln_10(type, x, training: bool):
+    y = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, y], axis=0)
+
+    dtype = jax.numpy.float64
+    layer_size = 32
+    x = hard_and.and_layer(type)(
+        layer_size,
+        dtype=dtype,
+        weights_init=initialization.initialize_bernoulli(0.01, 0.1, 0.51),
+    )(x)
+    x = hard_or.or_layer(type)(
+        layer_size,
+        dtype=dtype,
+        weights_init=initialization.initialize_bernoulli(0.99, 0.49, 0.9),
+    )(x)
+    x = hard_not.not_layer(type)(16, dtype=dtype)(x)
+
+    x = x.reshape((1, 16 * layer_size))
+    x = hard_majority.majority_layer(type)()(x)
+
+    z = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, z], axis=0)
+    ########################################################
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
 """
 | Technique/Accuracy  | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
 | ------------------- | -------------- | ------- | ------- | ------ | ------ |
 | Tsetlin             | 99.3 +/- 0.3   | 95.9    | 100.0   | 91.6   | 100.0  |
-| dB                  | 96.5 +/- 0.2   | 93.2    | 99.5    | 87.9   | 100.0  |
+| dB                  | 97.1 +/- 0.2   | 93.9    | 99.6    | 92.2   | 100.0  |
 | Neural network      | 95.4 +/- 0.5   | 90.1    | 98.6    | 88.2   | 99.9   |
 | SVM                 | 58.0 +/- 0.3   | 56.4    | 59.2    | 55.4   | 66.5   |
 | Naive Bayes         | 49.8 +/- 0.2   | 48.3    | 51.0    | 41.3   | 52.7   |
@@ -358,8 +386,7 @@ def nln_9(type, x, training: bool):
 
 Source: https://arxiv.org/pdf/1804.01508.pdf
 """
-
-# mean: 96.52, sem: 0.23, min: 87.86, max: 100.00, 5%: 93.16, 95%: 99.51
+# mean: 97.12, sem: 0.18, min: 92.18, max: 100.00, 5%: 93.90, 95%: 99.58
 def nln(type, x, training: bool):
     y = jax.vmap(lambda x: 1 - x)(x)
     x = jax.numpy.concatenate([x, y], axis=0)
@@ -588,7 +615,7 @@ def get_config():
     config.learning_rate = 0.001
     config.momentum = 0.9
     config.batch_size = 5000
-    config.num_epochs = 1000
+    config.num_epochs = 2000
     return config
 
 
