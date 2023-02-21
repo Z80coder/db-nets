@@ -3,10 +3,10 @@ from typing import Callable
 import jax
 from flax import linen as nn
 
-from neurallogic import neural_logic_net, symbolic_generation, hard_and, hard_or
+from neurallogic import neural_logic_net, symbolic_generation, hard_and, hard_or, initialization
 
 
-def soft_mask_to_true(w: float, x: float) -> float:
+def soft_mask_to_true(w: float, x: float):
     """
     w > 0.5 implies the mask operation is inactive, else active
 
@@ -37,7 +37,7 @@ soft_mask_to_true_layer = jax.vmap(soft_mask_to_true_neuron, (0, None), 0)
 hard_mask_to_true_layer = jax.vmap(hard_mask_to_true_neuron, (0, None), 0)
 
 
-def soft_mask_to_false(w: float, x: float) -> float:
+def soft_mask_to_false(w: float, x: float):
     """
     w > 0.5 implies the mask is inactive, else active
 

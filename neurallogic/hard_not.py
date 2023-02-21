@@ -3,10 +3,10 @@ from typing import Callable
 import jax
 from flax import linen as nn
 
-from neurallogic import neural_logic_net, symbolic_generation, hard_and, hard_or
+from neurallogic import neural_logic_net, symbolic_generation, hard_and, hard_or, initialization
 
 
-def soft_not(w: float, x: float) -> float:
+def soft_not(w, x):
     """
     w > 0.5 implies the not operation is inactive, else active
 
@@ -23,7 +23,7 @@ def soft_not_deprecated(w: float, x: float) -> float:
     return hard_or.soft_or(hard_and.soft_and(w, x), hard_and.soft_and(1.0 - w, 1.0 - x))
 
 
-def hard_not(w: bool, x: bool) -> bool:
+def hard_not(w: bool, x: bool):
     return jax.numpy.logical_not(jax.numpy.logical_xor(x, w))
 
 
@@ -36,17 +36,10 @@ soft_not_layer = jax.vmap(soft_not_neuron, (0, None), 0)
 
 hard_not_layer = jax.vmap(hard_not_neuron, (0, None), 0)
 
-def initialize_uniform_range(lower=0, upper=1):
-    def init(key, shape, dtype):
-        dtype = jax.dtypes.canonicalize_dtype(dtype)
-        x = jax.random.uniform(key, shape, dtype, lower, upper)
-        return x
-
-    return init
 
 class SoftNotLayer(nn.Module):
     layer_size: int
-    weights_init: Callable = initialize_uniform_range(0.49, 0.51)
+    weights_init: Callable = initialization.initialize_uniform_range(0.49, 0.51)
     dtype: jax.numpy.dtype = jax.numpy.float32
 
     @nn.compact
@@ -81,7 +74,7 @@ class SymbolicNotLayer:
 
 
 not_layer = neural_logic_net.select(
-    lambda layer_size, weights_init=initialize_uniform_range(0.49, 0.51), dtype=jax.numpy.float32: SoftNotLayer(layer_size, weights_init, dtype),
-    lambda layer_size, weights_init=initialize_uniform_range(0.49, 0.51), dtype=jax.numpy.float32: HardNotLayer(layer_size),
-    lambda layer_size, weights_init=initialize_uniform_range(0.49, 0.51), dtype=jax.numpy.float32: SymbolicNotLayer(layer_size),
+    lambda layer_size, weights_init=initialization.initialize_uniform_range(0.49, 0.51), dtype=jax.numpy.float32: SoftNotLayer(layer_size, weights_init, dtype),
+    lambda layer_size, weights_init=initialization.initialize_uniform_range(0.49, 0.51), dtype=jax.numpy.float32: HardNotLayer(layer_size),
+    lambda layer_size, weights_init=initialization.initialize_uniform_range(0.49, 0.51), dtype=jax.numpy.float32: SymbolicNotLayer(layer_size),
 )

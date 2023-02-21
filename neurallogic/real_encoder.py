@@ -8,7 +8,7 @@ from neurallogic import neural_logic_net, symbolic_generation
 # TODO: implement a soft_real_decoder that can perhaps replace the port count approach
 
 
-def soft_real_encoder(t: float, x: float) -> float:
+def soft_real_encoder(t: float, x: float):
     eps = 0.0000001
     # x should be in [0, 1]
     t = jax.numpy.clip(t, 0, 1)
@@ -25,7 +25,7 @@ def soft_real_encoder(t: float, x: float) -> float:
     )
 
 
-def hard_real_encoder(t: float, x: float) -> bool:
+def hard_real_encoder(t, x):
     # t and x must be floats
     return jax.numpy.where(soft_real_encoder(t, x) > 0.5, True, False)
 

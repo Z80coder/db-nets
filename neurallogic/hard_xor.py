@@ -34,7 +34,6 @@ class SoftXorLayer(nn.Module):
     layer_size: int
     weights_init: Callable = (
         nn.initializers.uniform(1.0)
-        # hard_and.initialize_near_to_zero()
     )
     dtype: jax.numpy.dtype = jax.numpy.float32
 

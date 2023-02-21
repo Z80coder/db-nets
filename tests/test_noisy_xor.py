@@ -22,6 +22,7 @@ from neurallogic import (
     harden,
     harden_layer,
     neural_logic_net,
+    initialization,
 )
 from tests import utils
 
@@ -137,6 +138,8 @@ config.momentum = 0.9
 config.batch_size = 5000
 config.num_epochs = 2000
 """
+
+
 # mean: 91.06, sem: 1.15, min: 48.86, max: 99.16, 5%: 48.86, 95%: 98.28
 def nln_2(type, x, training: bool):
     y = jax.vmap(lambda x: 1 - x)(x)
@@ -165,6 +168,7 @@ config.momentum = 0.9
 config.batch_size = 5000
 config.num_epochs = 2000
 """
+
 
 # mean: 91.54, sem: 0.64, min: 48.86, max: 99.58, 5%: 83.09, 95%: 97.10
 def nln_3(type, x, training: bool):
@@ -195,6 +199,7 @@ config.momentum = 0.9
 config.batch_size = 5000
 config.num_epochs = 2500
 """
+
 
 # mean: 91.84, sem: 0.98, min: 48.86, max: 99.66, 5%: 70.30, 95%: 98.79
 def nln_4(type, x, training: bool):
@@ -288,18 +293,6 @@ def nln_7(type, x, training: bool):
     return x
 
 
-"""
-| Technique/Accuracy  | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
-| ------------------- | -------------- | ------- | ------- | ------ | ------ |
-| Tsetlin             | 99.3 +/- 0.3   | 95.9    | 100.0   | 91.6   | 100.0  |
-| Neural network      | 95.4 +/- 0.5   | 90.1    | 98.6    | 88.2   | 99.9   |
-| dB                  | 94.2 +/- 0.44  | 85.1    | 99.1    | 74.6   | 100.0  |
-| SVM                 | 58.0 +/- 0.3   | 56.4    | 59.2    | 55.4   | 66.5   |
-| Naive Bayes         | 49.8 +/- 0.2   | 48.3    | 51.0    | 41.3   | 52.7   |
-| Logistic regression | 49.8 +/- 0.3   | 47.8    | 51.1    | 41.1   | 53.1   |
-
-Source: https://arxiv.org/pdf/1804.01508.pdf
-"""
 
 # mean: 94.15, sem: 0.44, min: 74.62, max: 100.00, 5%: 85.08, 95%: 99.10
 # soft_majority variant
@@ -329,20 +322,10 @@ def nln_8(type, x, training: bool):
     x = x.sum(-1)
     return x
 
-"""
-| Technique/Accuracy  | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
-| ------------------- | -------------- | ------- | ------- | ------ | ------ |
-| Tsetlin             | 99.3 +/- 0.3   | 95.9    | 100.0   | 91.6   | 100.0  |
-| Neural network      | 95.4 +/- 0.5   | 90.1    | 98.6    | 88.2   | 99.9   |
-| dB                  | 94.5 +/- 0.4   | 89.2    | 98.2    | 70.8   | 100.0  |
-| SVM                 | 58.0 +/- 0.3   | 56.4    | 59.2    | 55.4   | 66.5   |
-| Naive Bayes         | 49.8 +/- 0.2   | 48.3    | 51.0    | 41.3   | 52.7   |
-| Logistic regression | 49.8 +/- 0.3   | 47.8    | 51.1    | 41.1   | 53.1   |
 
-Source: https://arxiv.org/pdf/1804.01508.pdf
-"""
+
 # mean: 94.51, sem: 0.37, min: 70.82, max: 100.00, 5%: 89.24, 95%: 98.15
-def nln(type, x, training: bool):
+def nln_9(type, x, training: bool):
     y = jax.vmap(lambda x: 1 - x)(x)
     x = jax.numpy.concatenate([x, y], axis=0)
 
@@ -361,6 +344,50 @@ def nln(type, x, training: bool):
     x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
     x = x.sum(-1)
     return x
+
+
+"""
+| Technique/Accuracy  | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
+| ------------------- | -------------- | ------- | ------- | ------ | ------ |
+| Tsetlin             | 99.3 +/- 0.3   | 95.9    | 100.0   | 91.6   | 100.0  |
+| dB                  | 96.5 +/- 0.2   | 93.2    | 99.5    | 87.9   | 100.0  |
+| Neural network      | 95.4 +/- 0.5   | 90.1    | 98.6    | 88.2   | 99.9   |
+| SVM                 | 58.0 +/- 0.3   | 56.4    | 59.2    | 55.4   | 66.5   |
+| Naive Bayes         | 49.8 +/- 0.2   | 48.3    | 51.0    | 41.3   | 52.7   |
+| Logistic regression | 49.8 +/- 0.3   | 47.8    | 51.1    | 41.1   | 53.1   |
+
+Source: https://arxiv.org/pdf/1804.01508.pdf
+"""
+
+# mean: 96.52, sem: 0.23, min: 87.86, max: 100.00, 5%: 93.16, 95%: 99.51
+def nln(type, x, training: bool):
+    y = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, y], axis=0)
+
+    dtype = jax.numpy.float64
+    layer_size = 32
+    x = hard_and.and_layer(type)(
+        layer_size,
+        dtype=dtype,
+        weights_init=initialization.initialize_bernoulli(0.01, 0.1, 0.51),
+    )(x)
+    x = hard_or.or_layer(type)(
+        layer_size,
+        dtype=dtype,
+        weights_init=initialization.initialize_bernoulli(0.99, 0.49, 0.9),
+    )(x)
+    x = hard_not.not_layer(type)(16, dtype=dtype)(x)
+
+    x = x.reshape((1, 16 * layer_size))
+    x = hard_majority.majority_layer(type)()(x)
+
+    z = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, z], axis=0)
+    ########################################################
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
 
 def batch_nln(type, x, training: bool):
     return jax.vmap(lambda x: nln(type, x, training))(x)
@@ -551,7 +578,7 @@ def apply_hard_model(state, features, label):
 
 def apply_hard_model_to_data(state, features, labels):
     accuracy = 0
-    for (image, label) in tqdm(zip(features, labels), total=len(features)):
+    for image, label in tqdm(zip(features, labels), total=len(features)):
         accuracy += apply_hard_model(state, image, label)
     return accuracy / len(features)
 
@@ -561,7 +588,7 @@ def get_config():
     config.learning_rate = 0.001
     config.momentum = 0.9
     config.batch_size = 5000
-    config.num_epochs = 4000
+    config.num_epochs = 1000
     return config
 
 
@@ -603,10 +630,9 @@ def test_noisy_xor():
         # hard_weights = harden.hard_weights(trained_state.params)
         # print(f"trained hard weights: {repr(hard_weights)}")
 
-        #if final_test_accuracy < 0.85:
+        # if final_test_accuracy < 0.85:
         #    print("Aborting due to poor performance")
         #    break
-
 
         # Check symbolic net
         """
