@@ -11,6 +11,18 @@ def soft_or_neuron(w, x):
     x = jax.vmap(hard_masks.soft_mask_to_false, 0, 0)(w, x)
     return jax.numpy.max(x)
 
+def soft_or(x, y):
+    m = jax.numpy.maximum(x, y)
+    return jax.numpy.where(
+        2 * m > 1,
+        0.5 + 0.5 * (x + y) * (m - 0.5),
+        m + 0.5 * (x + y) * (0.5 - m),
+    )
+
+
+def soft_or_neuron_deprecated(w, x):
+    x = jax.vmap(hard_masks.soft_mask_to_true, 0, 0)(w, x)
+    return jax.lax.reduce(x, 0.0, soft_or, [0])
 
 def hard_or_neuron(w, x):
     x = jax.vmap(hard_masks.hard_mask_to_false, 0, 0)(w, x)

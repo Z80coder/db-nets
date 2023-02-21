@@ -12,6 +12,19 @@ def soft_and_neuron(w, x):
     return jax.numpy.min(x)
 
 
+def soft_and(x, y):
+    m = jax.numpy.minimum(x, y)
+    return jax.numpy.where(
+        2 * m > 1,
+        0.5 + 0.5 * (x + y) * (m - 0.5),
+        m + 0.5 * (x + y) * (0.5 - m),
+    )
+
+
+def soft_and_neuron_deprecated(w, x):
+    x = jax.vmap(hard_masks.soft_mask_to_true, 0, 0)(w, x)
+    return jax.lax.reduce(x, 1.0, soft_and, [0])
+
 def hard_and_neuron(w, x):
     x = jax.vmap(hard_masks.hard_mask_to_true, 0, 0)(w, x)
     return jax.lax.reduce(x, True, jax.lax.bitwise_and, [0])

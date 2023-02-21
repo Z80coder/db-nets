@@ -309,7 +309,7 @@ Source: https://arxiv.org/pdf/1804.01508.pdf
 # N.B. With normal soft majority we get
 # mean: 83.82, sem: 1.75, min: 48.86, max: 100.00, 5%: 48.86, 95%: 99.42
 # Hence new variant seems very effective in avoiding local minima
-def nln(type, x, training: bool):
+def nln_8(type, x, training: bool):
     y = jax.vmap(lambda x: 1 - x)(x)
     x = jax.numpy.concatenate([x, y], axis=0)
 
@@ -329,6 +329,38 @@ def nln(type, x, training: bool):
     x = x.sum(-1)
     return x
 
+"""
+| Technique/Accuracy  | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
+| ------------------- | -------------- | ------- | ------- | ------ | ------ |
+| Tsetlin             | 99.3 +/- 0.3   | 95.9    | 100.0   | 91.6   | 100.0  |
+| Neural network      | 95.4 +/- 0.5   | 90.1    | 98.6    | 88.2   | 99.9   |
+| dB                  | 94.5 +/- 0.4   | 89.2    | 98.2    | 70.8   | 100.0  |
+| SVM                 | 58.0 +/- 0.3   | 56.4    | 59.2    | 55.4   | 66.5   |
+| Naive Bayes         | 49.8 +/- 0.2   | 48.3    | 51.0    | 41.3   | 52.7   |
+| Logistic regression | 49.8 +/- 0.3   | 47.8    | 51.1    | 41.1   | 53.1   |
+
+Source: https://arxiv.org/pdf/1804.01508.pdf
+"""
+# mean: 94.51, sem: 0.37, min: 70.82, max: 100.00, 5%: 89.24, 95%: 98.15
+def nln(type, x, training: bool):
+    y = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, y], axis=0)
+
+    dtype = jax.numpy.float64
+    layer_size = 32
+    x = hard_and.and_layer(type)(layer_size, dtype=dtype)(x)
+    x = hard_or.or_layer(type)(layer_size, dtype=dtype)(x)
+    x = hard_not.not_layer(type)(16, dtype=dtype)(x)
+
+    x = x.reshape((1, 16 * layer_size))
+    x = hard_majority.majority_layer(type)()(x)
+
+    z = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, z], axis=0)
+    ########################################################
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
 
 def batch_nln(type, x, training: bool):
     return jax.vmap(lambda x: nln(type, x, training))(x)
@@ -375,7 +407,7 @@ def create_train_state(net, rng, dropout_rng, config):
         # optax.sm3(learning_rate=0.1),
         # optax.novograd(learning_rate=0.001),
         # optax.optimistic_gradient_descent(learning_rate=1),
-        optax.radam(learning_rate=0.005),  # 0.02
+        optax.radam(learning_rate=0.01),  # 0.02
         # optax.sgd(
         #    learning_rate=config.learning_rate, momentum=config.momentum, nesterov=False
         # ),
@@ -395,7 +427,7 @@ def my_hinge_loss(predictor_outputs, targets):
     loss = jax.numpy.abs(predictor_outputs - targets)
 
     def hinge(x):
-        return jax.numpy.where(x >= 0.4, x * x, 0)
+        return jax.numpy.where(x < 0.5, x, x)
 
     return jax.vmap(hinge)(loss)
 
@@ -529,7 +561,7 @@ def get_config():
     config.learning_rate = 0.001
     config.momentum = 0.9
     config.batch_size = 5000
-    config.num_epochs = 3000
+    config.num_epochs = 4000
     return config
 
 
@@ -571,7 +603,13 @@ def test_noisy_xor():
         # hard_weights = harden.hard_weights(trained_state.params)
         # print(f"trained hard weights: {repr(hard_weights)}")
 
+        #if final_test_accuracy < 0.85:
+        #    print("Aborting due to poor performance")
+        #    break
+
+
         # Check symbolic net
+        """
         _, hard, symbolic = neural_logic_net.net(
             lambda type, x, training: nln(type, x, training)
         )
@@ -581,3 +619,4 @@ def test_noisy_xor():
             trained_state,
             dropout_rng,
         )
+        """
