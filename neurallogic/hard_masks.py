@@ -17,6 +17,7 @@ def soft_mask_to_true_deprecated(w: float, x: float):
     w = jax.numpy.clip(w, 0.0, 1.0)
     return jax.numpy.maximum(x, 1.0 - w)
 
+# Superior on noisy XOR
 def soft_mask_to_true(w: float, x: float) -> float:
     w = jax.numpy.clip(w, 0.0, 1.0)
     return hard_or.soft_or(x, 1.0 - w)
@@ -49,6 +50,7 @@ def soft_mask_to_false_deprecated(w: float, x: float):
     # TODO: what is this madness?
     return 1.0 - jax.numpy.maximum(1.0 - x, 1.0 - w)
 
+# Superior on noisy XOR
 def soft_mask_to_false(w: float, x: float) -> float:
     w = jax.numpy.clip(w, 0.0, 1.0)
     return hard_and.soft_and(x, w)

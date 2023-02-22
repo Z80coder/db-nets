@@ -17,6 +17,7 @@ def soft_not(w, x):
     w = jax.numpy.clip(w, 0.0, 1.0)
     return 1.0 - w + x * (2.0 * w - 1.0)
 
+# TODO: split out function of parameter, and not operation, in order to simplify
 def soft_not_deprecated(w: float, x: float) -> float:
     w = jax.numpy.clip(w, 0.0, 1.0)
     # (w && x) || (! w && ! x)

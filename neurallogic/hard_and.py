@@ -20,7 +20,7 @@ def soft_and(x, y):
         m + 0.5 * (x + y) * (0.5 - m),
     )
 
-
+# This doesn't work well
 def soft_and_neuron_deprecated(w, x):
     x = jax.vmap(hard_masks.soft_mask_to_true, 0, 0)(w, x)
     return jax.lax.reduce(x, 1.0, soft_and, [0])
