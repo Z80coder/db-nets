@@ -7,6 +7,7 @@ from neurallogic import neural_logic_net, symbolic_generation
 def majority_index(input_size: int) -> int:
     return (input_size - 1) // 2
 
+# TODO: properly factor with/without margin versions
 
 def majority_bit(x: jax.numpy.array) -> float:
     index = majority_index(x.shape[-1])

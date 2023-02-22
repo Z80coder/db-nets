@@ -20,6 +20,7 @@ from neurallogic import (
     harden_layer,
     neural_logic_net,
     real_encoder,
+    initialization,
 )
 from tests import utils
 
@@ -139,11 +140,16 @@ def nln_iris(type, x, training: bool):
 Source: https://arxiv.org/pdf/1804.01508.pdf
 """
 
+# TODO: implement count layer, k-high neuron, and multi-label classification
+# to avoid the need for the harden layer
 
+# Using majority without margin
 # mean: 94.18, sem: 0.13, min: 80.00, max: 100.00, 5%: 86.67, 95%: 100.00
+# Using majority with margin
+# mean: 93.95, sem: 0.13, min: 76.67, max: 100.00, 5%: 86.67, 95%: 100.00
 def nln_binary_iris(type, x, training: bool):
     dtype = jax.numpy.float32
-    x = hard_masks.mask_to_true_layer(type)(120, dtype=dtype)(x)
+    x = hard_masks.mask_to_true_without_margin_layer(type)(120, dtype=dtype)(x)
     x = hard_majority.majority_layer(type)()(x)
     x = hard_dropout.hard_dropout(type)(
         rate=0.25,
@@ -174,6 +180,7 @@ def create_train_state(net, rng, dropout_rng, config):
     mock_input = jax.numpy.ones([1, num_features])
     soft_weights = net.init(rng, mock_input, training=False)["params"]
     tx = optax.sgd(config.learning_rate, config.momentum)
+    # tx = optax.radam(learning_rate=config.learning_rate)
     return TrainState.create(
         apply_fn=net.apply, params=soft_weights, tx=tx, dropout_rng=dropout_rng
     )
@@ -294,17 +301,17 @@ def apply_hard_model(state, features, label):
 
 def apply_hard_model_to_data(state, features, labels):
     accuracy = 0
-    for (image, label) in tqdm(zip(features, labels), total=len(features)):
+    for image, label in tqdm(zip(features, labels), total=len(features)):
         accuracy += apply_hard_model(state, image, label)
     return accuracy / len(features)
 
 
 def get_config():
     config = ml_collections.ConfigDict()
-    config.learning_rate = 0.01
+    config.learning_rate = 0.01 
     config.momentum = 0.9
     config.batch_size = 120
-    config.num_epochs = 2  # 500 for paper
+    config.num_epochs = 500  # 500 for paper
     return config
 
 

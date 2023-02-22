@@ -5,8 +5,10 @@ from flax import linen as nn
 
 from neurallogic import neural_logic_net, symbolic_generation, hard_and, hard_or, initialization
 
+# TODO: properly factor with/without margin versions
 
-def soft_mask_to_true_deprecated(w: float, x: float):
+
+def soft_mask_to_true_without_margin(w: float, x: float):
     """
     w > 0.5 implies the mask operation is inactive, else active
 
@@ -28,17 +30,19 @@ def hard_mask_to_true(w, x):
     return jax.numpy.logical_or(x, jax.numpy.logical_not(w))
 
 
+soft_mask_to_true_without_margin_neuron = jax.vmap(soft_mask_to_true_without_margin, 0, 0)
 soft_mask_to_true_neuron = jax.vmap(soft_mask_to_true, 0, 0)
 
 hard_mask_to_true_neuron = jax.vmap(hard_mask_to_true, 0, 0)
 
 
+soft_mask_to_true_without_margin_layer = jax.vmap(soft_mask_to_true_without_margin_neuron, (0, None), 0)
 soft_mask_to_true_layer = jax.vmap(soft_mask_to_true_neuron, (0, None), 0)
 
 hard_mask_to_true_layer = jax.vmap(hard_mask_to_true_neuron, (0, None), 0)
 
 
-def soft_mask_to_false_deprecated(w: float, x: float):
+def soft_mask_to_false_without_margin(w: float, x: float):
     """
     w > 0.5 implies the mask is inactive, else active
 
@@ -60,11 +64,13 @@ def hard_mask_to_false(w, x):
     return jax.numpy.logical_and(x, w)
 
 
+soft_mask_to_false_without_margin_neuron = jax.vmap(soft_mask_to_false_without_margin, 0, 0)
 soft_mask_to_false_neuron = jax.vmap(soft_mask_to_false, 0, 0)
 
 hard_mask_to_false_neuron = jax.vmap(hard_mask_to_false, 0, 0)
 
 
+soft_mask_to_false_without_margin_layer = jax.vmap(soft_mask_to_false_without_margin_neuron, (0, None), 0)
 soft_mask_to_false_layer = jax.vmap(soft_mask_to_false_neuron, (0, None), 0)
 
 hard_mask_to_false_layer = jax.vmap(hard_mask_to_false_neuron, (0, None), 0)
@@ -107,6 +113,23 @@ class SymbolicMaskLayer:
         return symbolic_generation.symbolic_expression(jaxpr, x)
 
 
+mask_to_true_without_margin_layer = neural_logic_net.select(
+    lambda layer_size, weights_init=nn.initializers.uniform(
+        1.0
+    ), dtype=jax.numpy.float32: SoftMaskLayer(
+        soft_mask_to_true_without_margin_layer, layer_size, weights_init, dtype
+    ),
+    lambda layer_size, weights_init=nn.initializers.uniform(
+        1.0
+    ), dtype=jax.numpy.float32: HardMaskLayer(hard_mask_to_true_layer, layer_size),
+    lambda layer_size, weights_init=nn.initializers.uniform(
+        1.0
+    ), dtype=jax.numpy.float32: SymbolicMaskLayer(
+        HardMaskLayer(hard_mask_to_true_layer, layer_size)
+    ),
+)
+
+
 mask_to_true_layer = neural_logic_net.select(
     lambda layer_size, weights_init=nn.initializers.uniform(
         1.0
@@ -122,7 +145,6 @@ mask_to_true_layer = neural_logic_net.select(
         HardMaskLayer(hard_mask_to_true_layer, layer_size)
     ),
 )
-
 
 mask_to_false_layer = neural_logic_net.select(
     lambda layer_size, weights_init=nn.initializers.uniform(

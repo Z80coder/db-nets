@@ -130,7 +130,10 @@ def nln(type, x, training: bool):
 
     z = jax.vmap(lambda x: 1 - x)(x)
     x = jax.numpy.concatenate([x, z], axis=0)
+    
     ########################################################
+    
+    x = harden_layer.harden_layer(type)(x)
     x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
     x = x.sum(-1)
     return x
@@ -315,10 +318,6 @@ def test_noisy_xor():
         # hard_weights = harden.hard_weights(trained_state.params)
         # print(f"trained hard weights: {repr(hard_weights)}")
 
-        # if final_test_accuracy < 0.85:
-        #    print("Aborting due to poor performance")
-        #    break
-        """
         # Check symbolic net
         _, hard, symbolic = neural_logic_net.net(
             lambda type, x, training: nln(type, x, training)
@@ -329,4 +328,3 @@ def test_noisy_xor():
             trained_state,
             dropout_rng,
         )
-        """
