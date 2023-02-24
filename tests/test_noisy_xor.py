@@ -1,10 +1,14 @@
+import sys
 from pathlib import Path
 
 import jax
 import ml_collections
 import numpy
 import optax
+import scipy
+from flax import linen as nn
 from flax.training import train_state
+from jax.config import config
 from tqdm import tqdm
 
 from neurallogic import (
@@ -12,32 +16,40 @@ from neurallogic import (
     hard_majority,
     hard_not,
     hard_or,
-    hard_xor,
-    hard_dropout,
     harden,
     harden_layer,
     neural_logic_net,
+    initialization,
 )
 from tests import utils
 
+config.update("jax_enable_x64", True)
 
-def check_symbolic(nets, data, trained_state):
-    x_training, y_training, x_test, y_test = get_train_and_test_data(data)
+
+def check_symbolic(nets, data, trained_state, dropout_rng):
+    x_training, y_training, x_test, y_test = data
     _, hard, symbolic = nets
-    _, test_loss, test_accuracy = apply_model_with_grad(trained_state, x_test, y_test)
+    _, test_loss, test_accuracy = apply_model_with_grad(
+        trained_state, x_test, y_test, dropout_rng
+    )
     print(
         "soft_net: final test_loss: %.4f, final test_accuracy: %.2f"
         % (test_loss, test_accuracy * 100)
     )
     hard_weights = harden.hard_weights(trained_state.params)
-    hard_trained_state = train_state.TrainState.create(
-        apply_fn=hard.apply, params=hard_weights, tx=optax.sgd(1.0, 1.0)
+    hard_trained_state = TrainState.create(
+        apply_fn=hard.apply,
+        params=hard_weights,
+        tx=optax.sgd(1.0, 1.0),
+        dropout_rng=dropout_rng,
     )
     hard_input = harden.harden(x_test)
-    hard_test_accuracy = apply_hard_model(hard_trained_state, hard_input, y_test)
+    hard_test_accuracy = apply_hard_model_to_data(
+        hard_trained_state, hard_input, y_test
+    )
     print("hard_net: final test_accuracy: %.2f" % (hard_test_accuracy * 100))
     assert numpy.isclose(test_accuracy, hard_test_accuracy, atol=0.0001)
-    if True:
+    if False:
         symbolic_weights = hard_weights  # utils.make_symbolic(hard_weights)
         symbolic_trained_state = train_state.TrainState.create(
             apply_fn=symbolic.apply, params=symbolic_weights, tx=optax.sgd(1.0, 1.0)
@@ -75,28 +87,53 @@ def get_data():
     return training_data, test_data
 
 
-# 100% test accuracy
+"""
+| Technique/Accuracy  | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
+| ------------------- | -------------- | ------- | ------- | ------ | ------ |
+| Tsetlin             | 99.3 +/- 0.3   | 95.9    | 100.0   | 91.6   | 100.0  |
+| dB                  | 97.9 +/- 0.2   | 95.4    | 100.0   | 93.6   | 100.0  |
+| Neural network      | 95.4 +/- 0.5   | 90.1    | 98.6    | 88.2   | 99.9   |
+| SVM                 | 58.0 +/- 0.3   | 56.4    | 59.2    | 55.4   | 66.5   |
+| Naive Bayes         | 49.8 +/- 0.2   | 48.3    | 51.0    | 41.3   | 52.7   |
+| Logistic regression | 49.8 +/- 0.3   | 47.8    | 51.1    | 41.1   | 53.1   |
+
+Source: https://arxiv.org/pdf/1804.01508.pdf
+"""
+
+
+# N.B. We use marginal versions of and/or layers for this performance
+# mean: 97.89, sem: 0.15, min: 93.58, max: 100.00, 5%: 95.40, 95%: 100.00
 def nln(type, x, training: bool):
-    x = hard_and.and_layer(type)(20)(x)
-    x = hard_not.not_layer(type)(4)(x)
-    x = x.ravel()
-    ########################################################
-    x = harden_layer.harden_layer(type)(x)
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
-    x = x.sum(-1)
-    return x
+    y = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, y], axis=0)
 
-
-def nln_experimental(type, x, training: bool):
-    not_x = jax.numpy.logical_not(x)
-    input = jax.numpy.concatenate([x, not_x], axis=0)
-    x = hard_xor.xor_layer(type)(100)(input)
-    # x = hard_not.not_layer(type)(4)(x)
-    x = x.ravel()
-    x = hard_dropout.hard_dropout(type)(
-        rate=0.5, dropout_value=0.0, deterministic=not training
+    layer_size = 32
+    dtype = jax.numpy.float64
+    x = hard_and.and_layer(type)(
+        layer_size,
+        dtype=dtype,
+        weights_init=initialization.initialize_bernoulli(0.01, 0.3, 0.501),
     )(x)
+    x = hard_or.or_layer(type)(
+        layer_size,
+        dtype=dtype,
+        weights_init=initialization.initialize_bernoulli(0.99, 0.499, 0.7),
+    )(x)
+    not_layer_size = 16
+    x = hard_not.not_layer(type)(
+        not_layer_size,
+        dtype=dtype,
+        weights_init=initialization.initialize_uniform_range(0.499, 0.501),
+    )(x)
+
+    x = x.reshape((1, layer_size * not_layer_size))
+    x = hard_majority.majority_layer(type)()(x)
+
+    z = jax.vmap(lambda x: 1 - x)(x)
+    x = jax.numpy.concatenate([x, z], axis=0)
+    
     ########################################################
+    
     x = harden_layer.harden_layer(type)(x)
     x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
     x = x.sum(-1)
@@ -114,10 +151,7 @@ class TrainState(train_state.TrainState):
 def create_train_state(net, rng, dropout_rng, config):
     mock_input = jax.numpy.ones([1, num_features])
     soft_weights = net.init(rng, mock_input, training=False)["params"]
-    tx = optax.sgd(config.learning_rate, config.momentum)
-    # tx = optax.yogi(config.learning_rate)
-    # tx = optax.noisy_sgd(config.learning_rate, config.momentum)
-    # tx = optax.adagrad(config.learning_rate) # investigate this one
+    tx = optax.radam(learning_rate=config.learning_rate)
     return TrainState.create(
         apply_fn=net.apply, params=soft_weights, tx=tx, dropout_rng=dropout_rng
     )
@@ -138,7 +172,7 @@ def apply_model_with_grad_impl(state, features, labels, dropout_rng, training: b
             training=training,
             rngs={"dropout": dropout_train_rng},
         )
-        one_hot = jax.nn.one_hot(labels, num_classes)
+        one_hot = jax.nn.one_hot(labels, num_classes, dtype=jax.numpy.int32)
         loss = jax.numpy.mean(
             optax.softmax_cross_entropy(logits=logits, labels=one_hot)
         )
@@ -203,8 +237,6 @@ def train_and_evaluate(
 ):
     state = create_train_state(net, init_rng, dropout_rng, config)
     x_training, y_training, x_test, y_test = data
-    best_train_accuracy = 0.0
-    best_test_accuracy = 0.0
     for epoch in range(1, config.num_epochs + 1):
         init_rng, input_rng = jax.random.split(init_rng)
         state, train_loss, train_accuracy = train_epoch(
@@ -213,22 +245,13 @@ def train_and_evaluate(
         _, test_loss, test_accuracy = apply_model_with_grad(
             state, x_test, y_test, dropout_rng
         )
-        if train_accuracy > best_train_accuracy:
-            best_train_accuracy = train_accuracy
-            # print(f"best_train_accuracy: {best_train_accuracy * 100:.2f}")
-            if test_accuracy >= best_test_accuracy:
-                best_test_accuracy = test_accuracy
-                # print(f"best_test_accuracy: {best_test_accuracy * 100:.2f}")
-            # else:
-            # print(f"test_accuracy: {test_accuracy * 100:.2f}")
-            # print("\n")
 
-        # print(
-        #    "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f"
-        #    % (epoch, train_loss, train_accuracy * 100, test_loss, test_accuracy * 100)
-        # )
+        print(
+            "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f"
+            % (epoch, train_loss, train_accuracy * 100, test_loss, test_accuracy * 100)
+        )
 
-    return state
+    return state, test_accuracy
 
 
 def apply_hard_model(state, features, label):
@@ -245,7 +268,7 @@ def apply_hard_model(state, features, label):
 
 def apply_hard_model_to_data(state, features, labels):
     accuracy = 0
-    for (image, label) in tqdm(zip(features, labels), total=len(features)):
+    for image, label in tqdm(zip(features, labels), total=len(features)):
         accuracy += apply_hard_model(state, image, label)
     return accuracy / len(features)
 
@@ -253,32 +276,56 @@ def apply_hard_model_to_data(state, features, labels):
 def get_config():
     config = ml_collections.ConfigDict()
     config.learning_rate = 0.01
-    config.momentum = 0.9
-    config.batch_size = 256
-    config.num_epochs = 500
+    config.batch_size = 5000
+    config.num_epochs = 2000
     return config
 
 
 def test_noisy_xor():
-    rng = jax.random.PRNGKey(0)
-    rng, int_rng, dropout_rng = jax.random.split(rng, 3)
     # Train net
-    soft, hard, symbolic = neural_logic_net.net(
+    soft, _, _ = neural_logic_net.net(
         lambda type, x, training: batch_nln(type, x, training)
     )
+
     x_training, y_training, x_test, y_test = get_train_and_test_data(get_data())
+
+    rng = jax.random.PRNGKey(0)
     print(soft.tabulate(rng, x_training[0:1], training=False))
 
-    print(f"training_data.shape: {x_training.shape}")
-    print(f"test_data.shape: {x_test.shape}")
-    trained_state = train_and_evaluate(
-        int_rng,
-        dropout_rng,
-        soft,
-        (x_training, y_training, x_test, y_test),
-        get_config(),
-    )
+    num_experiments = 1  # 100 for paper
+    final_test_accuracies = []
+    for i in range(num_experiments):
+        rng, int_rng, dropout_rng = jax.random.split(rng, 3)
+        trained_state, final_test_accuracy = train_and_evaluate(
+            int_rng,
+            dropout_rng,
+            soft,
+            (x_training, y_training, x_test, y_test),
+            get_config(),
+        )
+        final_test_accuracies.append(final_test_accuracy)
+        print(f"{i}: final test accuracy: {final_test_accuracy * 100:.2f}")
+        # print mean, standard error of the mean, min, max, lowest 5%, highest 5% of final test accuracies
+        print(
+            f"mean: {numpy.mean(final_test_accuracies) * 100:.2f}, "
+            f"sem: {scipy.stats.sem(final_test_accuracies) * 100:.2f}, "
+            f"min: {numpy.min(final_test_accuracies) * 100:.2f}, "
+            f"max: {numpy.max(final_test_accuracies) * 100:.2f}, "
+            f"5%: {numpy.percentile(final_test_accuracies, 5) * 100:.2f}, "
+            f"95%: {numpy.percentile(final_test_accuracies, 95) * 100:.2f}"
+        )
+        # numpy.set_printoptions(threshold=sys.maxsize)
+        # print(f"trained soft weights: {repr(trained_state.params)}")
+        # hard_weights = harden.hard_weights(trained_state.params)
+        # print(f"trained hard weights: {repr(hard_weights)}")
 
-    # Check symbolic net
-    # _, hard, symbolic = neural_logic_net.net(lambda type, x: nln(type, x))
-    # check_symbolic((soft, hard, symbolic), (training_data, test_data), trained_state)
+        # Check symbolic net
+        _, hard, symbolic = neural_logic_net.net(
+            lambda type, x, training: nln(type, x, training)
+        )
+        check_symbolic(
+            (soft, hard, symbolic),
+            (x_training, y_training, x_test, y_test),
+            trained_state,
+            dropout_rng,
+        )

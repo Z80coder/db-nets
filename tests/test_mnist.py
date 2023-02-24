@@ -133,7 +133,7 @@ def nln(type, x, training: bool):
     x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype)(x)
     x = x.reshape((int(mask_layer_size * 98), int(input_size / 98)))
     x = hard_majority.majority_layer(type)()(x)
-    x = hard_not.not_layer(type)(20, dtype=dtype)(x)
+    x = hard_not.not_layer(type)(20, weights_init=nn.initializers.uniform(1.0), dtype=dtype)(x)
     x = x.ravel()
     ##############################
     x = harden_layer.harden_layer(type)(x)

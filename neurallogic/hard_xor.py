@@ -6,15 +6,16 @@ from flax import linen as nn
 from neurallogic import neural_logic_net, symbolic_generation, hard_masks
 
 
+def differentiable_xor(x, y):
+    return jax.numpy.minimum(jax.numpy.maximum(x, y), 1.0 - jax.numpy.minimum(x, y))
+
+
 # TODO: seperate out the mask from the xor operation
 def soft_xor_neuron(w, x):
     # Conditionally include input bits, according to weights
     x = jax.vmap(hard_masks.soft_mask_to_false, 0, 0)(w, x)
 
-    def xor(x, y):
-        return jax.numpy.minimum(jax.numpy.maximum(x, y), 1.0 - jax.numpy.minimum(x, y))
-
-    x = jax.lax.reduce(x, jax.numpy.array(0, dtype=x.dtype), xor, (0,))
+    x = jax.lax.reduce(x, jax.numpy.array(0, dtype=x.dtype), differentiable_xor, (0,))
     return x
 
 
@@ -33,7 +34,6 @@ class SoftXorLayer(nn.Module):
     layer_size: int
     weights_init: Callable = (
         nn.initializers.uniform(1.0)
-        # hard_and.initialize_near_to_zero()
     )
     dtype: jax.numpy.dtype = jax.numpy.float32
 

@@ -89,7 +89,7 @@ def test_mask_to_true_layer():
         )
 
 
-def test_mask_to_true():
+def test_mask_to_true_net():
     def test_net(type, x):
         x = hard_masks.mask_to_true_layer(type)(4)(x)
         x = x.ravel()
@@ -226,7 +226,7 @@ def test_mask_to_false_layer():
         )
 
 
-def test_mask_to_false():
+def test_mask_to_false_net():
     def test_net(type, x):
         x = hard_masks.mask_to_false_layer(type)(4)(x)
         x = x.ravel()

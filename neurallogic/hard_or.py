@@ -3,13 +3,32 @@ from typing import Callable
 import jax
 from flax import linen as nn
 
-from neurallogic import neural_logic_net, symbolic_generation, hard_masks
+from neurallogic import (
+    neural_logic_net,
+    symbolic_generation,
+    hard_masks,
+    initialization,
+)
 
 
 # TODO: seperate out the or operation from the mask operation
 def soft_or_neuron(w, x):
     x = jax.vmap(hard_masks.soft_mask_to_false, 0, 0)(w, x)
     return jax.numpy.max(x)
+
+
+def soft_or(x, y):
+    m = jax.numpy.maximum(x, y)
+    return jax.numpy.where(
+        2 * m > 1,
+        0.5 + 0.5 * (x + y) * (m - 0.5),
+        m + 0.5 * (x + y) * (0.5 - m),
+    )
+
+# This doesn't work well
+def soft_or_neuron_deprecated(w, x):
+    x = jax.vmap(hard_masks.soft_mask_to_true, 0, 0)(w, x)
+    return jax.lax.reduce(x, 0.0, soft_or, [0])
 
 
 def hard_or_neuron(w, x):
@@ -21,25 +40,10 @@ soft_or_layer = jax.vmap(soft_or_neuron, (0, None), 0)
 
 hard_or_layer = jax.vmap(hard_or_neuron, (0, None), 0)
 
-# TODO: investigate better initialization
-
-
-def initialize_near_to_one():
-    def init(key, shape, dtype):
-        dtype = jax.dtypes.canonicalize_dtype(dtype)
-        # Sample from standard normal distribution (zero mean, unit variance)
-        x = jax.random.normal(key, shape, dtype)
-        # Transform to a normal distribution with mean 1 and standard deviation 0.5
-        x = 0.5 * x + 1
-        x = jax.numpy.clip(x, 0.001, 0.999)
-        return x
-
-    return init
-
 
 class SoftOrLayer(nn.Module):
     layer_size: int
-    weights_init: Callable = initialize_near_to_one()
+    weights_init: Callable = initialization.initialize_near_to_one()
     dtype: jax.numpy.dtype = jax.numpy.float32
 
     @nn.compact
@@ -75,7 +79,7 @@ class SymbolicOrLayer:
 
 
 or_layer = neural_logic_net.select(
-    lambda layer_size, weights_init=initialize_near_to_one(), dtype=jax.numpy.float32: SoftOrLayer(
+    lambda layer_size, weights_init=initialization.initialize_near_to_one(), dtype=jax.numpy.float32: SoftOrLayer(
         layer_size, weights_init, dtype
     ),
     lambda layer_size, weights_init=nn.initializers.constant(
