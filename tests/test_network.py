@@ -20,7 +20,7 @@ def test_train_network():
             16, nn.initializers.uniform(1.0), jnp.float64)(x)
         x = hard_and.and_layer(type)(
             4, nn.initializers.uniform(1.0), jnp.float64)(x)
-        x = hard_not.not_layer(type)(1, dtype=jnp.float64)(x)
+        x = hard_not.not_layer(type)(1, weights_init=nn.initializers.uniform(1.0), dtype=jnp.float64)(x)
         x = x.ravel()
         x = harden_layer.harden_layer(type)(x)
         return x

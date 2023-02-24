@@ -1,6 +1,7 @@
 import jax
 import numpy
 import optax
+from flax import linen as nn
 from flax.training import train_state
 from jax import random
 
@@ -89,7 +90,7 @@ def test_layer():
 
 def test_not():
     def test_net(type, x):
-        x = hard_not.not_layer(type)(4)(x)
+        x = hard_not.not_layer(type)(4, weights_init=nn.initializers.uniform(1.0))(x)
         x = x.ravel()
         return x
 

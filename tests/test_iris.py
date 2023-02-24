@@ -116,7 +116,7 @@ def nln_iris(type, x, training: bool):
     x = x.ravel()
     dtype = jax.numpy.float32
     mask_layer_size = 120
-    x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype)(x)
+    x = hard_masks.mask_to_true_margin_layer(type)(mask_layer_size, dtype=dtype)(x)
     x = x.reshape((mask_layer_size, input_size * bits_per_feature))
     x = hard_majority.majority_layer(type)()(x)
     x = hard_not.not_layer(type)(18)(x)
@@ -149,7 +149,7 @@ Source: https://arxiv.org/pdf/1804.01508.pdf
 # mean: 93.95, sem: 0.13, min: 76.67, max: 100.00, 5%: 86.67, 95%: 100.00
 def nln_binary_iris(type, x, training: bool):
     dtype = jax.numpy.float32
-    x = hard_masks.mask_to_true_without_margin_layer(type)(120, dtype=dtype)(x)
+    x = hard_masks.mask_to_true_layer(type)(120, dtype=dtype)(x)
     x = hard_majority.majority_layer(type)()(x)
     x = hard_dropout.hard_dropout(type)(
         rate=0.25,
