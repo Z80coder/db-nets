@@ -12,11 +12,11 @@ Questions? Ask @Z80coder
 
 Neural logic nets
 
-- [Neural logic nets]() (15m)
+- [Neural logic nets](https://drive.google.com/file/d/1_IECuI0f58o_aIIdaQhRo6qPH517YaMa/view?usp=share_link) (15m)
 
 ## Development videos   
 
-- [The Soft-NOT operator](https://drive.google.com/file/d/1_IECuI0f58o_aIIdaQhRo6qPH517YaMa/view?usp=share_link) (10m)
+- [The Soft-NOT operator](https://drive.google.com/file/d/1z2WFpz4eWLb9xauRnIl6mSXhkbU-XR6X/view?usp=share_link) (10m)
 - [The Soft-AND operator](https://drive.google.com/file/d/1l9Y2cWJYYdYSsgqwfH-Dfo2Nxmiewia-/view?usp=share_link) (10m)
 - [The differentiable Hard-AND operator](https://drive.google.com/file/d/1Bg1KjKF8KZaBP6jYFhQ5oARrcZYx2O8S/view?usp=share_link) (17m)
 - [The differentiable Hard-OR operator](https://drive.google.com/file/d/1WUmJHToU0hQo0YgHlhJb12qECDKzmE8f/view?usp=share_link) (5m)
@@ -24,7 +24,7 @@ Neural logic nets
 - [The hardening layer](https://drive.google.com/file/d/1c5K77n9dftsyciq32T7SBBa0PBhIgEq7/view?usp=share_link) (11m)
 - [The hardening operation](https://drive.google.com/file/d/1JWA9P9BbfEHWiDfNKVjaH_ssP6CA19Nf/view?usp=share_link) (19m)
 - [A classifier architecture](https://drive.google.com/file/d/1KZp8-7hbc_5tHESgmcyBDdBbZDu9UEO9/view?usp=share_link) (20m)
-- [Neural logic nets]() (15m)
+- [Neural logic nets](https://drive.google.com/file/d/1_IECuI0f58o_aIIdaQhRo6qPH517YaMa/view?usp=share_link) (15m)
 - [Learning XOR (parity)](https://drive.google.com/file/d/1I2H3iQjM7tNrG83DJFFngQZB_T8jM6uw/view?usp=share_link) (10m)
 - [Numerical regression](https://drive.google.com/file/d/1Qx9hBR2nZVymJr3Yoi1CGdg9y8VBxn8P/view?usp=share_link) (23m)
 - [If-Then-Else neuron](https://drive.google.com/file/d/1siMqbLr9VYCOwBqNUAnQse9IQSGUjlqo/view?usp=share_link) (23m)
