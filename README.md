@@ -2,44 +2,35 @@
 
 [![Python package](https://github.com/Z80coder/discrete-differentiable-networks/actions/workflows/python.yaml/badge.svg)](https://github.com/Z80coder/discrete-differentiable-networks/actions/workflows/python.yaml)
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://z80coder-legendary-space-cod-65vqgjqqxjq2xv44.github.dev/)
-
 A Boolean Logic Network library for learning boolean functions on GPUs with gradient descent.
 
 The working prototype is implemented in Wolfram. The production library is implemented in Python.
 
 Questions? Ask @Z80coder
 
-<p align="left">
-<img width="350" src="https://user-images.githubusercontent.com/55286208/186415016-ffdbaee9-4f1a-4304-a900-ed43456656ea.jpg">
-</p>
-
 ## Demos
 
 Neural logic nets
 
-https://user-images.githubusercontent.com/55286208/205712875-54d4cdfe-5199-4429-a438-3b797e4c4456.mp4
-
-
-- [Neural logic nets for differentiable QL](https://drive.google.com/file/d/195r9Y08Q61V80f2Hqw62YuHpYsCzJCmZ/view?usp=sharing) (30m)
-- [Boolean logic nets and MNIST](https://drive.google.com/file/d/1dWAQfFWcOm1ORqfh62H66nigGy2wQ17G/view?usp=share_link) (18m)
+- [Neural logic nets]() (15m)
 
 ## Development videos   
 
-- [The Soft-NOT operator](https://drive.google.com/file/d/1C9egUO9SWSXba7VEqqUPfECYXeLFf5g0/view?usp=sharing) (10m)
-- [The Soft-AND operator](https://drive.google.com/file/d/133U60sUh4qzjrieZyMfEzULsZJF27lov/view?usp=sharing) (10m)
-- [The differentiable Hard-AND operator](https://drive.google.com/file/d/1cdfMkO0xg-IUYK3avHqfarLJRXGtWcRf/view?usp=sharing) (17m)
-- [The differentiable Hard-OR operator](https://drive.google.com/file/d/1v1WMfOWx4PQbjyoPJo82QNh2DGBhM4uH/view?usp=sharing) (5m)
-- [The differentiable Hard-MAJORITY operator](https://drive.google.com/file/d/1qVTAFAVZ3Qlk_mYh2wd83uME89RsBzri/view?usp=sharing) (13m)
-- [The hardening layer](https://drive.google.com/file/d/1ZEd34UMyFY52_0U2-j58hKJ5uvJBYREn/view?usp=sharing) (11m)
-- [The hardening operation](https://drive.google.com/file/d/1M11ovLCbqAfjplFioKpMmX1hOvpwSHXv/view?usp=sharing) (19m)
-- [A classifier architecture](https://drive.google.com/file/d/1sQHyo4OjapEj3a0JLhnSYEsLMBMUZMT8/view?usp=sharing) (20m)
-- [Neural logic nets](https://drive.google.com/file/d/1P25OxM7Af8ppUGOUhKd6psGHI0OVXIzw/view?usp=sharing) (15m)
-- [Learning XOR (parity)](https://drive.google.com/file/d/1kBxJCkuEzbisWhUGJZ42o-m6xYOZ56pB/view?usp=sharing) (10m)
-- [Numerical regression](https://drive.google.com/file/d/1k2wQIjTN0omKuaFYQHrusMRIdDxPlSAf/view?usp=sharing) (23m)
-- [If-Then-Else neuron](https://drive.google.com/file/d/1qelfWX6s2XhlHxFwUSV76tAS2tyDK3Q0/view?usp=sharing) (23m)
-- [Neural conditions and actions](https://drive.google.com/file/d/1nrn_4TlNCmdC1ZAlN9pKIOF2hEjtykuo/view?usp=sharing) (24m)
-- [Neural decision lists](https://drive.google.com/file/d/16F_2kpBaZO-qPQLX38Sar9pJfuunsVyO/view?usp=sharing) (15m)
-- [Boolean logic nets and MNIST](https://drive.google.com/file/d/1dWAQfFWcOm1ORqfh62H66nigGy2wQ17G/view?usp=share_link) (18m)
+- [The Soft-NOT operator](https://drive.google.com/file/d/1_IECuI0f58o_aIIdaQhRo6qPH517YaMa/view?usp=share_link) (10m)
+- [The Soft-AND operator](https://drive.google.com/file/d/1l9Y2cWJYYdYSsgqwfH-Dfo2Nxmiewia-/view?usp=share_link) (10m)
+- [The differentiable Hard-AND operator](https://drive.google.com/file/d/1Bg1KjKF8KZaBP6jYFhQ5oARrcZYx2O8S/view?usp=share_link) (17m)
+- [The differentiable Hard-OR operator](https://drive.google.com/file/d/1WUmJHToU0hQo0YgHlhJb12qECDKzmE8f/view?usp=share_link) (5m)
+- [The differentiable Hard-MAJORITY operator](https://drive.google.com/file/d/18oQWhNvbkJGZ49OcQEqGAxkskGZV0e09/view?usp=share_link) (13m)
+- [The hardening layer](https://drive.google.com/file/d/1c5K77n9dftsyciq32T7SBBa0PBhIgEq7/view?usp=share_link) (11m)
+- [The hardening operation](https://drive.google.com/file/d/1JWA9P9BbfEHWiDfNKVjaH_ssP6CA19Nf/view?usp=share_link) (19m)
+- [A classifier architecture](https://drive.google.com/file/d/1KZp8-7hbc_5tHESgmcyBDdBbZDu9UEO9/view?usp=share_link) (20m)
+- [Neural logic nets]() (15m)
+- [Learning XOR (parity)](https://drive.google.com/file/d/1I2H3iQjM7tNrG83DJFFngQZB_T8jM6uw/view?usp=share_link) (10m)
+- [Numerical regression](https://drive.google.com/file/d/1Qx9hBR2nZVymJr3Yoi1CGdg9y8VBxn8P/view?usp=share_link) (23m)
+- [If-Then-Else neuron](https://drive.google.com/file/d/1siMqbLr9VYCOwBqNUAnQse9IQSGUjlqo/view?usp=share_link) (23m)
+- [Neural conditions and actions](https://drive.google.com/file/d/1WH319bwV55858TYQ9G3C4RPxzdTiA0Ru/view?usp=share_link) (24m)
+- [Neural decision lists](https://drive.google.com/file/d/1H0tJtiHz3yXZ7E2xeauaNRd4rnBTUf2v/view?usp=share_link) (15m)
+- [Boolean logic nets and MNIST](https://drive.google.com/file/d/12Rwx8H76UTNRdBK4WAwe_QeTWiGrbP-_/view?usp=share_link) (18m)
+- [Neural logic nets for differentiable QL](https://drive.google.com/file/d/15rAagCh7LxEN0CHVNkTY6iPWSxrAG0pW/view?usp=share_link) (30m)
 
 More to come!
