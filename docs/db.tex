@@ -7,14 +7,15 @@
 
 \usepackage{hyperref}
 \usepackage{url}
+\usepackage{amsthm}
 
-\title{Learning boolean functions with $\partial\mathbb{B}$ nets}
+\title{$\partial\mathbb{B}$ nets: learning boolean functions with\\backpropagation}
 
 % Authors must not appear in the submitted version. They should be hidden
 % as long as the \iclrfinalcopy macro remains commented out below.
 % Non-anonymous submissions will be rejected without review.
 
-\author{Ian Wright \thanks{GitHub, z80coder@github.com}
+\author{Ian Wright \thanks{GitHub, Z80coder@github.com}
 }
 
 % The \author macro works with any number of authors. There are two commands
@@ -28,20 +29,152 @@
 \newcommand{\fix}{\marginpar{FIX}}
 \newcommand{\new}{\marginpar{NEW}}
 
+\newtheorem{theorem}{Theorem}
+\newtheorem*{definition}{Definition}
+\newtheorem{prop}{Proposition}
+
+
 \iclrfinalcopy % Uncomment for camera-ready version, but NOT for submission.
 \begin{document}
-
 
 \maketitle
 
 \begin{abstract}
-	$\partial\mathbb{B}$ nets are real-valued, differentiable neural networks that can be `hardened' to generate boolean functions with identical semantics. Existing approaches to neural network binarization lose accuracy; in contrast, training a $\partial\mathbb{B}$ net with backpropagation yields a compact and interpretable  boolean function with identical accuracy. Experiments demonstrate that $\partial\mathbb{B}$ nets achieve competitive performance on standard machine learning problems.
+	$\partial\mathbb{B}$ nets are real-valued, differentiable neural networks 
+	trained by backpropagation that yield boolean functions with identical accuracy.
+	Existing approaches to neural network binarization lose accuracy. In contrast, 
+	$\partial\mathbb{B}$ nets `harden' to boolean functions with identical semantics.  Experiments demonstrate that $\partial\mathbb{B}$ nets achieve competitive accuracy on standard machine learning problems yet are significantly more compact and interpretable.
 \end{abstract}
 
 \section{Introduction}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+\section{Related work}
 
+\section{$\partial\mathbb{B}$ nets}
+
+\begin{definition}[Soft-bits and hard-bits]
+A {\em soft-bit} is a real value in the range $[0,1]$ and a {\em hard-bit} is a boolean value in the set $\{0,1\}$. A soft-bit, $x$, is {\em high} if $x>1/2$, otherwise it is {\em low}.
+\end{definition}
+
+\begin{definition}[Hardening]
+The {\em hardening} function, $h(x_{1}, \dots, x_{n}) = [f(x_{1}), \dots, f(x_{n})]$, converts soft-bits to hard-bits, where
+\begin{equation*}
+f(x) =
+\begin{cases}
+1 & \text{if } x > 1/2 \\
+0 & \text{otherwise.}
+\end{cases}
+\end{equation*}
+\end{definition}
+
+\begin{definition}[Hard-equivalence]
+	A function, $f: [0,1]^n \rightarrow [0,1]^m$, is {\em hard-equivalent} to a boolean function, $g: \{1,0\}^n \rightarrow \{1,0\}^m$,	if
+	$h(f(h({\bf x}))) = g(h({\bf x}))$ for all ${\bf x} \in [0,1]^{n}$.
+\end{definition}
+
+\subsection{Differentiable boolean functions}
+
+Weights are trainable soft-bits. A high weight implies the corresponding operation is masked out and therefore inactive.
+
+\begin{definition}
+$\partial\text{NOT}: [0, 1]^{2} \rightarrow [0,1]$ is the function,
+	\begin{equation*}
+	\partial\text{NOT}(w, x) = 1 - w + x (2w - 1)\text{,}
+	\end{equation*}
+where $w$ is a weight and $x$ is a soft-bit value.
+\end{definition}
+
+\begin{prop}\label{prop:not}
+	$\partial${NOT} is hard-equivalent to the boolean function
+$\neg (x \oplus w)$.
+\end{prop}
+
+If the weight is high then $\partial${NOT} is hard-equivalent to the boolean identity function; otherwise it is hard-equivalent to $\neg$. In consequence, we can learn to logically not, or simply pass through, the input value $x$.
+
+\begin{definition}
+$\partial\text{AND}: [0,1]^{2} \rightarrow [0,1]$ is the function,
+	\begin{equation*}
+	\partial\text{AND}(x, y) = 
+	\begin{cases}
+	1/2 + 1/2(x + y)(m - 1/2) & \text{if } 2m > 1 \\
+	m + 1/2(x + y)(1/2 - m) & \text{otherwise,}
+	\end{cases}
+	\end{equation*}
+	where $m=\min(x,y)$, and $x$ and $y$ are soft-bit values.
+\end{definition}
+
+\begin{prop}\label{prop:and}
+	$\partial${AND} is hard-equivalent to the boolean function $x \wedge y$.
+\end{prop}
+
+\begin{definition}
+$\partial\text{OR}: [0,1]^{2} \rightarrow [0,1]$ is the function,
+	\begin{equation*}
+	\partial\text{OR}(x, y) = 
+	\begin{cases}
+	1/2 + 1/2(x + y)(m - 1/2) & \text{if } 2m > 1 \\
+	m + 1/2(x + y)(1/2 - m) & \text{otherwise,}
+	\end{cases}
+	\end{equation*}
+	where $m=\max(x,y)$, and $x$ and $y$ are soft-bit values.
+\end{definition}
+
+\begin{prop}\label{prop:or}
+	$\partial${OR} is hard-equivalent to the boolean function $x \vee y$.
+\end{prop}
+
+\begin{definition}
+$\partial\text{IMPLIES}: [0,1]^{2} \rightarrow [0,1]$ is the function,
+	\begin{equation*}
+	\partial\text{IMPLIES}(w, x) = \partial\text{OR}(x, 1-w)\text{,}
+	\end{equation*}
+where $w$ is a weight and $x$ is a soft-bit value.
+\end{definition}
+
+\begin{prop}\label{prop:implies}
+	$\partial${IMPLIES} is hard-equivalent to the boolean function $w \Rightarrow x$.
+\end{prop}
+
+Define $\operatorname{majority-index}: \mathbb{Z}_{>0} \rightarrow \mathbb{Z}_{> 0}$ as $\operatorname{majority-index}(n) = 1 + \lfloor \frac{n-1}{2}\rfloor$.
+
+Define $\operatorname{select}: [0,1]^n \times {1, 2, \ldots, n} \rightarrow [0,1]$ as  $\operatorname{select}({\bf x}, i) = x_{i}$.
+
+Define $\operatorname{majority-bit}: [0,1]^n \rightarrow [0,1]$ as  $$\operatorname{majority-bit}({\bf x}) = \operatorname{select}( \operatorname{sort}({\bf x}), \operatorname{majority-index}(\lvert{\bf x}\rvert))\text{,}$$ where $\operatorname{sort}$ sorts the elements of a vector in ascending order.
+
+Define $\operatorname{majority-delta}: [0,1]^n \rightarrow [0,1]$ as
+$$\operatorname{majority-delta}({\bf x}) = \bar{\bf x} \times \left| \operatorname{majority-bit}({\bf x}) - 1/2\right|\text{.}$$
+
+\begin{definition}
+$\partial\text{MAJORITY}: [0,1]^{n} \rightarrow [0,1]$ is the function,
+	\begin{equation*}
+	\partial\text{MAJORITY}({\bf x}) = 
+	\begin{cases}
+	1/2 + \delta & \text{if } m > 1/2 \\
+	m + \delta & \text{otherwise,}
+	\end{cases}
+	\end{equation*}
+	where ${\bf x}$ is a vector of soft-bits, $m = \operatorname{majority-bit}({\bf x})$ and $\delta = \operatorname{majority-delta}({\bf x})$.
+\end{definition}
+
+\begin{prop}\label{prop:majority}
+	$\partial${MAJORITY} is hard-equivalent to the boolean majority function,
+\begin{equation*}
+\text{MAJ}(x_{1}, \dots, x_{n}) = 
+	\begin{cases}
+	1 & \text{if } \sum_{i=1}^{n} x_{i} \geq n/2 \\
+	0 & \text{otherwise.}
+\end{cases}
+\end{equation*}
+\end{prop}
+
+
+\subsection{Logical layers}
+
+
+
+\section{Experiments}
+
+\section{Conclusion}
 
 \begin{figure}[h]
 \begin{center}
@@ -50,139 +183,6 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 \end{center}
 \caption{Sample figure caption.}
 \end{figure}
-
-\section{Tables}
-
-\begin{table}[h]
-\caption{Sample table title}
-\label{sample-table}
-\begin{center}
-\begin{tabular}{ll}
-\multicolumn{1}{c}{\bf PART}  &\multicolumn{1}{c}{\bf DESCRIPTION}
-\\ \hline \\
-Dendrite         &Input terminal \\
-Axon             &Output terminal \\
-Soma             &Cell body (contains cell nucleus) \\
-\end{tabular}
-\end{center}
-\end{table}
-
-\section{Default Notation}
-
-
-\centerline{\bf Numbers and Arrays}
-\bgroup
-\def\arraystretch{1.5}
-\begin{tabular}{p{1in}p{3.25in}}
-$\displaystyle a$ & A scalar (integer or real)\\
-$\displaystyle \va$ & A vector\\
-$\displaystyle \mA$ & A matrix\\
-$\displaystyle \tA$ & A tensor\\
-$\displaystyle \mI_n$ & Identity matrix with $n$ rows and $n$ columns\\
-$\displaystyle \mI$ & Identity matrix with dimensionality implied by context\\
-$\displaystyle \ve^{(i)}$ & Standard basis vector $[0,\dots,0,1,0,\dots,0]$ with a 1 at position $i$\\
-$\displaystyle \text{diag}(\va)$ & A square, diagonal matrix with diagonal entries given by $\va$\\
-$\displaystyle \ra$ & A scalar random variable\\
-$\displaystyle \rva$ & A vector-valued random variable\\
-$\displaystyle \rmA$ & A matrix-valued random variable\\
-\end{tabular}
-\egroup
-\vspace{0.25cm}
-
-\centerline{\bf Sets and Graphs}
-\bgroup
-\def\arraystretch{1.5}
-
-\begin{tabular}{p{1.25in}p{3.25in}}
-$\displaystyle \sA$ & A set\\
-$\displaystyle \R$ & The set of real numbers \\
-$\displaystyle \{0, 1\}$ & The set containing 0 and 1 \\
-$\displaystyle \{0, 1, \dots, n \}$ & The set of all integers between $0$ and $n$\\
-$\displaystyle [a, b]$ & The real interval including $a$ and $b$\\
-$\displaystyle (a, b]$ & The real interval excluding $a$ but including $b$\\
-$\displaystyle \sA \backslash \sB$ & Set subtraction, i.e., the set containing the elements of $\sA$ that are not in $\sB$\\
-$\displaystyle \gG$ & A graph\\
-$\displaystyle \parents_\gG(\ervx_i)$ & The parents of $\ervx_i$ in $\gG$
-\end{tabular}
-\vspace{0.25cm}
-
-
-\centerline{\bf Indexing}
-\bgroup
-\def\arraystretch{1.5}
-
-\begin{tabular}{p{1.25in}p{3.25in}}
-$\displaystyle \eva_i$ & Element $i$ of vector $\va$, with indexing starting at 1 \\
-$\displaystyle \eva_{-i}$ & All elements of vector $\va$ except for element $i$ \\
-$\displaystyle \emA_{i,j}$ & Element $i, j$ of matrix $\mA$ \\
-$\displaystyle \mA_{i, :}$ & Row $i$ of matrix $\mA$ \\
-$\displaystyle \mA_{:, i}$ & Column $i$ of matrix $\mA$ \\
-$\displaystyle \etA_{i, j, k}$ & Element $(i, j, k)$ of a 3-D tensor $\tA$\\
-$\displaystyle \tA_{:, :, i}$ & 2-D slice of a 3-D tensor\\
-$\displaystyle \erva_i$ & Element $i$ of the random vector $\rva$ \\
-\end{tabular}
-\egroup
-\vspace{0.25cm}
-
-
-\centerline{\bf Calculus}
-\bgroup
-\def\arraystretch{1.5}
-\begin{tabular}{p{1.25in}p{3.25in}}
-% NOTE: the [2ex] on the next line adds extra height to that row of the table.
-% Without that command, the fraction on the first line is too tall and collides
-% with the fraction on the second line.
-$\displaystyle\frac{d y} {d x}$ & Derivative of $y$ with respect to $x$\\ [2ex]
-$\displaystyle \frac{\partial y} {\partial x} $ & Partial derivative of $y$ with respect to $x$ \\
-$\displaystyle \nabla_\vx y $ & Gradient of $y$ with respect to $\vx$ \\
-$\displaystyle \nabla_\mX y $ & Matrix derivatives of $y$ with respect to $\mX$ \\
-$\displaystyle \nabla_\tX y $ & Tensor containing derivatives of $y$ with respect to $\tX$ \\
-$\displaystyle \frac{\partial f}{\partial \vx} $ & Jacobian matrix $\mJ \in \R^{m\times n}$ of $f: \R^n \rightarrow \R^m$\\
-$\displaystyle \nabla_\vx^2 f(\vx)\text{ or }\mH( f)(\vx)$ & The Hessian matrix of $f$ at input point $\vx$\\
-$\displaystyle \int f(\vx) d\vx $ & Definite integral over the entire domain of $\vx$ \\
-$\displaystyle \int_\sS f(\vx) d\vx$ & Definite integral with respect to $\vx$ over the set $\sS$ \\
-\end{tabular}
-\egroup
-\vspace{0.25cm}
-
-\centerline{\bf Probability and Information Theory}
-\bgroup
-\def\arraystretch{1.5}
-\begin{tabular}{p{1.25in}p{3.25in}}
-$\displaystyle P(\ra)$ & A probability distribution over a discrete variable\\
-$\displaystyle p(\ra)$ & A probability distribution over a continuous variable, or over
-a variable whose type has not been specified\\
-$\displaystyle \ra \sim P$ & Random variable $\ra$ has distribution $P$\\% so thing on left of \sim should always be a random variable, with name beginning with \r
-$\displaystyle  \E_{\rx\sim P} [ f(x) ]\text{ or } \E f(x)$ & Expectation of $f(x)$ with respect to $P(\rx)$ \\
-$\displaystyle \Var(f(x)) $ &  Variance of $f(x)$ under $P(\rx)$ \\
-$\displaystyle \Cov(f(x),g(x)) $ & Covariance of $f(x)$ and $g(x)$ under $P(\rx)$\\
-$\displaystyle H(\rx) $ & Shannon entropy of the random variable $\rx$\\
-$\displaystyle \KL ( P \Vert Q ) $ & Kullback-Leibler divergence of P and Q \\
-$\displaystyle \mathcal{N} ( \vx ; \vmu , \mSigma)$ & Gaussian distribution %
-over $\vx$ with mean $\vmu$ and covariance $\mSigma$ \\
-\end{tabular}
-\egroup
-\vspace{0.25cm}
-
-\centerline{\bf Functions}
-\bgroup
-\def\arraystretch{1.5}
-\begin{tabular}{p{1.25in}p{3.25in}}
-$\displaystyle f: \sA \rightarrow \sB$ & The function $f$ with domain $\sA$ and range $\sB$\\
-$\displaystyle f \circ g $ & Composition of the functions $f$ and $g$ \\
-  $\displaystyle f(\vx ; \vtheta) $ & A function of $\vx$ parametrized by $\vtheta$.
-  (Sometimes we write $f(\vx)$ and omit the argument $\vtheta$ to lighten notation) \\
-$\displaystyle \log x$ & Natural logarithm of $x$ \\
-$\displaystyle \sigma(x)$ & Logistic sigmoid, $\displaystyle \frac{1} {1 + \exp(-x)}$ \\
-$\displaystyle \zeta(x)$ & Softplus, $\log(1 + \exp(x))$ \\
-$\displaystyle || \vx ||_p $ & $\normlp$ norm of $\vx$ \\
-$\displaystyle || \vx || $ & $\normltwo$ norm of $\vx$ \\
-$\displaystyle x^+$ & Positive part of $x$, i.e., $\max(0,x)$\\
-$\displaystyle \1_\mathrm{condition}$ & is 1 if the condition is true, 0 otherwise\\
-\end{tabular}
-\egroup
-\vspace{0.25cm}
-
 
 
 \subsubsection*{Acknowledgments}
@@ -194,7 +194,95 @@ acknowledgments, including those to funding agencies, go at the end of the paper
 \bibliographystyle{iclr2021_conference}
 
 \appendix
-\section{Appendix}
-You may include other additional sections here.
+
+\section*{Appendix}
+
+\section{Proofs}
+
+\subsection{Proof of proposition~\ref{prop:not}}
+
+\begin{proof}
+	Table \ref{not-table} is the truth table of the boolean function $\neg (x \oplus w)$.
+	\begin{table}
+		\begin{center}
+			\begin{tabular}{lll}
+				\multicolumn{1}{c}{$h(w)$}  &\multicolumn{1}{c}{$h(x)$} &\multicolumn{1}{c}{$\partial\text{NOT}(h(w), h(x))$}
+				\\ \hline \\
+				0 & 0 & 1\\
+				1 & 0 & 0\\
+				0 & 1 & 0\\
+				1 & 1 & 1\\
+			\end{tabular}
+		\end{center}
+		\caption{$\partial${NOT} is hard-equivalent to $\neg (x \oplus w)$.}\label{not-table}
+		
+	\end{table}
+\end{proof}
+
+\subsection{Proof of proposition~\ref{prop:and}}
+
+\begin{proof}
+	Table \ref{and-table} is the truth table of the boolean function $x \wedge y$.
+	\begin{table}
+		\begin{center}
+			\begin{tabular}{llll}
+				\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial\text{AND}(h(x), h(y))$} &\multicolumn{1}{c}{$h(\partial\text{AND}(h(x), h(y)))$}
+				\\ \hline \\
+				1 & 1 & 1 & 1\\
+				1 & 0 & 1/4 & 0\\
+				0 & 1 & 1/4 & 0\\
+				0 & 0 & 0 & 0\\
+			\end{tabular}
+		\end{center}
+		\caption{$\partial${AND} is hard-equivalent to $x \wedge y$.}\label{and-table}
+		
+	\end{table}
+\end{proof}
+
+\subsection{Proof of proposition~\ref{prop:or}}
+
+\begin{proof}
+	Table \ref{or-table} is the truth table of the boolean function $x \vee y$.
+	\begin{table}
+		\begin{center}
+			\begin{tabular}{llll}
+				\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial\text{OR}(h(x), h(y))$} &\multicolumn{1}{c}{$h(\partial\text{OR}(h(x), h(y)))$}
+				\\ \hline \\
+				1 & 1 & 1 & 1\\
+				1 & 0 & 3/4 & 1\\
+				0 & 1 & 3/4 & 1\\
+				0 & 0 & 0 & 0\\
+			\end{tabular}
+		\end{center}
+		\caption{$\partial${OR} is hard-equivalent to $x \vee y$.}\label{or-table}
+		
+	\end{table}
+\end{proof}
+
+\subsection{Proof of proposition~\ref{prop:implies}}
+
+\begin{proof}
+	Table \ref{implies-table} is the truth table of the boolean function $x \Rightarrow y$.
+	\begin{table}
+		\begin{center}
+			\begin{tabular}{llll}
+				\multicolumn{1}{c}{$h(w)$}  &\multicolumn{1}{c}{$h(x)$} &\multicolumn{1}{c}{$\partial\text{IMPLIES}(h(w), h(x))$} &\multicolumn{1}{c}{$h(\partial\text{IMPLIES}(h(w), h(x)))$}
+				\\ \hline \\
+				1 & 1 & 3/4 & 1\\
+				1 & 0 & 0 & 0\\
+				0 & 1 & 1 & 1\\
+				0 & 0 & 3/4 & 1\\
+			\end{tabular}
+		\end{center}
+		\caption{$\partial${IMPLIES} is hard-equivalent to $w \Rightarrow x$.}\label{implies-table}
+		
+	\end{table}
+\end{proof}
+
+\subsection{Proof of proposition~\ref{prop:majority}}
+
+\begin{proof}
+todo
+\end{proof}
 
 \end{document}
