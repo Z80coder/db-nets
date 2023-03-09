@@ -8,6 +8,8 @@
 \usepackage{hyperref}
 \usepackage{url}
 \usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{comment}
 
 \title{$\partial\mathbb{B}$ nets: learning boolean functions with\\backpropagation}
 
@@ -42,9 +44,8 @@
 
 \begin{abstract}
 	$\partial\mathbb{B}$ nets are real-valued, differentiable neural networks 
-	trained by backpropagation that yield boolean functions with identical accuracy.
-	Existing approaches to neural network binarization lose accuracy. In contrast, 
-	$\partial\mathbb{B}$ nets `harden' to boolean functions with identical semantics.  Experiments demonstrate that $\partial\mathbb{B}$ nets achieve competitive accuracy on standard machine learning problems yet are significantly more compact and interpretable.
+	trained by backpropagation that learn discrete boolean functions.
+	$\partial\mathbb{B}$ nets, once trained, `harden' to boolean functions with identical semantics and therefore, unlike existing approaches to neural network binarization, retain their accuracy. Experiments demonstrate that $\partial\mathbb{B}$ nets achieve competitive performance on standard machine learning problems yet are significantly more compact (due to 1-bit weights) and interpretable (due to the logical nature of the learnt function).
 \end{abstract}
 
 \section{Introduction}
@@ -134,6 +135,7 @@ Define $\operatorname{majority-bit}: [0,1]^n \to [0,1]$ as  ${\bf x} \mapsto \op
 Define $\operatorname{majority-delta}: [0,1]^n \to [0,1]$ as
 ${\bf x} \mapsto \bar{\bf x} \times \left| \operatorname{majority-bit}({\bf x}) - 1/2\right|$.
 
+Define
 \begin{equation*}
 \begin{aligned}
 \partial\text{MAJORITY}: [0,1]^{n} &\to [0,1], \\
@@ -147,12 +149,55 @@ ${\bf x} \mapsto \bar{\bf x} \times \left| \operatorname{majority-bit}({\bf x}) 
 where ${\bf x}$ is a vector of soft-bits, $m = \operatorname{majority-bit}({\bf x})$ and $\delta = \operatorname{majority-delta}({\bf x})$.
 $\partial${MAJORITY} is hard-equivalent to the boolean majority function (proposition \ref{prop:majority}).
 
-
 \subsection{Logical layers}
 
+Define
+\begin{equation*}
+\begin{aligned}
+\partial\text{NOT-LAYER}: [0,1]^{n \times m} \times [0,1]^{m} &\to [0,1]^{n \times m}, \\
+({\bf W}, {\bf x}) &\mapsto 
+\begin{bmatrix}
+\partial\text{NOT}(w_{1,1}, x_{1}) & \dots & \partial\text{NOT}(w_{1,m}, x_{m}) \\
+\vdots & \ddots & \vdots \\
+\partial\text{NOT}(w_{n,1}, x_{1}) & \dots & \partial\text{NOT}(w_{n,m}, x_{m})
+\end{bmatrix}
+\end{aligned}
+\end{equation*}
+where ${\bf W}$ is a matrix of weights and ${\bf x}$ is a vector of soft-bits.
+
+%[\partial\text{NOT}({\bf W}_{1}, {\bf x}), \dots, \partial\text{NOT}({\bf W}_{n}, {\bf x})]
+
+Define
+\begin{equation*}
+\begin{aligned}
+\partial\text{AND-NEURON}: [0,1]^{n} \times [0,1]^{n} &\to [0,1], \\
+({\bf w}, {\bf x}) &\mapsto \min(\partial\text{IMPLIES}(w_{1}, x_{1}), \dots, \partial\text{IMPLIES}(w_{n}, x_{n}))\text{,}
+\end{aligned}
+\end{equation*}
+where ${\bf w}$ is vector of weights and ${\bf x}$ is a vector of soft-bits. A single AND neuron maps $n$ soft-bit inputs to a single soft-bit value. A $\partial\text{AND-LAYER}$ of $n$ neurons maps $m$ soft-bit inputs to $n$ soft-bit outputs.
+
+Define
+\begin{equation*}
+\begin{aligned}
+\partial\text{OR-NEURON}: [0,1]^{n} \times [0,1]^{n} &\to [0,1], \\
+({\bf w}, {\bf x}) &\mapsto \max(\partial\text{AND}(w_{1}, x_{1}), \dots, \partial\text{AND}(w_{n}, x_{n}))\text{.}
+\end{aligned}
+\end{equation*}
+A single OR neuron maps $n$ soft-bit inputs to a single soft-bit value. A $\partial\text{OR-LAYER}$ of $n$ neurons maps $m$ soft-bit inputs to $n$ soft-bit outputs.
 
 
 \section{Experiments}
+
+\subsection{Noisy XOR}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.8\textwidth]{noisy-xor-architecture.png}
+	\caption{todo}
+	\label{fig:noisy-xor-architecture}
+\end{figure}
+
+todo: weight initialization
 
 \section{Conclusion}
 
@@ -288,3 +333,13 @@ $\operatorname{majority-bit}$ is hard-equivalent to the boolean majority functio
 
 
 \end{document}
+
+\begin{comment}
+Define
+\begin{equation*}
+\begin{aligned}
+\partial\text{AND-LAYER}: [0,1]^{n \times m} \times [0,1]^{m} &\to [0,1]^{n}, \\
+({\bf W}, {\bf x}) &\mapsto [\partial\text{AND-NEURON}({\bf W}_{1}, {\bf x}), \dots, \partial\text{AND-NEURON}({\bf W}_{n}, {\bf x})]
+\end{aligned}
+\end{equation*}
+\end{comment}

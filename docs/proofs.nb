@@ -1,0 +1,1926 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     73397,       1918]
+NotebookOptionsPosition[     67778,       1812]
+NotebookOutlinePosition[     68424,       1833]
+CellTagsIndexPosition[     68381,       1830]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["Proofs", "Title",
+ CellChangeTimes->{{3.864793590384657*^9, 3.864793591864854*^9}, {
+  3.867471884432931*^9, 3.867471884953972*^9}, {3.867473220069077*^9, 
+  3.8674732224859324`*^9}, {3.867473369958376*^9, 3.867473373851125*^9}, {
+  3.8871928391476507`*^9, 
+  3.887192839742244*^9}},ExpressionUUID->"e16c6739-4a62-4e56-b75b-\
+c3030d8dbab8"],
+
+Cell[BoxData[
+ RowBox[{"Get", "[", 
+  RowBox[{"\"\<neural-logic.m\>\"", ",", 
+   RowBox[{"Path", "->", 
+    RowBox[{"SetDirectory", "[", 
+     RowBox[{
+      RowBox[{"ParentDirectory", "[", 
+       RowBox[{"NotebookDirectory", "[", "]"}], "]"}], "<>", 
+      "\"\</prototype\>\""}], "]"}]}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.864789316910233*^9, 3.864789318413851*^9}, 
+   3.8647909759269857`*^9, 3.864791161343305*^9, {3.865060533686211*^9, 
+   3.865060534575768*^9}, {3.865654305983205*^9, 3.8656543071935663`*^9}, {
+   3.866956080731056*^9, 3.86695608434475*^9}, {3.8669767464388313`*^9, 
+   3.866976747693492*^9}, {3.867471894979569*^9, 3.867471949782963*^9}, {
+   3.867471988411284*^9, 3.867472015819126*^9}, {3.867472058275365*^9, 
+   3.86747207120851*^9}, 3.867472142261231*^9},
+ CellLabel->"In[1]:=",ExpressionUUID->"31a3d5b7-a862-4434-bcdf-74b6c5931123"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"?", "neurallogic`*"}]], "Input",
+ CellChangeTimes->{{3.887180002138702*^9, 3.887180004833652*^9}},
+ CellLabel->"In[6]:=",ExpressionUUID->"00377942-043f-45eb-aea5-de4bbbeeef88"],
+
+Cell[BoxData[
+ StyleBox[
+  FrameBox[GridBox[{
+     {
+      DynamicModuleBox[{Typeset`open$$ = True}, 
+       PaneSelectorBox[{False->
+        ButtonBox[
+         RowBox[{
+          
+          DynamicBox[FEPrivate`FrontEndResource[
+           "FEBitmaps", "RightPointerOpener"]], " ", 
+          StyleBox["neurallogic`", "InformationGridGroupHeader"]}],
+         Appearance->None,
+         BaseStyle->"InformationGridLink",
+         ButtonFunction:>FEPrivate`Set[Typeset`open$$, True],
+         Evaluator->Automatic,
+         Method->"Preemptive"], True->
+        PaneBox[GridBox[{
+           {
+            ButtonBox[
+             RowBox[{
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpener"],
+               ImageSizeCache->{10., {3., 7.}}], " ", 
+              StyleBox["neurallogic`", "InformationGridGroupHeader"]}],
+             Appearance->None,
+             BaseStyle->"InformationGridLink",
+             ButtonFunction:>FEPrivate`Set[Typeset`open$$, False],
+             Evaluator->Automatic,
+             Method->"Preemptive"]},
+           {
+            PaneBox[GridBox[{
+               {
+                ButtonBox[
+                 StyleBox["BalancedSoftBits", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "BalancedSoftBits", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardAND", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardAND", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 
+                 StyleBox["HardNetClassifyEvaluation", 
+                  "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNetClassifyEvaluation", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralMajority", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralMajority", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["LogisticClip", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "LogisticClip", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["BinaryCountToReal", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "BinaryCountToReal", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardClassificationLoss", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardClassificationLoss", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNetClassPrediction", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNetClassPrediction", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralNAND", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralNAND", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["MajorityIndex", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "MajorityIndex", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["BlendFactor", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "BlendFactor", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardClip", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardClip", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 
+                 StyleBox["HardNetClassProbabilities", 
+                  "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNetClassProbabilities", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralNOR", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralNOR", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["NearZeroSoftBits", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "NearZeroSoftBits", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["ClosedActions", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "ClosedActions", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardDropoutLayer", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardDropoutLayer", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNetClassScores", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNetClassScores", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralNOT", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralNOT", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["NeuralAND", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "NeuralAND", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["ConditionAction", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "ConditionAction", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Harden", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "Harden", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNetFunction", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNetFunction", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralOR", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralOR", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["NeuralHardeningLayer", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "NeuralHardeningLayer", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["ConditionActionLayers", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "ConditionActionLayers", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardeningBackward", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardeningBackward", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNetTransformWeights", "InformationGridButton"],
+                 
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNetTransformWeights", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralRealLayer", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralRealLayer", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["NeuralOR", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "NeuralOR", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["DifferentiableHardAND", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "DifferentiableHardAND", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardeningForward", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardeningForward", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralAND", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralAND", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralReshapeLayer", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralReshapeLayer", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["OpenActions", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "OpenActions", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 
+                 StyleBox["DifferentiableHardIfThenElse", 
+                  "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "DifferentiableHardIfThenElse", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardeningLayer", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardeningLayer", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralANDorOR", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralANDorOR", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralTransposeLayer", "InformationGridButton"],
+                 
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralTransposeLayer", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 
+                 StyleBox["RandomBalancedNormalSoftBits", 
+                  "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "RandomBalancedNormalSoftBits", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 
+                 StyleBox["DifferentiableHardIfThenElse1", 
+                  "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "DifferentiableHardIfThenElse1", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardenNet", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardenNet", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralCatenateLayer", "InformationGridButton"],
+                 
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralCatenateLayer", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralXOR", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralXOR", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["RandomNormalSoftBits", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "RandomNormalSoftBits", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 
+                 StyleBox["DifferentiableHardIfThenElse2", 
+                  "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "DifferentiableHardIfThenElse2", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardIfThenElse", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardIfThenElse", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralChain", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralChain", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNOR", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNOR", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["RandomUniformSoftBits", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "RandomUniformSoftBits", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["DifferentiableHardNOT", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "DifferentiableHardNOT", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardMajority", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardMajority", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralCount", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralCount", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNOT", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNOT", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["RealEncoderDecoder", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "RealEncoderDecoder", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["DifferentiableHardOR", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "DifferentiableHardOR", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNAND", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNAND", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralDecisionList", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralDecisionList", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardOR", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardOR", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["RealTo1Hot", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "RealTo1Hot", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["DifferentiableHardXOR", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "DifferentiableHardXOR", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNetBooleanExpression", "InformationGridButton"],
+                 
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNetBooleanExpression", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralExactlyK", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralExactlyK", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["InitializeBalanced", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "InitializeBalanced", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Require", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "Require", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["ExtractWeights", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "ExtractWeights", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNetBooleanFunction", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNetBooleanFunction", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralFlattenLayer", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralFlattenLayer", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["InitializeNearToOne", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "InitializeNearToOne", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["SoftBits", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "SoftBits", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["GetNetArrays", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "GetNetArrays", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNetClassBits", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNetClassBits", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 
+                 StyleBox["HardNeuralIfThenElseLayer", 
+                  "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralIfThenElseLayer", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["InitializeNearToZero", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "InitializeNearToZero", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Soften", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "Soften", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["GetWeights", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "GetWeights", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNetClassify", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNetClassify", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["HardNeuralLTEK", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "HardNeuralLTEK", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["InitializeToConstant", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "InitializeToConstant", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["SoftNOT", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-d281f7cd-ce0e-4b18-bb5f-14b5df2fb002", {
+                   "SoftNOT", "neurallogic`"}, False},
+                 ButtonNote->"neurallogic`",
+                 Evaluator->Automatic]}
+              },
+              DefaultBaseStyle->"Text",
+              
+              GridBoxAlignment->{
+               "Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+              GridBoxItemSize->{"Columns" -> {{
+                   Scaled[0.19]}}}],
+             ImageMargins->{{10, 0}, {0, 2}}]}
+          },
+          GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}}],
+         FrameMargins->{{0, 0}, {8, 0}}]}, Dynamic[Typeset`open$$],
+        ImageSize->Automatic]]}
+    },
+    GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+    GridBoxDividers->{"ColumnsIndexed" -> {{False}}, "RowsIndexed" -> {}},
+    GridBoxSpacings->{"Columns" -> {
+        Offset[0.27999999999999997`], {
+         Offset[0.5599999999999999]}, 
+        Offset[0.27999999999999997`]}, "Rows" -> {
+        Offset[0.2], {
+         Offset[0.8]}, 
+        Offset[0.2]}}],
+   BaseStyle->"InformationTitleFrame"], "InformationGridPlain"]], "Output",
+ CellChangeTimes->{3.887180005367757*^9},
+ CellLabel->"Out[6]=",ExpressionUUID->"ca726769-b346-48ac-904e-96315b43c747"]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"h", "[", "x_", "]"}], ":=", 
+  RowBox[{"If", "[", 
+   RowBox[{
+    RowBox[{"x", ">", 
+     RowBox[{"1", "/", "2"}]}], ",", "1", ",", "0"}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.887193033873515*^9, 3.8871930414401293`*^9}},
+ CellLabel->"In[38]:=",ExpressionUUID->"3dc483cd-1a21-474e-9d9b-7f59d47cd801"],
+
+Cell[CellGroupData[{
+
+Cell["NOT", "Section",
+ CellChangeTimes->{{3.887192854921034*^9, 
+  3.887192855113987*^9}},ExpressionUUID->"8e390d9c-f567-494b-a0d0-\
+1efd7c157c99"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"f", "[", 
+   RowBox[{"w_", ",", "x_"}], "]"}], ":=", 
+  RowBox[{"1", "-", "w", "+", 
+   RowBox[{
+    RowBox[{"(", 
+     RowBox[{
+      RowBox[{"-", "1"}], "+", 
+      RowBox[{"2", " ", "w"}]}], ")"}], " ", "x"}]}]}]], "Input",
+ CellChangeTimes->{{3.887192954454529*^9, 3.887192962883155*^9}},
+ CellLabel->"In[48]:=",ExpressionUUID->"ab21144c-98ed-4bc9-b1fc-e6eab0263ec0"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"h", "/@", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{"f", "[", 
+     RowBox[{"1", ",", "1"}], "]"}], ",", 
+    RowBox[{"f", "[", 
+     RowBox[{"1", ",", "0"}], "]"}], ",", 
+    RowBox[{"f", "[", 
+     RowBox[{"0", ",", "1"}], "]"}], ",", 
+    RowBox[{"f", "[", 
+     RowBox[{"0", ",", "0"}], "]"}]}], "}"}]}]], "Input",
+ CellChangeTimes->{{3.8871901662941933`*^9, 3.887190191232834*^9}, {
+  3.887192969804278*^9, 3.887192977784906*^9}, {3.8871930545071993`*^9, 
+  3.887193097546914*^9}},
+ CellLabel->"In[49]:=",ExpressionUUID->"22aa237a-dbaa-423d-85b5-5b4ff6635216"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"1", ",", "0", ",", "0", ",", "1"}], "}"}]], "Output",
+ CellChangeTimes->{{3.8871901690915422`*^9, 3.887190191799479*^9}, 
+   3.887191153953327*^9, 3.8871929785768423`*^9, {3.8871930556715384`*^9, 
+   3.887193065116001*^9}, 3.887193099851315*^9},
+ CellLabel->"Out[49]=",ExpressionUUID->"985b9733-2377-4dc4-b8ec-fbf20ee628dc"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"ResourceFunction", "[", "\"\<TruthTable\>\"", "]"}], "[", 
+  RowBox[{
+   RowBox[{"Not", "[", 
+    RowBox[{"Xor", "[", 
+     RowBox[{"w", ",", "x"}], "]"}], "]"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"w", ",", "x"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.8871910053712053`*^9, 3.8871910100668707`*^9}, {
+  3.8871910530833673`*^9, 3.887191077566078*^9}},
+ CellLabel->"In[50]:=",ExpressionUUID->"6cf6b364-7822-4eca-9285-0f72ca4f85c9"],
+
+Cell[BoxData[
+ TagBox[GridBox[{
+    {"w", "x", 
+     RowBox[{"!", 
+      RowBox[{"(", 
+       RowBox[{"w", "\[Xor]", "x"}], ")"}]}]},
+    {
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False]},
+    {
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False]},
+    {
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False]},
+    {
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False]}
+   },
+   AutoDelete->False,
+   FrameStyle->GrayLevel[0.5],
+   GridBoxAlignment->{
+    "Columns" -> {Right, Right, {Left}}, "Rows" -> {{Center}}},
+   GridBoxDividers->{
+    "Columns" -> {{True}}, "ColumnsIndexed" -> {-2 -> AbsoluteThickness[3]}, 
+     "Rows" -> {{True}}},
+   GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+   GridBoxSpacings->{"Columns" -> {{Automatic}}, "Rows" -> {{1}}}],
+  "Grid"]], "Output",
+ CellChangeTimes->{3.887191088001392*^9, 3.8871911562879543`*^9, 
+  3.8871929796569138`*^9, 3.887193066051948*^9, 3.887193101226165*^9},
+ CellLabel->"Out[50]=",ExpressionUUID->"0c07cb5a-ddd8-4701-9402-b05fb6aefeeb"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["AND", "Section",
+ CellChangeTimes->{{3.887192854921034*^9, 
+  3.8871928636330957`*^9}},ExpressionUUID->"aae9c8ca-0191-436f-9977-\
+a00ef17060bc"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"f", "[", 
+   RowBox[{"x_", ",", "y_"}], "]"}], ":=", 
+  RowBox[{"Module", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"m", "=", 
+      RowBox[{"Min", "[", 
+       RowBox[{"x", ",", "y"}], "]"}]}], "}"}], ",", "\[IndentingNewLine]", 
+    RowBox[{"If", "[", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"2", "m"}], ">", "1"}], ",", "\[IndentingNewLine]", 
+      RowBox[{
+       FractionBox["1", "2"], "+", 
+       RowBox[{
+        FractionBox["1", "2"], 
+        RowBox[{"(", 
+         RowBox[{"x", "+", "y"}], ")"}], "*", 
+        RowBox[{"(", 
+         RowBox[{"m", "-", 
+          FractionBox["1", "2"]}], ")"}]}]}], ",", "\[IndentingNewLine]", 
+      RowBox[{"m", "+", 
+       RowBox[{
+        FractionBox["1", "2"], 
+        RowBox[{"(", 
+         RowBox[{"x", "+", "y"}], ")"}], 
+        RowBox[{"(", 
+         RowBox[{
+          FractionBox["1", "2"], "-", "m"}], ")"}]}]}]}], 
+     "\[IndentingNewLine]", "]"}]}], "\[IndentingNewLine]", "]"}]}]], "Input",\
+
+ CellChangeTimes->{{3.887192868869769*^9, 3.887192940293351*^9}},
+ CellLabel->"In[51]:=",ExpressionUUID->"22895057-e1d1-41c2-80b2-57dde1a50fb5"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"f", "[", 
+    RowBox[{"1", ",", "1"}], "]"}], ",", 
+   RowBox[{"f", "[", 
+    RowBox[{"1", ",", "0"}], "]"}], ",", 
+   RowBox[{"f", "[", 
+    RowBox[{"0", ",", "1"}], "]"}], ",", 
+   RowBox[{"f", "[", 
+    RowBox[{"0", ",", "0"}], "]"}]}], "}"}]], "Input",
+ CellChangeTimes->{{3.887193046061488*^9, 3.887193047094839*^9}, 
+   3.8871931080627747`*^9, 3.887193247092787*^9},
+ CellLabel->"In[54]:=",ExpressionUUID->"b708a848-d1c8-47b2-9c1a-473efc8630eb"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"1", ",", 
+   FractionBox["1", "4"], ",", 
+   FractionBox["1", "4"], ",", "0"}], "}"}]], "Output",
+ CellChangeTimes->{
+  3.887192990069903*^9, {3.8871930477109222`*^9, 3.887193068547625*^9}, 
+   3.8871931086988373`*^9, 3.887193247460602*^9},
+ CellLabel->"Out[54]=",ExpressionUUID->"9f41507b-8e7a-4e66-af45-502bc5a07228"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"ResourceFunction", "[", "\"\<TruthTable\>\"", "]"}], "[", 
+  RowBox[{
+   RowBox[{"And", "[", 
+    RowBox[{"x", ",", "y"}], "]"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"x", ",", "y"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.887193075123945*^9, 3.887193078667647*^9}},
+ CellLabel->"In[53]:=",ExpressionUUID->"caccb912-10d2-4737-85cf-ff531c529c38"],
+
+Cell[BoxData[
+ TagBox[GridBox[{
+    {"x", "y", 
+     RowBox[{"x", "&&", "y"}]},
+    {
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False]},
+    {
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False]},
+    {
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False]},
+    {
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False]}
+   },
+   AutoDelete->False,
+   FrameStyle->GrayLevel[0.5],
+   GridBoxAlignment->{
+    "Columns" -> {Right, Right, {Left}}, "Rows" -> {{Center}}},
+   GridBoxDividers->{
+    "Columns" -> {{True}}, "ColumnsIndexed" -> {-2 -> AbsoluteThickness[3]}, 
+     "Rows" -> {{True}}},
+   GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+   GridBoxSpacings->{"Columns" -> {{Automatic}}, "Rows" -> {{1}}}],
+  "Grid"]], "Output",
+ CellChangeTimes->{3.8871930793454027`*^9, 3.887193109704795*^9},
+ CellLabel->"Out[53]=",ExpressionUUID->"f524cecd-3a83-4987-939b-5c239090e61e"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["OR", "Section",
+ CellChangeTimes->{{3.887192854921034*^9, 3.8871928636330957`*^9}, {
+  3.887254238166834*^9, 
+  3.887254238242547*^9}},ExpressionUUID->"ecbfc1dc-1226-4fd6-8ae9-\
+3eb4d7046417"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"f", "[", 
+   RowBox[{"x_", ",", "y_"}], "]"}], ":=", 
+  RowBox[{"Module", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"m", "=", 
+      RowBox[{"Max", "[", 
+       RowBox[{"x", ",", "y"}], "]"}]}], "}"}], ",", "\[IndentingNewLine]", 
+    RowBox[{"If", "[", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"2", "m"}], ">", "1"}], ",", "\[IndentingNewLine]", 
+      RowBox[{
+       FractionBox["1", "2"], "+", 
+       RowBox[{
+        FractionBox["1", "2"], 
+        RowBox[{"(", 
+         RowBox[{"x", "+", "y"}], ")"}], "*", 
+        RowBox[{"(", 
+         RowBox[{"m", "-", 
+          FractionBox["1", "2"]}], ")"}]}]}], ",", "\[IndentingNewLine]", 
+      RowBox[{"m", "+", 
+       RowBox[{
+        FractionBox["1", "2"], 
+        RowBox[{"(", 
+         RowBox[{"x", "+", "y"}], ")"}], 
+        RowBox[{"(", 
+         RowBox[{
+          FractionBox["1", "2"], "-", "m"}], ")"}]}]}]}], 
+     "\[IndentingNewLine]", "]"}]}], "\[IndentingNewLine]", "]"}]}]], "Input",\
+
+ CellChangeTimes->{{3.8872542448006973`*^9, 3.8872542452338667`*^9}},
+ CellLabel->
+  "In[186]:=",ExpressionUUID->"9acf8a22-c3d5-4f2b-b139-26e62cb20ce9"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"f", "[", 
+    RowBox[{"1", ",", "1"}], "]"}], ",", 
+   RowBox[{"f", "[", 
+    RowBox[{"1", ",", "0"}], "]"}], ",", 
+   RowBox[{"f", "[", 
+    RowBox[{"0", ",", "1"}], "]"}], ",", 
+   RowBox[{"f", "[", 
+    RowBox[{"0", ",", "0"}], "]"}]}], "}"}]], "Input",
+ CellLabel->
+  "In[187]:=",ExpressionUUID->"cf8760a2-f1e4-4f71-aafa-9ae1073d0041"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"1", ",", 
+   FractionBox["3", "4"], ",", 
+   FractionBox["3", "4"], ",", "0"}], "}"}]], "Output",
+ CellChangeTimes->{3.8872542502233477`*^9, 3.887343455231943*^9},
+ CellLabel->
+  "Out[187]=",ExpressionUUID->"7856c7c3-f906-4659-af9f-7a44e2873a41"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"ResourceFunction", "[", "\"\<TruthTable\>\"", "]"}], "[", 
+  RowBox[{
+   RowBox[{"Or", "[", 
+    RowBox[{"x", ",", "y"}], "]"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"x", ",", "y"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.887254257367319*^9, 3.887254258467719*^9}},
+ CellLabel->
+  "In[188]:=",ExpressionUUID->"eeedfba2-7110-4292-8326-a30cc8db93a7"],
+
+Cell[BoxData[
+ TagBox[GridBox[{
+    {"x", "y", 
+     RowBox[{"x", "||", "y"}]},
+    {
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False]},
+    {
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False]},
+    {
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False]},
+    {
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False]}
+   },
+   AutoDelete->False,
+   FrameStyle->GrayLevel[0.5],
+   GridBoxAlignment->{
+    "Columns" -> {Right, Right, {Left}}, "Rows" -> {{Center}}},
+   GridBoxDividers->{
+    "Columns" -> {{True}}, "ColumnsIndexed" -> {-2 -> AbsoluteThickness[3]}, 
+     "Rows" -> {{True}}},
+   GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+   GridBoxSpacings->{"Columns" -> {{Automatic}}, "Rows" -> {{1}}}],
+  "Grid"]], "Output",
+ CellChangeTimes->{3.887254261292555*^9, 3.8873434559132233`*^9},
+ CellLabel->
+  "Out[188]=",ExpressionUUID->"57c373cb-5d01-42e4-a9aa-9a8f2bd4c3ac"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["dIMPLIES", "Section",
+ CellChangeTimes->{{3.887192854921034*^9, 3.8871928636330957`*^9}, {
+  3.887254238166834*^9, 3.887254238242547*^9}, {3.8872598693639402`*^9, 
+  3.887259872590295*^9}, {3.887263283969906*^9, 
+  3.887263284929915*^9}},ExpressionUUID->"08d7ae6b-0058-465e-9ea0-\
+e74ff879f4c9"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"g", "[", 
+   RowBox[{"w_", ",", "x_"}], "]"}], ":=", 
+  RowBox[{"f", "[", 
+   RowBox[{"x", ",", 
+    RowBox[{"1", "-", "w"}]}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.8872598788527327`*^9, 3.8872598922150373`*^9}},
+ CellLabel->
+  "In[189]:=",ExpressionUUID->"1e450851-7f18-4882-80dc-72864ff1825b"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"g", "[", 
+    RowBox[{"1", ",", "1"}], "]"}], ",", 
+   RowBox[{"g", "[", 
+    RowBox[{"1", ",", "0"}], "]"}], ",", 
+   RowBox[{"g", "[", 
+    RowBox[{"0", ",", "1"}], "]"}], ",", 
+   RowBox[{"g", "[", 
+    RowBox[{"0", ",", "0"}], "]"}]}], "}"}]], "Input",
+ CellChangeTimes->{{3.88725990106975*^9, 3.887259906913588*^9}},
+ CellLabel->
+  "In[190]:=",ExpressionUUID->"95b224d9-5f9f-4624-90e0-7346d96f9785"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   FractionBox["3", "4"], ",", "0", ",", "1", ",", 
+   FractionBox["3", "4"]}], "}"}]], "Output",
+ CellChangeTimes->{3.8872599072600727`*^9, 3.887343458588017*^9},
+ CellLabel->
+  "Out[190]=",ExpressionUUID->"4a9d6c7f-750f-4ebf-9a65-982a9fe34c6c"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"ResourceFunction", "[", "\"\<TruthTable\>\"", "]"}], "[", 
+  RowBox[{
+   RowBox[{"Implies", "[", 
+    RowBox[{"w", ",", "x"}], "]"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"w", ",", "x"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.887259954213162*^9, 3.887259999620221*^9}},
+ CellLabel->
+  "In[191]:=",ExpressionUUID->"c81dbb03-8f38-4b82-b876-02b9784aedad"],
+
+Cell[BoxData[
+ TagBox[GridBox[{
+    {"w", "x", 
+     RowBox[{"w", "\[Implies]", "x"}]},
+    {
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False]},
+    {
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False]},
+    {
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False]},
+    {
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False]}
+   },
+   AutoDelete->False,
+   FrameStyle->GrayLevel[0.5],
+   GridBoxAlignment->{
+    "Columns" -> {Right, Right, {Left}}, "Rows" -> {{Center}}},
+   GridBoxDividers->{
+    "Columns" -> {{True}}, "ColumnsIndexed" -> {-2 -> AbsoluteThickness[3]}, 
+     "Rows" -> {{True}}},
+   GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+   GridBoxSpacings->{"Columns" -> {{Automatic}}, "Rows" -> {{1}}}],
+  "Grid"]], "Output",
+ CellChangeTimes->{{3.8872599588740587`*^9, 3.887260000131254*^9}, 
+   3.8873434595201817`*^9},
+ CellLabel->
+  "Out[191]=",ExpressionUUID->"6a86ef6b-5e4e-4dd1-ada2-c7ba42490a51"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"ResourceFunction", "[", "\"\<TruthTable\>\"", "]"}], "[", 
+  RowBox[{
+   RowBox[{"Or", "[", 
+    RowBox[{"x", ",", 
+     RowBox[{"Not", "[", "w", "]"}]}], "]"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"w", ",", "x"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.88734348041336*^9, 3.887343486804093*^9}},
+ CellLabel->
+  "In[192]:=",ExpressionUUID->"46317eaf-a9d8-46b1-8125-7624a334afb9"],
+
+Cell[BoxData[
+ TagBox[GridBox[{
+    {"w", "x", 
+     RowBox[{"x", "||", 
+      RowBox[{"!", "w"}]}]},
+    {
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False]},
+    {
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False]},
+    {
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False]},
+    {
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["False",
+      Background->RGBColor[1, 0.85, 0.85],
+      StripOnInput->False], 
+     ItemBox["True",
+      Background->RGBColor[0.87, 0.94, 1],
+      StripOnInput->False]}
+   },
+   AutoDelete->False,
+   FrameStyle->GrayLevel[0.5],
+   GridBoxAlignment->{
+    "Columns" -> {Right, Right, {Left}}, "Rows" -> {{Center}}},
+   GridBoxDividers->{
+    "Columns" -> {{True}}, "ColumnsIndexed" -> {-2 -> AbsoluteThickness[3]}, 
+     "Rows" -> {{True}}},
+   GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+   GridBoxSpacings->{"Columns" -> {{Automatic}}, "Rows" -> {{1}}}],
+  "Grid"]], "Output",
+ CellChangeTimes->{3.887343487553802*^9},
+ CellLabel->
+  "Out[192]=",ExpressionUUID->"352a3d30-ecff-43ef-8f95-40ccfbdfcb04"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["dMAJORITY", "Section",
+ CellChangeTimes->{{3.887192854921034*^9, 3.8871928636330957`*^9}, {
+  3.887254238166834*^9, 3.887254238242547*^9}, {3.8872598693639402`*^9, 
+  3.887259872590295*^9}, {3.887263277998085*^9, 
+  3.8872632802275457`*^9}},ExpressionUUID->"a2621df0-19eb-4035-9863-\
+1066a5a6bf87"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"MajorityIndex", "[", "x_List", "]"}], ":=", 
+  RowBox[{"Quotient", "[", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"Length", "[", "x", "]"}], "-", "1"}], ",", "2"}], 
+   "]"}]}]], "Input",
+ CellChangeTimes->{{3.8872633204317017`*^9, 3.887263353136869*^9}, {
+  3.887263500486972*^9, 3.887263508291638*^9}},
+ CellLabel->
+  "In[180]:=",ExpressionUUID->"437e01ba-cd55-49ca-a556-5d88d6fc10bb"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"MajorityIndex", "[", "x_List", "]"}], ":=", 
+  RowBox[{"Floor", "[", 
+   RowBox[{
+    RowBox[{"(", 
+     RowBox[{
+      RowBox[{"Length", "[", "x", "]"}], "-", "1"}], ")"}], "/", "2"}], 
+   "]"}]}]], "Input",
+ CellChangeTimes->{{3.8872683865568953`*^9, 3.887268412416937*^9}},
+ CellLabel->
+  "In[182]:=",ExpressionUUID->"b7a31ca1-15c0-40a5-9f4e-43284320dd04"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"MajorityIndex", "/@", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{"{", "1", "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"1", ",", "2"}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"1", ",", "2", ",", "3"}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"1", ",", "2", ",", "3", ",", "4"}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"1", ",", "2", ",", "3", ",", "4", ",", "5"}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"1", ",", "2", ",", "3", ",", "4", ",", "5", ",", "6"}], "}"}]}],
+    "}"}]}]], "Input",
+ CellChangeTimes->{{3.887263712126041*^9, 3.887263761220574*^9}},
+ CellLabel->
+  "In[183]:=",ExpressionUUID->"4f3dcd3c-2373-40af-a787-50388713cf17"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"0", ",", "0", ",", "1", ",", "1", ",", "2", ",", "2"}], 
+  "}"}]], "Output",
+ CellChangeTimes->{{3.8872637233346653`*^9, 3.887263761741906*^9}, {
+  3.887268333016362*^9, 3.8872683416334677`*^9}, {3.887268391350646*^9, 
+  3.887268419990883*^9}},
+ CellLabel->
+  "Out[183]=",ExpressionUUID->"551d36b5-43c0-4045-b7ca-35a6cb83116b"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Sort", "[", 
+  RowBox[{"{", 
+   RowBox[{"1", ",", "2", ",", "3", ",", "5"}], "}"}], "]"}]], "Input",
+ CellChangeTimes->{{3.887267759583805*^9, 3.887267762482505*^9}},
+ CellLabel->
+  "In[168]:=",ExpressionUUID->"80fc5ca8-3b53-446e-a235-1951e00e2cab"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"1", ",", "2", ",", "3", ",", "5"}], "}"}]], "Output",
+ CellChangeTimes->{3.887267763123293*^9},
+ CellLabel->
+  "Out[168]=",ExpressionUUID->"07fa8963-9b09-4cd7-b8da-506c2f91581f"]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"MajorityBit", "[", "x_List", "]"}], ":=", 
+  RowBox[{
+   RowBox[{"Take", "[", 
+    RowBox[{
+     RowBox[{"Sort", "[", "x", "]"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"MajorityIndex", "[", "x", "]"}], "+", "1"}], "}"}]}], "]"}], 
+   "[", 
+   RowBox[{"[", "1", "]"}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.887263291499085*^9, 3.887263307407421*^9}, {
+  3.887263568197703*^9, 3.8872636169996157`*^9}, {3.8872638303811617`*^9, 
+  3.887263830604273*^9}, {3.8872650075640163`*^9, 3.887265007823615*^9}},
+ CellLabel->
+  "In[161]:=",ExpressionUUID->"bb6986dd-8362-42aa-aad5-333d0c1082e6"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"MajorityBit", "/@", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{"{", "1", "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"2", ",", "1"}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"1", ",", "3", ",", "2"}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"2", ",", "1", ",", "4", ",", "3"}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"1", ",", "2", ",", "3", ",", "4", ",", "5"}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"6", ",", "3", ",", "2", ",", "4", ",", "5", ",", "1"}], "}"}], 
+    ",", 
+    RowBox[{"{", 
+     RowBox[{
+     "7", ",", "6", ",", "5", ",", "4", ",", "3", ",", "2", ",", "1"}], 
+     "}"}]}], "}"}]}]], "Input",
+ CellChangeTimes->{{3.887263774830868*^9, 3.887263791340356*^9}, {
+  3.8872638399072237`*^9, 3.8872639323142357`*^9}},
+ CellLabel->
+  "In[162]:=",ExpressionUUID->"7db43080-9ab1-4290-93db-c9b56436514c"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"1", ",", "1", ",", "2", ",", "2", ",", "3", ",", "3", ",", "4"}], 
+  "}"}]], "Output",
+ CellChangeTimes->{
+  3.887263791743215*^9, {3.887263831841167*^9, 3.8872639027569838`*^9}, 
+   3.8872639329782333`*^9, 3.88726500914787*^9},
+ CellLabel->
+  "Out[162]=",ExpressionUUID->"1219545a-0fd2-4f64-8e11-aec76b2c5382"]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"DMajority", "[", "x_List", "]"}], ":=", 
+  RowBox[{"Module", "[", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"mbit", "=", 
+       RowBox[{"MajorityBit", "[", "x", "]"}]}], ",", "margin", ",", "mean", 
+      ",", "marginDelta"}], "}"}], ",", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"margin", "=", 
+      RowBox[{"Abs", "[", 
+       RowBox[{"mbit", "-", 
+        RowBox[{"1", "/", "2"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"mean", "=", 
+      RowBox[{"Mean", "[", "x", "]"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"marginDelta", "=", 
+      RowBox[{"mean", "*", "margin"}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"If", "[", 
+      RowBox[{
+       RowBox[{"mbit", ">", 
+        RowBox[{"1", "/", "2"}]}], ",", "\[IndentingNewLine]", 
+       RowBox[{"Evaluate", "[", 
+        RowBox[{
+         RowBox[{"1", "/", "2"}], "+", "marginDelta"}], "]"}], ",", 
+       "\[IndentingNewLine]", 
+       RowBox[{"Evaluate", "[", 
+        RowBox[{"mbit", "+", "marginDelta"}], "]"}]}], "]"}]}]}], 
+   "\[IndentingNewLine]", "]"}]}]], "Input",
+ CellChangeTimes->{{3.887264012586032*^9, 3.887264144155182*^9}, {
+  3.887264987171956*^9, 3.887264993258794*^9}},
+ CellLabel->
+  "In[163]:=",ExpressionUUID->"bb6002fe-d7c3-4fb1-a29a-118c82683476"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"DMajority", "[", 
+  RowBox[{"{", 
+   RowBox[{"0.1", ",", "0.2", ",", "0.8", ",", "0.9", ",", "0.52"}], "}"}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.887264965478478*^9, 3.8872649742423058`*^9}, {
+  3.887265019457057*^9, 3.887265023863069*^9}},
+ CellLabel->
+  "In[166]:=",ExpressionUUID->"e532dacd-01fb-468d-ae36-06efd08543a8"],
+
+Cell[BoxData["0.51008`"], "Output",
+ CellChangeTimes->{{3.88726497464977*^9, 3.8872650241801023`*^9}},
+ CellLabel->
+  "Out[166]=",ExpressionUUID->"26be4b0b-d71f-48ec-bde9-4bc9d373bd70"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"DMajority", "[", 
+  RowBox[{"{", 
+   RowBox[{"x1", ",", "x2", ",", "x3", ",", "x4", ",", "x5"}], "}"}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.887265048868321*^9, 3.887265052056212*^9}},
+ CellLabel->
+  "In[167]:=",ExpressionUUID->"c241e109-42ef-4883-b6e8-1780ec6b05b4"],
+
+Cell[BoxData[
+ RowBox[{"If", "[", 
+  RowBox[{
+   RowBox[{"x3", ">", 
+    FractionBox["1", "2"]}], ",", 
+   RowBox[{
+    FractionBox["1", "2"], "+", 
+    RowBox[{
+     FractionBox["1", "5"], " ", 
+     RowBox[{"(", 
+      RowBox[{"x1", "+", "x2", "+", "x3", "+", "x4", "+", "x5"}], ")"}], " ", 
+     
+     RowBox[{"Abs", "[", 
+      RowBox[{
+       RowBox[{"-", 
+        FractionBox["1", "2"]}], "+", "x3"}], "]"}]}]}], ",", 
+   RowBox[{"x3", "+", 
+    RowBox[{
+     FractionBox["1", "5"], " ", 
+     RowBox[{"(", 
+      RowBox[{"x1", "+", "x2", "+", "x3", "+", "x4", "+", "x5"}], ")"}], " ", 
+     
+     RowBox[{"Abs", "[", 
+      RowBox[{
+       RowBox[{"-", 
+        FractionBox["1", "2"]}], "+", "x3"}], "]"}]}]}]}], "]"}]], "Output",
+ CellChangeTimes->{3.887265052362452*^9},
+ CellLabel->
+  "Out[167]=",ExpressionUUID->"9d5cd618-5b1e-4357-81e0-d341c675c4b7"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{1440., 782.25},
+WindowMargins->{{1440, Automatic}, {Automatic, 0}},
+TaggingRules-><|"TryRealOnly" -> False|>,
+FrontEndVersion->"13.2 for Linux x86 (64-bit) (December 7, 2022)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[StyleDefinitions -> "Default.nb"]]}, Visible -> False, 
+  FrontEndVersion -> "13.2 for Linux x86 (64-bit) (December 7, 2022)", 
+  StyleDefinitions -> "PrivateStylesheetFormatting.nb"],
+ExpressionUUID->"5639487d-0000-4d16-a9a2-da6a2fa136c4"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 346, 6, 98, "Title",ExpressionUUID->"e16c6739-4a62-4e56-b75b-c3030d8dbab8"],
+Cell[929, 30, 870, 16, 29, "Input",ExpressionUUID->"31a3d5b7-a862-4434-bcdf-74b6c5931123"],
+Cell[CellGroupData[{
+Cell[1824, 50, 200, 3, 29, "Input",ExpressionUUID->"00377942-043f-45eb-aea5-de4bbbeeef88"],
+Cell[2027, 55, 38756, 890, 423, "Output",ExpressionUUID->"ca726769-b346-48ac-904e-96315b43c747"]
+}, Open  ]],
+Cell[40798, 948, 340, 8, 29, "Input",ExpressionUUID->"3dc483cd-1a21-474e-9d9b-7f59d47cd801"],
+Cell[CellGroupData[{
+Cell[41163, 960, 148, 3, 67, "Section",ExpressionUUID->"8e390d9c-f567-494b-a0d0-1efd7c157c99"],
+Cell[41314, 965, 406, 11, 33, "Input",ExpressionUUID->"ab21144c-98ed-4bc9-b1fc-e6eab0263ec0"],
+Cell[CellGroupData[{
+Cell[41745, 980, 588, 15, 29, "Input",ExpressionUUID->"22aa237a-dbaa-423d-85b5-5b4ff6635216"],
+Cell[42336, 997, 364, 6, 33, "Output",ExpressionUUID->"985b9733-2377-4dc4-b8ec-fbf20ee628dc"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[42737, 1008, 475, 11, 29, "Input",ExpressionUUID->"6cf6b364-7822-4eca-9285-0f72ca4f85c9"],
+Cell[43215, 1021, 1931, 59, 145, "Output",ExpressionUUID->"0c07cb5a-ddd8-4701-9402-b05fb6aefeeb"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[45195, 1086, 150, 3, 67, "Section",ExpressionUUID->"aae9c8ca-0191-436f-9977-a00ef17060bc"],
+Cell[45348, 1091, 1148, 34, 190, "Input",ExpressionUUID->"22895057-e1d1-41c2-80b2-57dde1a50fb5"],
+Cell[CellGroupData[{
+Cell[46521, 1129, 503, 13, 29, "Input",ExpressionUUID->"b708a848-d1c8-47b2-9c1a-473efc8630eb"],
+Cell[47027, 1144, 359, 8, 47, "Output",ExpressionUUID->"9f41507b-8e7a-4e66-af45-502bc5a07228"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[47423, 1157, 387, 9, 29, "Input",ExpressionUUID->"caccb912-10d2-4737-85cf-ff531c529c38"],
+Cell[47813, 1168, 1807, 56, 145, "Output",ExpressionUUID->"f524cecd-3a83-4987-939b-5c239090e61e"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[49669, 1230, 198, 4, 67, "Section",ExpressionUUID->"ecbfc1dc-1226-4fd6-8ae9-3eb4d7046417"],
+Cell[49870, 1236, 1156, 35, 190, "Input",ExpressionUUID->"9acf8a22-c3d5-4f2b-b139-26e62cb20ce9"],
+Cell[CellGroupData[{
+Cell[51051, 1275, 391, 12, 29, "Input",ExpressionUUID->"cf8760a2-f1e4-4f71-aafa-9ae1073d0041"],
+Cell[51445, 1289, 286, 7, 48, "Output",ExpressionUUID->"7856c7c3-f906-4659-af9f-7a44e2873a41"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[51768, 1301, 390, 10, 29, "Input",ExpressionUUID->"eeedfba2-7110-4292-8326-a30cc8db93a7"],
+Cell[52161, 1313, 1809, 57, 145, "Output",ExpressionUUID->"57c373cb-5d01-42e4-a9aa-9a8f2bd4c3ac"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[54019, 1376, 301, 5, 67, "Section",ExpressionUUID->"08d7ae6b-0058-465e-9ea0-e74ff879f4c9"],
+Cell[54323, 1383, 334, 9, 29, "Input",ExpressionUUID->"1e450851-7f18-4882-80dc-72864ff1825b"],
+Cell[CellGroupData[{
+Cell[54682, 1396, 456, 13, 29, "Input",ExpressionUUID->"95b224d9-5f9f-4624-90e0-7346d96f9785"],
+Cell[55141, 1411, 286, 7, 48, "Output",ExpressionUUID->"4a9d6c7f-750f-4ebf-9a65-982a9fe34c6c"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[55464, 1423, 395, 10, 29, "Input",ExpressionUUID->"c81dbb03-8f38-4b82-b876-02b9784aedad"],
+Cell[55862, 1435, 1847, 58, 145, "Output",ExpressionUUID->"6a86ef6b-5e4e-4dd1-ada2-c7ba42490a51"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[57746, 1498, 422, 11, 29, "Input",ExpressionUUID->"46317eaf-a9d8-46b1-8125-7624a334afb9"],
+Cell[58171, 1511, 1807, 58, 145, "Output",ExpressionUUID->"352a3d30-ecff-43ef-8f95-40ccfbdfcb04"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[60027, 1575, 304, 5, 67, "Section",ExpressionUUID->"a2621df0-19eb-4035-9863-1066a5a6bf87"],
+Cell[60334, 1582, 419, 11, 29, "Input",ExpressionUUID->"437e01ba-cd55-49ca-a556-5d88d6fc10bb"],
+Cell[60756, 1595, 394, 11, 29, "Input",ExpressionUUID->"b7a31ca1-15c0-40a5-9f4e-43284320dd04"],
+Cell[CellGroupData[{
+Cell[61175, 1610, 682, 18, 29, "Input",ExpressionUUID->"4f3dcd3c-2373-40af-a787-50388713cf17"],
+Cell[61860, 1630, 367, 8, 33, "Output",ExpressionUUID->"551d36b5-43c0-4045-b7ca-35a6cb83116b"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[62264, 1643, 273, 6, 29, "Input",ExpressionUUID->"80fc5ca8-3b53-446e-a235-1951e00e2cab"],
+Cell[62540, 1651, 218, 5, 33, "Output",ExpressionUUID->"07fa8963-9b09-4cd7-b8da-506c2f91581f"]
+}, Open  ]],
+Cell[62773, 1659, 637, 16, 29, "Input",ExpressionUUID->"bb6986dd-8362-42aa-aad5-333d0c1082e6"],
+Cell[CellGroupData[{
+Cell[63435, 1679, 857, 23, 29, "Input",ExpressionUUID->"7db43080-9ab1-4290-93db-c9b56436514c"],
+Cell[64295, 1704, 351, 8, 33, "Output",ExpressionUUID->"1219545a-0fd2-4f64-8e11-aec76b2c5382"]
+}, Open  ]],
+Cell[64661, 1715, 1313, 33, 174, "Input",ExpressionUUID->"bb6002fe-d7c3-4fb1-a29a-118c82683476"],
+Cell[CellGroupData[{
+Cell[65999, 1752, 353, 8, 29, "Input",ExpressionUUID->"e532dacd-01fb-468d-ae36-06efd08543a8"],
+Cell[66355, 1762, 185, 3, 33, "Output",ExpressionUUID->"26be4b0b-d71f-48ec-bde9-4bc9d373bd70"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[66577, 1770, 296, 7, 29, "Input",ExpressionUUID->"c241e109-42ef-4883-b6e8-1780ec6b05b4"],
+Cell[66876, 1779, 862, 28, 48, "Output",ExpressionUUID->"9d5cd618-5b1e-4357-81e0-d341c675c4b7"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+
