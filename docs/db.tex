@@ -193,21 +193,42 @@ A single OR neuron maps $n$ soft-bit inputs to a single soft-bit value. A $\part
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.8\textwidth]{noisy-xor-architecture.png}
-	\caption{todo}
+	\caption{$\partial\mathbb{B}$ net for the noisy-xor problem.}
 	\label{fig:noisy-xor-architecture}
 \end{figure}
 
 todo: weight initialization
 
-\section{Conclusion}
+\begin{table}[]
+	\centering
+	\begin{tabular}{llllll}
+		\multicolumn{1}{c}{}                       & \multicolumn{5}{c}{accuracy}                                                                                                                                                            \\
+		\multicolumn{1}{l|}{}                      & \multicolumn{1}{l|}{mean}                  & \multicolumn{1}{l|}{5 \%ile}       & \multicolumn{1}{l|}{95 \%ile}       & \multicolumn{1}{l|}{min}           & \multicolumn{1}{l|}{max}            \\ \hline
+		\multicolumn{1}{|l|}{Tsetlin}              & \multicolumn{1}{l|}{99.3 +/- 0.3}          & \multicolumn{1}{l|}{95.9}          & \multicolumn{1}{l|}{100.0}          & \multicolumn{1}{l|}{91.6}          & \multicolumn{1}{l|}{100.0}          \\ \hline
+		\multicolumn{1}{|l|}{$\partial\mathbb{B}$} & \multicolumn{1}{l|}{\textbf{97.9 +/- 0.2}} & \multicolumn{1}{l|}{\textbf{95.4}} & \multicolumn{1}{l|}{\textbf{100.0}} & \multicolumn{1}{l|}{\textbf{93.6}} & \multicolumn{1}{l|}{\textbf{100.0}} \\ \hline
+		\multicolumn{1}{|l|}{neural network}       & \multicolumn{1}{l|}{95.4 +/- 0.5}          & \multicolumn{1}{l|}{90.1}          & \multicolumn{1}{l|}{98.6}           & \multicolumn{1}{l|}{88.2}          & \multicolumn{1}{l|}{99.9}           \\ \hline
+		\multicolumn{1}{|l|}{SVM}                  & \multicolumn{1}{l|}{58.0 +/- 0.3}          & \multicolumn{1}{l|}{56.4}          & \multicolumn{1}{l|}{59.2}           & \multicolumn{1}{l|}{55.4}          & \multicolumn{1}{l|}{66.5}           \\ \hline
+		\multicolumn{1}{|l|}{naive Bayes}          & \multicolumn{1}{l|}{49.8 +/- 0.2}          & \multicolumn{1}{l|}{48.3}          & \multicolumn{1}{l|}{51.0}           & \multicolumn{1}{l|}{41.3}          & \multicolumn{1}{l|}{52.7}           \\ \hline
+		\multicolumn{1}{|l|}{logistic regression}  & \multicolumn{1}{l|}{49.8 +/- 0.3}          & \multicolumn{1}{l|}{47.8}          & \multicolumn{1}{l|}{51.1}           & \multicolumn{1}{l|}{41.1}          & \multicolumn{1}{l|}{53.1}           \\ \hline
+	\end{tabular}
+	\caption{Noisy-XOR results.}
+	\label{tab:noisy-xor-results}
+\end{table}
+\begin{comment}
+"""
+| Technique/Accuracy  | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
+| ------------------- | -------------- | ------- | ------- | ------ | ------ |
+| Tsetlin             | 99.3 +/- 0.3   | 95.9    | 100.0   | 91.6   | 100.0  |
+| dB                  | 97.9 +/- 0.2   | 95.4    | 100.0   | 93.6   | 100.0  |
+| Neural network      | 95.4 +/- 0.5   | 90.1    | 98.6    | 88.2   | 99.9   |
+| SVM                 | 58.0 +/- 0.3   | 56.4    | 59.2    | 55.4   | 66.5   |
+| Naive Bayes         | 49.8 +/- 0.2   | 48.3    | 51.0    | 41.3   | 52.7   |
+| Logistic regression | 49.8 +/- 0.3   | 47.8    | 51.1    | 41.1   | 53.1   |
+Source: https://arxiv.org/pdf/1804.01508.pdf
+"""
+\end{comment}
 
-%\begin{figure}[h]
-%\begin{center}
-%\framebox[4.0in]{$\;$}
-%\fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
-%\end{center}
-%\caption{Sample figure caption.}
-%\end{figure}
+\section{Conclusion}
 
 
 \subsubsection*{Acknowledgments}
