@@ -32,6 +32,7 @@
 \newtheorem{theorem}{Theorem}
 \newtheorem*{definition}{Definition}
 \newtheorem{prop}{Proposition}
+\newtheorem{lemma}{Lemma}
 
 
 \iclrfinalcopy % Uncomment for camera-ready version, but NOT for submission.
@@ -53,7 +54,7 @@
 \section{$\partial\mathbb{B}$ nets}
 
 \begin{definition}[Soft-bits and hard-bits]
-A {\em soft-bit} is a real value in the range $[0,1]$ and a {\em hard-bit} is a boolean value in the set $\{0,1\}$. A soft-bit, $x$, is {\em high} if $x>1/2$, otherwise it is {\em low}.
+A {\em soft-bit} is a real value in the range $[0,1]$ and a {\em hard-bit} is a boolean value from the set $\{0,1\}$. A soft-bit, $x$, is {\em high} if $x>1/2$, otherwise it is {\em low}.
 \end{definition}
 
 \begin{definition}[Hardening]
@@ -76,96 +77,75 @@ f(x) =
 
 Weights are trainable soft-bits. A high weight implies the corresponding operation is masked out and therefore inactive.
 
-\begin{definition}
-$\partial\text{NOT}: [0, 1]^{2} \rightarrow [0,1]$ is the function,
+Define
 	\begin{equation*}
-	\partial\text{NOT}(w, x) = 1 - w + x (2w - 1)\text{,}
+	\begin{aligned}
+	\partial\text{NOT}: [0, 1]^{2} &\to [0,1], \\
+	(w, x) &\mapsto 1 - w + x (2w - 1)\text{,}
+	\end{aligned}
 	\end{equation*}
 where $w$ is a weight and $x$ is a soft-bit value.
-\end{definition}
+$\partial${NOT} is hard-equivalent to the boolean function $\neg(x \oplus w)$ (proposition \ref{prop:not}). If the weight is high then $\partial${NOT} is hard-equivalent to the boolean identity function; otherwise it is hard-equivalent to $\neg$. In consequence, we can learn to logically not, or simply pass through, the input value $x$.
 
-\begin{prop}\label{prop:not}
-	$\partial${NOT} is hard-equivalent to the boolean function
-$\neg (x \oplus w)$.
-\end{prop}
-
-If the weight is high then $\partial${NOT} is hard-equivalent to the boolean identity function; otherwise it is hard-equivalent to $\neg$. In consequence, we can learn to logically not, or simply pass through, the input value $x$.
-
-\begin{definition}
-$\partial\text{AND}: [0,1]^{2} \rightarrow [0,1]$ is the function,
-	\begin{equation*}
-	\partial\text{AND}(x, y) = 
+Define
+\begin{equation*}
+\begin{aligned}
+\partial\text{AND}: [0,1]^{2} &\to [0,1], \\
+	(x, y) &\mapsto 
 	\begin{cases}
 	1/2 + 1/2(x + y)(m - 1/2) & \text{if } 2m > 1 \\
 	m + 1/2(x + y)(1/2 - m) & \text{otherwise,}
 	\end{cases}
-	\end{equation*}
-	where $m=\min(x,y)$, and $x$ and $y$ are soft-bit values.
-\end{definition}
+\end{aligned}
+\end{equation*}
+where $m=\min(x,y)$, and $x$ and $y$ are soft-bit values.
+$\partial${AND} is hard-equivalent to the boolean function $x \wedge y$ (proposition \ref{prop:and}).
 
-\begin{prop}\label{prop:and}
-	$\partial${AND} is hard-equivalent to the boolean function $x \wedge y$.
-\end{prop}
-
-\begin{definition}
-$\partial\text{OR}: [0,1]^{2} \rightarrow [0,1]$ is the function,
-	\begin{equation*}
-	\partial\text{OR}(x, y) = 
-	\begin{cases}
+Define 
+\begin{equation*}
+\begin{aligned}
+\partial\text{OR}: [0,1]^{2} &\to [0,1], \\
+(x, y) &\mapsto 
+\begin{cases}
 	1/2 + 1/2(x + y)(m - 1/2) & \text{if } 2m > 1 \\
-	m + 1/2(x + y)(1/2 - m) & \text{otherwise,}
-	\end{cases}
-	\end{equation*}
-	where $m=\max(x,y)$, and $x$ and $y$ are soft-bit values.
-\end{definition}
+m + 1/2(x + y)(1/2 - m) & \text{otherwise,}
+\end{cases}
+\end{aligned}
+\end{equation*}
+where $m=\max(x,y)$, and $x$ and $y$ are soft-bit values.
+$\partial${OR} is hard-equivalent to the boolean function $x \vee y$ (proposition \ref{prop:or}).
 
-\begin{prop}\label{prop:or}
-	$\partial${OR} is hard-equivalent to the boolean function $x \vee y$.
-\end{prop}
-
-\begin{definition}
-$\partial\text{IMPLIES}: [0,1]^{2} \rightarrow [0,1]$ is the function,
-	\begin{equation*}
-	\partial\text{IMPLIES}(w, x) = \partial\text{OR}(x, 1-w)\text{,}
-	\end{equation*}
+Define
+\begin{equation*}
+\begin{aligned}
+\partial\text{IMPLIES}: [0,1]^{2} &\to [0,1],\\
+(w, x) &\mapsto \partial\text{OR}(x, 1-w)\text{,}
+\end{aligned}
+\end{equation*}
 where $w$ is a weight and $x$ is a soft-bit value.
-\end{definition}
+$\partial${IMPLIES} is hard-equivalent to the boolean function $w \Rightarrow x$ (proposition \ref{prop:implies}).
 
-\begin{prop}\label{prop:implies}
-	$\partial${IMPLIES} is hard-equivalent to the boolean function $w \Rightarrow x$.
-\end{prop}
+Define $\operatorname{majority-index}: \mathbb{Z}_{>0} \to \mathbb{Z}_{> 0}$ as $n \mapsto 1 + \lfloor \frac{n-1}{2}\rfloor$. 
 
-Define $\operatorname{majority-index}: \mathbb{Z}_{>0} \rightarrow \mathbb{Z}_{> 0}$ as $\operatorname{majority-index}(n) = 1 + \lfloor \frac{n-1}{2}\rfloor$.
+Define $\operatorname{select}: [0,1]^n \times {1, 2, \ldots, n} \to [0,1]$ as  $({\bf x}, i) \mapsto x_{i}$.
 
-Define $\operatorname{select}: [0,1]^n \times {1, 2, \ldots, n} \rightarrow [0,1]$ as  $\operatorname{select}({\bf x}, i) = x_{i}$.
+Define $\operatorname{majority-bit}: [0,1]^n \to [0,1]$ as  ${\bf x} \mapsto \operatorname{select}( \operatorname{sort}({\bf x}), \operatorname{majority-index}(\lvert{\bf x}\rvert))$, where $\operatorname{sort}({\bf x})$ sorts the elements of ${\bf x}$ in ascending order.
 
-Define $\operatorname{majority-bit}: [0,1]^n \rightarrow [0,1]$ as  $$\operatorname{majority-bit}({\bf x}) = \operatorname{select}( \operatorname{sort}({\bf x}), \operatorname{majority-index}(\lvert{\bf x}\rvert))\text{,}$$ where $\operatorname{sort}$ sorts the elements of a vector in ascending order.
+Define $\operatorname{majority-delta}: [0,1]^n \to [0,1]$ as
+${\bf x} \mapsto \bar{\bf x} \times \left| \operatorname{majority-bit}({\bf x}) - 1/2\right|$.
 
-Define $\operatorname{majority-delta}: [0,1]^n \rightarrow [0,1]$ as
-$$\operatorname{majority-delta}({\bf x}) = \bar{\bf x} \times \left| \operatorname{majority-bit}({\bf x}) - 1/2\right|\text{.}$$
-
-\begin{definition}
-$\partial\text{MAJORITY}: [0,1]^{n} \rightarrow [0,1]$ is the function,
-	\begin{equation*}
-	\partial\text{MAJORITY}({\bf x}) = 
+\begin{equation*}
+\begin{aligned}
+\partial\text{MAJORITY}: [0,1]^{n} &\to [0,1], \\
+{\bf x} &\mapsto 
 	\begin{cases}
 	1/2 + \delta & \text{if } m > 1/2 \\
 	m + \delta & \text{otherwise,}
 	\end{cases}
-	\end{equation*}
-	where ${\bf x}$ is a vector of soft-bits, $m = \operatorname{majority-bit}({\bf x})$ and $\delta = \operatorname{majority-delta}({\bf x})$.
-\end{definition}
-
-\begin{prop}\label{prop:majority}
-	$\partial${MAJORITY} is hard-equivalent to the boolean majority function,
-\begin{equation*}
-\text{MAJ}(x_{1}, \dots, x_{n}) = 
-	\begin{cases}
-	1 & \text{if } \sum_{i=1}^{n} x_{i} \geq n/2 \\
-	0 & \text{otherwise.}
-\end{cases}
+\end{aligned}
 \end{equation*}
-\end{prop}
+where ${\bf x}$ is a vector of soft-bits, $m = \operatorname{majority-bit}({\bf x})$ and $\delta = \operatorname{majority-delta}({\bf x})$.
+$\partial${MAJORITY} is hard-equivalent to the boolean majority function (proposition \ref{prop:majority}).
 
 
 \subsection{Logical layers}
@@ -176,13 +156,13 @@ $\partial\text{MAJORITY}: [0,1]^{n} \rightarrow [0,1]$ is the function,
 
 \section{Conclusion}
 
-\begin{figure}[h]
-\begin{center}
+%\begin{figure}[h]
+%\begin{center}
 %\framebox[4.0in]{$\;$}
-\fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
-\end{center}
-\caption{Sample figure caption.}
-\end{figure}
+%\fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+%\end{center}
+%\caption{Sample figure caption.}
+%\end{figure}
 
 
 \subsubsection*{Acknowledgments}
@@ -199,8 +179,9 @@ acknowledgments, including those to funding agencies, go at the end of the paper
 
 \section{Proofs}
 
-\subsection{Proof of proposition~\ref{prop:not}}
-
+\begin{prop}\label{prop:not}
+	$\partial${NOT} is hard-equivalent to the boolean function
+	$\neg (x \oplus w)$.
 \begin{proof}
 	Table \ref{not-table} is the truth table of the boolean function $\neg (x \oplus w)$.
 	\begin{table}
@@ -218,9 +199,11 @@ acknowledgments, including those to funding agencies, go at the end of the paper
 		
 	\end{table}
 \end{proof}
+\end{prop}
 
-\subsection{Proof of proposition~\ref{prop:and}}
 
+\begin{prop}\label{prop:and}
+	$\partial${AND} is hard-equivalent to the boolean function $x \wedge y$.
 \begin{proof}
 	Table \ref{and-table} is the truth table of the boolean function $x \wedge y$.
 	\begin{table}
@@ -238,9 +221,10 @@ acknowledgments, including those to funding agencies, go at the end of the paper
 		
 	\end{table}
 \end{proof}
+\end{prop}
 
-\subsection{Proof of proposition~\ref{prop:or}}
-
+\begin{prop}\label{prop:or}
+	$\partial${OR} is hard-equivalent to the boolean function $x \vee y$.
 \begin{proof}
 	Table \ref{or-table} is the truth table of the boolean function $x \vee y$.
 	\begin{table}
@@ -258,9 +242,10 @@ acknowledgments, including those to funding agencies, go at the end of the paper
 		
 	\end{table}
 \end{proof}
+\end{prop}
 
-\subsection{Proof of proposition~\ref{prop:implies}}
-
+\begin{prop}\label{prop:implies}
+	$\partial${IMPLIES} is hard-equivalent to the boolean function $w \Rightarrow x$.
 \begin{proof}
 	Table \ref{implies-table} is the truth table of the boolean function $x \Rightarrow y$.
 	\begin{table}
@@ -278,11 +263,28 @@ acknowledgments, including those to funding agencies, go at the end of the paper
 		
 	\end{table}
 \end{proof}
+\end{prop}
 
-\subsection{Proof of proposition~\ref{prop:majority}}
-
+\begin{lemma}
+$\operatorname{majority-bit}$ is hard-equivalent to the boolean majority function.
 \begin{proof}
-todo
+	The boolean majority function,
+\begin{equation*}
+\text{MAJ}(x_{1}, \dots, x_{n}) = 
+\begin{cases}
+1 & \text{if } \sum_{i=1}^{n} x_{i} \geq n/2 \\
+0 & \text{otherwise.}
+\end{cases}
+\end{equation*}
 \end{proof}
+\end{lemma}
+
+\begin{prop}\label{prop:majority}
+	$\partial${MAJORITY} is hard-equivalent to the boolean majority function.
+\begin{proof}
+	todo
+\end{proof}
+\end{prop}
+
 
 \end{document}
