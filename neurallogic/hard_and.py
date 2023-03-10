@@ -8,7 +8,7 @@ from neurallogic import hard_masks, neural_logic_net, symbolic_generation, initi
 
 # TODO: seperate and operation from mask operation
 def soft_and_neuron(w, x):
-    x = jax.vmap(hard_masks.soft_mask_to_true, 0, 0)(w, x)
+    x = jax.vmap(hard_masks.soft_mask_to_true_margin, 0, 0)(w, x)
     return jax.numpy.min(x)
 
 

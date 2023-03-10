@@ -20,11 +20,13 @@ from neurallogic import (
     harden_layer,
     neural_logic_net,
     initialization,
+    symbolic_primitives,
+    hard_vmap,
+    hard_concatenate
 )
 from tests import utils
 
 config.update("jax_enable_x64", True)
-
 
 def check_symbolic(nets, data, trained_state, dropout_rng):
     x_training, y_training, x_test, y_test = data
@@ -49,10 +51,14 @@ def check_symbolic(nets, data, trained_state, dropout_rng):
     )
     print("hard_net: final test_accuracy: %.2f" % (hard_test_accuracy * 100))
     assert numpy.isclose(test_accuracy, hard_test_accuracy, atol=0.0001)
+
     if False:
         symbolic_weights = hard_weights  # utils.make_symbolic(hard_weights)
         symbolic_trained_state = train_state.TrainState.create(
-            apply_fn=symbolic.apply, params=symbolic_weights, tx=optax.sgd(1.0, 1.0)
+            apply_fn=symbolic.apply,
+            params=symbolic_weights,
+            tx=optax.sgd(1.0, 1.0),
+            dropout_rng=dropout_rng,
         )
         symbolic_input = hard_input.tolist()
         symbolic_test_accuracy = apply_hard_model(
@@ -62,12 +68,11 @@ def check_symbolic(nets, data, trained_state, dropout_rng):
             "symbolic_net: final test_accuracy: %.2f" % (symbolic_test_accuracy * 100)
         )
         assert numpy.isclose(test_accuracy, symbolic_test_accuracy, atol=0.0001)
-    if False:
+    if True:
         # CPU and GPU give different results, so we can't easily regress on a static symbolic expression
         symbolic_input = [f"x{i}" for i in range(len(hard_input[0].tolist()))]
-        symbolic_output = symbolic.apply({"params": symbolic_weights}, symbolic_input)
-        print("symbolic_output", symbolic_output[0][:10000])
-
+        # This simply checks that the symbolic output can be generated
+        symbolic_output = symbolic.apply({"params": hard_weights}, symbolic_input, training=False)
 
 num_features = 12
 num_classes = 2
@@ -104,8 +109,8 @@ Source: https://arxiv.org/pdf/1804.01508.pdf
 # N.B. We use marginal versions of and/or layers for this performance
 # mean: 97.89, sem: 0.15, min: 93.58, max: 100.00, 5%: 95.40, 95%: 100.00
 def nln(type, x, training: bool):
-    y = jax.vmap(lambda x: 1 - x)(x)
-    x = jax.numpy.concatenate([x, y], axis=0)
+    y = hard_vmap.vmap(type)((lambda x: 1 - x, lambda x: 1 - x, lambda x: symbolic_primitives.symbolic_not(x)))(x)
+    x = hard_concatenate.concatenate(type)([x, y], 0)
 
     layer_size = 32
     dtype = jax.numpy.float64
@@ -129,12 +134,11 @@ def nln(type, x, training: bool):
     x = x.reshape((1, layer_size * not_layer_size))
     x = hard_majority.majority_layer(type)()(x)
 
-    z = jax.vmap(lambda x: 1 - x)(x)
-    x = jax.numpy.concatenate([x, z], axis=0)
+    z = hard_vmap.vmap(type)((lambda x: 1 - x, lambda x: 1 - x, lambda x: symbolic_primitives.symbolic_not(x)))(x)
+    x = hard_concatenate.concatenate(type)([x, z], 0)
     
     ########################################################
     
-    x = harden_layer.harden_layer(type)(x)
     x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
     x = x.sum(-1)
     return x
@@ -277,7 +281,7 @@ def get_config():
     config = ml_collections.ConfigDict()
     config.learning_rate = 0.01
     config.batch_size = 5000
-    config.num_epochs = 2000
+    config.num_epochs = 2000 # 2000 for paper
     return config
 
 

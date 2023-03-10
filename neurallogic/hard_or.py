@@ -13,7 +13,7 @@ from neurallogic import (
 
 # TODO: seperate out the or operation from the mask operation
 def soft_or_neuron(w, x):
-    x = jax.vmap(hard_masks.soft_mask_to_false, 0, 0)(w, x)
+    x = jax.vmap(hard_masks.soft_mask_to_false_margin, 0, 0)(w, x)
     return jax.numpy.max(x)
 
 

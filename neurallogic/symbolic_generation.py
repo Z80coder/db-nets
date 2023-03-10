@@ -14,9 +14,9 @@ import jax._src.lax_reference as lax_reference
 
 
 def symbolic_bind(prim, *args, **params):
-    print('\nprimitive: ', prim.name)
-    print('\targs:\n\t\t', args)
-    print('\tparams\n\t\t: ', params)
+    #print('\nprimitive: ', prim.name)
+    #print('\targs:\n\t\t', args)
+    #print('\tparams\n\t\t: ', params)
     symbolic_outvals = {
         'broadcast_in_dim': symbolic_primitives.symbolic_broadcast_in_dim,
         'reshape': symbolic_primitives.symbolic_reshape,
