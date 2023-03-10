@@ -190,22 +190,29 @@ A single OR neuron maps $n$ soft-bit inputs to a single soft-bit value. A $\part
 
 \subsection{Noisy XOR}
 
+todo: replace majority-layer with majority
+
+pathological: single bit-flip changes the classification
+
+following \cite{granmo18}
+ 
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.8\textwidth]{noisy-xor-architecture.png}
-	\caption{$\partial\mathbb{B}$ net for the noisy-xor problem.}
+	\caption{{\em A $\partial\mathbb{B}$ net for the noisy-xor problem}. The net concatenates the soft-bit input, ${\bf x}$ (length 12), with its negation, ${\bf 1 - x}$, and supplies the resulting vector (length 24) to a $\partial\text{AND-LAYER}$ (width 32), $\partial\text{OR-LAYER}$ (width 32),  $\partial\text{NOT-LAYER}$ (width 16), and a final $\partial\text{MAJORITY}$ to produce a single soft-bit $y \in [0,1]$ (to predict odd parity) and its negation $1-y$ (to predict even parity). The net's weights, once hardened, consume $288$ bytes.}
 	\label{fig:noisy-xor-architecture}
 \end{figure}
 
+
 todo: weight initialization
 
-\begin{table}[]
+\begin{table}[h]
 	\centering
 	\begin{tabular}{llllll}
 		\multicolumn{1}{c}{}                       & \multicolumn{5}{c}{accuracy}                                                                                                                                                            \\
 		\multicolumn{1}{l|}{}                      & \multicolumn{1}{l|}{mean}                  & \multicolumn{1}{l|}{5 \%ile}       & \multicolumn{1}{l|}{95 \%ile}       & \multicolumn{1}{l|}{min}           & \multicolumn{1}{l|}{max}            \\ \hline
 		\multicolumn{1}{|l|}{Tsetlin}              & \multicolumn{1}{l|}{99.3 +/- 0.3}          & \multicolumn{1}{l|}{95.9}          & \multicolumn{1}{l|}{100.0}          & \multicolumn{1}{l|}{91.6}          & \multicolumn{1}{l|}{100.0}          \\ \hline
-		\multicolumn{1}{|l|}{$\partial\mathbb{B}$} & \multicolumn{1}{l|}{\textbf{97.9 +/- 0.2}} & \multicolumn{1}{l|}{\textbf{95.4}} & \multicolumn{1}{l|}{\textbf{100.0}} & \multicolumn{1}{l|}{\textbf{93.6}} & \multicolumn{1}{l|}{\textbf{100.0}} \\ \hline
+		\multicolumn{1}{|l|}{$\partial\mathbb{B}$ net} & \multicolumn{1}{l|}{\textbf{97.9 +/- 0.2}} & \multicolumn{1}{l|}{\textbf{95.4}} & \multicolumn{1}{l|}{\textbf{100.0}} & \multicolumn{1}{l|}{\textbf{93.6}} & \multicolumn{1}{l|}{\textbf{100.0}} \\ \hline
 		\multicolumn{1}{|l|}{neural network}       & \multicolumn{1}{l|}{95.4 +/- 0.5}          & \multicolumn{1}{l|}{90.1}          & \multicolumn{1}{l|}{98.6}           & \multicolumn{1}{l|}{88.2}          & \multicolumn{1}{l|}{99.9}           \\ \hline
 		\multicolumn{1}{|l|}{SVM}                  & \multicolumn{1}{l|}{58.0 +/- 0.3}          & \multicolumn{1}{l|}{56.4}          & \multicolumn{1}{l|}{59.2}           & \multicolumn{1}{l|}{55.4}          & \multicolumn{1}{l|}{66.5}           \\ \hline
 		\multicolumn{1}{|l|}{naive Bayes}          & \multicolumn{1}{l|}{49.8 +/- 0.2}          & \multicolumn{1}{l|}{48.3}          & \multicolumn{1}{l|}{51.0}           & \multicolumn{1}{l|}{41.3}          & \multicolumn{1}{l|}{52.7}           \\ \hline
@@ -214,19 +221,6 @@ todo: weight initialization
 	\caption{Noisy-XOR results.}
 	\label{tab:noisy-xor-results}
 \end{table}
-\begin{comment}
-"""
-| Technique/Accuracy  | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
-| ------------------- | -------------- | ------- | ------- | ------ | ------ |
-| Tsetlin             | 99.3 +/- 0.3   | 95.9    | 100.0   | 91.6   | 100.0  |
-| dB                  | 97.9 +/- 0.2   | 95.4    | 100.0   | 93.6   | 100.0  |
-| Neural network      | 95.4 +/- 0.5   | 90.1    | 98.6    | 88.2   | 99.9   |
-| SVM                 | 58.0 +/- 0.3   | 56.4    | 59.2    | 55.4   | 66.5   |
-| Naive Bayes         | 49.8 +/- 0.2   | 48.3    | 51.0    | 41.3   | 52.7   |
-| Logistic regression | 49.8 +/- 0.3   | 47.8    | 51.1    | 41.1   | 53.1   |
-Source: https://arxiv.org/pdf/1804.01508.pdf
-"""
-\end{comment}
 
 \section{Conclusion}
 
@@ -236,8 +230,8 @@ Use unnumbered third level headings for the acknowledgments. All
 acknowledgments, including those to funding agencies, go at the end of the paper.
 
 
-\bibliography{iclr2021_conference}
 \bibliographystyle{iclr2021_conference}
+\bibliography{db}
 
 \appendix
 
