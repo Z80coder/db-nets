@@ -79,7 +79,3 @@ majority_layer = neural_logic_net.select(
 # where k is the number of high-soft bits required for a majority
 # and where k is a soft-bit parameter. Requires constructing
 # a piecewise-continuous function (as per notebook).
-
-
-# TODO: construct a soft-count layer from sorting/majority approach
-# output is 1 high-soft bit that indicates the number of high-soft bits in the input
