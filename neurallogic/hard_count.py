@@ -7,7 +7,7 @@ from neurallogic import neural_logic_net, symbolic_generation
 def high_to_low(x, y):
     return jax.numpy.minimum(1 - x, y)
 
-def soft_count(x: jax.numpy.array) -> float:
+def soft_count(x: jax.numpy.array):
     """
     Returns an array of soft-bits, of length |x|+1, and where only 1 soft-bit is high.
     The index of the high soft-bit indicates the total quantity of low and high bits in the input array.
@@ -34,8 +34,11 @@ def soft_count(x: jax.numpy.array) -> float:
     sorted_x = jax.numpy.concatenate([low, sorted_x, high])
     return jax.vmap(high_to_low)(sorted_x[:-1], sorted_x[1:])
     
-def hard_count(x: jax.numpy.array) -> bool:
-    return 1.0
+def hard_count(x: jax.numpy.array):
+    # We simply count the number of low bits
+    num_low_bits = jax.numpy.sum(x <= 0.5, axis=-1)
+    return jax.nn.one_hot(num_low_bits, num_classes=x.shape[-1] + 1)
+    
 
 soft_count_layer = jax.vmap(soft_count, in_axes=0)
 
@@ -65,7 +68,7 @@ class SymbolicCountLayer:
         return symbolic_generation.symbolic_expression(jaxpr, x)
 
 
-majority_layer = neural_logic_net.select(
+count_layer = neural_logic_net.select(
     lambda: SoftCountLayer(),
     lambda: HardCountLayer(),
     lambda: SymbolicCountLayer(),

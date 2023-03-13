@@ -50,3 +50,4 @@ def test_soft_count():
     print("soft_count", y)
     assert numpy.allclose(y, expected_output)
 
+# TODO: test soft_count == hard_count
