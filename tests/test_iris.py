@@ -23,6 +23,9 @@ from neurallogic import (
     neural_logic_net,
     real_encoder,
     initialization,
+    hard_vmap,
+    hard_concatenate,
+    symbolic_primitives
 )
 from tests import utils
 
@@ -167,46 +170,25 @@ def nln_binary_iris_1(type, x, training: bool):
     return x
 
 def nln_binary_iris(type, x, training: bool):
-    layer_size = 20 # 80 # 60
     dtype = jax.numpy.float64
-    x = hard_masks.mask_to_true_layer(type)(layer_size, dtype=dtype)(x)
-    x = x.ravel()
-    """
+    y = hard_vmap.vmap(type)((lambda x: 1 - x, lambda x: 1 - x, lambda x: symbolic_primitives.symbolic_not(x)))(x)
+    x = hard_concatenate.concatenate(type)([x, y], 0)
+    layer_size = 16
     x = hard_and.and_layer(type)(
         layer_size,
         dtype=dtype,
         weights_init=initialization.initialize_bernoulli(0.01, 0.3, 0.501),
     )(x)
-    """
-    """
-    x = hard_or.or_layer(type)(
-        layer_size,
-        dtype=dtype,
-        weights_init=initialization.initialize_bernoulli(0.99, 0.499, 0.7),
-    )(x)
     x = x.ravel()
-    """
-    not_layer_size = 4
-    x = hard_not.not_layer(type)(
-        not_layer_size,
-        dtype=dtype,
-        weights_init=initialization.initialize_uniform_range(0.499, 0.501),
-    )(x)
-    total_size = layer_size * num_features * not_layer_size
-    block_size = 40
-    num_blocks = int(total_size / block_size)
-    x = x.reshape((num_blocks, block_size))
-    x = hard_majority.majority_layer(type)()(x)
     x = x.reshape((num_classes - 1, int(x.shape[0] / (num_classes - 1))))
     x = hard_majority.majority_layer(type)()(x)
-    x = jax.numpy.array([x]) # TODO: shouldn't need to do this
     ########################################################
+    x = jax.numpy.array([x]) # TODO: shouldn't need to do this
     x = hard_count.count_layer(type)()(x)
     x = x.ravel()
     x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
     x = x.sum(-1)
     return x
-
 
 def batch_nln_iris(type, x, training: bool):
     return jax.vmap(lambda x: nln_iris(type, x, training))(x)
@@ -360,10 +342,10 @@ def apply_hard_model_to_data(state, features, labels):
 
 def get_config():
     config = ml_collections.ConfigDict()
-    config.learning_rate = 0.001 # sgd = 0.1
+    config.learning_rate = 0.01 # sgd = 0.1
     config.momentum = 0.9
     config.batch_size = 120
-    config.num_epochs = 4000  # 500 for paper
+    config.num_epochs = 4000 # 20000  # 500 for paper
     return config
 
 
