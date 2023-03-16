@@ -11,14 +11,13 @@
 \usepackage{graphicx}
 \usepackage{comment}
 
-\title{$\partial\mathbb{B}$ nets: learning boolean functions with\\backpropagation}
+\title{$\partial\mathbb{B}$ nets learn boolean functions by\\backpropagation}
 
 % Authors must not appear in the submitted version. They should be hidden
 % as long as the \iclrfinalcopy macro remains commented out below.
 % Non-anonymous submissions will be rejected without review.
 
-\author{Ian Wright \thanks{GitHub, Z80coder@github.com}
-}
+\author{Ian Wright}
 
 % The \author macro works with any number of authors. There are two commands
 % used to separate the names and addresses of multiple authors: \And and \AND.
@@ -45,10 +44,18 @@
 \begin{abstract}
 	$\partial\mathbb{B}$ nets are differentiable neural networks 
 	that learn discrete boolean functions by backpropagation.
-	$\partial\mathbb{B}$ nets, once trained, `harden' to boolean functions with identical semantics and therefore, unlike existing approaches to neural network binarization, retain their accuracy. Experiments demonstrate that $\partial\mathbb{B}$ nets achieve competitive performance on standard machine learning problems yet are significantly more compact (due to 1-bit weights) and interpretable (due to the logical nature of the learnt function).
+	$\partial\mathbb{B}$ nets, once trained, `harden' to boolean functions with identical semantics. In consequence, the boolean functions have identical accuracy to the trained nets, unlike existing approaches to neural network binarization. Experiments demonstrate that $\partial\mathbb{B}$ nets achieve competitive performance on standard machine learning problems yet are significantly more compact (due to 1-bit weights) and interpretable (due to the logical nature of the learnt function).
 \end{abstract}
 
 \section{Introduction}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.95\textwidth]{db-net.png}
+	\caption{{\em Learning discrete boolean-valued functions with a $\partial\mathbb{B}$ net.}}
+	\label{fig:noisy-xor-architecture}
+\end{figure}
+
 
 \section{Related work}
 
@@ -78,6 +85,41 @@ f(x) =
 
 Weights are trainable soft-bits. A high weight implies the corresponding operation is masked out and therefore inactive.
 
+TODO: requirements are smooth almost everywhere, strictly increasing or decreasing (i.e. no zero gradient). We also want to maximise fan-in information where necessary (for backprop error signal) but also minimize it where necessary (e.g. picking a representative bit we want to optimize). Representative bit when we want a vector-wise update; otherwise, min/max.
+
+TODO: min/max are a degenerate case of sorting/ordering
+
+Define 
+\begin{equation*}
+\begin{aligned}
+\operatorname{margin}: [0,1]^{n} \times 1,2,\dots,n &\to [0,1],\\
+({\bf x}, i) &\mapsto \bar{\bf x} \times \left|x_{i} - 1/2\right| \text{.}
+\end{aligned}
+\end{equation*}
+
+Define 
+\begin{equation*}
+\begin{aligned}
+\operatorname{representative-bit}: [0,1]^{n} \times 1,2,\dots,n &\to [0,1],\\
+({\bf x}, i) &\mapsto 
+\begin{cases}
+1/2 + \operatorname{margin}({\bf x}, i) & \text{if } x_{i} > 1/2 \\
+x_{i} + \operatorname{margin}({\bf x}, i) & \text{otherwise,}
+\end{cases}
+\end{aligned}
+\end{equation*}
+
+\begin{figure}[t]
+	\centering
+	\includegraphics[trim=0pt 0pt 0pt 0pt, clip, width=0.975\textwidth]{logic-gates.png}
+	\caption{{\em Gradient-rich versus gradient-sparse differentiable boolean functions.} Each column contains contour plots of functions $f(x,y)$ that are hard-equivalent to a boolean function (one of $\neg(x \oplus y)$, $x \wedge y$, $x \vee y$, or $x \Rightarrow y$). Every function is continuous and differentiable almost everywhere (white lines indicate non-continuous derivatives). The upper plots are gradient-sparse, where vertical and horizontal contours indicate the function is constant with respect to one of its inputs, i.e. $\partial f/\partial y = 0$ or $\partial f/\partial x = 0$. The lower plots are gradient-rich, where the curved contours indicate the function always varies with respect to any of its inputs, i.e. $\partial f/\partial y \neq 0$ and $\partial f/\partial x \neq 0$. $\partial \mathbb{B}$ nets use gradient-rich functions to ensure that error is always backpropagated to all inputs.} 
+	\label{fig:and-plot}
+\end{figure}
+
+\subsubsection{Not}
+
+TODO: this is not the not operator, but `learn not'.
+
 Define
 	\begin{equation*}
 	\begin{aligned}
@@ -88,21 +130,51 @@ Define
 where $w$ is a weight and $x$ is a soft-bit value.
 $\partial${NOT} is hard-equivalent to the boolean function $\neg(x \oplus w)$ (proposition \ref{prop:not}). If the weight is high then $\partial${NOT} is hard-equivalent to the boolean identity function; otherwise it is hard-equivalent to $\neg$. In consequence, we can learn to logically not, or simply pass through, the input value $x$.
 
+
+\subsubsection{And}
+
 Define
 \begin{equation*}
 \begin{aligned}
-\partial\text{AND}: [0,1]^{2} &\to [0,1], \\
-	(x, y) &\mapsto 
-	\begin{cases}
-	1/2 + 1/2(x + y)(m - 1/2) & \text{if } 2m > 1 \\
-	m + 1/2(x + y)(1/2 - m) & \text{otherwise,}
-	\end{cases}
+\partial\text{AND}: [0,1]^{n} &\to [0,1], \\
+{\bf x} &\mapsto \operatorname{representative-bit}({\bf x}, \operatorname{argmin}\limits_{i} x[i])
 \end{aligned}
 \end{equation*}
-where $m=\min(x,y)$, and $x$ and $y$ are soft-bit values.
+$\partial${AND} is hard-equivalent to the boolean function $\bigwedge_{i=1}^{n} x_i$ (proposition \ref{prop:and}).
+
+\begin{equation*}
+\partial\text{AND}(x, y) =
+	\begin{cases}
+	1/2 + 1/2(x + y)(\operatorname{min}(x,y) - 1/2) & \text{if } \operatorname{min}(x,y) > 1/2 \\
+	\operatorname{min}(x,y) + 1/2(x + y)(1/2 - \operatorname{min}(x,y)) & \text{otherwise.}
+	\end{cases}
+\end{equation*}
+
 $\partial${AND} is hard-equivalent to the boolean function $x \wedge y$ (proposition \ref{prop:and}).
 
+
+\subsubsection{Or}
+
+Define
+\begin{equation*}
+\begin{aligned}
+\partial\text{OR}: [0,1]^{n} &\to [0,1], \\
+{\bf x} &\mapsto \operatorname{representative-bit}({\bf x}, \operatorname{argmax}\limits_{i} x[i])
+\end{aligned}
+\end{equation*}
+$\partial${OR} is hard-equivalent to the boolean function $\bigvee_{i=1}^{n} x_i$ (proposition \ref{prop:or}).
+
 Define 
+\begin{equation*}
+\begin{aligned}
+\partial\text{OR}(x, y) =
+\begin{cases}
+1/2 + 1/2(x + y)(\operatorname{max}(x,y) - 1/2) & \text{if } \operatorname{max}(x,y) > 1/2 \\
+\operatorname{max}(x,y) + 1/2(x + y)(1/2 - \operatorname{max}(x,y)) & \text{otherwise.}
+\end{cases}
+\end{aligned}
+\end{equation*}
+\begin{comment}
 \begin{equation*}
 \begin{aligned}
 \partial\text{OR}: [0,1]^{2} &\to [0,1], \\
@@ -113,8 +185,11 @@ m + 1/2(x + y)(1/2 - m) & \text{otherwise,}
 \end{cases}
 \end{aligned}
 \end{equation*}
-where $m=\max(x,y)$, and $x$ and $y$ are soft-bit values.
+\end{comment}
+
 $\partial${OR} is hard-equivalent to the boolean function $x \vee y$ (proposition \ref{prop:or}).
+
+\subsubsection{Implies}
 
 Define
 \begin{equation*}
@@ -126,16 +201,24 @@ Define
 where $w$ is a weight and $x$ is a soft-bit value.
 $\partial${IMPLIES} is hard-equivalent to the boolean function $w \Rightarrow x$ (proposition \ref{prop:implies}).
 
+\subsubsection{Majority}
+
 Define $\operatorname{majority-index}: \mathbb{Z}_{>0} \to \mathbb{Z}_{> 0}$ as $n \mapsto 1 + \lfloor \frac{n-1}{2}\rfloor$. 
 
-Define $\operatorname{select}: [0,1]^n \times {1, 2, \ldots, n} \to [0,1]$ as  $({\bf x}, i) \mapsto x_{i}$.
+%Define $\operatorname{select}: [0,1]^n \times {1, 2, \ldots, n} \to [0,1]$ as  $({\bf x}, i) \mapsto x_{i}$.
 
-Define $\operatorname{majority-bit}: [0,1]^n \to [0,1]$ as  ${\bf x} \mapsto \operatorname{select}( \operatorname{sort}({\bf x}), \operatorname{majority-index}(\lvert{\bf x}\rvert))$, where $\operatorname{sort}({\bf x})$ sorts the elements of ${\bf x}$ in ascending order.
+%Define $\operatorname{majority-bit}: [0,1]^n \to [0,1]$ as  ${\bf x} \mapsto \operatorname{select}( \operatorname{sort}({\bf x}), \operatorname{majority-index}(\lvert{\bf x}\rvert))$, where $\operatorname{sort}({\bf x})$ sorts the elements of ${\bf x}$ in ascending order.
 
-Define $\operatorname{majority-delta}: [0,1]^n \to [0,1]$ as
-${\bf x} \mapsto \bar{\bf x} \times \left| \operatorname{majority-bit}({\bf x}) - 1/2\right|$.
+%Define $\operatorname{majority-delta}: [0,1]^n \to [0,1]$ as ${\bf x} \mapsto \operatorname{margin}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))$.
 
 Define
+\begin{equation*}
+\begin{aligned}
+	\partial\text{MAJORITY}: [0,1]^{n} &\to [0,1], \\
+	{\bf x} &\mapsto \operatorname{representative-bit}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))
+\end{aligned}
+\end{equation*}
+\begin{comment}
 \begin{equation*}
 \begin{aligned}
 \partial\text{MAJORITY}: [0,1]^{n} &\to [0,1], \\
@@ -146,8 +229,48 @@ Define
 	\end{cases}
 \end{aligned}
 \end{equation*}
-where ${\bf x}$ is a vector of soft-bits, $m = \operatorname{majority-bit}({\bf x})$ and $\delta = \operatorname{majority-delta}({\bf x})$.
+\end{comment}
+where ${\bf x}$ is a vector of soft-bits, and $\operatorname{sort}({\bf x})$ sorts the elements of ${\bf x}$ in ascending order.
 $\partial${MAJORITY} is hard-equivalent to the boolean majority function (proposition \ref{prop:majority}).
+
+TODO: explain how we use sort to avoid space blow-up.
+TODO: discuss time-complexity of sort.
+
+\subsubsection{Count}
+
+Define 
+\begin{equation*}
+\begin{aligned}
+\operatorname{low-high}: [0,1]^{n} &\to [0,1]^{n+1},\\
+{\bf x} &\mapsto \left[ \operatorname{min}(1, x_{1}), \operatorname{min}(1 - x_{1}, x_{2}), \dots, \operatorname{min}(1 - x_{n-1}, x_{n}), \operatorname{min}(x_{n}, 1) \right]\text{.}
+\end{aligned}
+\end{equation*}
+
+Define
+\begin{equation*}
+\begin{aligned}
+\partial\text{COUNT}: [0,1]^{n} &\to [0,1]^{n+1}, \\
+{\bf x} &\mapsto \operatorname{low-high}(\operatorname{sort}({\bf x}))\text{,}
+\end{aligned}
+\end{equation*}
+where ${\bf x}$ is a vector of soft-bits. $\partial${COUNT} is hard-equivalent to
+\begin{equation*}
+\begin{aligned}
+\text{COUNT}: \{0,1\}^{n} &\to \{0,1\}^{n+1}, \\
+{\bf x} &\mapsto \left[\operatorname{k-of-n}({\bf x}, 0), \operatorname{k-of-n}({\bf x}, 1), \dots, \operatorname{k-of-n}({\bf x}, n)\right]\text{,}
+\end{aligned}
+\end{equation*}
+where
+\begin{equation*}
+\operatorname{k-of-n}({\bf x}, k) = \bigvee_{|S|=k} \bigwedge_{i\in S} x_i \bigwedge_{j\notin S} \neg x_j
+\end{equation*}
+(see proposition \ref{prop:count}).
+
+%$f(x_1, x_2, \ldots, x_n) = \bigvee_{|S|=k} \left( \bigwedge_{i\in S} x_i \bigwedge_{j\notin S} \neg x_j \right)$
+%is a logical OR that is taken over all possible subsets $S$ of size $k$ of the set ${1,2,\ldots,n}$.
+
+TODO: count is 1-hot function
+TODO: count allows us to implement boolean counting functions.
 
 \subsection{Logical layers}
 
@@ -189,6 +312,8 @@ A single OR neuron maps $n$ soft-bit inputs to a single soft-bit value. A $\part
 
 todo: architectures
 
+todo: multi-label classification
+
 \section{Experiments}
 
 \subsection{Binary Iris}
@@ -219,7 +344,7 @@ We initialized the network described in figure \ref{fig:noisy-xor-architecture} 
 		\multicolumn{1}{|l|}{naive Bayes}          & \multicolumn{1}{l|}{49.8 +/- 0.2}          & \multicolumn{1}{l|}{48.3}          & \multicolumn{1}{l|}{51.0}           & \multicolumn{1}{l|}{41.3}          & \multicolumn{1}{l|}{52.7}           \\ \hline
 		\multicolumn{1}{|l|}{logistic regression}  & \multicolumn{1}{l|}{49.8 +/- 0.3}          & \multicolumn{1}{l|}{47.8}          & \multicolumn{1}{l|}{51.1}           & \multicolumn{1}{l|}{41.1}          & \multicolumn{1}{l|}{53.1}           \\ \hline
 	\end{tabular}
-	\caption{{\em Noisy-XOR results}}
+	\caption{{\em Ranked noisy-XOR results}}
 	\label{tab:noisy-xor-results}
 \end{table}
 
@@ -351,6 +476,13 @@ $\operatorname{majority-bit}$ is hard-equivalent to the boolean majority functio
 \begin{proof}
 	todo
 \end{proof}
+\end{prop}
+
+\begin{prop}\label{prop:count}
+	$\partial${COUNT} is hard-equivalent to COUNT.
+	\begin{proof}
+		todo
+	\end{proof}
 \end{prop}
 
 
