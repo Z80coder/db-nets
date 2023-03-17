@@ -55,7 +55,7 @@ However, there are drawbacks. First, we cannot easily learn discrete functions, 
 
 This paper proposes a new approach to mitigating these drawbacks. The main idea is to define a type of neural network, called a $\partial \mathbb{B}$ net, which has two aspects: a `soft' aspect, which is a differentiable real-valued function trainable by backpropagation, and a `hard' aspect, which is a non-differentiable boolean function. Both aspects are semantically equivalent. We train the `soft' net as normal, using backpropagation, then `harden' the network and its weights to yield a learned boolean function with equivalent predictive performance (see figure \ref{fig:main-idea}). In consequence, interpreting and verifying what a $\partial \mathbb{B}$ net has learned is relatively less difficult. The option to bias towards learning boolean functions will reduce variance in some domains. And boolean-valued, 1-bit weights increase the memory-efficiency of trained models.
 
-The main contributions of this work are (i) defining novel activation functions that harden to semantically equivalent boolean functions, (ii) defining novel network architectures that effectively learn boolean functions to solve multi-class classification problems, and (iii) experiments that demonstrate $\partial \mathbb{B}$ nets compete with existing approaches in terms of predictive performance yet yield considerably smaller models.
+The main contributions of this work are (i) defining novel activation functions that `harden' to semantically equivalent boolean functions, (ii) defining novel network architectures to effectively learn boolean functions that solve multi-class classification problems, and (iii) experiments that demonstrate $\partial \mathbb{B}$ nets compete with existing approaches in terms of predictive performance yet yield considerably smaller models.
 
 This paper examines related work (section \ref{sec:related-work}), (ii) etc.
 
@@ -215,6 +215,14 @@ where $w$ is a weight and $x$ is a soft-bit value.
 $\partial${IMPLIES} is hard-equivalent to the boolean function $w \Rightarrow x$ (proposition \ref{prop:implies}).
 
 \subsubsection{Majority}
+
+\begin{figure}[t]
+	\centering
+	\includegraphics[trim=0pt 0pt 0pt 0pt, clip, width=0.975\textwidth]{majority-gates.png}
+	\caption{{\em Majority.}} 
+	\label{fig:majority-plot}
+\end{figure}
+
 
 Define $\operatorname{majority-index}: \mathbb{Z}_{>0} \to \mathbb{Z}_{> 0}$ as $n \mapsto 1 + \lfloor \frac{n-1}{2}\rfloor$. 
 
@@ -379,6 +387,7 @@ todo: can Tsetlin machines be chained in differentiable architectures?
 
 \section{Conclusion}
 
+TODO: we can write boolean functions, soften them, and place them within differentiable neural networks.
 
 \subsubsection*{Acknowledgments}
 Use unnumbered third level headings for the acknowledgments. All
