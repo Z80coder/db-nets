@@ -49,15 +49,25 @@
 
 \section{Introduction}
 
+Neural networks are typically trained by gradient descent in weight-space, where the direction of descent minimises some loss function. The backpropagation algorithm \citep{rumelhart1986learning} is a highly efficient method to calculate the partial derivatives of the loss with respect to the network's weights. In consequence, typical neural networks are differentiable functions with weights represented by machine floats. This approach has led to tremendous advances in machine learning.
+
+However, there are drawbacks. First, we cannot easily learn discrete functions, such as logical predicates. In consequence, interpreting or verifying what a network has learned is difficult. Also, many learning problems naturally arise in boolean rather than real-valued domains. Second, representing weights as machine floats confers the benefit of time-efficient training but at the cost of memory-inefficient trained models. For example, network quantisation techniques (TODO:refs) demonstrate that full 64 of 32-bit precision weights are often unnecessary for a network's predictive performance, although there is a trade-off.
+
+This paper proposes a new approach to mitigating these drawbacks. The main idea is to define a type of neural network, called a $\partial \mathbb{B}$ net, which has two aspects: a `soft' aspect, which is a differentiable real-valued function trainable by backpropagation, and a `hard' aspect, which is a non-differentiable boolean function. Both aspects are semantically equivalent. We train the `soft' net as normal, using backpropagation, then `harden' the network and its weights to yield a learned boolean function with equivalent predictive performance (see figure \ref{fig:main-idea}). In consequence, interpreting and verifying what a $\partial \mathbb{B}$ net has learned is relatively less difficult. The option to bias towards learning boolean functions will reduce variance in some domains. And boolean-valued, 1-bit weights increase the memory-efficiency of trained models.
+
+The main contributions of this work are (i) defining novel activation functions that harden to semantically equivalent boolean functions, (ii) defining novel network architectures that effectively learn boolean functions to solve multi-class classification problems, and (iii) experiments that demonstrate $\partial \mathbb{B}$ nets compete with existing approaches in terms of predictive performance yet yield considerably smaller models.
+
+This paper examines related work (section \ref{sec:related-work}), (ii) etc.
+
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=0.95\textwidth]{db-net.png}
-	\caption{{\em Learning discrete boolean-valued functions with a $\partial\mathbb{B}$ net.}}
-	\label{fig:noisy-xor-architecture}
+	\includegraphics[width=0.9\textwidth]{db-net.png}
+	\caption{{\em Learning discrete boolean-valued functions with a $\partial\mathbb{B}$ net.} A $\partial \mathbb{B}$ net specifies (i) a differentiable neural network that is hard-equivalent to (ii) a non-differentiable discrete function. The neural network is trained as normal with backpropagation to yield a set of real weights. The real weights are hardened to boolean values and then bound with the discrete function. The result is a learned discrete function that performs identically to the trained network.}
+	\label{fig:main-idea}
 \end{figure}
 
 
-\section{Related work}
+\section{Related work}\label{sec:related-work}
 
 \section{$\partial\mathbb{B}$ nets}
 
@@ -66,7 +76,7 @@ A {\em soft-bit} is a real value in the range $[0,1]$ and a {\em hard-bit} is a 
 \end{definition}
 
 \begin{definition}[Hardening]
-The {\em hardening} function, $h(x_{1}, \dots, x_{n}) = [f(x_{1}), \dots, f(x_{n})]$, converts soft-bits to hard-bits, where
+The {\em hardening} function, $\operatorname{harden}(x_{1}, \dots, x_{n}) = [f(x_{1}), \dots, f(x_{n})]$, converts soft-bits to hard-bits, where
 \begin{equation*}
 f(x) =
 \begin{cases}
@@ -78,7 +88,10 @@ f(x) =
 
 \begin{definition}[Hard-equivalence]
 	A function, $f: [0,1]^n \rightarrow [0,1]^m$, is {\em hard-equivalent} to a boolean function, $g: \{1,0\}^n \rightarrow \{1,0\}^m$,	if
-	$h(f(h({\bf x}))) = g(h({\bf x}))$ for all ${\bf x} \in [0,1]^{n}$.
+	\begin{equation*}
+	\operatorname{harden}(f(\operatorname{harden}({\bf x}))) = g(\operatorname{harden}({\bf x}))
+	\end{equation*}
+for all ${\bf x} \in [0,1]^{n}$.
 \end{definition}
 
 \subsection{Differentiable boolean functions}
@@ -100,7 +113,7 @@ Define
 Define 
 \begin{equation*}
 \begin{aligned}
-\operatorname{representative-bit}: [0,1]^{n} \times 1,2,\dots,n &\to [0,1],\\
+\operatorname{augmented-bit}: [0,1]^{n} \times 1,2,\dots,n &\to [0,1],\\
 ({\bf x}, i) &\mapsto 
 \begin{cases}
 1/2 + \operatorname{margin}({\bf x}, i) & \text{if } x_{i} > 1/2 \\
@@ -137,7 +150,7 @@ Define
 \begin{equation*}
 \begin{aligned}
 \partial\text{AND}: [0,1]^{n} &\to [0,1], \\
-{\bf x} &\mapsto \operatorname{representative-bit}({\bf x}, \operatorname{argmin}\limits_{i} x[i])
+{\bf x} &\mapsto \operatorname{augmented-bit}({\bf x}, \operatorname{argmin}\limits_{i} x[i])
 \end{aligned}
 \end{equation*}
 $\partial${AND} is hard-equivalent to the boolean function $\bigwedge_{i=1}^{n} x_i$ (proposition \ref{prop:and}).
@@ -159,7 +172,7 @@ Define
 \begin{equation*}
 \begin{aligned}
 \partial\text{OR}: [0,1]^{n} &\to [0,1], \\
-{\bf x} &\mapsto \operatorname{representative-bit}({\bf x}, \operatorname{argmax}\limits_{i} x[i])
+{\bf x} &\mapsto \operatorname{augmented-bit}({\bf x}, \operatorname{argmax}\limits_{i} x[i])
 \end{aligned}
 \end{equation*}
 $\partial${OR} is hard-equivalent to the boolean function $\bigvee_{i=1}^{n} x_i$ (proposition \ref{prop:or}).
@@ -215,7 +228,7 @@ Define
 \begin{equation*}
 \begin{aligned}
 	\partial\text{MAJORITY}: [0,1]^{n} &\to [0,1], \\
-	{\bf x} &\mapsto \operatorname{representative-bit}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))
+	{\bf x} &\mapsto \operatorname{augmented-bit}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))
 \end{aligned}
 \end{equation*}
 \begin{comment}
@@ -313,6 +326,16 @@ A single OR neuron maps $n$ soft-bit inputs to a single soft-bit value. A $\part
 todo: architectures
 
 todo: multi-label classification
+
+Define
+\begin{equation*}
+\begin{aligned}
+\partial\text{HARDEN}: [0,1]^{n} &\to [0,1]^{n}, \\
+{\bf x} &\mapsto \operatorname{harden}({\bf x})\text{.}
+\end{aligned}
+\end{equation*}
+A $\partial\text{HARDEN}$ layer maps $m$ soft-bit inputs to $n$ hard-bit outputs. The $\operatorname{harden}$ function is not differentiable and therefore we use the straight-through estimator \citep{DBLP:journals/corr/BengioLC13} during backpropagation.
+
 
 \section{Experiments}
 
