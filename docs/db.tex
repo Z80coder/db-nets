@@ -11,7 +11,7 @@
 \usepackage{graphicx}
 \usepackage{comment}
 
-\title{$\partial\mathbb{B}$ nets learn boolean functions by\\backpropagation}
+\title{$\partial\mathbb{B}$ nets: learning boolean functions by\\gradient descent}
 
 % Authors must not appear in the submitted version. They should be hidden
 % as long as the \iclrfinalcopy macro remains commented out below.
@@ -43,17 +43,17 @@
 
 \begin{abstract}
 	$\partial\mathbb{B}$ nets are differentiable neural networks 
-	that learn discrete boolean functions by backpropagation.
-	$\partial\mathbb{B}$ nets, once trained, `harden' to boolean functions with identical semantics. In consequence, the boolean functions have identical accuracy to the trained nets, unlike existing approaches to neural network binarization. Experiments demonstrate that $\partial\mathbb{B}$ nets achieve competitive performance on standard machine learning problems yet are significantly more compact (due to 1-bit weights) and interpretable (due to the logical nature of the learnt function).
+	that learn discrete boolean functions by gradient descent.
+	$\partial\mathbb{B}$ nets, once trained, `harden' to boolean functions with identical semantics. In consequence, the boolean functions have identical accuracy to the trained nets, unlike existing approaches to neural network binarization. Experiments demonstrate that $\partial\mathbb{B}$ nets achieve comparable performance on standard machine learning problems yet are significantly more compact (due to 1-bit weights) and interpretable (due to the logical nature of the learnt function).
 \end{abstract}
 
 \section{Introduction}
 
-Neural networks are typically trained by gradient descent in weight-space, where the direction of descent minimises some loss function. The backpropagation algorithm \citep{rumelhart1986learning} is a highly efficient method to calculate the partial derivatives of the loss with respect to the network's weights. In consequence, typical neural networks are differentiable functions with weights represented by machine floats. This approach has led to tremendous advances in machine learning.
+Typical neural networks are differentiable functions with weights represented by machine floats. Training consists of gradient descent in weight-space, where the direction of descent minimises loss and the gradient is efficiently calculated by the backpropagation algorithm \citep{rumelhart1986learning}. This approach has led to tremendous advances in machine learning.
 
-However, there are drawbacks. First, we cannot easily learn discrete functions, such as logical predicates. In consequence, interpreting or verifying what a network has learned is difficult. Also, many learning problems naturally arise in boolean rather than real-valued domains. Second, representing weights as machine floats confers the benefit of time-efficient training but at the cost of memory-inefficient trained models. For example, network quantisation techniques (TODO:refs) demonstrate that full 64 of 32-bit precision weights are often unnecessary for a network's predictive performance, although there is a trade-off.
+However, there are drawbacks. First, the differentiability requirement means we cannot easily learn discrete functions, such as logical predicates. In consequence, interpreting or verifying what a network has learned is difficult. Also, many learning problems naturally arise in discrete rather than continuous domains. Second, representing weights as machine floats enables time-efficient training but at the cost of memory-inefficient models. For example, network quantisation techniques (TODO:refs) demonstrate that full 64 of 32-bit precision weights are often unnecessary for final predictive performance, although there is a trade-off.
 
-This paper proposes a new approach to mitigating these drawbacks. The main idea is to define a type of neural network, called a $\partial \mathbb{B}$ net, which has two aspects: a `soft' aspect, which is a differentiable real-valued function trainable by backpropagation, and a `hard' aspect, which is a non-differentiable boolean function. Both aspects are semantically equivalent. We train the `soft' net as normal, using backpropagation, then `harden' the network and its weights to yield a learned boolean function with equivalent predictive performance (see figure \ref{fig:main-idea}). In consequence, interpreting and verifying what a $\partial \mathbb{B}$ net has learned is relatively less difficult. The option to bias towards learning boolean functions will reduce variance in some domains. And boolean-valued, 1-bit weights increase the memory-efficiency of trained models.
+This paper proposes a new approach to mitigating these drawbacks. The main idea is to define a type of neural network, called a $\partial \mathbb{B}$ net, which has two aspects: a soft net, which is a differentiable real-valued function, and a hard net, which is a non-differentiable, discrete function. Both aspects are semantically equivalent. We train the soft net as normal, using backpropagation, then `harden' the learned weights to boolean values and bind them with the hard net to yield a discrete function with identical predictive performance (see figure \ref{fig:main-idea}). In consequence, interpreting and verifying a $\partial \mathbb{B}$ net is relatively less difficult. The bias towards learning discrete functions reduces variance in some domains. And boolean-valued, 1-bit weights increase the memory-efficiency of trained models.
 
 The main contributions of this work are (i) defining novel activation functions that `harden' to semantically equivalent boolean functions, (ii) defining novel network architectures to effectively learn boolean functions that solve multi-class classification problems, and (iii) experiments that demonstrate $\partial \mathbb{B}$ nets compete with existing approaches in terms of predictive performance yet yield considerably smaller models.
 
@@ -62,7 +62,7 @@ This paper examines related work (section \ref{sec:related-work}), (ii) etc.
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.9\textwidth]{db-net.png}
-	\caption{{\em Learning discrete boolean-valued functions with a $\partial\mathbb{B}$ net.} A $\partial \mathbb{B}$ net specifies (i) a differentiable neural network that is hard-equivalent to (ii) a non-differentiable discrete function. The neural network is trained as normal with backpropagation to yield a set of real weights. The real weights are hardened to boolean values and then bound with the discrete function. The result is a learned discrete function that performs identically to the trained network.}
+	\caption{{\em Learning discrete functions with a $\partial\mathbb{B}$ net.} A $\partial \mathbb{B}$ net specifies (i) a differentiable neural network that is hard-equivalent to (ii) a non-differentiable discrete function. The neural network is trained as normal with backpropagation to yield a set of real weights. The real weights are hardened to boolean values and then bound with the discrete function. The result is a learned discrete function that performs identically to the trained network.}
 	\label{fig:main-idea}
 \end{figure}
 
@@ -71,9 +71,13 @@ This paper examines related work (section \ref{sec:related-work}), (ii) etc.
 
 \section{$\partial\mathbb{B}$ nets}
 
+A $\partial \mathbb{B}$ net has two aspects, a soft net and a hard net. Both nets use bits to represent transitory values and learnable weights. However, a soft net uses soft-bits and a hard net uses hard-bits.
+
 \begin{definition}[Soft-bits and hard-bits]
 A {\em soft-bit} is a real value in the range $[0,1]$ and a {\em hard-bit} is a boolean value from the set $\{0,1\}$. A soft-bit, $x$, is {\em high} if $x>1/2$, otherwise it is {\em low}.
 \end{definition}
+
+A hardening function converts soft-bits to hard-bits.
 
 \begin{definition}[Hardening]
 The {\em hardening} function, $\operatorname{harden}(x_{1}, \dots, x_{n}) = [f(x_{1}), \dots, f(x_{n})]$, converts soft-bits to hard-bits, where
@@ -86,21 +90,53 @@ f(x) =
 \end{equation*}
 \end{definition}
 
+The soft-bit value $1/2$ is therefore a threshold. Above this threshold the soft-bit represents $\text{True}$, otherwise it represents $\text{False}$.
+
+A soft net is any differentiable function, $f$, that `hardens' to a semantically equivalent discrete function, $g$. For example, if $f(x) = 1 - x$, where $x \in [0,1]$, and $g(y) = \neg y$, where $y \in \{0,1\}$ then: if $x$ is high (resp. low) then both $f(x)$ and $g(\operatorname{harden}(x))$ are low (resp. high). In other words, $f$ is hard-equivalent to boolean negation. More generally:
+
 \begin{definition}[Hard-equivalence]
-	A function, $f: [0,1]^n \rightarrow [0,1]^m$, is {\em hard-equivalent} to a boolean function, $g: \{1,0\}^n \rightarrow \{1,0\}^m$,	if
+	A function, $f: [0,1]^n \rightarrow [0,1]^m$, is {\em hard-equivalent} to a discrete function, $g: \{1,0\}^n \rightarrow \{1,0\}^m$,	if
 	\begin{equation*}
 	\operatorname{harden}(f(\operatorname{harden}({\bf x}))) = g(\operatorname{harden}({\bf x}))
 	\end{equation*}
 for all ${\bf x} \in [0,1]^{n}$.
 \end{definition}
 
-\subsection{Differentiable boolean functions}
+$\partial \mathbb{B}$ nets are arbitrary compositions of differentiable functions that are hard-equivalent to boolean functions (and natural generalisations).
 
-Weights are trainable soft-bits. A high weight implies the corresponding operation is masked out and therefore inactive.
+Neural networks are typically composed of nonlinear activation functions (for representational generality) that are strictly monotonic (so gradients always exist that link changes in inputs to outputs) and differentiable (so gradients reliably represent the local loss surface). Activation functions that are only monotonic (so some gradients are zero) and differentiable almost everywhere (so some gradients are undefined) can also work, e.g. RELU \citep{10.5555/3104322.3104425}. $\partial \mathbb{B}$ nets are also composed of `activation' functions that satisfy these properties. But $\partial \mathbb{B}$ net activation functions must also satisfy the additional requirement of hard-equivalence.
 
-TODO: requirements are smooth almost everywhere, strictly increasing or decreasing (i.e. no zero gradient). We also want to maximise fan-in information where necessary (for backprop error signal) but also minimize it where necessary (e.g. picking a representative bit we want to optimize). Representative bit when we want a vector-wise update; otherwise, min/max.
+\begin{figure}[t]
+	\centering
+	\includegraphics[trim=0pt 0pt 0pt 0pt, clip, width=0.975\textwidth]{logic-gates.png}
+	\caption{{\em Gradient-rich versus gradient-sparse differentiable boolean functions.} Each column contains contour plots of functions $f(x,y)$ that are hard-equivalent to a boolean function (one of $\neg(x \oplus y)$, $x \wedge y$, $x \vee y$, or $x \Rightarrow y$). Every function is continuous and differentiable almost everywhere (white lines indicate non-continuous derivatives). The upper plots are gradient-sparse, where vertical and horizontal contours indicate the function is constant with respect to one of its inputs, i.e. $\partial f/\partial y = 0$ or $\partial f/\partial x = 0$. The lower plots are gradient-rich, where the curved contours indicate the function always varies with respect to any of its inputs, i.e. $\partial f/\partial y \neq 0$ and $\partial f/\partial x \neq 0$. $\partial \mathbb{B}$ nets use gradient-rich functions to ensure that error is always backpropagated to all inputs.} 
+	\label{fig:gradient-rich}
+\end{figure}
 
-TODO: min/max are a degenerate case of sorting/ordering
+\subsection{Learning to negate}
+
+We want to learn whether to negate a boolean value, $x$, or simply leave it unaltered. We represent this decision by a boolean weight, $w$, where low $w$ means negate and high $w$ means do nothing. The boolean function that meets this requirement is $\neg(x \oplus w)$. However, this function is not differentiable. We therefore define the differentiable function,
+	\begin{equation*}
+	\begin{aligned}
+	\partial\text{NOT}: [0, 1]^{2} &\to [0,1], \\
+	(w, x) &\mapsto 1 - w + x (2w - 1)\text{,}
+	\end{aligned}
+	\end{equation*}
+which is hard-equivalent to the boolean function $\neg(x \oplus w)$ (see proposition \ref{prop:not}).
+
+Note that $\operatorname{min}$ is hard-equivalent to $\wedge$ and $\operatorname{max}$ is hard-equivalent to $\vee$. So the function $\operatorname{max}(\operatorname{min}(w, x), \operatorname{min}(1-w, 1-x))$ is also hard-equivalent to $\neg(x \oplus w)$. But $\partial\text{NOT}$, in contrast, is a gradient-rich function that always backpropagates error to all its inputs (see figure \ref{fig:gradient-rich}).
+
+\subsection{Differentiable $\wedge$}
+
+As stated $\operatorname{min}(x, y)$ is differentiable and hard-equivalent to $x \wedge y$. However, it is gradient-sparse, e.g. $\frac{\partial}{\partial x} \operatorname{min}(x,y) = 0$ when $(x,y)=(0.9,0.1)$. Other soft logic functions, such as $f(x,y) = x y$, are not hard-equivalent at intermediate soft-bit values, e.g. $f(0.6, 0.6) = 0.36$. To construct a gradient-rich, hard-equivalent function we first observe that $\operatorname{min}(x,y)$ essentially selects one of $x$ or $y$ as a `representative soft-bit' that is guaranteed to be hard-equivalent to $x \wedge y$. The representative bit, whether low or high, has a corresponding margin up to the threshold value $1/2$.
+
+\begin{figure}[t]
+	\centering
+	\includegraphics[width=1.0\textwidth]{margin-trick.png}
+	\caption{{\em todo}.}
+	\label{fig:margin-trick}
+\end{figure}
+
 
 Define 
 \begin{equation*}
@@ -122,29 +158,6 @@ x_{i} + \operatorname{margin}({\bf x}, i) & \text{otherwise,}
 \end{aligned}
 \end{equation*}
 
-\begin{figure}[t]
-	\centering
-	\includegraphics[trim=0pt 0pt 0pt 0pt, clip, width=0.975\textwidth]{logic-gates.png}
-	\caption{{\em Gradient-rich versus gradient-sparse differentiable boolean functions.} Each column contains contour plots of functions $f(x,y)$ that are hard-equivalent to a boolean function (one of $\neg(x \oplus y)$, $x \wedge y$, $x \vee y$, or $x \Rightarrow y$). Every function is continuous and differentiable almost everywhere (white lines indicate non-continuous derivatives). The upper plots are gradient-sparse, where vertical and horizontal contours indicate the function is constant with respect to one of its inputs, i.e. $\partial f/\partial y = 0$ or $\partial f/\partial x = 0$. The lower plots are gradient-rich, where the curved contours indicate the function always varies with respect to any of its inputs, i.e. $\partial f/\partial y \neq 0$ and $\partial f/\partial x \neq 0$. $\partial \mathbb{B}$ nets use gradient-rich functions to ensure that error is always backpropagated to all inputs.} 
-	\label{fig:and-plot}
-\end{figure}
-
-\subsubsection{Not}
-
-TODO: this is not the not operator, but `learn not'.
-
-Define
-	\begin{equation*}
-	\begin{aligned}
-	\partial\text{NOT}: [0, 1]^{2} &\to [0,1], \\
-	(w, x) &\mapsto 1 - w + x (2w - 1)\text{,}
-	\end{aligned}
-	\end{equation*}
-where $w$ is a weight and $x$ is a soft-bit value.
-$\partial${NOT} is hard-equivalent to the boolean function $\neg(x \oplus w)$ (proposition \ref{prop:not}). If the weight is high then $\partial${NOT} is hard-equivalent to the boolean identity function; otherwise it is hard-equivalent to $\neg$. In consequence, we can learn to logically not, or simply pass through, the input value $x$.
-
-
-\subsubsection{And}
 
 Define
 \begin{equation*}
@@ -166,7 +179,11 @@ $\partial${AND} is hard-equivalent to the boolean function $\bigwedge_{i=1}^{n} 
 $\partial${AND} is hard-equivalent to the boolean function $x \wedge y$ (proposition \ref{prop:and}).
 
 
-\subsubsection{Or}
+We also want to maximise fan-in information where necessary (for backprop error signal) but also minimize it where necessary (e.g. picking a representative bit we want to optimize). Representative bit when we want a vector-wise update; otherwise, min/max.
+
+TODO: min/max are a degenerate case of sorting/ordering
+
+\subsection{Differentiable $\vee$}
 
 Define
 \begin{equation*}
@@ -202,7 +219,7 @@ m + 1/2(x + y)(1/2 - m) & \text{otherwise,}
 
 $\partial${OR} is hard-equivalent to the boolean function $x \vee y$ (proposition \ref{prop:or}).
 
-\subsubsection{Implies}
+\subsection{Differentiable $\Rightarrow$}
 
 Define
 \begin{equation*}
@@ -214,7 +231,7 @@ Define
 where $w$ is a weight and $x$ is a soft-bit value.
 $\partial${IMPLIES} is hard-equivalent to the boolean function $w \Rightarrow x$ (proposition \ref{prop:implies}).
 
-\subsubsection{Majority}
+\subsection{Differentiable majority}
 
 \begin{figure}[t]
 	\centering
@@ -257,7 +274,7 @@ $\partial${MAJORITY} is hard-equivalent to the boolean majority function (propos
 TODO: explain how we use sort to avoid space blow-up.
 TODO: discuss time-complexity of sort.
 
-\subsubsection{Count}
+\subsection{Differentiable integer count}
 
 Define 
 \begin{equation*}
@@ -407,20 +424,19 @@ acknowledgments, including those to funding agencies, go at the end of the paper
 	$\partial${NOT} is hard-equivalent to the boolean function
 	$\neg (x \oplus w)$.
 \begin{proof}
-	Table \ref{not-table} is the truth table of the boolean function $\neg (x \oplus w)$.
+	Table \ref{not-table} is the truth table of the boolean function $\neg (x \oplus w)$, where $h(x) = \operatorname{harden}(x)$.
 	\begin{table}
 		\begin{center}
-			\begin{tabular}{lll}
-				\multicolumn{1}{c}{$h(w)$}  &\multicolumn{1}{c}{$h(x)$} &\multicolumn{1}{c}{$\partial\text{NOT}(h(w), h(x))$}
+			\begin{tabular}{cccccc}
+				\multicolumn{1}{c}{$w$}  &\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$h(w)$}  &\multicolumn{1}{c}{$h(x)$} &\multicolumn{1}{c}{$\partial\text{NOT}(h(w), h(x))$} &\multicolumn{1}{c}{$h(\partial\text{NOT}(h(w), h(x)))$}
 				\\ \hline \\
-				0 & 0 & 1\\
-				1 & 0 & 0\\
-				0 & 1 & 0\\
-				1 & 1 & 1\\
+				$\left[0, \frac{1}{2}\right]$ & $\left[0, \frac{1}{2}\right]$ & 0 & 0 & 1 & 1\\[0.1cm]
+				$\left(\frac{1}{2}, 1\right]$ & $\left[0, \frac{1}{2}\right]$ &1 & 0 & 0 & 0\\[0.1cm]
+				$\left[0, \frac{1}{2}\right]$ & $\left(\frac{1}{2}, 1\right]$ &0 & 1 & 0 & 0\\[0.1cm]
+				$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & 1 & 1\\[0.1cm]
 			\end{tabular}
 		\end{center}
 		\caption{$\partial${NOT} is hard-equivalent to $\neg (x \oplus w)$.}\label{not-table}
-		
 	\end{table}
 \end{proof}
 \end{prop}
@@ -429,63 +445,60 @@ acknowledgments, including those to funding agencies, go at the end of the paper
 \begin{prop}\label{prop:and}
 	$\partial${AND} is hard-equivalent to the boolean function $x \wedge y$.
 \begin{proof}
-	Table \ref{and-table} is the truth table of the boolean function $x \wedge y$.
+	Table \ref{and-table} is the truth table of the boolean function $x \wedge y$, where $h(x) = \operatorname{harden}(x)$..
 	\begin{table}
 		\begin{center}
-			\begin{tabular}{llll}
-				\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial\text{AND}(h(x), h(y))$} &\multicolumn{1}{c}{$h(\partial\text{AND}(h(x), h(y)))$}
+			\begin{tabular}{cccccc}
+				\multicolumn{1}{c}{$w$}  &\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$h(w)$}  &\multicolumn{1}{c}{$h(x)$} &\multicolumn{1}{c}{$\partial\text{AND}(h(w), h(x))$} &\multicolumn{1}{c}{$h(\partial\text{AND}(h(w), h(x)))$}
 				\\ \hline \\
-				1 & 1 & 1 & 1\\
-				1 & 0 & 1/4 & 0\\
-				0 & 1 & 1/4 & 0\\
-				0 & 0 & 0 & 0\\
+				$\left[0, \frac{1}{2}\right]$ & $\left[0, \frac{1}{2}\right]$ & 0 & 0 & 0 & 0\\[0.1cm]
+				$\left(\frac{1}{2}, 1\right]$ & $\left[0, \frac{1}{2}\right]$ &1 & 0 & $\frac{1}{4}$ & 0\\[0.1cm]
+				$\left[0, \frac{1}{2}\right]$ & $\left(\frac{1}{2}, 1\right]$ &0 & 1 & $\frac{1}{4}$ & 0\\[0.1cm]
+				$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & 1 & 1\\[0.1cm]
 			\end{tabular}
 		\end{center}
 		\caption{$\partial${AND} is hard-equivalent to $x \wedge y$.}\label{and-table}
-		
-	\end{table}
+	\end{table}			
 \end{proof}
 \end{prop}
 
 \begin{prop}\label{prop:or}
 	$\partial${OR} is hard-equivalent to the boolean function $x \vee y$.
 \begin{proof}
-	Table \ref{or-table} is the truth table of the boolean function $x \vee y$.
+	Table \ref{or-table} is the truth table of the boolean function $x \vee y$, where $h(x) = \operatorname{harden}(x)$..
 	\begin{table}
-		\begin{center}
-			\begin{tabular}{llll}
-				\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial\text{OR}(h(x), h(y))$} &\multicolumn{1}{c}{$h(\partial\text{OR}(h(x), h(y)))$}
-				\\ \hline \\
-				1 & 1 & 1 & 1\\
-				1 & 0 & 3/4 & 1\\
-				0 & 1 & 3/4 & 1\\
-				0 & 0 & 0 & 0\\
-			\end{tabular}
-		\end{center}
-		\caption{$\partial${OR} is hard-equivalent to $x \vee y$.}\label{or-table}
-		
-	\end{table}
+	\begin{center}
+		\begin{tabular}{cccccc}
+			\multicolumn{1}{c}{$w$}  &\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$h(w)$}  &\multicolumn{1}{c}{$h(x)$} &\multicolumn{1}{c}{$\partial\text{OR}(h(w), h(x))$} &\multicolumn{1}{c}{$h(\partial\text{OR}(h(w), h(x)))$}
+			\\ \hline \\
+			$\left[0, \frac{1}{2}\right]$ & $\left[0, \frac{1}{2}\right]$ & 0 & 0 & 0 & 0\\[0.1cm]
+			$\left(\frac{1}{2}, 1\right]$ & $\left[0, \frac{1}{2}\right]$ &1 & 0 & $\frac{3}{4}$ & 1\\[0.1cm]
+			$\left[0, \frac{1}{2}\right]$ & $\left(\frac{1}{2}, 1\right]$ &0 & 1 & $\frac{3}{4}$ & 1\\[0.1cm]
+			$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & 1 & 1\\[0.1cm]
+		\end{tabular}
+	\end{center}
+	\caption{$\partial${OR} is hard-equivalent to $x \vee y$.}\label{or-table}
+	\end{table}			
 \end{proof}
 \end{prop}
 
 \begin{prop}\label{prop:implies}
 	$\partial${IMPLIES} is hard-equivalent to the boolean function $w \Rightarrow x$.
 \begin{proof}
-	Table \ref{implies-table} is the truth table of the boolean function $x \Rightarrow y$.
+	Table \ref{implies-table} is the truth table of the boolean function $x \Rightarrow y$, where $h(x) = \operatorname{harden}(x)$..
 	\begin{table}
-		\begin{center}
-			\begin{tabular}{llll}
-				\multicolumn{1}{c}{$h(w)$}  &\multicolumn{1}{c}{$h(x)$} &\multicolumn{1}{c}{$\partial\text{IMPLIES}(h(w), h(x))$} &\multicolumn{1}{c}{$h(\partial\text{IMPLIES}(h(w), h(x)))$}
-				\\ \hline \\
-				1 & 1 & 3/4 & 1\\
-				1 & 0 & 0 & 0\\
-				0 & 1 & 1 & 1\\
-				0 & 0 & 3/4 & 1\\
-			\end{tabular}
-		\end{center}
-		\caption{$\partial${IMPLIES} is hard-equivalent to $w \Rightarrow x$.}\label{implies-table}
-		
-	\end{table}
+	\begin{center}
+		\begin{tabular}{cccccc}
+			\multicolumn{1}{c}{$w$}  &\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$h(w)$}  &\multicolumn{1}{c}{$h(x)$} &\multicolumn{1}{c}{$\partial\text{IMPLIES}(h(w), h(x))$} &\multicolumn{1}{c}{$h(\partial\text{IMPLIES}(h(w), h(x)))$}
+			\\ \hline \\
+			$\left[0, \frac{1}{2}\right]$ & $\left[0, \frac{1}{2}\right]$ & 0 & 0 & $\frac{3}{4}$ & 1\\[0.1cm]
+			$\left(\frac{1}{2}, 1\right]$ & $\left[0, \frac{1}{2}\right]$ &1 & 0 & 0 & 0\\[0.1cm]
+			$\left[0, \frac{1}{2}\right]$ & $\left(\frac{1}{2}, 1\right]$ &0 & 1 & 1 & 1\\[0.1cm]
+			$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & $\frac{3}{4}$ & 1\\[0.1cm]
+		\end{tabular}
+	\end{center}
+	\caption{$\partial${IMPLIES} is hard-equivalent to $x \Rightarrow y$.}\label{implies-table}
+	\end{table}			
 \end{proof}
 \end{prop}
 
