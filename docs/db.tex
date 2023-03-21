@@ -126,7 +126,7 @@ Product logics, where for example $f(x,y) = x y$ is as a soft version of $x \wed
 
 \subsection{Margin packing}
 
-Say we aim to construct a differentiable analogue of $x \wedge y$. Note that $\operatorname{min}(x,y)$ essentially selects one of $x$ or $y$ as a `representative soft-bit' that is guaranteed hard-equivalent to $x \wedge y$. However, by selecting only one of $x$ or $y$ then $\operatorname{min}$ is also guaranteed to be gradient-sparse. We define a `margin packing' method to avoid this dilemma.
+Say we aim to construct a differentiable analogue of $x \wedge y$. Note that $\operatorname{min}(x,y)$ essentially selects one of $x$ or $y$ as a representative soft-bit that is guaranteed hard-equivalent to $x \wedge y$. However, by selecting only one of $x$ or $y$ then $\operatorname{min}$ is also guaranteed to be gradient-sparse. We define a `margin packing' method to avoid this dilemma.
 
 The main idea of margin packing is (i) select a representative bit that is hard-equivalent to the target discrete function, and then (ii) pack a fraction of the margin between the representative bit and the hard threshold $1/2$ with gradient-rich information. The result is an augmented bit that is a function of all inputs yet hard-equivalent to the target function.
 
@@ -138,14 +138,14 @@ The main idea of margin packing is (i) select a representative bit that is hard-
 \end{figure}
 % On the left, ${\bf x}=[0.9,0.23]$, $z=0.23$, $\bar{\bf x}=0.57$ and therefore $\approx 60\%$ of the margin is packed; on the right, ${\bf x}=[0.9,0.83]$,  $z=0.83$, $\bar{\bf x}=0.87$, and therefore $\approx 90\%$ of the margin is packed.
 
-Say we have a vector of soft-bit inputs ${\bf x}$ and the $i$th element represents the target discrete function (e.g. if our target is $x \wedge y$ then ${\bf x}=[x,y]$ and $i$ is 1 if $x<y$ and $i=2$ otherwise). Now, if we pack only a fraction of the available margin, $|x_{i}-1/2|$, we will not cross the $1/2$ threshold and break the hard-equivalence of the representative bit. The mean soft-bit value, $\bar{\bf x} \in [0,1]$, is just such a gradient-rich fraction. We therefore define 
+More concretely, say we have a vector of soft-bit inputs ${\bf x}$ and the $i$th element represents the target discrete function (e.g. if our target is $x \wedge y$ then ${\bf x}=[x,y]$ and $i$ is 1 if $x<y$ and $i=2$ otherwise). Now, if we pack only a fraction of the available margin, $|x_{i}-1/2|$, we will not cross the $1/2$ threshold and break the hard-equivalence of the representative bit. The average soft-bit value, $\bar{\bf x} \in [0,1]$, is just such a gradient-rich fraction. We therefore define 
 \begin{equation*}
 \begin{aligned}
 \operatorname{margin-fraction}: [0,1]^{n} \times 1,2,\dots,n &\to [0,1],\\
 ({\bf x}, i) &\mapsto \bar{\bf x} \times \left|x_{i} - 1/2\right| \text{.}
 \end{aligned}
 \end{equation*}
-The packed fraction of the margin increases or decreases with the mean soft-bit value. The available margin tends to zero as the representative bit tends to the hard threshold $1/2$. At the threshold point there is no margin to pack. 
+The packed fraction of the margin increases or decreases with the average soft-bit value. The available margin tends to zero as the representative bit tends to the hard threshold $1/2$. At the threshold point there is no margin to pack. 
 
 Define the augmented bit as
 \begin{equation*}
@@ -159,7 +159,7 @@ x_{i} + \operatorname{margin-fraction}({\bf x}, i) & \text{otherwise.}
 \end{aligned}
 \end{equation*}
 If the representative bit is high (resp. low) then the augmented bit is also high (resp. low). 
-But the augmented bit has a higher (resp. lower) value than the representative bit when below (resp. above) the $1/2$ threshold. The difference depends on the size of the available margin and the mean soft-bit value. Almost everywhere, an increase (resp. decrease) of the mean soft-bit increases (resp. decreases) the value of the augmented bit (see figure \ref{fig:margin-trick}). Note that if the $i$th bit is representative (i.e. hard-equivalent to the target function) then so is the augmented bit (see proposition \ref{prop:augmented}). We now use margin packing to define gradient-rich, hard-equivalents of basic boolean functions.
+But the augmented bit has a higher (resp. lower) value than the representative bit when below (resp. above) the $1/2$ threshold. The difference depends on the size of the available margin and the mean soft-bit value. Almost everywhere, an increase (resp. decrease) of the mean soft-bit increases (resp. decreases) the value of the augmented bit (see figure \ref{fig:margin-trick}). Note that if the $i$th bit is representative (i.e. hard-equivalent to the target function) then so is the augmented bit (see proposition \ref{prop:augmented}). We now use margin packing to define gradient-rich, hard-equivalents of boolean functions.
 
 \subsection{Differentiable $\wedge$}
 
@@ -215,7 +215,6 @@ m + 1/2(x + y)(1/2 - m) & \text{otherwise,}
 \end{equation*}
 \end{comment}
 
-
 \subsection{Differentiable $\Rightarrow$}
 
 The differentiable analogue of $\Rightarrow$ is defined in terms of $\partial\vee$. The function
@@ -229,13 +228,6 @@ is hard-equivalent to $x \Rightarrow y$ (proposition \ref{prop:implies}). We can
 
 \subsection{Differentiable majority}
 
-Some boolean functions are particularly important for tractable learning.
-
-We also want to maximise fan-in information where necessary (for backprop error signal) but also minimize it where necessary (e.g. picking a representative bit we want to optimize). Representative bit when we want a vector-wise update; otherwise, min/max.
-
-TODO: min/max are a degenerate case of sorting/ordering
-
-
 \begin{figure}[t]
 	\centering
 	\includegraphics[trim=0pt 0pt 0pt 0pt, clip, width=1.0\textwidth]{majority-gates.png}
@@ -243,39 +235,45 @@ TODO: min/max are a degenerate case of sorting/ordering
 	\label{fig:majority-plot}
 \end{figure}
 
-
-Define $\operatorname{majority-index}: \mathbb{Z}_{>0} \to \mathbb{Z}_{> 0}$ as $n \mapsto 1 + \lfloor \frac{n-1}{2}\rfloor$. 
-
-%Define $\operatorname{select}: [0,1]^n \times {1, 2, \ldots, n} \to [0,1]$ as  $({\bf x}, i) \mapsto x_{i}$.
-
-%Define $\operatorname{majority-bit}: [0,1]^n \to [0,1]$ as  ${\bf x} \mapsto \operatorname{select}( \operatorname{sort}({\bf x}), \operatorname{majority-index}(\lvert{\bf x}\rvert))$, where $\operatorname{sort}({\bf x})$ sorts the elements of ${\bf x}$ in ascending order.
-
-%Define $\operatorname{majority-delta}: [0,1]^n \to [0,1]$ as ${\bf x} \mapsto \operatorname{margin}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))$.
-
-Define
+The boolean majority function is particularly important for tractable learning because it is a threshold function:
 \begin{equation*}
 \begin{aligned}
-	\partial\text{MAJORITY}: [0,1]^{n} &\to [0,1], \\
+\operatorname{Maj}: \{0,1\}^{n} &\to \{0,1\},\\
+{\bf x} &\mapsto 
+	\begin{cases}
+	1 &\text{if }\sum_{i=1}^n x_i \geq \ceil{\frac{n}{2}}\\
+	0 &\text{otherwise.}
+	\end{cases}
+\text{,}
+\end{aligned}
+\end{equation*}
+Interpret each input bit $x_{i}$ as a vote, yes or no, for a binary decision. If the majority of voters are in favour then $\operatorname{Maj}$ outputs 1. The majority function, in the context of predictive model, aggregates multiple bits of weak evidence into a hard decision. Neural network binarization transforms real-valued activation functions into boolean majority \citep{10.5555/3157382.3157557}, which demonstrates their close association. We aim to construct a differentiable analogue of $\operatorname{Maj}$.
+
+$\operatorname{Maj}$ for $n$ bits in DNF form is a disjunction of $\binom{n}{k}$ conjunctive clauses of size $k$, where $k=\lceil n/2 \rceil$ and each clause checks if a unique combination of a majority of the $n$ bits are high; e.g. $\operatorname{Maj}(x, y, z) = (x \wedge y) \vee (x \wedge y) \vee (y \wedge z)$. Therefore, we could in principle implement a differentiable analogue of $\operatorname{Maj}$ in terms of $\partial\wedge$ and $\partial\vee$. However, the number of terms grows exponentially; e.g. $n=50$ generates over 100 trillion conjunctive clauses, which is infeasible. In circuit theory there is no known general algorithm for finding the minimal representation of $\operatorname{Maj}$ for arbitrary $n$.
+
+Instead, we observe that if $\operatorname{sort}({\bf x})$ sorts the elements of ${\bf x}$ in ascending order then the `middle' soft-bit is representative. For example, if ${\bf x} = [0.4, 0.9, 0.2]$ then $\operatorname{sort}({\bf x}) = [0.2, 0.4, 0.9]$ and the `middle' bit $x_{2}=0.4$ is low, which is hard-equivalent to $\operatorname{Maj}(0, 1, 0) = 0$. Define the index of the `middle' bit by
+\begin{equation*}
+\begin{aligned}
+\operatorname{majority-index}: \mathbb{Z}_{>0} \to \mathbb{Z}_{> 0}\\
+n \mapsto \left\lceil \frac{n}{2}\right\rceil
+\text{.}
+\end{aligned}
+\end{equation*}
+Then the differentiable function
+\begin{equation*}
+\begin{aligned}
+	\partial\!\operatorname{Maj}: [0,1]^{n} &\to [0,1], \\
 	{\bf x} &\mapsto \operatorname{augmented-bit}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))
 \end{aligned}
 \end{equation*}
-\begin{comment}
-\begin{equation*}
-\begin{aligned}
-\partial\text{MAJORITY}: [0,1]^{n} &\to [0,1], \\
-{\bf x} &\mapsto 
-	\begin{cases}
-	1/2 + \delta & \text{if } m > 1/2 \\
-	m + \delta & \text{otherwise,}
-	\end{cases}
-\end{aligned}
-\end{equation*}
-\end{comment}
-where ${\bf x}$ is a vector of soft-bits, and $\operatorname{sort}({\bf x})$ sorts the elements of ${\bf x}$ in ascending order.
-$\partial${MAJORITY} is hard-equivalent to the boolean majority function (proposition \ref{prop:majority}).
+is hard-equivalent to $\operatorname{Maj}({\bf x})$ (see proposition \ref{prop:majority}). Note that $\partial\!\operatorname{Maj}$ is differentiable almost everywhere and gradient-rich (see figure \ref{fig:majority-plot}).
 
-TODO: explain how we use sort to avoid space blow-up.
+
 TODO: discuss time-complexity of sort.
+
+We also want to maximise fan-in information where necessary (for backprop error signal) but also minimize it where necessary (e.g. picking a representative bit we want to optimize). Representative bit when we want a vector-wise update; otherwise, min/max.
+
+TODO: min/max are a degenerate case of sorting/ordering
 
 \subsection{Differentiable integer count}
 
@@ -378,7 +376,7 @@ The noisy XOR dataset \citep{noisy-xor-dataset} is an adversarial parity problem
 \begin{figure}[t]
 	\centering
 	\includegraphics[width=1.0\textwidth]{noisy-xor-architecture.png}
-	\caption{{\em A $\partial\mathbb{B}$ net for the noisy-xor problem}. The net concatenates the soft-bit input, ${\bf x}$ (length 12), with its negation, ${\bf 1 - x}$, and supplies the resulting vector (length 24) to a $\partial\!\wedge\!\text{LAYER}$ (width 32), $\partial\!\vee\!\text{LAYER}$ (width 32),  $\partial \neg \text{LAYER}$ (width 16), and a final $\partial\text{MAJORITY}$ to produce a single soft-bit $y \in [0,1]$ (to predict odd parity) and its negation $1-y$ (to predict even parity). The net's weights, once hardened, consume $288$ bytes.}
+	\caption{{\em A $\partial\mathbb{B}$ net for the noisy-xor problem}. The net concatenates the soft-bit input, ${\bf x}$ (length 12), with its negation, ${\bf 1 - x}$, and supplies the resulting vector (length 24) to a $\partial\!\wedge\!\text{LAYER}$ (width 32), $\partial\!\vee\!\text{LAYER}$ (width 32),  $\partial \neg \text{LAYER}$ (width 16), and a final $\partial\!\operatorname{Maj}$ to produce a single soft-bit $y \in [0,1]$ (to predict odd parity) and its negation $1-y$ (to predict even parity). The net's weights, once hardened, consume $288$ bytes.}
 	\label{fig:noisy-xor-architecture}
 \end{figure}
 
