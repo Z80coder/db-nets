@@ -61,7 +61,7 @@ This paper examines related work (section \ref{sec:related-work}), (ii) etc.
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=0.9\textwidth]{db-net.png}
+	\includegraphics[width=1.0\textwidth]{db-net.png}
 	\caption{{\em Learning discrete functions with a $\partial\mathbb{B}$ net.} A $\partial \mathbb{B}$ net specifies (i) a differentiable neural network that is hard-equivalent to (ii) a non-differentiable discrete function. The neural network is trained as normal with backpropagation to yield a set of real weights. The real weights are hardened to boolean values and then bound with the discrete function. The result is a learned discrete function that performs identically to the trained network.}
 	\label{fig:main-idea}
 \end{figure}
@@ -99,105 +99,103 @@ A soft net is any differentiable function, $f$, that `hardens' to a semantically
 	\begin{equation*}
 	\operatorname{harden}(f(\operatorname{harden}({\bf x}))) = g(\operatorname{harden}({\bf x}))
 	\end{equation*}
-for all ${\bf x} \in [0,1]^{n}$.
+for all ${\bf x} \in [0,1]^{n}$. For shorthand write $f \equiv g$.
 \end{definition}
 
-$\partial \mathbb{B}$ nets are arbitrary compositions of differentiable functions that are hard-equivalent to boolean functions (and natural generalisations).
-
-Neural networks are typically composed of nonlinear activation functions (for representational generality) that are strictly monotonic (so gradients always exist that link changes in inputs to outputs) and differentiable (so gradients reliably represent the local loss surface). Activation functions that are only monotonic (so some gradients are zero) and differentiable almost everywhere (so some gradients are undefined) can also work, e.g. RELU \citep{10.5555/3104322.3104425}. $\partial \mathbb{B}$ nets are also composed of `activation' functions that satisfy these properties. But $\partial \mathbb{B}$ net activation functions must also satisfy the additional requirement of hard-equivalence.
+Neural networks are typically composed of nonlinear activation functions (for representational generality) that are strictly monotonic (so gradients always exist that link changes in inputs to outputs) and differentiable (so gradients reliably represent the local loss surface). Activation functions that are monotonic but not strictly so (and therefore some gradients are zero) and differentiable almost everywhere (and therefore some gradients are undefined) also work, e.g. RELU \citep{10.5555/3104322.3104425}. $\partial \mathbb{B}$ nets are arbitrary compositions of `activation' functions that also satisfy these properties but in addition are hard-equivalent to boolean functions (and natural generalisations).
 
 \begin{figure}[t]
 	\centering
-	\includegraphics[trim=0pt 0pt 0pt 0pt, clip, width=0.975\textwidth]{logic-gates.png}
+	\includegraphics[trim=0pt 0pt 0pt 0pt, clip, width=1.0\textwidth]{logic-gates.png}
 	\caption{{\em Gradient-rich versus gradient-sparse differentiable boolean functions.} Each column contains contour plots of functions $f(x,y)$ that are hard-equivalent to a boolean function (one of $\neg(x \oplus y)$, $x \wedge y$, $x \vee y$, or $x \Rightarrow y$). Every function is continuous and differentiable almost everywhere (white lines indicate non-continuous derivatives). The upper plots are gradient-sparse, where vertical and horizontal contours indicate the function is constant with respect to one of its inputs, i.e. $\partial f/\partial y = 0$ or $\partial f/\partial x = 0$. The lower plots are gradient-rich, where the curved contours indicate the function always varies with respect to any of its inputs, i.e. $\partial f/\partial y \neq 0$ and $\partial f/\partial x \neq 0$. $\partial \mathbb{B}$ nets use gradient-rich functions to ensure that error is always backpropagated to all inputs.} 
 	\label{fig:gradient-rich}
 \end{figure}
 
 \subsection{Learning to negate}
 
-We want to learn whether to negate a boolean value, $x$, or simply leave it unaltered. We represent this decision by a boolean weight, $w$, where low $w$ means negate and high $w$ means do nothing. The boolean function that meets this requirement is $\neg(x \oplus w)$. However, this function is not differentiable. We therefore define the differentiable function,
+We aim to learn to negate a boolean value, $x$, or simply leave it unaltered. Represent this decision by a boolean weight, $w$, where low $w$ means negate and high $w$ means do nothing. The boolean function that meets this requirement is $\neg(x \oplus w)$. However, this function is not differentiable. We therefore define the differentiable function,
 	\begin{equation*}
 	\begin{aligned}
-	\partial\text{NOT}: [0, 1]^{2} &\to [0,1], \\
+	\partial \neg: [0, 1]^{2} &\to [0,1], \\
 	(w, x) &\mapsto 1 - w + x (2w - 1)\text{,}
 	\end{aligned}
 	\end{equation*}
-which is hard-equivalent to the boolean function $\neg(x \oplus w)$ (see proposition \ref{prop:not}).
+where $\partial \neg(w, x) \equiv \neg(x \oplus w)$ (see proposition \ref{prop:not}).
 
-Note that $\operatorname{min}$ is hard-equivalent to $\wedge$ and $\operatorname{max}$ is hard-equivalent to $\vee$. So the function $\operatorname{max}(\operatorname{min}(w, x), \operatorname{min}(1-w, 1-x))$ is also hard-equivalent to $\neg(x \oplus w)$. But $\partial\text{NOT}$, in contrast, is a gradient-rich function that always backpropagates error to all its inputs (see figure \ref{fig:gradient-rich}).
+Product logics, where for example $f(x,y) = x y$ is as a soft version of $x \wedge y$, although hard-equivalent at extreme values, e.g. $f(1,1)=1$ and $f(0,1)=0$, are not hard-equivalent at intermediate values, e.g. $f(0.6, 0.6) = 0.36$. G\"{o}del-style $\operatorname{min}$ and $\operatorname{max}$ functions, although hard-equivalent over the entire soft-bit range, i.e. $\operatorname{min}(x,y) \equiv x \wedge y$ and $\operatorname{min}(x,y) \equiv x \vee y$, are gradient-sparse in the sense that their outputs are not always a function of all their inputs, e.g. $\frac{\partial}{\partial x} \operatorname{max}(x,y) = 0$ when $(x,y)=(0.1, 0.9)$. So although the composite function $\operatorname{max}(\operatorname{min}(w, x), \operatorname{min}(1-w, 1-x))$ is differentiable and $\equiv \neg(x \oplus w)$ it does not always backpropagate error to its inputs. In contrast, $\partial \neg$ is a gradient-rich function that always backpropagates error to its inputs (see figure \ref{fig:gradient-rich}). 
 
-\subsection{Differentiable $\wedge$}
+\subsection{Margin packing}
 
-As stated $\operatorname{min}(x, y)$ is differentiable and hard-equivalent to $x \wedge y$. However, it is gradient-sparse, e.g. $\frac{\partial}{\partial x} \operatorname{min}(x,y) = 0$ when $(x,y)=(0.9,0.1)$. Other soft logic functions, such as $f(x,y) = x y$, are not hard-equivalent at intermediate soft-bit values, e.g. $f(0.6, 0.6) = 0.36$. To construct a gradient-rich, hard-equivalent function we first observe that $\operatorname{min}(x,y)$ essentially selects one of $x$ or $y$ as a `representative soft-bit' that is guaranteed to be hard-equivalent to $x \wedge y$. The representative bit, whether low or high, has a corresponding margin up to the threshold value $1/2$.
+Say we aim to construct a differentiable analogue of $x \wedge y$. Note that $\operatorname{min}(x,y)$ essentially selects one of $x$ or $y$ as a `representative soft-bit' that is guaranteed hard-equivalent to $x \wedge y$. However, by selecting only one of $x$ or $y$ then $\operatorname{min}$ is also guaranteed to be gradient-sparse. We define a `margin packing' method to avoid this dilemma.
+
+The main idea of margin packing is (i) select a representative bit that is hard-equivalent to the target discrete function, and then (ii) pack a fraction of the margin between the representative bit and the hard threshold $1/2$ with gradient-rich information. The result is an augmented bit that is a function of all inputs yet hard-equivalent to the target function.
 
 \begin{figure}[t]
 	\centering
 	\includegraphics[width=1.0\textwidth]{margin-trick.png}
-	\caption{{\em todo}.}
+	\caption{{\em Margin packing for constructing gradient-rich, hard-equivalent functions}. A representative bit, $z$, is hard-equivalent to a discrete target function but gradient-sparse (e.g. $z=\operatorname{min}(x,y) \equiv x \wedge y$). On the left $z$ is low, $z<1/2$; on the right $z$ is high, $z>1/2$. We can pack a fraction of the margin between $z$ and the hard threshold $1/2$ with additional gradient-rich information without affecting hard-equivalence. A natural choice is the mean soft-bit, $\bar{\bf x} \in [0,1]$. The grey shaded areas denote the packed margins and the final augmented bit. On the left $\approx 60\%$ of the margin is packed; on the right $\approx 90\%$.}
 	\label{fig:margin-trick}
 \end{figure}
+% On the left, ${\bf x}=[0.9,0.23]$, $z=0.23$, $\bar{\bf x}=0.57$ and therefore $\approx 60\%$ of the margin is packed; on the right, ${\bf x}=[0.9,0.83]$,  $z=0.83$, $\bar{\bf x}=0.87$, and therefore $\approx 90\%$ of the margin is packed.
 
-
-Define 
+Say we have a vector of soft-bit inputs ${\bf x}$ and the $i$th element represents the target discrete function (e.g. if our target is $x \wedge y$ then ${\bf x}=[x,y]$ and $i$ is 1 if $x<y$ and $i=2$ otherwise). Now, if we pack only a fraction of the available margin, $|x_{i}-1/2|$, we will not cross the $1/2$ threshold and break the hard-equivalence of the representative bit. The mean soft-bit value, $\bar{\bf x} \in [0,1]$, is just such a gradient-rich fraction. We therefore define 
 \begin{equation*}
 \begin{aligned}
-\operatorname{margin}: [0,1]^{n} \times 1,2,\dots,n &\to [0,1],\\
+\operatorname{margin-fraction}: [0,1]^{n} \times 1,2,\dots,n &\to [0,1],\\
 ({\bf x}, i) &\mapsto \bar{\bf x} \times \left|x_{i} - 1/2\right| \text{.}
 \end{aligned}
 \end{equation*}
+The packed fraction of the margin increases or decreases with the mean soft-bit value. The available margin tends to zero as the representative bit tends to the hard threshold $1/2$. At the threshold point there is no margin to pack. 
 
-Define 
+Define the augmented bit as
 \begin{equation*}
 \begin{aligned}
 \operatorname{augmented-bit}: [0,1]^{n} \times 1,2,\dots,n &\to [0,1],\\
 ({\bf x}, i) &\mapsto 
 \begin{cases}
-1/2 + \operatorname{margin}({\bf x}, i) & \text{if } x_{i} > 1/2 \\
-x_{i} + \operatorname{margin}({\bf x}, i) & \text{otherwise,}
+1/2 + \operatorname{margin-fraction}({\bf x}, i) & \text{if } x_{i} > 1/2 \\
+x_{i} + \operatorname{margin-fraction}({\bf x}, i) & \text{otherwise.}
 \end{cases}
 \end{aligned}
 \end{equation*}
+If the representative bit is high (resp. low) then the augmented bit is also high (resp. low). 
+But the augmented bit has a higher (resp. lower) value than the representative bit when below (resp. above) the $1/2$ threshold. The difference depends on the size of the available margin and the mean soft-bit value. Almost everywhere, an increase (resp. decrease) of the mean soft-bit increases (resp. decreases) the value of the augmented bit (see figure \ref{fig:margin-trick}). Note that if the $i$th bit is representative (i.e. hard-equivalent to the target function) then so is the augmented bit (see proposition \ref{prop:augmented}). We now use margin packing to define gradient-rich, hard-equivalents of basic boolean functions.
 
+\subsection{Differentiable $\wedge$}
 
-Define
+We aim to construct a differentiable analogue of the boolean function $\bigwedge_{i=1}^{n} x_i$. A representative bit is $\operatorname{min}(x_{1},\dots,x_{n})$. The function
 \begin{equation*}
 \begin{aligned}
-\partial\text{AND}: [0,1]^{n} &\to [0,1], \\
+\partial \wedge: [0,1]^{n} &\to [0,1], \\
 {\bf x} &\mapsto \operatorname{augmented-bit}({\bf x}, \operatorname{argmin}\limits_{i} x[i])
 \end{aligned}
 \end{equation*}
-$\partial${AND} is hard-equivalent to the boolean function $\bigwedge_{i=1}^{n} x_i$ (proposition \ref{prop:and}).
-
+is therefore hard-equivalent to the boolean function $\bigwedge_{i=1}^{n} x_i$ (see proposition \ref{prop:and}). In the special case $n=2$ we get the piecewise function,
 \begin{equation*}
-\partial\text{AND}(x, y) =
+\partial\!\wedge\!(x, y) =
 	\begin{cases}
 	1/2 + 1/2(x + y)(\operatorname{min}(x,y) - 1/2) & \text{if } \operatorname{min}(x,y) > 1/2 \\
 	\operatorname{min}(x,y) + 1/2(x + y)(1/2 - \operatorname{min}(x,y)) & \text{otherwise.}
 	\end{cases}
 \end{equation*}
-
-$\partial${AND} is hard-equivalent to the boolean function $x \wedge y$ (proposition \ref{prop:and}).
-
-
-We also want to maximise fan-in information where necessary (for backprop error signal) but also minimize it where necessary (e.g. picking a representative bit we want to optimize). Representative bit when we want a vector-wise update; otherwise, min/max.
-
-TODO: min/max are a degenerate case of sorting/ordering
+Note that $\partial \wedge$ is differentiable almost everywhere and gradient-rich (see figure \ref{fig:gradient-rich}).
 
 \subsection{Differentiable $\vee$}
 
-Define
+The differentiable analogue of $\vee$ is identical to $\wedge$, except the representative bit is selected by $\operatorname{max}$. The function
 \begin{equation*}
 \begin{aligned}
-\partial\text{OR}: [0,1]^{n} &\to [0,1], \\
+\partial\vee: [0,1]^{n} &\to [0,1], \\
 {\bf x} &\mapsto \operatorname{augmented-bit}({\bf x}, \operatorname{argmax}\limits_{i} x[i])
 \end{aligned}
 \end{equation*}
-$\partial${OR} is hard-equivalent to the boolean function $\bigvee_{i=1}^{n} x_i$ (proposition \ref{prop:or}).
+is hard-equivalent to the boolean function $\bigvee_{i=1}^{n} x_i$ (see proposition \ref{prop:or}). Note that $\partial \vee$ is differentiable almost everywhere and gradient-rich (see figure \ref{fig:gradient-rich}).
 
+\begin{comment}
 Define 
 \begin{equation*}
 \begin{aligned}
-\partial\text{OR}(x, y) =
+\partial\!\vee\!(x, y) =
 \begin{cases}
 1/2 + 1/2(x + y)(\operatorname{max}(x,y) - 1/2) & \text{if } \operatorname{max}(x,y) > 1/2 \\
 \operatorname{max}(x,y) + 1/2(x + y)(1/2 - \operatorname{max}(x,y)) & \text{otherwise.}
@@ -207,7 +205,7 @@ Define
 \begin{comment}
 \begin{equation*}
 \begin{aligned}
-\partial\text{OR}: [0,1]^{2} &\to [0,1], \\
+\partial \vee: [0,1]^{2} &\to [0,1], \\
 (x, y) &\mapsto 
 \begin{cases}
 	1/2 + 1/2(x + y)(m - 1/2) & \text{if } 2m > 1 \\
@@ -217,25 +215,30 @@ m + 1/2(x + y)(1/2 - m) & \text{otherwise,}
 \end{equation*}
 \end{comment}
 
-$\partial${OR} is hard-equivalent to the boolean function $x \vee y$ (proposition \ref{prop:or}).
 
 \subsection{Differentiable $\Rightarrow$}
 
-Define
+The differentiable analogue of $\Rightarrow$ is defined in terms of $\partial\vee$. The function
 \begin{equation*}
 \begin{aligned}
-\partial\text{IMPLIES}: [0,1]^{2} &\to [0,1],\\
-(w, x) &\mapsto \partial\text{OR}(x, 1-w)\text{,}
+\partial\!\Rightarrow: [0,1]^{2} &\to [0,1],\\
+(x, y) &\mapsto \partial\!\vee\!(y, 1-x)\text{,}
 \end{aligned}
 \end{equation*}
-where $w$ is a weight and $x$ is a soft-bit value.
-$\partial${IMPLIES} is hard-equivalent to the boolean function $w \Rightarrow x$ (proposition \ref{prop:implies}).
+is hard-equivalent to $x \Rightarrow y$ (proposition \ref{prop:implies}). We can define  analogues of all the basic boolean operators in a similar manner.
 
 \subsection{Differentiable majority}
 
+Some boolean functions are particularly important for tractable learning.
+
+We also want to maximise fan-in information where necessary (for backprop error signal) but also minimize it where necessary (e.g. picking a representative bit we want to optimize). Representative bit when we want a vector-wise update; otherwise, min/max.
+
+TODO: min/max are a degenerate case of sorting/ordering
+
+
 \begin{figure}[t]
 	\centering
-	\includegraphics[trim=0pt 0pt 0pt 0pt, clip, width=0.975\textwidth]{majority-gates.png}
+	\includegraphics[trim=0pt 0pt 0pt 0pt, clip, width=1.0\textwidth]{majority-gates.png}
 	\caption{{\em Majority.}} 
 	\label{fig:majority-plot}
 \end{figure}
@@ -315,36 +318,36 @@ TODO: count allows us to implement boolean counting functions.
 Define
 \begin{equation*}
 \begin{aligned}
-\partial\text{NOT-LAYER}: [0,1]^{n \times m} \times [0,1]^{m} &\to [0,1]^{n \times m}, \\
+\partial \neg \text{LAYER}: [0,1]^{n \times m} \times [0,1]^{m} &\to [0,1]^{n \times m}, \\
 ({\bf W}, {\bf x}) &\mapsto 
 \begin{bmatrix}
-\partial\text{NOT}(w_{1,1}, x_{1}) & \dots & \partial\text{NOT}(w_{1,m}, x_{m}) \\
+\partial \neg(w_{1,1}, x_{1}) & \dots & \partial \neg(w_{1,m}, x_{m}) \\
 \vdots & \ddots & \vdots \\
-\partial\text{NOT}(w_{n,1}, x_{1}) & \dots & \partial\text{NOT}(w_{n,m}, x_{m})
+\partial \neg(w_{n,1}, x_{1}) & \dots & \partial \neg(w_{n,m}, x_{m})
 \end{bmatrix}
 \end{aligned}
 \end{equation*}
 where ${\bf W}$ is a matrix of weights and ${\bf x}$ is a vector of soft-bits.
 
-%[\partial\text{NOT}({\bf W}_{1}, {\bf x}), \dots, \partial\text{NOT}({\bf W}_{n}, {\bf x})]
+%[\partial \neg({\bf W}_{1}, {\bf x}), \dots, \partial \neg({\bf W}_{n}, {\bf x})]
 
 Define
 \begin{equation*}
 \begin{aligned}
-\partial\text{AND-NEURON}: [0,1]^{n} \times [0,1]^{n} &\to [0,1], \\
-({\bf w}, {\bf x}) &\mapsto \min(\partial\text{IMPLIES}(w_{1}, x_{1}), \dots, \partial\text{IMPLIES}(w_{n}, x_{n}))\text{,}
+\partial\!\wedge\!\text{NEURON}: [0,1]^{n} \times [0,1]^{n} &\to [0,1], \\
+({\bf w}, {\bf x}) &\mapsto \min(\partial \Rightarrow(w_{1}, x_{1}), \dots, \partial \Rightarrow(w_{n}, x_{n}))\text{,}
 \end{aligned}
 \end{equation*}
-where ${\bf w}$ is vector of weights and ${\bf x}$ is a vector of soft-bits. A single AND neuron maps $n$ soft-bit inputs to a single soft-bit value. A $\partial\text{AND-LAYER}$ of $n$ neurons maps $m$ soft-bit inputs to $n$ soft-bit outputs.
+where ${\bf w}$ is vector of weights and ${\bf x}$ is a vector of soft-bits. A single AND neuron maps $n$ soft-bit inputs to a single soft-bit value. A $\partial\!\wedge\!\text{LAYER}$ of $n$ neurons maps $m$ soft-bit inputs to $n$ soft-bit outputs.
 
 Define
 \begin{equation*}
 \begin{aligned}
-\partial\text{OR-NEURON}: [0,1]^{n} \times [0,1]^{n} &\to [0,1], \\
-({\bf w}, {\bf x}) &\mapsto \max(\partial\text{AND}(w_{1}, x_{1}), \dots, \partial\text{AND}(w_{n}, x_{n}))\text{.}
+\partial\!\vee\!\text{NEURON}: [0,1]^{n} \times [0,1]^{n} &\to [0,1], \\
+({\bf w}, {\bf x}) &\mapsto \max(\partial \wedge(w_{1}, x_{1}), \dots, \partial \wedge(w_{n}, x_{n}))\text{.}
 \end{aligned}
 \end{equation*}
-A single OR neuron maps $n$ soft-bit inputs to a single soft-bit value. A $\partial\text{OR-LAYER}$ of $n$ neurons maps $m$ soft-bit inputs to $n$ soft-bit outputs.
+A single $\vee$ neuron maps $n$ soft-bit inputs to a single soft-bit value. A $\partial\!\vee\!\text{LAYER}$ of $n$ neurons maps $m$ soft-bit inputs to $n$ soft-bit outputs.
 
 \subsection{Architectures}
 
@@ -364,6 +367,8 @@ A $\partial\text{HARDEN}$ layer maps $m$ soft-bit inputs to $n$ hard-bit outputs
 
 \section{Experiments}
 
+\subsection{Hardening}
+
 \subsection{Binary Iris}
 
 \subsection{Noisy XOR}
@@ -372,8 +377,8 @@ The noisy XOR dataset \citep{noisy-xor-dataset} is an adversarial parity problem
 
 \begin{figure}[t]
 	\centering
-	\includegraphics[width=0.8\textwidth]{noisy-xor-architecture.png}
-	\caption{{\em A $\partial\mathbb{B}$ net for the noisy-xor problem}. The net concatenates the soft-bit input, ${\bf x}$ (length 12), with its negation, ${\bf 1 - x}$, and supplies the resulting vector (length 24) to a $\partial\text{AND-LAYER}$ (width 32), $\partial\text{OR-LAYER}$ (width 32),  $\partial\text{NOT-LAYER}$ (width 16), and a final $\partial\text{MAJORITY}$ to produce a single soft-bit $y \in [0,1]$ (to predict odd parity) and its negation $1-y$ (to predict even parity). The net's weights, once hardened, consume $288$ bytes.}
+	\includegraphics[width=1.0\textwidth]{noisy-xor-architecture.png}
+	\caption{{\em A $\partial\mathbb{B}$ net for the noisy-xor problem}. The net concatenates the soft-bit input, ${\bf x}$ (length 12), with its negation, ${\bf 1 - x}$, and supplies the resulting vector (length 24) to a $\partial\!\wedge\!\text{LAYER}$ (width 32), $\partial\!\vee\!\text{LAYER}$ (width 32),  $\partial \neg \text{LAYER}$ (width 16), and a final $\partial\text{MAJORITY}$ to produce a single soft-bit $y \in [0,1]$ (to predict odd parity) and its negation $1-y$ (to predict even parity). The net's weights, once hardened, consume $288$ bytes.}
 	\label{fig:noisy-xor-architecture}
 \end{figure}
 
@@ -421,14 +426,13 @@ acknowledgments, including those to funding agencies, go at the end of the paper
 \section{Proofs}
 
 \begin{prop}\label{prop:not}
-	$\partial${NOT} is hard-equivalent to the boolean function
-	$\neg (x \oplus w)$.
+	$\partial \neg(x,y) \equiv \neg (x \oplus y)$.
 \begin{proof}
 	Table \ref{not-table} is the truth table of the boolean function $\neg (x \oplus w)$, where $h(x) = \operatorname{harden}(x)$.
 	\begin{table}
 		\begin{center}
 			\begin{tabular}{cccccc}
-				\multicolumn{1}{c}{$w$}  &\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$h(w)$}  &\multicolumn{1}{c}{$h(x)$} &\multicolumn{1}{c}{$\partial\text{NOT}(h(w), h(x))$} &\multicolumn{1}{c}{$h(\partial\text{NOT}(h(w), h(x)))$}
+				\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$y$}  &\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial \neg(h(x), h(y))$} &\multicolumn{1}{c}{$h(\partial \neg(h(x), h(y)))$}
 				\\ \hline \\
 				$\left[0, \frac{1}{2}\right]$ & $\left[0, \frac{1}{2}\right]$ & 0 & 0 & 1 & 1\\[0.1cm]
 				$\left(\frac{1}{2}, 1\right]$ & $\left[0, \frac{1}{2}\right]$ &1 & 0 & 0 & 0\\[0.1cm]
@@ -436,20 +440,27 @@ acknowledgments, including those to funding agencies, go at the end of the paper
 				$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & 1 & 1\\[0.1cm]
 			\end{tabular}
 		\end{center}
-		\caption{$\partial${NOT} is hard-equivalent to $\neg (x \oplus w)$.}\label{not-table}
+		\caption{$\partial \neg(x,y) \equiv \neg (y \oplus x)$.}\label{not-table}
 	\end{table}
 \end{proof}
 \end{prop}
 
+\begin{prop}\label{prop:augmented}
+	If a representative bit is hard-equivalent to a target function then so is the augmented bit.
+	\begin{proof}
+		todo
+	\end{proof}
+\end{prop}
+
 
 \begin{prop}\label{prop:and}
-	$\partial${AND} is hard-equivalent to the boolean function $x \wedge y$.
+	$\partial\!\wedge\!(x,y) \equiv x \wedge y$.
 \begin{proof}
 	Table \ref{and-table} is the truth table of the boolean function $x \wedge y$, where $h(x) = \operatorname{harden}(x)$..
 	\begin{table}
 		\begin{center}
 			\begin{tabular}{cccccc}
-				\multicolumn{1}{c}{$w$}  &\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$h(w)$}  &\multicolumn{1}{c}{$h(x)$} &\multicolumn{1}{c}{$\partial\text{AND}(h(w), h(x))$} &\multicolumn{1}{c}{$h(\partial\text{AND}(h(w), h(x)))$}
+				\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$y$}  &\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial \wedge(h(x), h(y))$} &\multicolumn{1}{c}{$h(\partial \wedge(h(x), h(y)))$}
 				\\ \hline \\
 				$\left[0, \frac{1}{2}\right]$ & $\left[0, \frac{1}{2}\right]$ & 0 & 0 & 0 & 0\\[0.1cm]
 				$\left(\frac{1}{2}, 1\right]$ & $\left[0, \frac{1}{2}\right]$ &1 & 0 & $\frac{1}{4}$ & 0\\[0.1cm]
@@ -457,19 +468,19 @@ acknowledgments, including those to funding agencies, go at the end of the paper
 				$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & 1 & 1\\[0.1cm]
 			\end{tabular}
 		\end{center}
-		\caption{$\partial${AND} is hard-equivalent to $x \wedge y$.}\label{and-table}
+		\caption{$\partial \wedge(x,y) \equiv x \wedge y$.}\label{and-table}
 	\end{table}			
 \end{proof}
 \end{prop}
 
 \begin{prop}\label{prop:or}
-	$\partial${OR} is hard-equivalent to the boolean function $x \vee y$.
+	$\partial\!\vee\!(x,y) \equiv x \vee y$.
 \begin{proof}
 	Table \ref{or-table} is the truth table of the boolean function $x \vee y$, where $h(x) = \operatorname{harden}(x)$..
 	\begin{table}
 	\begin{center}
 		\begin{tabular}{cccccc}
-			\multicolumn{1}{c}{$w$}  &\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$h(w)$}  &\multicolumn{1}{c}{$h(x)$} &\multicolumn{1}{c}{$\partial\text{OR}(h(w), h(x))$} &\multicolumn{1}{c}{$h(\partial\text{OR}(h(w), h(x)))$}
+			\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$y$}  &\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial \vee(h(x), h(y))$} &\multicolumn{1}{c}{$h(\partial \vee(h(x), h(y)))$}
 			\\ \hline \\
 			$\left[0, \frac{1}{2}\right]$ & $\left[0, \frac{1}{2}\right]$ & 0 & 0 & 0 & 0\\[0.1cm]
 			$\left(\frac{1}{2}, 1\right]$ & $\left[0, \frac{1}{2}\right]$ &1 & 0 & $\frac{3}{4}$ & 1\\[0.1cm]
@@ -477,19 +488,19 @@ acknowledgments, including those to funding agencies, go at the end of the paper
 			$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & 1 & 1\\[0.1cm]
 		\end{tabular}
 	\end{center}
-	\caption{$\partial${OR} is hard-equivalent to $x \vee y$.}\label{or-table}
+	\caption{$\partial \vee(x,y) \equiv x \vee y$.}\label{or-table}
 	\end{table}			
 \end{proof}
 \end{prop}
 
 \begin{prop}\label{prop:implies}
-	$\partial${IMPLIES} is hard-equivalent to the boolean function $w \Rightarrow x$.
+	$\partial\!\Rightarrow\!(x,y) \equiv x \Rightarrow y$.
 \begin{proof}
 	Table \ref{implies-table} is the truth table of the boolean function $x \Rightarrow y$, where $h(x) = \operatorname{harden}(x)$..
 	\begin{table}
 	\begin{center}
 		\begin{tabular}{cccccc}
-			\multicolumn{1}{c}{$w$}  &\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$h(w)$}  &\multicolumn{1}{c}{$h(x)$} &\multicolumn{1}{c}{$\partial\text{IMPLIES}(h(w), h(x))$} &\multicolumn{1}{c}{$h(\partial\text{IMPLIES}(h(w), h(x)))$}
+			\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$y$}  &\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial \Rightarrow(h(x), h(y))$} &\multicolumn{1}{c}{$h(\partial \Rightarrow(h(x), h(y)))$}
 			\\ \hline \\
 			$\left[0, \frac{1}{2}\right]$ & $\left[0, \frac{1}{2}\right]$ & 0 & 0 & $\frac{3}{4}$ & 1\\[0.1cm]
 			$\left(\frac{1}{2}, 1\right]$ & $\left[0, \frac{1}{2}\right]$ &1 & 0 & 0 & 0\\[0.1cm]
@@ -497,7 +508,7 @@ acknowledgments, including those to funding agencies, go at the end of the paper
 			$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & $\frac{3}{4}$ & 1\\[0.1cm]
 		\end{tabular}
 	\end{center}
-	\caption{$\partial${IMPLIES} is hard-equivalent to $x \Rightarrow y$.}\label{implies-table}
+	\caption{$\partial \Rightarrow(x,y) \equiv x \Rightarrow y$.}\label{implies-table}
 	\end{table}			
 \end{proof}
 \end{prop}
@@ -538,7 +549,7 @@ Define
 \begin{equation*}
 \begin{aligned}
 \partial\text{AND-LAYER}: [0,1]^{n \times m} \times [0,1]^{m} &\to [0,1]^{n}, \\
-({\bf W}, {\bf x}) &\mapsto [\partial\text{AND-NEURON}({\bf W}_{1}, {\bf x}), \dots, \partial\text{AND-NEURON}({\bf W}_{n}, {\bf x})]
+({\bf W}, {\bf x}) &\mapsto [\partial\wedge\text{NEURON}({\bf W}_{1}, {\bf x}), \dots, \partial\wedge\text{NEURON}({\bf W}_{n}, {\bf x})]
 \end{aligned}
 \end{equation*}
 \end{comment}
