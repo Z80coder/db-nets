@@ -231,7 +231,7 @@ is hard-equivalent to $x \Rightarrow y$ (proposition \ref{prop:implies}). We can
 \begin{figure}[t]
 	\centering
 	\includegraphics[trim=0pt 0pt 0pt 0pt, clip, width=1.0\textwidth]{majority-gates.png}
-	\caption{{\em Majority.}} 
+	\caption{{\em Differentiable boolean majority.} The boolean majority function for three variables in DNF form is $\operatorname{Maj}(x,y,z) = (x \wedge y) \vee (x \wedge y) \vee (y \wedge z)$. The upper row contains contour plots of $f(x,y,z) = \operatorname{min}(\operatorname{max}(x,y), \operatorname{max}(x,z), \operatorname{max}(y,z))$ for values of $z \in \{0.2, 0.4, 0.6, 0.8\}$. $f$ is differentiable and $\equiv \operatorname{Maj}$ but gradient-sparse (vertical and horizontal contours indicate constancy with respect to an input). Also, the number of terms in $f$ grows exponentially with the number of variables. The lower row contains contour plots of $\partial\!\operatorname{Maj}(x,y,z)$ for the same values of $z$. $\partial\!\operatorname{Maj}$ is differentiable and $\equiv \operatorname{Maj}$ yet gradient-rich (curved contours indicate variability with respect to any inputs). In addition, the number of terms in $\partial\!\operatorname{Maj}$ is constant with respect to the number of variables.} 
 	\label{fig:majority-plot}
 \end{figure}
 
@@ -247,11 +247,11 @@ The boolean majority function is particularly important for tractable learning b
 \text{,}
 \end{aligned}
 \end{equation*}
-Interpret each input bit $x_{i}$ as a vote, yes or no, for a binary decision. If the majority of voters are in favour then $\operatorname{Maj}$ outputs 1. The majority function, in the context of predictive model, aggregates multiple bits of weak evidence into a hard decision. Neural network binarization transforms real-valued activation functions into boolean majority \citep{10.5555/3157382.3157557}, which demonstrates their close association. We aim to construct a differentiable analogue of $\operatorname{Maj}$.
+Interpret each input bit $x_{i}$ as a vote, yes or no, for a binary decision. If the majority of voters are in favour then $\operatorname{Maj}$ outputs 1. The majority function, in the context of predictive model, therefore aggregates multiple bits of weak evidence into a hard decision. Neural network binarization transforms real-valued activation functions into boolean threshold functions \citep{10.5555/3157382.3157557}, which indicates their close association. We aim to construct a differentiable analogue of $\operatorname{Maj}$.
 
-$\operatorname{Maj}$ for $n$ bits in DNF form is a disjunction of $\binom{n}{k}$ conjunctive clauses of size $k$, where $k=\lceil n/2 \rceil$ and each clause checks if a unique combination of a majority of the $n$ bits are high; e.g. $\operatorname{Maj}(x, y, z) = (x \wedge y) \vee (x \wedge y) \vee (y \wedge z)$. Therefore, we could in principle implement a differentiable analogue of $\operatorname{Maj}$ in terms of $\partial\wedge$ and $\partial\vee$. However, the number of terms grows exponentially; e.g. $n=50$ generates over 100 trillion conjunctive clauses, which is infeasible. In circuit theory there is no known general algorithm for finding the minimal representation of $\operatorname{Maj}$ for arbitrary $n$.
+$\operatorname{Maj}$ for $n$ bits in DNF form is a disjunction of $\binom{n}{k}$ conjunctive clauses of size $k$, where $k=\lceil n/2 \rceil$ and each clause checks if a unique combination of a majority of the $n$ bits are high; e.g. $\operatorname{Maj}(x, y, z) = (x \wedge y) \vee (x \wedge y) \vee (y \wedge z)$. Therefore, we could in principle implement a differentiable analogue of $\operatorname{Maj}$ in terms of $\partial\wedge$ and $\partial\vee$. However, the number of terms grows exponentially (e.g. $n=50$ generates over 100 trillion conjunctive clauses, which is infeasible) and there is no known general algorithm for finding the minimal representation of $\operatorname{Maj}$ for arbitrary $n$.
 
-Instead, we observe that if $\operatorname{sort}({\bf x})$ sorts the elements of ${\bf x}$ in ascending order then the `middle' soft-bit is representative. For example, if ${\bf x} = [0.4, 0.9, 0.2]$ then $\operatorname{sort}({\bf x}) = [0.2, 0.4, 0.9]$ and the `middle' bit $x_{2}=0.4$ is low, which is hard-equivalent to $\operatorname{Maj}(0, 1, 0) = 0$. Define the index of the `middle' bit by
+Instead, we trade-off time for memory costs. Observe that if the function $\operatorname{sort}({\bf x})$ sorts the elements of ${\bf x}$ in ascending order then the `middle' soft-bit is representative. For example, if ${\bf x} = [0.4, 0.9, 0.2]$ then $\operatorname{sort}({\bf x}) = [0.2, 0.4, 0.9]$ and the `middle' bit $x_{2}=0.4$ is low, which is hard-equivalent to $\operatorname{Maj}(0, 1, 0) = 0$. Define the index of the `middle' bit by
 \begin{equation*}
 \begin{aligned}
 \operatorname{majority-index}: \mathbb{Z}_{>0} \to \mathbb{Z}_{> 0}\\
@@ -259,21 +259,14 @@ n \mapsto \left\lceil \frac{n}{2}\right\rceil
 \text{.}
 \end{aligned}
 \end{equation*}
-Then the differentiable function
+Then, applying margin packing, define the differentiable function
 \begin{equation*}
 \begin{aligned}
 	\partial\!\operatorname{Maj}: [0,1]^{n} &\to [0,1], \\
-	{\bf x} &\mapsto \operatorname{augmented-bit}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))
+	{\bf x} &\mapsto \operatorname{augmented-bit}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))\text{,}
 \end{aligned}
 \end{equation*}
-is hard-equivalent to $\operatorname{Maj}({\bf x})$ (see proposition \ref{prop:majority}). Note that $\partial\!\operatorname{Maj}$ is differentiable almost everywhere and gradient-rich (see figure \ref{fig:majority-plot}).
-
-
-TODO: discuss time-complexity of sort.
-
-We also want to maximise fan-in information where necessary (for backprop error signal) but also minimize it where necessary (e.g. picking a representative bit we want to optimize). Representative bit when we want a vector-wise update; otherwise, min/max.
-
-TODO: min/max are a degenerate case of sorting/ordering
+which is hard-equivalent to $\operatorname{Maj}({\bf x})$ (see proposition \ref{prop:majority}). Note that $\partial\!\operatorname{Maj}$ is differentiable almost everywhere and gradient-rich (see figure \ref{fig:majority-plot}). If $\operatorname{sort}$ is quicksort then the the average time-complexity of $\partial\!\operatorname{Maj}$ is $\mathcal{O}(n\log{}n)$, which is more expensive than $\partial\neg$, $\partial\wedge$, $\partial\vee$ and $\partial\!\Rightarrow$. 
 
 \subsection{Differentiable integer count}
 
