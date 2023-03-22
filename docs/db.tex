@@ -10,6 +10,8 @@
 \usepackage{amsthm}
 \usepackage{graphicx}
 \usepackage{comment}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 
 \title{$\partial\mathbb{B}$ nets: learning boolean functions by\\gradient descent}
 
@@ -126,7 +128,7 @@ Product logics, where for example $f(x,y) = x y$ is as a soft version of $x \wed
 
 \subsection{Margin packing}
 
-Say we aim to construct a differentiable analogue of $x \wedge y$. Note that $\operatorname{min}(x,y)$ essentially selects one of $x$ or $y$ as a representative soft-bit that is guaranteed hard-equivalent to $x \wedge y$. However, by selecting only one of $x$ or $y$ then $\operatorname{min}$ is also guaranteed to be gradient-sparse. We define a `margin packing' method to avoid this dilemma.
+Say we aim to construct a differentiable analogue of $x \wedge y$. Note that $\operatorname{min}(x,y)$ essentially selects one of $x$ or $y$ as a representative soft-bit that is guaranteed hard-equivalent to $x \wedge y$. However, by selecting only one of $x$ or $y$ then $\operatorname{min}$ is also guaranteed to be gradient-sparse. We define a `margin packing' method to solve this dilemma.
 
 The main idea of margin packing is (i) select a representative bit that is hard-equivalent to the target discrete function, and then (ii) pack a fraction of the margin between the representative bit and the hard threshold $1/2$ with gradient-rich information. The result is an augmented bit that is a function of all inputs yet hard-equivalent to the target function.
 
@@ -159,7 +161,7 @@ x_{i} + \operatorname{margin-fraction}({\bf x}, i) & \text{otherwise.}
 \end{aligned}
 \end{equation*}
 If the representative bit is high (resp. low) then the augmented bit is also high (resp. low). 
-But the augmented bit has a higher (resp. lower) value than the representative bit when below (resp. above) the $1/2$ threshold. The difference depends on the size of the available margin and the mean soft-bit value. Almost everywhere, an increase (resp. decrease) of the mean soft-bit increases (resp. decreases) the value of the augmented bit (see figure \ref{fig:margin-trick}). Note that if the $i$th bit is representative (i.e. hard-equivalent to the target function) then so is the augmented bit (see proposition \ref{prop:augmented}). We now use margin packing to define gradient-rich, hard-equivalents of boolean functions.
+But the augmented bit has a higher (resp. lower) value than the representative bit when below (resp. above) the $1/2$ threshold. The difference depends on the size of the available margin and the mean soft-bit value. Almost everywhere, an increase (resp. decrease) of the mean soft-bit increases (resp. decreases) the value of the augmented bit (see figure \ref{fig:margin-trick}). Note that if the $i$th bit is representative (i.e. hard-equivalent to the target function) then so is the augmented bit (see proposition \ref{prop:augmented}). We use margin packing, where appropriate, to define gradient-rich, hard-equivalents of boolean functions.
 
 \subsection{Differentiable $\wedge$}
 
@@ -228,7 +230,7 @@ is hard-equivalent to $x \Rightarrow y$ (proposition \ref{prop:implies}). We can
 
 \subsection{Differentiable majority}
 
-\begin{figure}[t]
+\begin{figure}[h]
 	\centering
 	\includegraphics[trim=0pt 0pt 0pt 0pt, clip, width=1.0\textwidth]{majority-gates.png}
 	\caption{{\em Differentiable boolean majority.} The boolean majority function for three variables in DNF form is $\operatorname{Maj}(x,y,z) = (x \wedge y) \vee (x \wedge y) \vee (y \wedge z)$. The upper row contains contour plots of $f(x,y,z) = \operatorname{min}(\operatorname{max}(x,y), \operatorname{max}(x,z), \operatorname{max}(y,z))$ for values of $z \in \{0.2, 0.4, 0.6, 0.8\}$. $f$ is differentiable and $\equiv \operatorname{Maj}$ but gradient-sparse (vertical and horizontal contours indicate constancy with respect to an input). Also, the number of terms in $f$ grows exponentially with the number of variables. The lower row contains contour plots of $\partial\!\operatorname{Maj}(x,y,z)$ for the same values of $z$. $\partial\!\operatorname{Maj}$ is differentiable and $\equiv \operatorname{Maj}$ yet gradient-rich (curved contours indicate variability with respect to any inputs). In addition, the number of terms in $\partial\!\operatorname{Maj}$ is constant with respect to the number of variables.} 
@@ -247,9 +249,9 @@ The boolean majority function is particularly important for tractable learning b
 \text{,}
 \end{aligned}
 \end{equation*}
-Interpret each input bit $x_{i}$ as a vote, yes or no, for a binary decision. If the majority of voters are in favour then $\operatorname{Maj}$ outputs 1. The majority function, in the context of predictive model, therefore aggregates multiple bits of weak evidence into a hard decision. Neural network binarization transforms real-valued activation functions into boolean threshold functions \citep{10.5555/3157382.3157557}, which indicates their close association. We aim to construct a differentiable analogue of $\operatorname{Maj}$.
+Interpret each input bit $x_{i}$ as a vote, yes or no, for a binary decision. If the majority of voters are in favour then $\operatorname{Maj}$ outputs 1. The majority function, in the context of a predictive model, aggregates multiple bits of weak evidence into a hard decision. Neural network binarization transforms real-valued activation functions into boolean threshold functions \citep{10.5555/3157382.3157557}, which indicates their close association. We aim to construct a differentiable analogue of $\operatorname{Maj}$.
 
-$\operatorname{Maj}$ for $n$ bits in DNF form is a disjunction of $\binom{n}{k}$ conjunctive clauses of size $k$, where $k=\lceil n/2 \rceil$ and each clause checks if a unique combination of a majority of the $n$ bits are high; e.g. $\operatorname{Maj}(x, y, z) = (x \wedge y) \vee (x \wedge y) \vee (y \wedge z)$. Therefore, we could in principle implement a differentiable analogue of $\operatorname{Maj}$ in terms of $\partial\wedge$ and $\partial\vee$. However, the number of terms grows exponentially (e.g. $n=50$ generates over 100 trillion conjunctive clauses, which is infeasible) and there is no known general algorithm for finding the minimal representation of $\operatorname{Maj}$ for arbitrary $n$.
+$\operatorname{Maj}$ for $n$ bits in DNF form is a disjunction of $\binom{n}{k}$ conjunctive clauses of size $k$, where $k=\lceil n/2 \rceil$ and each clause checks whether a unique combination of a majority of the $n$ bits are all high; e.g. $\operatorname{Maj}(x, y, z) = (x \wedge y) \vee (x \wedge y) \vee (y \wedge z)$. Therefore, we could in principle implement a differentiable analogue of $\operatorname{Maj}$ in terms of $\partial\wedge$ and $\partial\vee$. However, the number of terms grows exponentially with the number of variables (e.g. $n=50$ generates over 100 trillion clauses, which is infeasible). And there is no known general algorithm for finding the minimal representation of $\operatorname{Maj}$ for arbitrary $n$.
 
 Instead, we trade-off time for memory costs. Observe that if the function $\operatorname{sort}({\bf x})$ sorts the elements of ${\bf x}$ in ascending order then the `middle' soft-bit is representative. For example, if ${\bf x} = [0.4, 0.9, 0.2]$ then $\operatorname{sort}({\bf x}) = [0.2, 0.4, 0.9]$ and the `middle' bit $x_{2}=0.4$ is low, which is hard-equivalent to $\operatorname{Maj}(0, 1, 0) = 0$. Define the index of the `middle' bit by
 \begin{equation*}
@@ -266,29 +268,32 @@ Then, applying margin packing, define the differentiable function
 	{\bf x} &\mapsto \operatorname{augmented-bit}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))\text{,}
 \end{aligned}
 \end{equation*}
-which is hard-equivalent to $\operatorname{Maj}({\bf x})$ (see proposition \ref{prop:majority}). Note that $\partial\!\operatorname{Maj}$ is differentiable almost everywhere and gradient-rich (see figure \ref{fig:majority-plot}). If $\operatorname{sort}$ is quicksort then the the average time-complexity of $\partial\!\operatorname{Maj}$ is $\mathcal{O}(n\log{}n)$, which is more expensive than $\partial\neg$, $\partial\wedge$, $\partial\vee$ and $\partial\!\Rightarrow$. 
+which is hard-equivalent to $\operatorname{Maj}({\bf x})$ (see proposition \ref{prop:majority}). Note that $\partial\!\operatorname{Maj}$ is differentiable almost everywhere and gradient-rich (see figure \ref{fig:majority-plot}). If $\operatorname{sort}$ is quicksort then the the average time-complexity of $\partial\!\operatorname{Maj}$ is $\mathcal{O}(n\log{}n)$, which makes $\partial\!\operatorname{Maj}$ more expensive than $\partial\neg$, $\partial\wedge$, $\partial\vee$ and $\partial\!\Rightarrow$. 
 
-\subsection{Differentiable integer count}
+\subsection{Differentiable counting}
 
-Define 
+A boolean counting function $f({\bf x})$ has the value $1$ if a counting predicate, $c({\bf x})$, holds for its $n$ inputs. For example, $\partial\!\operatorname{Maj}({\bf x})$ is a boolean counting function where $c({\bf x}) := |\{x_{i} : x_{i} = 1 \}| \geq \lceil \frac{n}{2} \rceil$. We aim to construct a differentiable analogue of $\operatorname{count}({\bf x}, k)$ where $c({\bf x}) := |\{x_{i} : x_{i} = 1 \}| = k$ (i.e. `exactly $k$ high'). This will be useful for multiclass classification problems where we interpret $k$ as a class prediction.
+
+As before, we use $\operatorname{sort}$ to trade-off time for memory costs. Observe that if the elements of ${\bf x}$ are in ascending order then, if any soft-bits are high, there exists a unique contiguous pair of indices $(i,i+1)$ where $x_{i}$ is low and $x_{i+1}$ is high, where index $i$ is a direct count of the number of soft-bits that are low in ${\bf x}$. In consequence, define
 \begin{equation*}
 \begin{aligned}
-\operatorname{low-high}: [0,1]^{n} &\to [0,1]^{n+1},\\
-{\bf x} &\mapsto \left[ \operatorname{min}(1, x_{1}), \operatorname{min}(1 - x_{1}, x_{2}), \dots, \operatorname{min}(1 - x_{n-1}, x_{n}), \operatorname{min}(x_{n}, 1) \right]\text{.}
-\end{aligned}
-\end{equation*}
-
-Define
-\begin{equation*}
-\begin{aligned}
-\partial\text{COUNT}: [0,1]^{n} &\to [0,1]^{n+1}, \\
+\partial\!\operatorname{count-hot}: [0,1]^{n} &\to [0,1]^{n+1}, \\
 {\bf x} &\mapsto \operatorname{low-high}(\operatorname{sort}({\bf x}))\text{,}
 \end{aligned}
 \end{equation*}
-where ${\bf x}$ is a vector of soft-bits. $\partial${COUNT} is hard-equivalent to
+where 
 \begin{equation*}
 \begin{aligned}
-\text{COUNT}: \{0,1\}^{n} &\to \{0,1\}^{n+1}, \\
+\operatorname{low-high}: [0,1]^{n} &\to [0,1]^{n+1},\\
+{\bf x} &\mapsto \left[ \partial\!\wedge\!(1, x_{1}), \partial\!\wedge\!(1 - x_{1}, x_{2}), \dots, \partial\!\wedge\!(1 - x_{n-1}, x_{n}), \partial\!\wedge\!(1-x_{n}, 1) \right]\text{.}
+\end{aligned}
+\end{equation*}
+$\partial\!\operatorname{count-hot}({\bf x})$ outputs a 1-hot vector where the index of high bit is the number of low bits in ${\bf x}$. For example, $\partial\!\operatorname{count-hot}([0.1, 0.9, 0.2]) = [0.1, 0.2, \bold{0.8}, 0.1]\text{,}$ indicating that 2 bits are low, and $\partial\!\operatorname{count-hot}([0.6, 0.9, 0.7]) = [\bold{0.6}, 0.4, 0.3, 0.1]\text{,}$ indicating that 0 bits are low.
+
+Note that $\partial\!\operatorname{count-hot}$ is hard-equivalent to the boolean function
+\begin{equation*}
+\begin{aligned}
+\operatorname{count-hot}: \{0,1\}^{n} &\to \{0,1\}^{n+1}, \\
 {\bf x} &\mapsto \left[\operatorname{k-of-n}({\bf x}, 0), \operatorname{k-of-n}({\bf x}, 1), \dots, \operatorname{k-of-n}({\bf x}, n)\right]\text{,}
 \end{aligned}
 \end{equation*}
@@ -296,13 +301,9 @@ where
 \begin{equation*}
 \operatorname{k-of-n}({\bf x}, k) = \bigvee_{|S|=k} \bigwedge_{i\in S} x_i \bigwedge_{j\notin S} \neg x_j
 \end{equation*}
-(see proposition \ref{prop:count}).
+(see proposition \ref{prop:count}). However, in the hardened aspect of the $\partial\mathbb{B}$ net we efficiently implement $\operatorname{count-hot}$ as a discrete program that simply counts the number of low bits.
 
-%$f(x_1, x_2, \ldots, x_n) = \bigvee_{|S|=k} \left( \bigwedge_{i\in S} x_i \bigwedge_{j\notin S} \neg x_j \right)$
-%is a logical OR that is taken over all possible subsets $S$ of size $k$ of the set ${1,2,\ldots,n}$.
-
-TODO: count is 1-hot function
-TODO: count allows us to implement boolean counting functions.
+Note that $\partial\!\operatorname{count-hot}$ is differentiable and gradient-rich. We may construct various kinds of boolean counting functions from $\partial\!\operatorname{count-hot}$. For example, $\partial\!\operatorname{count}({\bf x}, k)$ is straightforwardly $\partial\!\operatorname{count-hot}({\bf x})[k]$.
 
 \subsection{Logical layers}
 
