@@ -1,11 +1,11 @@
 import jax
 from flax import linen as nn
 
-from neurallogic import neural_logic_net, symbolic_generation
+from neurallogic import neural_logic_net, symbolic_generation, hard_and
 
 
-def high_to_low(x, y):
-    return jax.numpy.minimum(1 - x, y)
+def low_to_high(x, y):
+    return hard_and.soft_and(1 - x, y)
 
 def soft_count(x: jax.numpy.array):
     """
@@ -32,7 +32,7 @@ def soft_count(x: jax.numpy.array):
     low = jax.numpy.array([0.0])
     high = jax.numpy.array([1.0])
     sorted_x = jax.numpy.concatenate([low, sorted_x, high])
-    return jax.vmap(high_to_low)(sorted_x[:-1], sorted_x[1:])
+    return jax.vmap(low_to_high)(sorted_x[:-1], sorted_x[1:])
     
 def hard_count(x: jax.numpy.array):
     # We simply count the number of low bits

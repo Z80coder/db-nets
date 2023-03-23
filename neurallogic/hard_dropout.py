@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Callable
 
 import jax
 from flax import linen as nn
@@ -30,8 +30,8 @@ class SoftHardDropout(nn.Module):
     broadcast_dims: Sequence[int] = ()
     deterministic: Optional[bool] = None
     rng_collection: str = "dropout"
-    dropout_value: float = 0.0
     dtype: jax.numpy.dtype = jax.numpy.float32
+    dropout_function: Callable = lambda x: jax.numpy.full_like(x, 0.0)
 
     @nn.compact
     def __call__(self, inputs, deterministic: Optional[bool] = None):
@@ -65,9 +65,12 @@ class SoftHardDropout(nn.Module):
             broadcast_shape[dim] = 1
         mask = random.bernoulli(rng, p=keep_prob, shape=broadcast_shape)
         mask = jax.numpy.broadcast_to(mask, inputs.shape)
+        """
         masked_values = jax.numpy.full_like(
             inputs, self.dropout_value, dtype=self.dtype
         )
+        """
+        masked_values = jax.vmap(self.dropout_function)(inputs)
         return lax.select(mask, inputs, masked_values)
 
 
