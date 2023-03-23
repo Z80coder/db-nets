@@ -145,10 +145,6 @@ def nln_iris(type, x, training: bool):
 
 Source: https://arxiv.org/pdf/1804.01508.pdf
 """
-
-# TODO: implement count layer, k-high neuron, and multi-label classification
-# to avoid the need for the harden layer
-
 # Using majority without margin
 # mean: 94.18, sem: 0.13, min: 80.00, max: 100.00, 5%: 86.67, 95%: 100.00
 # Using majority with margin
@@ -169,26 +165,56 @@ def nln_binary_iris_1(type, x, training: bool):
     x = x.sum(-1)
     return x
 
+"""
+| Technique/Accuracy | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
+| ------------------ | -------------- | ------- | ------- | ------ | ------ |
+| Tsetlin            | 95.0 +/- 0.2   | 86.7    | 100.0   | 80.0   | 100.0  |
+| dB                 | 93.9 +/- 0.1   | 86.7    | 100.0   | 80.0   | 100.0  |
+| Neural network     | 93.8 +/- 0.2   | 86.7    | 100.0   | 80.0   | 100.0  |
+| SVM                | 93.6 +/- 0.3   | 86.7    | 100.0   | 76.7   | 100.0  |
+| Naive Bayes        | 91.6 +/- 0.3   | 83.3    | 96.7    | 70.0   | 100.0  |
+
+Source: https://arxiv.org/pdf/1804.01508.pdf
+"""
+# mean: 93.88, sem: 0.12, min: 80.00, max: 100.00, 5%: 86.67, 95%: 100.00
 def nln_binary_iris(type, x, training: bool):
     dtype = jax.numpy.float64
     y = hard_vmap.vmap(type)((lambda x: 1 - x, lambda x: 1 - x, lambda x: symbolic_primitives.symbolic_not(x)))(x)
     x = hard_concatenate.concatenate(type)([x, y], 0)
-    layer_size = 16
+    layer_size = 59
     x = hard_and.and_layer(type)(
         layer_size,
         dtype=dtype,
-        weights_init=initialization.initialize_bernoulli(0.01, 0.3, 0.501),
+        weights_init=initialization.initialize_bernoulli(0.0, 0.3, 0.501),
     )(x)
-    x = x.ravel()
-    x = x.reshape((num_classes - 1, int(x.shape[0] / (num_classes - 1))))
-    x = hard_majority.majority_layer(type)()(x)
+    x = hard_dropout.hard_dropout(type)(
+        rate=0.05,
+        dropout_function=lambda x: 1-x,
+        deterministic=not training,
+        dtype=dtype,
+    )(x)
     ########################################################
     x = jax.numpy.array([x]) # TODO: shouldn't need to do this
-    x = hard_count.count_layer(type)()(x)
-    x = x.ravel()
+    # count the number of high bits to yield layer_size+1 outputs
+    x = hard_count.count_layer(type)()(x) 
+    # split into num_classes equally sized bit buckets
+    x = x.ravel() # TODO: shouldn't need to do this
     x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    # take the logical or of each bucket
+    # TODO: create a specialised layer for this
+    x = hard_vmap.vmap(type)((
+        lambda x: jax.numpy.max(x),
+        # This is conceptually wrong
+        #lambda x: hard_or.soft_or_vec(x), # I don't want the other bits in the bucket to be high (if correct label)
+        lambda x: jax.numpy.max(x),
+        lambda x: symbolic_primitives.symbolic_reduce_or(x)))(x)
+    x = x.ravel()
+    x = harden_layer.harden_layer(type)(x)
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes))) # TODO: shouldn't need to do this
     x = x.sum(-1)
     return x
+
+
 
 def batch_nln_iris(type, x, training: bool):
     return jax.vmap(lambda x: nln_iris(type, x, training))(x)
@@ -205,7 +231,6 @@ class TrainState(train_state.TrainState):
 def create_train_state(net, rng, dropout_rng, config):
     mock_input = jax.numpy.ones([1, num_features])
     soft_weights = net.init(rng, mock_input, training=False)["params"]
-    #tx = optax.sgd(config.learning_rate, config.momentum)
     tx = optax.radam(learning_rate=config.learning_rate)
     return TrainState.create(
         apply_fn=net.apply, params=soft_weights, tx=tx, dropout_rng=dropout_rng
@@ -215,13 +240,6 @@ def create_train_state(net, rng, dropout_rng, config):
 @jax.jit
 def update_model(state, grads):
     return state.apply_gradients(grads=grads)
-
-def my_loss(predictions, targets):
-    return jax.vmap(lambda x: jax.numpy.where(x < 0.45, 0.0, x*x))(predictions - targets)
-
-def my_loss(predictions, targets):
-    x = predictions - targets
-    return x*x
 
 def apply_model_with_grad_impl(state, features, labels, dropout_rng, training: bool):
     dropout_train_rng = jax.random.fold_in(key=dropout_rng, data=state.step)
@@ -236,8 +254,6 @@ def apply_model_with_grad_impl(state, features, labels, dropout_rng, training: b
         one_hot = jax.nn.one_hot(labels, num_classes)
         loss = jax.numpy.mean(
             optax.softmax_cross_entropy(logits=logits, labels=one_hot)
-            #optax.l2_loss(logits, one_hot)
-            #my_loss(logits, one_hot)
         )
         return loss, logits
 
@@ -344,8 +360,8 @@ def get_config():
     config = ml_collections.ConfigDict()
     config.learning_rate = 0.01 # sgd = 0.1
     config.momentum = 0.9
-    config.batch_size = 120
-    config.num_epochs = 4000 # 20000  # 500 for paper
+    config.batch_size = 60
+    config.num_epochs = 1000
     return config
 
 
