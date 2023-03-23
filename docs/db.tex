@@ -71,6 +71,8 @@ This paper examines related work (section \ref{sec:related-work}), (ii) etc.
 
 \section{Related work}\label{sec:related-work}
 
+todo: can Tsetlin machines be chained in differentiable architectures?
+
 \section{$\partial\mathbb{B}$ nets}
 
 A $\partial \mathbb{B}$ net has two aspects, a soft net and a hard net. Both nets use bits to represent transitory values and learnable weights. However, a soft net uses soft-bits and a hard net uses hard-bits.
@@ -346,12 +348,27 @@ In classification problems the final layer of a neural network is typically inte
 In addition, at training time, loss functions should be a function of hardened bits, otherwise gradient descent may non-optimally traverse trajectories that take no account of the hard threshold at $1/2$. For example, say that an example is correctly classified by a 1-hot vector with high bit $x=0.51$. Updating the net's weights to change this value to $x=0.52$ won't increase classification accuracy but may prevent updating the weights to correctly classify another example in the training data. For this reason, $\partial\mathbb{B}$ nets have a final `hardening' layer to ensure that loss is a function of hard, not soft, bits:
 \begin{equation*}
 \begin{aligned}
-\partial\!\operatorname{Harden}: [0,1]^{n} &\to [0,1]^{n}, \\
+\partial\!\operatorname{harden}: [0,1]^{n} &\to [0,1]^{n}, \\
 {\bf x} &\mapsto \operatorname{harden}({\bf x})\text{.}
 \end{aligned}
 \end{equation*}
-The $\operatorname{harden}$ function is not differentiable and therefore we use the straight-through estimator \citep{DBLP:journals/corr/BengioLC13} during backpropagation. However, by restricting the straight-through estimator to the very final layer we avoid compounding gradient errors to deeper parts of the network.
+The $\operatorname{harden}$ function is not differentiable and therefore $\partial\!\operatorname{harden}$ uses the straight-through estimator \citep{DBLP:journals/corr/BengioLC13} during backpropagation. However, by restricting the straight-through estimator to the very final layer we avoid compounding gradient estimation errors to deeper parts of the network. $\partial\!\operatorname{harden}$ is hard-equivalent to a $\operatorname{nop}$.
 
+$\partial\mathbb{B}$ nets can re-use many of the techniques deployed in standard neural networks. For example, for improved generalisation, we define a `boolean' analogue of the dropout layer \citep{JMLR:v15:srivastava14a}:
+\begin{equation*}
+\begin{aligned}
+\partial\!\operatorname{dropout}: [0,1]^{n} \times [0,1] &\to [0,1]^{n}, \\
+({\bf x}, p) &\mapsto [f(x_{1}, p), \dots, f(x_{n}, p)]\text{,}
+\end{aligned}
+\end{equation*}
+where
+\begin{equation*}
+f(x, p) = \begin{cases}
+1 - x, & \text{with probability } p \\
+x, & \text{otherwise.}
+\end{cases}
+\end{equation*}
+At train time $\partial\!\operatorname{dropout}$ randomly negates soft-bit values with probability $p$. At test time, and in the hard net, $\partial\!\operatorname{dropout}$ is a $\operatorname{nop}$.
 
 \section{Experiments}
 
@@ -362,24 +379,13 @@ The $\operatorname{harden}$ function is not differentiable and therefore we use 
 \begin{figure}[t]
 	\centering
 	\includegraphics[width=1.0\textwidth]{binary-iris-architecture.png}
-	\caption{{\em A $\partial\mathbb{B}$ net for the binary iris problem}.}
+	\caption{{\em A $\partial\mathbb{B}$ net for the binary Iris problem}. The net concatenates the soft-bit input, ${\bf x}$ (length 16), with its negation, ${\bf 1 - x}$, and supplies the resulting vector (length 32) to a $\partial_{\wedge}\!\operatorname{Layer}$ (width 59), a $\partial\!\operatorname{dropout}$ layer for improved generalisation, a $\partial\!\operatorname{count-hot}$ layer that generates a 1-hot vector (width 60) that is reduced by $\operatorname{max}$ to a 1-hot vector of 3 classification bits. A final $\partial\!\operatorname{harden}$ ensures the loss function is a function of hard bits. The net's weights, once hardened, consume $236$ bytes.}
 	\label{fig:binary-iris-architecture}
 \end{figure}
 
+The Iris dataset has 150 examples with 4 inputs (sepal length and width, and petal length and width), and 3 labels ({\em setosa}, {\em versicolour}, and {\em virginica}). We use the binary version of the Iris dataset \citep{binary-iris-dataset} where each input float is represented by 4 bits. We perform 1000 experiments, each with a different random seed. Each experiment randomly partitions the data into 20\% training and 80\% test sets. 
 
-\begin{comment}
-"""
-| Technique/Accuracy | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
-| ------------------ | -------------- | ------- | ------- | ------ | ------ |
-| Tsetlin            | 95.0 +/- 0.2   | 86.7    | 100.0   | 80.0   | 100.0  |
-| dB                 | 93.9 +/- 0.1   | 86.7    | 100.0   | 80.0   | 100.0  |
-| Neural network     | 93.8 +/- 0.2   | 86.7    | 100.0   | 80.0   | 100.0  |
-| SVM                | 93.6 +/- 0.3   | 86.7    | 100.0   | 76.7   | 100.0  |
-| Naive Bayes        | 91.6 +/- 0.3   | 83.3    | 96.7    | 70.0   | 100.0  |
-
-Source: https://arxiv.org/pdf/1804.01508.pdf
-"""
-\end{comment}
+We initialize the network described in figure \ref{fig:binary-iris-architecture} using the XX policy and train for 1000 epochs with the RAdam optimizer \citep{Liu2020On} and softmax cross-entropy loss. We measure the accuracy of the final net to avoid hand-picking the best configuration. Table \ref{tab:binary-iris-results} compares the $\delta\mathbb{B}$ net against other classifiers  \citep{granmo18}. Naive Bayes performs the worst. The Tsetlin machine performs best on this problem, with the $\partial\mathbb{B}$ net second, notably beating a standard multilayer neural network.
 
 \begin{table}[t]
 	\centering
@@ -403,13 +409,14 @@ Source: https://arxiv.org/pdf/1804.01508.pdf
 \begin{figure}[t]
 	\centering
 	\includegraphics[width=1.0\textwidth]{noisy-xor-architecture.png}
-	\caption{{\em A $\partial\mathbb{B}$ net for the noisy-xor problem}. The net concatenates the soft-bit input, ${\bf x}$ (length 12), with its negation, ${\bf 1 - x}$, and supplies the resulting vector (length 24) to a $\partial_{\wedge}\!\!\operatorname{Layer}$ (width 32), $\partial_{\vee}\!\!\operatorname{Layer}$ (width 32),  $\partial_{\neg} \!\operatorname{Layer}$ (width 16), and a final $\partial\!\operatorname{Maj}$ to produce a single soft-bit $y \in [0,1]$ (to predict odd parity) and its negation $1-y$ (to predict even parity). The net's weights, once hardened, consume $288$ bytes.}
+	\caption{{\em A $\partial\mathbb{B}$ net for the noisy xor problem}. The net concatenates the soft-bit input, ${\bf x}$ (length 12), with its negation, ${\bf 1 - x}$, and supplies the resulting vector (length 24) to a $\partial_{\wedge}\!\!\operatorname{Layer}$ (width 32), $\partial_{\vee}\!\!\operatorname{Layer}$ (width 32),  $\partial_{\neg} \!\operatorname{Layer}$ (width 16), and a final $\partial\!\operatorname{Maj}$ to produce a single soft-bit $y \in [0,1]$ (to predict odd parity) and its negation $1-y$ (to predict even parity). The net's weights, once hardened, consume $288$ bytes.}
 	\label{fig:noisy-xor-architecture}
 \end{figure}
 
 The noisy XOR dataset \citep{noisy-xor-dataset} is an adversarial parity problem with noisy non-informative features. The dataset consists of 10K examples with 12 boolean inputs and a target label (where 0 = odd and 1 = even) that is a XOR function of 2 inputs. The remaining 10 inputs are entirely random. We train on 50\% of the data where, additionally, 40\% of the labels are inverted.
 
-We initialized the network described in figure \ref{fig:noisy-xor-architecture} using the XX policy and then trained for 2000 epochs with the RAdam optimizer \citep{Liu2020On} and softmax cross-entropy loss. We measure the accuracy of the final net on the test data (to avoid handpicking the best configuration). Table \ref{tab:noisy-xor-results} compares the $\partial\mathbb{B}$ net against other classifiers \citep{granmo18} and reports the mean accuracy with 95\% confidence intervals obtained over 100 replications of the experiment with different random seeds. 
+We randomly initialize the network described in figure \ref{fig:noisy-xor-architecture} using the XX policy and then trained for 2000 epochs with the RAdam optimizer and softmax cross-entropy loss. We measure the accuracy of the final net on the test data to avoid hand-picking the best configuration. Table \ref{tab:noisy-xor-results} compares the $\partial\mathbb{B}$ net against other classifiers \citep{granmo18}. The high noise causes logistic regression and naive Bayes to randomly guess. The SVM hardly performs better. In constrast, the multilayer neural network, Tsetlin machine \citep{granmo18}, and  $\partial\mathbb{B}$ net all successfully learn the underlying XOR signal. The Tsetlin machine performs best on this problem, with the $\partial\mathbb{B}$ net second.
+
 
 \begin{table}[t]
 	\centering
@@ -424,13 +431,10 @@ We initialized the network described in figure \ref{fig:noisy-xor-architecture} 
 		\multicolumn{1}{|l|}{naive Bayes}          & \multicolumn{1}{l|}{49.8 +/- 0.2}          & \multicolumn{1}{l|}{48.3}          & \multicolumn{1}{l|}{51.0}           & \multicolumn{1}{l|}{41.3}          & \multicolumn{1}{l|}{52.7}           \\ \hline
 		\multicolumn{1}{|l|}{logistic regression}  & \multicolumn{1}{l|}{49.8 +/- 0.3}          & \multicolumn{1}{l|}{47.8}          & \multicolumn{1}{l|}{51.1}           & \multicolumn{1}{l|}{41.1}          & \multicolumn{1}{l|}{53.1}           \\ \hline
 	\end{tabular}
-	\caption{{\em Ranked noisy-XOR results}}
+	\caption{{\em Ranked noisy XOR results}}
 	\label{tab:noisy-xor-results}
 \end{table}
 
-The high noise causes logistic regression and naive Bayes to randomly guess. The SVM hardly performs better. In constrast, the multilayer neural network, Tsetlin machine \citep{granmo18}, and  $\partial\mathbb{B}$ net all successfully learn the underlying XOR signal. The Tsetlin machine performs best on this problem, with the $\partial\mathbb{B}$ net second.
-
-todo: can Tsetlin machines be chained in differentiable architectures?
 
 \subsection{MNIST}
 
