@@ -176,7 +176,7 @@ def nln_binary_iris_1(type, x, training: bool):
 
 Source: https://arxiv.org/pdf/1804.01508.pdf
 """
-# mean: 93.88, sem: 0.12, min: 80.00, max: 100.00, 5%: 86.67, 95%: 100.00
+# mean: 93.89, sem: 0.12, min: 80.00, max: 100.00, 5%: 86.67, 95%: 100.00
 def nln_binary_iris(type, x, training: bool):
     dtype = jax.numpy.float64
     y = hard_vmap.vmap(type)((lambda x: 1 - x, lambda x: 1 - x, lambda x: symbolic_primitives.symbolic_not(x)))(x)
@@ -185,7 +185,7 @@ def nln_binary_iris(type, x, training: bool):
     x = hard_and.and_layer(type)(
         layer_size,
         dtype=dtype,
-        weights_init=initialization.initialize_bernoulli(0.0, 0.3, 0.501),
+        weights_init=initialization.initialize_uniform_range(0.4, 0.4),
     )(x)
     x = hard_dropout.hard_dropout(type)(
         rate=0.05,
