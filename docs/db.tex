@@ -70,28 +70,14 @@ This paper examines related work (section \ref{sec:related-work}), (ii) etc.
 
 \section{Related work}\label{sec:related-work}
 
-Methods to learn complex, discrete boolean functions can be broadly categorized as either non-differentiable or differentiable.
+Methods to learn discrete boolean functions can be broadly categorized as either non-differentiable or differentiable.
 
-Non-differentiable approaches include boolean-valued decision trees \citep{BreiFrieStonOlsh84}, random forests \citep{598994} and genetic programming \citep{koza1992genetic}. Tsetlin machines \cite{granmo18} represent propositional formulae by collections of Tsetlin Automata with integer weights that learn by positive and negative feedback. Tsetlin Machines are not end-to-end differentiable because feedback mechanism uses a hard threshold function.
+Non-differentiable approaches include boolean-valued decision trees \citep{BreiFrieStonOlsh84}, random forests \citep{598994}, genetic programming \citep{koza1992genetic} and, more recently, Tsetlin machines \cite{granmo18}. Tsetlin machines represent propositional formulae by collections of simple automata with integer weights optimised by positive and negative feedback defined in terms of a hard threshold function. These models are relatively easier to interpret, compared to deep neural networks, because they directly represent boolean decisions. However, their non-differentiability means it is relatively harder to compose them into larger-scale systems that learn useful representations of high-dimensional data (e.g. NLP, images and audio) without manual feature engineering, although Tsetlin machines show promise on such tasks \citep{Granmo2019TheCT}.
 
-These models can be highly interpretable but can fail to capture complex relationships between inputs and outputs.
+Differentiable approaches include systems that integrate rule-based reasoning with neural components, and binarization techniques that quantize neural networks by converting real-valued weights and activations to binary values. For example, differentiable inductive logic programming \citep{10.5555/3241691.3241692}, neural logic machines \citep{dong2018neural} 
+and differentiable neural logic networks \cite{DBLP:phd/basesearch/Payani20} learn first-order logic rules using gradient descent. These systems combine the benefits of logical inference and interpretability with end-to-end differentiability; however, they can require combinatoric enumeration of rulesets and therefore struggle to scale to large datasets. The technique of network binarization aims to significantly reduce model size and inference costs while maintaining predictive accuracy. Binarization reduces a real-valued neural network to a binary network where nonlinear activation functions are replaced by boolean majority functions. For example, BinaryConnect \citep{10.5555/2969442.2969588}, XNOR-Net \citep{10.1007/978-3-319-46493-0_32}, and LUTNet \citep{9026948}, optimize a continuous relaxation or approximation of the binary net during training. However, binary-valued functions are intrinsically non-differentiable and therefore training by gradient descent becomes challenging. Plus, binarization throws away information, which reduces accuracy \citep{QIN2020107281}. 
 
-Differentiable approaches include differentiable Inductive Logic Programming \citep{10.5555/3241691.3241692} learns first-order logic rules using gradient descent. Neural Logic Machines \citep{dong2018neural} also learn first-order logic rules. First-order logic is more expressive than propositional logic. However, don't scale to large problem instances.
-
-These approaches also aim to learn discrete functions while maintaining end-to-end differentiability. 
-
-Binarization reduces model size and computation cost while attempting to maintain accuracy by reducing real-valued weights and activations to binary values. The binarized neurons typically implement boolean majority and therefore the entire network is a boolean function. For example, BinaryConnect \citep{10.5555/2969442.2969588} optimizes a continuous relaxation of binary weights during training. However, training is relatively difficult because binary weights are intrinsically not differentiable. Binarization tends to reduce accuracy due to the loss of information \citep{QIN2020107281}. So research has focussed on avoiding accuracy loss (e.g. XNOR-Net \citep{10.1007/978-3-319-46493-0_32} employs a real-valued scaling factor to improve accuracy).
-
-LUTNet \citep{9026948}
-
-We don't aim to learn fuzzy logic, but hard logic. See \cite{VANKRIEKEN2022103602} for comparable approaches to activation functions that represent logical operations (Godel, product etc.)
-
-\cite{DBLP:phd/basesearch/Payani20} for an example of similar but not hard-equivalent activations.
-
-In summary, while there has been significant research in the area of binary-valued neural networks and boolean functions, there is still much to be explored in terms of developing models that can learn complex boolean functions while maintaining high predictive accuracy.
-
-In this paper, we propose a new kind of neural network that is end-to-end differentiable, yet learns an arbitrarily complex, discrete boolean function without losing predictive accuracy. We require a separate full-precision copy of the weights for efficient training. Avoids need for feature engineering required by direct boolean function learning methods.
-
+Clearly, the design-space of algorithms that learn boolean functions is large, with various trade-offs. In this paper we investigate an under-explored area of the design-space where a differentiable neural network is semantically equivalent, without approximation or loss, to an arbitrarily complex boolean function. We aim to combine the benefits of deep neural networks trained by gradient descent with the interpretability and logical bias of boolean functions but without loss of accuracy.
 
 \section{$\partial\mathbb{B}$ nets}
 
@@ -145,6 +131,8 @@ We aim to learn to negate a boolean value, $x$, or simply leave it unaltered. Re
 	\end{aligned}
 	\end{equation*}
 where $\partial_{\neg}(w, x) \equiv \neg(x \oplus w)$ (see proposition \ref{prop:not}).
+
+TODO: See \cite{VANKRIEKEN2022103602} for comparable approaches to activation functions that represent logical operations (Godel, product etc.)
 
 Product logics, where for example $f(x,y) = x y$ is as a soft version of $x \wedge y$, although hard-equivalent at extreme values, e.g. $f(1,1)=1$ and $f(0,1)=0$, are not hard-equivalent at intermediate values, e.g. $f(0.6, 0.6) = 0.36 \not\equiv 1$. G\"{o}del-style $\operatorname{min}$ and $\operatorname{max}$ functions, although hard-equivalent over the entire soft-bit range, i.e. $\operatorname{min}(x,y) \equiv x \wedge y$ and $\operatorname{min}(x,y) \equiv x \vee y$, are gradient-sparse in the sense that their outputs are not always a function of all their inputs, e.g. $\frac{\partial}{\partial x} \operatorname{max}(x,y) = 0$ when $(x,y)=(0.1, 0.9)$. So although the composite function $\operatorname{max}(\operatorname{min}(w, x), \operatorname{min}(1-w, 1-x))$ is differentiable and $\equiv \neg(x \oplus w)$ it does not always backpropagate error to its inputs. In contrast, $\partial_{\neg}$ is a gradient-rich function that always backpropagates error to its inputs (see figure \ref{fig:gradient-rich}). 
 
@@ -250,7 +238,7 @@ is hard-equivalent to $x \Rightarrow y$ (see proposition \ref{prop:implies}). We
 
 \subsection{Differentiable majority}
 
-\begin{figure}[h]
+\begin{figure}[t]
 	\centering
 	\includegraphics[trim=0pt 0pt 0pt 0pt, clip, width=1.0\textwidth]{majority-gates.png}
 	\caption{{\em Differentiable boolean majority.} The boolean majority function for three variables in DNF form is $\operatorname{Maj}(x,y,z) = (x \wedge y) \vee (x \wedge y) \vee (y \wedge z)$. The upper row contains contour plots of $f(x,y,z) = \operatorname{min}(\operatorname{max}(x,y), \operatorname{max}(x,z), \operatorname{max}(y,z))$ for values of $z \in \{0.2, 0.4, 0.6, 0.8\}$. $f$ is differentiable and $\equiv \operatorname{Maj}$ but gradient-sparse (vertical and horizontal contours indicate constancy with respect to an input). Also, the number of terms in $f$ grows exponentially with the number of variables. The lower row contains contour plots of $\partial\!\operatorname{Maj}(x,y,z)$ for the same values of $z$. $\partial\!\operatorname{Maj}$ is differentiable and $\equiv \operatorname{Maj}$ yet gradient-rich (curved contours indicate variability with respect to any inputs). In addition, the number of terms in $\partial\!\operatorname{Maj}$ is constant with respect to the number of variables.} 
