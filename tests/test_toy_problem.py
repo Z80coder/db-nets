@@ -31,197 +31,127 @@ from tests import utils
 
 config.update("jax_enable_x64", True)
 
-def check_symbolic(nets, data, trained_state):
+"""
+Temperature: 4 booleans, 1-hot vector
+    0 high = very cold
+    1 high = cold
+    2 high = warm
+    3 high = very warm
+Outside?: 1 boolean
+    0 = no
+    1 = yes
+Labels: 
+    0 = wear t-shirt 
+    1 = wear coat
+"""
+
+toy_data = 1
+num_classes = 2
+if toy_data == 1:
+    num_features = 1
+else:
+    num_features = 5
+
+
+def check_symbolic(nets, data, trained_state, dropout_rng):
     x_training, y_training, x_test, y_test = data
     _, hard, symbolic = nets
-    _, test_loss, test_accuracy = apply_model_with_grad(trained_state, x_test, y_test)
+    _, test_loss, test_accuracy = apply_model_with_grad(trained_state, x_test, y_test, dropout_rng)
     print(
         "soft_net: final test_loss: %.4f, final test_accuracy: %.2f"
         % (test_loss, test_accuracy * 100)
     )
     hard_weights = harden.hard_weights(trained_state.params)
-    hard_trained_state = train_state.TrainState.create(
-        apply_fn=hard.apply, params=hard_weights, tx=optax.sgd(1.0, 1.0)
+    hard_trained_state = TrainState.create(
+        apply_fn=hard.apply,
+        params=hard_weights,
+        tx=optax.sgd(1.0, 1.0),
+        dropout_rng=dropout_rng,
     )
     hard_input = harden.harden(x_test)
-    hard_test_accuracy = apply_hard_model(hard_trained_state, hard_input, y_test)
+    hard_test_accuracy = apply_hard_model_to_data(hard_trained_state, hard_input, y_test)
     print("hard_net: final test_accuracy: %.2f" % (hard_test_accuracy * 100))
     assert numpy.isclose(test_accuracy, hard_test_accuracy, atol=0.0001)
-    if True:
-        symbolic_weights = hard_weights  # utils.make_symbolic(hard_weights)
-        symbolic_trained_state = train_state.TrainState.create(
-            apply_fn=symbolic.apply, params=symbolic_weights, tx=optax.sgd(1.0, 1.0)
-        )
-        symbolic_input = hard_input.tolist()
-        symbolic_test_accuracy = apply_hard_model(
-            symbolic_trained_state, symbolic_input, y_test
-        )
-        print(
-            "symbolic_net: final test_accuracy: %.2f" % (symbolic_test_accuracy * 100)
-        )
-        assert numpy.isclose(test_accuracy, symbolic_test_accuracy, atol=0.0001)
-    if False:
-        # CPU and GPU give different results, so we can't easily regress on a static symbolic expression
-        symbolic_input = [f"x{i}" for i in range(len(hard_input[0].tolist()))]
-        symbolic_output = symbolic.apply({"params": symbolic_weights}, symbolic_input)
-        print("symbolic_output", symbolic_output[0][:10000])
+
+    # CPU and GPU give different results, so we can't easily regress on a static symbolic expression
+    if toy_data == 1:
+        symbolic_input = ["outside"]
+    else:
+        symbolic_input = ["very-cold", "cold", "warm", "very-warm", "outside"]
+    # This simply checks that the symbolic output can be generated
+    symbolic_output = symbolic.apply({"params": hard_weights}, symbolic_input, training=False)
+    print("symbolic_output: class 1", symbolic_output[0][:10000])
+    print("symbolic_output: class 2", symbolic_output[1][:10000])
 
 
-binary_iris = True
-num_features = 16 if binary_iris else 4
-num_classes = 3
-
-
-def get_iris_data():
-    data_dir = Path(__file__).parent.parent / "tests" / "data"
-    data = numpy.loadtxt(
-        data_dir / "iris.data",
-        delimiter=",",
-        dtype={
-            "names": (
-                "sepal_length",
-                "sepal_width",
-                "petal_length",
-                "petal_width",
-                "class",
-            ),
-            "formats": ("f4", "f4", "f4", "f4", "U15"),
-        },
-    )
-    features = numpy.array([list(d)[:4] for d in data])
-    # Normalise each feature column to be in the range [0, 1]
-    features = (features - features.min(axis=0)) / (
-        features.max(axis=0) - features.min(axis=0)
-    )
-    labels = numpy.array(
-        [
-            0
-            if d[num_features] == "Iris-setosa"
-            else 1
-            if d[num_features] == "Iris-versicolor"
-            else 2
-            for d in data
-        ]
-    )
-    return features, labels
-
-
-def get_binary_iris_data():
-    data_dir = Path(__file__).parent.parent / "tests" / "data"
-    data = numpy.loadtxt(data_dir / "BinaryIrisData.txt").astype(dtype=numpy.int32)
-    features = data[:, 0:num_features]  # Input features
-    labels = data[:, num_features]  # Target value
-    return features, labels
-
-
-# overfitting model: 100% training accuracy
-def nln_iris(type, x, training: bool):
-    input_size = x.shape[0]
-    bits_per_feature = 10
-    x = real_encoder.real_encoder_layer(type)(bits_per_feature)(x)
-    x = x.ravel()
+def nln_1(type, x, training: bool):
     dtype = jax.numpy.float32
-    mask_layer_size = 120
-    x = hard_masks.mask_to_true_margin_layer(type)(mask_layer_size, dtype=dtype)(x)
-    x = x.reshape((mask_layer_size, input_size * bits_per_feature))
-    x = hard_majority.majority_layer(type)()(x)
-    x = hard_not.not_layer(type)(18)(x)
+    layer_size = 2
+    x = hard_not.not_layer(type)(layer_size)(x)
     x = x.ravel()
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = hard_majority.majority_layer(type)()(x)
     ########################################################
     x = harden_layer.harden_layer(type)(x)
     x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
     x = x.sum(-1)
     return x
 
-
 """
-| Technique/Accuracy | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
-| ------------------ | -------------- | ------- | ------- | ------ | ------ |
-| Tsetlin            | 95.0 +/- 0.2   | 86.7    | 100.0   | 80.0   | 100.0  |
-| dB                 | 94.2 +/- 0.1   | 86.7    | 100.0   | 80.0   | 100.0  |
-| Neural network     | 93.8 +/- 0.2   | 86.7    | 100.0   | 80.0   | 100.0  |
-| SVM                | 93.6 +/- 0.3   | 86.7    | 100.0   | 76.7   | 100.0  |
-| Naive Bayes        | 91.6 +/- 0.3   | 83.3    | 96.7    | 70.0   | 100.0  |
+Class 1:
+lax_reference.ge(lax_reference.sum((0, numpy.logical_not(numpy.logical_xor(lax_reference.ne(x0, 0), False)))), 1)
 
-Source: https://arxiv.org/pdf/1804.01508.pdf
+is equivalent to:
+
+sum(
+    (
+        0, 
+        ! xor(x0 != 0, False)
+    )
+) >= 1
+
+is equivalent to:
+
+! xor(x0 != 0, False) >= 1
+
+is equivalent to:
+
+! x0
+
+Class 2:
+class 2 lax_reference.ge(lax_reference.sum((0, numpy.logical_not(numpy.logical_xor(lax_reference.ne(x0, 0), True)))), 1)
+
+is equivalent to:
+
+! xor(x0 != 0, True) >= 1
+
+is equivalent to:
+
+x0
+
+Therefore learned class prediction is [!x, x]
 """
-# Using majority without margin
-# mean: 94.18, sem: 0.13, min: 80.00, max: 100.00, 5%: 86.67, 95%: 100.00
-# Using majority with margin
-# mean: 93.95, sem: 0.13, min: 76.67, max: 100.00, 5%: 86.67, 95%: 100.00
-def nln_binary_iris_1(type, x, training: bool):
+
+def nln_2(type, x, training: bool):
     dtype = jax.numpy.float32
-    x = hard_masks.mask_to_true_layer(type)(120, dtype=dtype)(x)
-    x = hard_majority.majority_layer(type)()(x)
-    x = hard_dropout.hard_dropout(type)(
-        rate=0.25,
-        dropout_value=0.0,
-        deterministic=not training,
-        dtype=dtype,
-    )(x)
-    ########################################################
-    x = harden_layer.harden_layer(type)(x)
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
-    x = x.sum(-1)
-    return x
-
-"""
-| Technique/Accuracy | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
-| ------------------ | -------------- | ------- | ------- | ------ | ------ |
-| Tsetlin            | 95.0 +/- 0.2   | 86.7    | 100.0   | 80.0   | 100.0  |
-| dB                 | 93.9 +/- 0.1   | 86.7    | 100.0   | 80.0   | 100.0  |
-| Neural network     | 93.8 +/- 0.2   | 86.7    | 100.0   | 80.0   | 100.0  |
-| SVM                | 93.6 +/- 0.3   | 86.7    | 100.0   | 76.7   | 100.0  |
-| Naive Bayes        | 91.6 +/- 0.3   | 83.3    | 96.7    | 70.0   | 100.0  |
-
-Source: https://arxiv.org/pdf/1804.01508.pdf
-"""
-# mean: 93.89, sem: 0.12, min: 80.00, max: 100.00, 5%: 86.67, 95%: 100.00
-def nln_binary_iris(type, x, training: bool):
-    dtype = jax.numpy.float64
-    y = hard_vmap.vmap(type)((lambda x: 1 - x, lambda x: 1 - x, lambda x: symbolic_primitives.symbolic_not(x)))(x)
-    x = hard_concatenate.concatenate(type)([x, y], 0)
-    layer_size = 59
-    x = hard_and.and_layer(type)(
-        layer_size,
-        dtype=dtype,
-        weights_init=initialization.initialize_uniform_range(0.49, 0.49),
-    )(x)
-    x = hard_dropout.hard_dropout(type)(
-        rate=0.05,
-        dropout_function=lambda x: 1-x,
-        deterministic=not training,
-        dtype=dtype,
-    )(x)
-    ########################################################
-    x = jax.numpy.array([x]) # TODO: shouldn't need to do this
-    # count the number of high bits to yield layer_size+1 outputs
-    x = hard_count.count_layer(type)()(x) 
-    # split into num_classes equally sized bit buckets
-    x = x.ravel() # TODO: shouldn't need to do this
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
-    # take the logical or of each bucket
-    # TODO: create a specialised layer for this
-    x = hard_vmap.vmap(type)((
-        lambda x: jax.numpy.max(x),
-        # This is conceptually wrong
-        #lambda x: hard_or.soft_or_vec(x), # I don't want the other bits in the bucket to be high (if correct label)
-        lambda x: jax.numpy.max(x),
-        lambda x: symbolic_primitives.symbolic_reduce_or(x)))(x)
+    x = hard_not.not_layer(type)(4)(x)
     x = x.ravel()
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = hard_majority.majority_layer(type)()(x)
+    ########################################################
     x = harden_layer.harden_layer(type)(x)
-    x = x.reshape((num_classes, int(x.shape[0] / num_classes))) # TODO: shouldn't need to do this
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
     x = x.sum(-1)
     return x
 
+def nln(type, x, training: bool):
+    if toy_data == 1:
+        return nln_1(type, x, training)
+    else:
+        return nln_2(type, x, training)
 
-
-def batch_nln_iris(type, x, training: bool):
-    return jax.vmap(lambda x: nln_iris(type, x, training))(x)
-
-
-def batch_nln_binary_iris(type, x, training: bool):
-    return jax.vmap(lambda x: nln_binary_iris(type, x, training))(x)
+def batch_nln(type, x, training: bool):
+    return jax.vmap(lambda x: nln(type, x, training))(x)
 
 
 class TrainState(train_state.TrainState):
@@ -319,19 +249,14 @@ def train_and_evaluate(
         )
         if train_accuracy > best_train_accuracy:
             best_train_accuracy = train_accuracy
-            # print(f"epoch: {epoch}")
-            # print(f"\tbest_train_accuracy: {best_train_accuracy * 100:.2f}")
             if test_accuracy >= best_test_accuracy:
                 best_test_accuracy = test_accuracy
-                # print(f"\tbest_test_accuracy: {best_test_accuracy * 100:.2f}")
-            # else:
-            #    print(f"\ttest_accuracy: {test_accuracy * 100:.2f}")
-            # print("\n")
-
         print(
             "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f"
             % (epoch, train_loss, train_accuracy * 100, test_loss, test_accuracy * 100)
         )
+        if train_accuracy == 1.0 and test_accuracy == 1.0:
+            break
 
     # return trained state and final test_accuracy
     return state, test_accuracy
@@ -358,11 +283,24 @@ def apply_hard_model_to_data(state, features, labels):
 
 def get_config():
     config = ml_collections.ConfigDict()
-    config.learning_rate = 0.01 # sgd = 0.1
+    config.learning_rate = 0.01
     config.momentum = 0.9
-    config.batch_size = 60
+    if toy_data == 1:
+        config.batch_size = 16
+    else:
+        config.batch_size = 48
     config.num_epochs = 1000
     return config
+
+def get_toy_data():
+    data_dir = Path(__file__).parent.parent / "tests" / "data"
+    if toy_data == 1:
+        data = numpy.loadtxt(data_dir / "toy_data_1.txt").astype(dtype=numpy.int32)
+    else:
+        data = numpy.loadtxt(data_dir / "toy_data_2.txt").astype(dtype=numpy.int32)
+    features = data[:, 0:num_features]  # Input features
+    labels = data[:, num_features]  # Target value
+    return features, labels
 
 
 def train_test_split(features, labels, rng, test_size=0.2):
@@ -377,24 +315,18 @@ def train_test_split(features, labels, rng, test_size=0.2):
         labels[test_idx],
     )
 
-#@pytest.mark.skip(reason="temporarily off")
-def test_iris():
+@pytest.mark.skip(reason="temporarily off")
+def test_toy():
     # Train net
-    if binary_iris:
-        features, labels = get_binary_iris_data()
-        soft, hard, symbolic = neural_logic_net.net(
-            lambda type, x, training: batch_nln_binary_iris(type, x, training)
-        )
-    else:
-        features, labels = get_iris_data()
-        soft, hard, symbolic = neural_logic_net.net(
-            lambda type, x, training: batch_nln_iris(type, x, training)
-        )
+    features, labels = get_toy_data()
+    soft, hard, symbolic = neural_logic_net.net(
+        lambda type, x, training: batch_nln(type, x, training)
+    )
 
     rng = jax.random.PRNGKey(0)
     print(soft.tabulate(rng, features[0:1], training=False))
 
-    num_experiments = 1000  # 1000 for paper
+    num_experiments = 1
     final_test_accuracies = []
     for i in range(num_experiments):
         # Split features and labels into 80% training and 20% test
@@ -422,5 +354,5 @@ def test_iris():
         )
 
     # Check symbolic net
-    # _, hard, symbolic = neural_logic_net.net(lambda type, x: nln(type, x))
-    # check_symbolic((soft, hard, symbolic), (x_training, y_training, x_test, y_test), trained_state)
+    _, hard, symbolic = neural_logic_net.net(lambda type, x, training: nln(type, x, training))
+    check_symbolic((soft, hard, symbolic), (x_training, y_training, x_test, y_test), trained_state, dropout_rng)
