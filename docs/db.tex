@@ -11,7 +11,15 @@
 \usepackage{graphicx}
 \usepackage{comment}
 \usepackage{algorithm}
-\usepackage{algpseudocode}
+\usepackage{listings}
+
+\lstset{basicstyle=\ttfamily\tiny}
+\lstdefinestyle{mystyle}{
+	keywordstyle=\bfseries,
+	keywords={ge,return,def,not,xor,ne},
+}
+\lstset{breaklines=true}
+
 
 \title{$\partial\mathbb{B}$ nets: learning discrete functions by\\gradient descent}
 
@@ -77,7 +85,7 @@ Non-differentiable approaches include boolean-valued decision trees \citep{BreiF
 Differentiable approaches include systems that integrate rule-based reasoning with neural components, and binarization techniques that quantize neural networks by converting real-valued weights and activations to binary values. For example, differentiable inductive logic programming \citep{10.5555/3241691.3241692}, neural logic machines \citep{dong2018neural} 
 and differentiable neural logic networks \cite{DBLP:phd/basesearch/Payani20} learn first-order logic rules using gradient descent. These systems combine the benefits of logical inference and interpretability with end-to-end differentiability; however, they can require combinatoric enumeration of rulesets and therefore struggle to scale to large datasets. The technique of network binarization aims to significantly reduce model size and inference costs while maintaining predictive accuracy. Binarization reduces a real-valued neural network to a binary network where nonlinear activation functions are replaced by boolean majority functions. For example, BinaryConnect \citep{10.5555/2969442.2969588}, XNOR-Net \citep{10.1007/978-3-319-46493-0_32}, and LUTNet \citep{9026948}, optimize a continuous relaxation or approximation of the binary net during training. However, binary-valued functions are intrinsically non-differentiable and therefore training by gradient descent becomes challenging. Plus, binarization throws away information, which reduces accuracy \citep{QIN2020107281}. 
 
-Clearly, the design-space of algorithms that learn boolean functions is large, with various trade-offs. In this paper we investigate an under-explored area of the design-space where a differentiable neural network is semantically equivalent, without approximation or loss, to an arbitrarily complex boolean function. We aim to combine the benefits of deep neural networks trained by gradient descent with the interpretability and logical bias of boolean functions but without loss of accuracy.
+Clearly, the design-space of algorithms that learn boolean functions is large, with various trade-offs. In this paper we investigate an under-explored area of the design-space where a differentiable neural network is semantically equivalent, without approximation or loss, to an arbitrarily complex boolean function. We aim to combine the benefits of deep neural networks trained by gradient descent with the efficiency, interpretability and logical bias of boolean functions -- but without loss of accuracy.
 
 \section{$\partial\mathbb{B}$ nets}
 
@@ -388,18 +396,103 @@ The $\partial\mathbb{B}$ net library is open-source and available at {\small \ur
 
 \subsection{Hardening}
 
+\begin{figure}[t!]
+	\centering
+	\includegraphics[width=0.65\textwidth]{toy-example-architecture.png}
+	\caption{{\em A $\partial\mathbb{B}$ net to illustrate hardening}. The net concatenates a $\partial_{\neg}\!\operatorname{Layer}$ (of width $n$) with a reshaping layer that  outputs two vectors, which get reduced, by a $\partial\!\operatorname{Maj}$ operator,  to 2 soft-bits, one for each class label. A final $\partial\!\operatorname{harden}$ layer ensures the loss is a function of hard bits. When $|{\bf x}|=1$ we choose $n=2$ and therefore the net's weights, once hardened, consume $2$ bits. When $|{\bf x}|=5$ we choose $n=8$ and the weights consume $40$ bits or $5$ bytes.}
+	\label{fig:toy-example-architecture}
+\end{figure}
+
+First we describe a toy problem to illustrate hard-equivalence. Consider the trivial problem of predicting whether a person wears a $\operatorname{t-shirt}$ (label 0) or a $\operatorname{coat}$ (label 1) conditional on the single feature $\operatorname{outside}$ (0 = False, and 1 = True). The training and test data consists of multiple copies of the data described in table \ref{tab:toy1}.
+
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{|c|c|}
+		$\operatorname{outside}$ & $\operatorname{label}$ \\ \hline
+		0       & 0     \\
+		1       & 1    
+	\end{tabular}
+	\caption{A trivial learning problem}
+	\label{tab:toy1}
+\end{table}
+
+We randomly initialize the network described in figure \ref{fig:toy-example-architecture} and train using the RAdam optimizer \citep{Liu2020On} with softmax cross-entropy loss until training and test accuracies are both $100\%$. The net is hard-equivalent to the discrete program:
+
+\begin{lstlisting}[language=Python,style=mystyle,frame=single]
+def dbNet(outside):
+	return [
+		ge(sum((0, not(xor(ne(outside, 0), w1)))), 1),
+		ge(sum((0, not(xor(ne(outside, 0), w2)))), 1)
+	]
+\end{lstlisting}
+
+The learned weights are $w_{1} = False$ and $w_{2} = True$, and therefore the learned discrete program simplifies to:
+
+\begin{lstlisting}[language=Python,style=mystyle,frame=single]
+def dbNet(outside):
+	return [not(outside), outside]
+\end{lstlisting}
+
+which is directly interpretable as `when outside wear a $\operatorname{coat}$, otherwise wear a $\operatorname{t-shirt}$'.
+
+Consider that we introduce 4 additional boolean features: $\operatorname{very-cold}$, $\operatorname{cold}$, $\operatorname{warm}$, and $\operatorname{very-warm}$. The training and test data now consists of examples illustrated in table \ref{tab:toy2}.
+
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{|c|c|c|c|c|c|}
+		$\operatorname{very-cold}$ & $\operatorname{cold}$ & $\operatorname{warm}$ & $\operatorname{very-warm}$ & $\operatorname{outside}$ & $\operatorname{label}$ \\ \hline
+		1 & 0 & 0 & 0 & 0 & 1 \\
+		0 & 0 & 0 & 1 & 1 & 1 \\
+		0 & 0 & 1 & 0 & 1 & 0 \\
+		0 & 0 & 0 & 1 & 0 & 0 \\
+		\dots & \dots & \dots & \dots & \dots & \dots
+	\end{tabular}
+	\caption{A toy learning problem}
+	\label{tab:toy2}
+\end{table}
+
+We use the same architecture but increase the width of the $\partial_{\neg}\!\operatorname{Layer}$ from 2 to 8. The net is now hard-equivalent to the discrete program:
+
+\begin{comment}
+\begin{lstlisting}[language=Python,style=mystyle,frame=single]
+def dbNet(outside):
+  return [
+    ge(sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((0, not(xor(ne(very-cold, 0), False)))), not(xor(ne(cold, 0), True)))), not(xor(ne(warm, 0), True)))), not(xor(ne(very-warm, 0), True)))), not(xor(ne(outside, 0), True)))), not(xor(ne(very-cold, 0), True)))), not(xor(ne(cold, 0), False)))), not(xor(ne(warm, 0), False)))), not(xor(ne(very-warm, 0), True)))), not(xor(ne(outside, 0), False)))), not(xor(ne(very-cold, 0), False)))), not(xor(ne(cold, 0), False)))), not(xor(ne(warm, 0), True)))), not(xor(ne(very-warm, 0), False)))), not(xor(ne(outside, 0), False)))), not(xor(ne(very-cold, 0), False)))), not(xor(ne(cold, 0), False)))), not(xor(ne(warm, 0), True)))), not(xor(ne(very-warm, 0), False)))), not(xor(ne(outside, 0), False)))), 11),
+    ge(sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((0, not(xor(ne(very-cold, 0), True)))), not(xor(ne(cold, 0), False)))), not(xor(ne(warm, 0), False)))), not(xor(ne(very-warm, 0), False)))), not(xor(ne(outside, 0), False)))), not(xor(ne(very-cold, 0), True)))), not(xor(ne(cold, 0), True)))), not(xor(ne(warm, 0), False)))), not(xor(ne(very-warm, 0), True)))), not(xor(ne(outside, 0), True)))), not(xor(ne(very-cold, 0), False)))), not(xor(ne(cold, 0), True)))), not(xor(ne(warm, 0), False)))), not(xor(ne(very-warm, 0), True)))), not(xor(ne(outside, 0), False)))), not(xor(ne(very-cold, 0), False)))), not(xor(ne(cold, 0), True)))), not(xor(ne(warm, 0), False)))), not(xor(ne(very-warm, 0), False)))), not(xor(ne(outside, 0), True)))), 11)]
+\end{lstlisting}
+\end{comment}
+
+\begin{lstlisting}[language=Python,style=mystyle,frame=single]
+def dbNet(outside):
+return [
+ge(sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((0, not(xor(ne(very-cold, 0), w1)))), not(xor(ne(cold, 0), w2)))), not(xor(ne(warm, 0), w3)))), not(xor(ne(very-warm, 0), w4)))), not(xor(ne(outside, 0), w5)))), not(xor(ne(very-cold, 0), w6)))), not(xor(ne(cold, 0), w7)))), not(xor(ne(warm, 0), w8)))), not(xor(ne(very-warm, 0), w9)))), not(xor(ne(outside, 0), w10)))), not(xor(ne(very-cold, 0), w11)))), not(xor(ne(cold, 0), w12)))), not(xor(ne(warm, 0), w13)))), not(xor(ne(very-warm, 0), w14)))), not(xor(ne(outside, 0), w15)))), not(xor(ne(very-cold, 0), w16)))), not(xor(ne(cold, 0), w17)))), not(xor(ne(warm, 0), w18)))), not(xor(ne(very-warm, 0), w19)))), not(xor(ne(outside, 0), w20)))), 11),
+ge(sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((0, not(xor(ne(very-cold, 0), w21)))), not(xor(ne(cold, 0), w22)))), not(xor(ne(warm, 0), w23)))), not(xor(ne(very-warm, 0), w24)))), not(xor(ne(outside, 0), w25)))), not(xor(ne(very-cold, 0), w26)))), not(xor(ne(cold, 0), w27)))), not(xor(ne(warm, 0), w28)))), not(xor(ne(very-warm, 0), w29)))), not(xor(ne(outside, 0), w30)))), not(xor(ne(very-cold, 0), w31)))), not(xor(ne(cold, 0), w32)))), not(xor(ne(warm, 0), w33)))), not(xor(ne(very-warm, 0), w34)))), not(xor(ne(outside, 0), w35)))), not(xor(ne(very-cold, 0), w36)))), not(xor(ne(cold, 0), w37)))), not(xor(ne(warm, 0), w38)))), not(xor(ne(very-warm, 0), w39)))), not(xor(ne(outside, 0), w40)))), 11)]
+\end{lstlisting}
+We train the $[w_{1}, \dots, w_{40}]$ soft-bit weights as before and then harden to 40 boolean weights. Post-training the learned discrete program then simplifies to:
+
+\begin{lstlisting}[language=Python,style=mystyle,frame=single]
+def dbNet(outside):
+  return [
+    4 !very-cold + 4 !cold + (3 warm + !warm) + (very-warm + 3 !very-warm) + (outside + 3 !outside) >= 11,
+    (very-cold + 3 !very-cold) + 4 cold + 4 !warm + (3 very-warm + !very-warm) + 2 (outside + !outside) >= 11
+  ]
+\end{lstlisting}
+
+For example, the label predictions combine multiple pieces of evidence due to the presence of the $\partial\!\operatorname{Maj}$ operator: such as `if not $\operatorname{very-cold}$ and not $\operatorname{cold}$ and not $\operatorname{outside}$ then wear a $\operatorname{t-shirt}$', and `if $\operatorname{cold}$ and not ($\operatorname{warm}$ or $\operatorname{very-warm}$) and $\operatorname{outside}$ then wear a $\operatorname{coat}$' etc.
+
+
 \subsection{Binary Iris}
 
 \begin{figure}[t!]
 	\centering
 	\includegraphics[width=1.0\textwidth]{binary-iris-architecture.png}
-	\caption{{\em A $\partial\mathbb{B}$ net for the binary Iris problem}. The net concatenates the soft-bit input, ${\bf x}$ (length 16), with its negation, ${\bf 1 - x}$, and supplies the resulting vector (length 32) to a $\partial_{\wedge}\!\operatorname{Layer}$ (width 59), a $\partial\!\operatorname{dropout}$ layer for improved generalisation, a $\partial\!\operatorname{count-hot}$ layer that generates a 1-hot vector (width 60) that is reduced by $\operatorname{max}$ to a 1-hot vector of 3 classification bits. A final $\partial\!\operatorname{harden}$ ensures the loss function is a function of hard bits. The net's weights, once hardened, consume $236$ bytes.}
+	\caption{{\em A $\partial\mathbb{B}$ net for the binary Iris problem}. The net concatenates the soft-bit input, ${\bf x}$ (length 16), with its negation, ${\bf 1 - x}$, and supplies the resulting vector (length 32) to a $\partial_{\wedge}\!\operatorname{Layer}$ (width 59), a $\partial\!\operatorname{dropout}$ layer for improved generalisation, a $\partial\!\operatorname{count-hot}$ layer that generates a 1-hot vector (width 60) that is reduced by $\operatorname{max}$ to a 1-hot vector of 3 classification bits. A final $\partial\!\operatorname{harden}$ ensures the loss is a function of hard bits. The net's weights, once hardened, consume $236$ bytes.}
 	\label{fig:binary-iris-architecture}
 \end{figure}
 
-The Iris dataset has 150 examples with 4 inputs (sepal length and width, and petal length and width), and 3 labels ({\em setosa}, {\em versicolour}, and {\em virginica}). We use the binary version of the Iris dataset \citep{binary-iris-dataset} where each input float is represented by 4 bits. We perform 1000 experiments, each with a different random seed. Each experiment randomly partitions the data into 20\% training and 80\% test sets. 
+The Iris dataset has 150 examples with 4 inputs (sepal length and width, and petal length and width), and 3 labels ({\em setosa}, {\em versicolour}, and {\em virginica}). We use the binary version of the Iris dataset \citep{binary-iris-dataset} where each input float is represented by 4 bits. We perform 1000 experiments, each with a different random seed. Each experiment randomly partitions the data into 80\% training and 20\% test sets. 
 
-We initialize the network, described in figure \ref{fig:binary-iris-architecture}, with all weights $w_{i} = 0.3$ and train for 1000 epochs with the RAdam optimizer \citep{Liu2020On} and softmax cross-entropy loss. We measure the accuracy of the final net to avoid hand-picking the best configuration. Table \ref{tab:binary-iris-results} compares the $\delta\mathbb{B}$ net against other classifiers  \citep{granmo18}. Naive Bayes performs the worst. The Tsetlin machine performs best on this problem, with the $\partial\mathbb{B}$ net second.
+We initialize the network, described in figure \ref{fig:binary-iris-architecture}, with all weights $w_{i} = 0.3$ and train for 1000 epochs with the RAdam optimizer and softmax cross-entropy loss. We measure the accuracy of the final net to avoid hand-picking the best configuration. Table \ref{tab:binary-iris-results} compares the $\delta\mathbb{B}$ net against other classifiers  \citep{granmo18}. Naive Bayes performs the worst. The Tsetlin machine performs best on this problem, with the $\partial\mathbb{B}$ net second.
 
 \begin{table}[t]
 	\centering
@@ -422,7 +515,7 @@ We initialize the network, described in figure \ref{fig:binary-iris-architecture
 
 \begin{figure}[t!]
 	\centering
-	\includegraphics[width=1.0\textwidth]{noisy-xor-architecture.png}
+	\includegraphics[width=0.95\textwidth]{noisy-xor-architecture.png}
 	\caption{{\em A $\partial\mathbb{B}$ net for the noisy xor problem}. The net concatenates the soft-bit input, ${\bf x}$ (length 12), with its negation, ${\bf 1 - x}$, and supplies the resulting vector (length 24) to a $\partial_{\wedge}\!\!\operatorname{Layer}$ (width 32), $\partial_{\vee}\!\!\operatorname{Layer}$ (width 32),  $\partial_{\neg} \!\operatorname{Layer}$ (width 16), and a final $\partial\!\operatorname{Maj}$ to produce a single soft-bit $y \in [0,1]$ (to predict odd parity) and its negation $1-y$ (to predict even parity). The net's weights, once hardened, consume $288$ bytes.}
 	\label{fig:noisy-xor-architecture}
 \end{figure}
@@ -459,9 +552,7 @@ We measure the accuracy of the final net on the test data to avoid hand-picking 
 TODO: we can write boolean functions, soften them, and place them within differentiable neural networks.
 
 \subsubsection*{Acknowledgments}
-Use unnumbered third level headings for the acknowledgments. All
-acknowledgments, including those to funding agencies, go at the end of the paper.
-
+This research was sponsored by GitHub Next and GitHub Advanced Security Products. Thanks to Pavel Augustinov, Richard Evans, Johan Rosenkilde, Max Schaefer, Tam\'{a}s Szab\'{o} and Albert Ziegler for helpful discussions and feedback.
 
 \bibliographystyle{iclr2021_conference}
 \bibliography{db}
