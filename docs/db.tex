@@ -166,7 +166,7 @@ More concretely, say we have a vector of soft-bit inputs ${\bf x}$ and the $i$th
 \end{aligned}
 \end{equation*}
 The packed fraction, $\bar{\bf x}$, of the margin increases or decreases with the average soft-bit value. The available margin, $\left|x_{i} - 1/2\right|$, tends to zero as the representative bit, $x_{i}$, tends to the hard threshold $1/2$. At the threshold point there is no margin to pack. Now, define the augmented bit as
-\begin{equation*}
+\begin{equation}
 \begin{aligned}
 \operatorname{augmented-bit}: [0,1]^{n} \times 1,2,\dots,n &\to [0,1],\\
 ({\bf x}, i) &\mapsto 
@@ -175,7 +175,8 @@ The packed fraction, $\bar{\bf x}$, of the margin increases or decreases with th
 x_{i} + \operatorname{margin-fraction}({\bf x}, i) & \text{otherwise.}
 \end{cases}
 \end{aligned}
-\end{equation*}
+\label{eq:augmented-bit}
+\end{equation}
 If the representative bit is high (resp. low) then the augmented bit is also high (resp. low). 
 But the augmented bit has a higher (resp. lower) value than the representative bit when below (resp. above) the $1/2$ threshold. The difference depends on the size of the available margin and the mean soft-bit value. Almost everywhere, an increase (resp. decrease) of the mean soft-bit increases (resp. decreases) the value of the augmented bit (see figure \ref{fig:margin-trick}). Note that if the $i$th bit is representative (i.e. hard-equivalent to the target function) then so is the augmented bit (see proposition \ref{prop:augmented}). We use margin packing, where appropriate, to define gradient-rich, hard-equivalents of boolean functions.
 
@@ -257,23 +258,20 @@ The boolean majority function is particularly important for tractable learning b
 \begin{equation*}
 \begin{aligned}
 \operatorname{Maj}: \{0,1\}^{n} &\to \{0,1\},\\
-{\bf x} &\mapsto 
-	\begin{cases}
-	1 &\text{if }\sum_{i=1}^n x_i \geq \ceil{\frac{n}{2}}\\
-	0 &\text{otherwise.}
-	\end{cases}
-\text{,}
+{\bf x} &\mapsto \left\lfloor
+\frac{1}{2} + \frac{\sum_{i=1}^{n} x_{i} - 1/2}{n}
+\right\rfloor\text{,}
 \end{aligned}
 \end{equation*}
-Interpret each input bit $x_{i}$ as a vote, yes or no, for a binary decision. If the majority of voters are in favour then $\operatorname{Maj}$ outputs 1. The majority function, in the context of a predictive model, aggregates multiple bits of weak evidence into a hard decision. Neural network binarization transforms real-valued activation functions into boolean threshold functions \citep{10.5555/3157382.3157557}, which indicates their close association. We aim to construct a differentiable analogue of $\operatorname{Maj}$.
+where we count $\operatorname{False}$ as $0$ and $\operatorname{True}$ as $1$. Interpret each input bit $x_{i}$ as a vote, yes or no, for a binary decision. If the majority of voters are in favour then $\operatorname{Maj}$ outputs 1. The majority function, in the context of a predictive model, aggregates multiple bits of weak evidence into a hard decision. Neural network binarization transforms real-valued activation functions into boolean threshold functions \citep{10.5555/3157382.3157557}, which indicates their close association. We aim to construct a differentiable analogue of $\operatorname{Maj}$.
 
-$\operatorname{Maj}$ for $n$ bits in DNF form is a disjunction of $\binom{n}{k}$ conjunctive clauses of size $k$, where $k=\lceil n/2 \rceil$ and each clause checks whether a unique combination of a majority of the $n$ bits are all high; e.g. $\operatorname{Maj}(x, y, z) = (x \wedge y) \vee (x \wedge y) \vee (y \wedge z)$. Therefore, we could in principle implement a differentiable analogue of $\operatorname{Maj}$ in terms of $\partial_{\wedge}$ and $\partial_{\vee}$. However, the number of terms grows exponentially with the number of variables (e.g. $n=50$ generates over 100 trillion clauses, which is infeasible). And there is no known general algorithm for finding the minimal representation of $\operatorname{Maj}$ for arbitrary $n$.
+$\operatorname{Maj}$ for $n$ bits in DNF form is a disjunction of $\binom{n}{k}$ conjunctive clauses of size $k$, where $k=\lceil n/2 \rceil$ and each clause checks whether a unique combination of a majority of the $n$ bits are all high; e.g. $\operatorname{Maj}(x, y, z) = (x \wedge y) \vee (x \wedge y) \vee (y \wedge z)$. Therefore, we could in principle implement a differentiable analogue of $\operatorname{Maj}$ in terms of $\partial_{\wedge}$ and $\partial_{\vee}$. However, the number of terms grows exponentially with the number of variables (e.g. $n=50$ generates over 100 trillion clauses, which is infeasible). There is no known general algorithm for finding the minimal representation of $\operatorname{Maj}$ for arbitrary $n$.
 
 Instead, we trade-off time for memory costs. Observe that if the function $\operatorname{sort}({\bf x})$ sorts the elements of ${\bf x}$ in ascending order then the `median' soft-bit is representative. For example, if ${\bf x} = [0.4, 0.9, 0.2]$ then $\operatorname{sort}({\bf x}) = [0.2, 0.4, 0.9]$ and the `median' bit $x_{2}=0.4$ is low, which is hard-equivalent to $\operatorname{Maj}(0, 1, 0) = 0$. Define the index of the `median' bit by
 \begin{equation*}
 \begin{aligned}
-\operatorname{majority-index}: \mathbb{Z}_{>0} \to \mathbb{Z}_{> 0}\\
-n \mapsto \left\lceil \frac{n}{2}\right\rceil
+\operatorname{majority-index}: [0, 1]^{n} & \to \mathbb{Z}_{> 0}\\
+{\bf x} & \mapsto \left\lceil \frac{|{\bf x}|}{2} \right\rceil
 \text{.}
 \end{aligned}
 \end{equation*}
@@ -284,7 +282,7 @@ Then, applying margin packing, define the differentiable function
 	{\bf x} &\mapsto \operatorname{augmented-bit}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))\text{,}
 \end{aligned}
 \end{equation*}
-which is hard-equivalent to $\operatorname{Maj}({\bf x})$ (see proposition \ref{prop:majority}). Note that $\partial\!\operatorname{Maj}$ is differentiable almost everywhere and gradient-rich (see figure \ref{fig:majority-plot}). If $\operatorname{sort}$ is quicksort then the the average time-complexity of $\partial\!\operatorname{Maj}$ is $\mathcal{O}(n\log{}n)$, which makes $\partial\!\operatorname{Maj}$ more expensive than $\partial_{\neg}$, $\partial_{\wedge}$, $\partial_{\vee}$ and $\partial_{\Rightarrow}$ at training time. However, in the hard $\partial\mathbb{B}$ net we efficiently implement $\operatorname{Maj}$ as a discrete program that simply checks if the majority of bits are high.
+which is hard-equivalent to $\operatorname{Maj}$ (see proposition \ref{prop:majority}). Note that $\partial\!\operatorname{Maj}$ is differentiable almost everywhere and gradient-rich (see figure \ref{fig:majority-plot}). If $\operatorname{sort}$ is quicksort then the the average time-complexity of $\partial\!\operatorname{Maj}$ is $\mathcal{O}(n\log{}n)$, which makes $\partial\!\operatorname{Maj}$ more expensive than $\partial_{\neg}$, $\partial_{\wedge}$, $\partial_{\vee}$ and $\partial_{\Rightarrow}$ at training time. However, in the hard $\partial\mathbb{B}$ net we efficiently implement $\operatorname{Maj}$ as a discrete program that simply checks if the majority of bits are high.
 
 TODO: compare to \cite{NEURIPS2019_d8c24ca8}
 
@@ -399,11 +397,11 @@ The $\partial\mathbb{B}$ net library is open-source and available at {\small \ur
 \begin{figure}[t!]
 	\centering
 	\includegraphics[width=0.65\textwidth]{toy-example-architecture.png}
-	\caption{{\em A $\partial\mathbb{B}$ net to illustrate hardening}. The net concatenates a $\partial_{\neg}\!\operatorname{Layer}$ (of width $n$) with a reshaping layer that  outputs two vectors, which get reduced, by a $\partial\!\operatorname{Maj}$ operator,  to 2 soft-bits, one for each class label. A final $\partial\!\operatorname{harden}$ layer ensures the loss is a function of hard bits. When $|{\bf x}|=1$ we choose $n=2$ and therefore the net's weights, once hardened, consume $2$ bits. When $|{\bf x}|=5$ we choose $n=8$ and the weights consume $40$ bits or $5$ bytes.}
+	\caption{{\em A $\partial\mathbb{B}$ net to illustrate hardening}. The net concatenates a $\partial_{\neg}\!\operatorname{Layer}$ (of width $n$) with a reshaping layer that  outputs two vectors, which get reduced, by a $\partial\!\operatorname{Maj}$ operator,  to 2 soft-bits, one for each class label. A final $\partial\!\operatorname{harden}$ layer ensures the loss is a function of hard bits. When $|{\bf x}|=1$ we choose $n=2$ and therefore the net's weights, once hardened, consume $2$ bits. When $|{\bf x}|=5$ we choose $n=8$ and the weights consume $40$ bits ($5$ bytes).}
 	\label{fig:toy-example-architecture}
 \end{figure}
 
-First we describe a toy problem to illustrate hard-equivalence. Consider the trivial problem of predicting whether a person wears a $\operatorname{t-shirt}$ (label 0) or a $\operatorname{coat}$ (label 1) conditional on the single feature $\operatorname{outside}$ (0 = False, and 1 = True). The training and test data consists of multiple copies of the data described in table \ref{tab:toy1}.
+We present a toy problem to illustrate hard-equivalence. First, consider the trivial problem of predicting whether a person wears a $\operatorname{t-shirt}$ (label 0) or a $\operatorname{coat}$ (label 1) conditional on the single feature $\operatorname{outside}$ (0 = False, and 1 = True). The training and test data consist of the examples in table \ref{tab:toy1}.
 
 \begin{table}[h!]
 	\centering
@@ -416,17 +414,17 @@ First we describe a toy problem to illustrate hard-equivalence. Consider the tri
 	\label{tab:toy1}
 \end{table}
 
-We randomly initialize the network described in figure \ref{fig:toy-example-architecture} and train using the RAdam optimizer \citep{Liu2020On} with softmax cross-entropy loss until training and test accuracies are both $100\%$. The net is hard-equivalent to the discrete program:
+We use the $\partial\mathbb{B}$ net described in figure \ref{fig:toy-example-architecture}, which is hard-equivalent to the discrete program:
 
 \begin{lstlisting}[language=Python,style=mystyle,frame=single]
 def dbNet(outside):
-	return [
-		ge(sum((0, not(xor(ne(outside, 0), w1)))), 1),
-		ge(sum((0, not(xor(ne(outside, 0), w2)))), 1)
-	]
+  return [
+    ge(sum((0, not(xor(ne(outside, 0), w1)))), 1),
+	ge(sum((0, not(xor(ne(outside, 0), w2)))), 1)
+  ]
 \end{lstlisting}
 
-The learned weights are $w_{1} = False$ and $w_{2} = True$, and therefore the learned discrete program simplifies to:
+with trainable weights $w_{1}$ and $w_{2}$. We randomly initialize the network and train using the RAdam optimizer \citep{Liu2020On} with softmax cross-entropy loss until training and test accuracies are both $100\%$. We harden the learned weights to get $w_{1} = \operatorname{False}$ and $w_{2} = \operatorname{True}$, and bind with the discrete program, which then simplifies to:
 
 \begin{lstlisting}[language=Python,style=mystyle,frame=single]
 def dbNet(outside):
@@ -435,7 +433,7 @@ def dbNet(outside):
 
 which is directly interpretable as `when outside wear a $\operatorname{coat}$, otherwise wear a $\operatorname{t-shirt}$'.
 
-Consider that we introduce 4 additional boolean features: $\operatorname{very-cold}$, $\operatorname{cold}$, $\operatorname{warm}$, and $\operatorname{very-warm}$. The training and test data now consists of examples illustrated in table \ref{tab:toy2}.
+Hardening scales to arbitrarily complex $\partial\mathbb{B}$ nets, although to interpret the net's predictions more post-training expression simplification is required. Second, we introduce 4 additional boolean features: $\operatorname{very-cold}$, $\operatorname{cold}$, $\operatorname{warm}$, and $\operatorname{very-warm}$. The training and test data consists of examples like those in table \ref{tab:toy2}.
 
 \begin{table}[h!]
 	\centering
@@ -464,11 +462,12 @@ def dbNet(outside):
 
 \begin{lstlisting}[language=Python,style=mystyle,frame=single]
 def dbNet(outside):
-return [
-ge(sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((0, not(xor(ne(very-cold, 0), w1)))), not(xor(ne(cold, 0), w2)))), not(xor(ne(warm, 0), w3)))), not(xor(ne(very-warm, 0), w4)))), not(xor(ne(outside, 0), w5)))), not(xor(ne(very-cold, 0), w6)))), not(xor(ne(cold, 0), w7)))), not(xor(ne(warm, 0), w8)))), not(xor(ne(very-warm, 0), w9)))), not(xor(ne(outside, 0), w10)))), not(xor(ne(very-cold, 0), w11)))), not(xor(ne(cold, 0), w12)))), not(xor(ne(warm, 0), w13)))), not(xor(ne(very-warm, 0), w14)))), not(xor(ne(outside, 0), w15)))), not(xor(ne(very-cold, 0), w16)))), not(xor(ne(cold, 0), w17)))), not(xor(ne(warm, 0), w18)))), not(xor(ne(very-warm, 0), w19)))), not(xor(ne(outside, 0), w20)))), 11),
-ge(sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((0, not(xor(ne(very-cold, 0), w21)))), not(xor(ne(cold, 0), w22)))), not(xor(ne(warm, 0), w23)))), not(xor(ne(very-warm, 0), w24)))), not(xor(ne(outside, 0), w25)))), not(xor(ne(very-cold, 0), w26)))), not(xor(ne(cold, 0), w27)))), not(xor(ne(warm, 0), w28)))), not(xor(ne(very-warm, 0), w29)))), not(xor(ne(outside, 0), w30)))), not(xor(ne(very-cold, 0), w31)))), not(xor(ne(cold, 0), w32)))), not(xor(ne(warm, 0), w33)))), not(xor(ne(very-warm, 0), w34)))), not(xor(ne(outside, 0), w35)))), not(xor(ne(very-cold, 0), w36)))), not(xor(ne(cold, 0), w37)))), not(xor(ne(warm, 0), w38)))), not(xor(ne(very-warm, 0), w39)))), not(xor(ne(outside, 0), w40)))), 11)]
+  return [
+    ge(sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((0, not(xor(ne(very-cold, 0), w1)))), not(xor(ne(cold, 0), w2)))), not(xor(ne(warm, 0), w3)))), not(xor(ne(very-warm, 0), w4)))), not(xor(ne(outside, 0), w5)))), not(xor(ne(very-cold, 0), w6)))), not(xor(ne(cold, 0), w7)))), not(xor(ne(warm, 0), w8)))), not(xor(ne(very-warm, 0), w9)))), not(xor(ne(outside, 0), w10)))), not(xor(ne(very-cold, 0), w11)))), not(xor(ne(cold, 0), w12)))), not(xor(ne(warm, 0), w13)))), not(xor(ne(very-warm, 0), w14)))), not(xor(ne(outside, 0), w15)))), not(xor(ne(very-cold, 0), w16)))), not(xor(ne(cold, 0), w17)))), not(xor(ne(warm, 0), w18)))), not(xor(ne(very-warm, 0), w19)))), not(xor(ne(outside, 0), w20)))), 11),
+    ge(sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((0, not(xor(ne(very-cold, 0), w21)))), not(xor(ne(cold, 0), w22)))), not(xor(ne(warm, 0), w23)))), not(xor(ne(very-warm, 0), w24)))), not(xor(ne(outside, 0), w25)))), not(xor(ne(very-cold, 0), w26)))), not(xor(ne(cold, 0), w27)))), not(xor(ne(warm, 0), w28)))), not(xor(ne(very-warm, 0), w29)))), not(xor(ne(outside, 0), w30)))), not(xor(ne(very-cold, 0), w31)))), not(xor(ne(cold, 0), w32)))), not(xor(ne(warm, 0), w33)))), not(xor(ne(very-warm, 0), w34)))), not(xor(ne(outside, 0), w35)))), not(xor(ne(very-cold, 0), w36)))), not(xor(ne(cold, 0), w37)))), not(xor(ne(warm, 0), w38)))), not(xor(ne(very-warm, 0), w39)))), not(xor(ne(outside, 0), w40)))), 11)
+  ]
 \end{lstlisting}
-We train the $[w_{1}, \dots, w_{40}]$ soft-bit weights as before and then harden to 40 boolean weights. Post-training the learned discrete program then simplifies to:
+We train the $[w_{1}, \dots, w_{40}]$ soft-bit weights as before then harden to 40 boolean weights and bind with the discrete program. Post-training the program then simplifies to:
 
 \begin{lstlisting}[language=Python,style=mystyle,frame=single]
 def dbNet(outside):
@@ -584,9 +583,23 @@ This research was sponsored by GitHub Next and GitHub Advanced Security Products
 \end{prop}
 
 \begin{prop}\label{prop:augmented}
-	If a representative bit is hard-equivalent to a target function then so is the augmented bit.
+	If a representative bit, $x_{i}$, is hard-equivalent to a target function, $g$, then so is the augmented bit, $z$.
 	\begin{proof}
-		todo
+		As $x_{i}$ is representative then $\operatorname{harden}(x_{i}) = g(\operatorname{harden}({\bf x}))$. The augmented bit, $z$, is given by  \eqref{eq:augmented-bit}:
+		\begin{equation*}
+		z = \begin{cases}
+		1/2 + \bar{\bf x}\times|x_{i} - 1/2| & \text{if } x_{i} > 1/2 \\
+		x_{i} + \bar{\bf x}\times|x_{i} - 1/2| & \text{otherwise.}
+		\end{cases}
+		\end{equation*}
+		In consequence,
+		\begin{equation*}
+		\operatorname{harden}(z) = \begin{cases}
+		1 & \text{if } x > 1/2 \\
+		0 & \text{otherwise,}
+		\end{cases}
+		\end{equation*}
+		since $x_{i} > 1/2 \Rightarrow z > 1/2$ and $x_{i} \leq 1/2 \Rightarrow z \leq 1/2$. Hence, $\operatorname{harden}(z) = \operatorname{harden}(x_{i}) = g(\operatorname{harden}({\bf x}))$
 	\end{proof}
 \end{prop}
 
@@ -652,21 +665,19 @@ This research was sponsored by GitHub Next and GitHub Advanced Security Products
 \end{prop}
 
 \begin{lemma}
-$\operatorname{majority-bit}$ is hard-equivalent to the boolean majority function.
+Let $i$ = $\operatorname{majority-index}({\bf x})$, then the $i$th element of $\operatorname{sort}({\bf x})$ is hard-equivalent to boolean majority, i.e. $\operatorname{harden}(\operatorname{sort}({\bf x})[i]) = \operatorname{Maj}(\operatorname{harden}({\bf x}))$.
 \begin{proof}
-	The boolean majority function,
-\begin{equation*}
-\text{MAJ}(x_{1}, \dots, x_{n}) = 
-\begin{cases}
-1 & \text{if } \sum_{i=1}^{n} x_{i} \geq n/2 \\
-0 & \text{otherwise.}
-\end{cases}
-\end{equation*}
+Let $h$ denote the number of bits that are high in ${\bf x} = [x_{1}, \dots, x_{n}]$. Then the $h$th element of $\operatorname{sort}({\bf x})$ is high. 
+
+Assume $h \geq \lfloor n/2 + 1 \rfloor$ then $\operatorname{Maj}({\bf x}) \geq \left\lfloor \frac{1}{2} + \frac{1}{n}\left(\frac{n}{2} + 1 - \frac{1}{2} \right) \right\rfloor
+\geq \left\lfloor 1 + \frac{1}{2n} \right\rfloor = 1$. 
+
+Assume $h < \lfloor n/2 + 1 \rfloor$ then $\operatorname{Maj}({\bf x}) < \left\lfloor 1 + \frac{1}{2n} \right\rfloor = 0$.
 \end{proof}
 \end{lemma}
 
 \begin{prop}\label{prop:majority}
-	$\partial${MAJORITY} is hard-equivalent to the boolean majority function.
+	$\partial\!\operatorname{Maj} \equiv \operatorname{Maj}$.
 \begin{proof}
 	todo
 \end{proof}
