@@ -178,7 +178,7 @@ x_{i} + \operatorname{margin-fraction}({\bf x}, i) & \text{otherwise.}
 \label{eq:augmented-bit}
 \end{equation}
 If the representative bit is high (resp. low) then the augmented bit is also high (resp. low). 
-But the augmented bit has a higher (resp. lower) value than the representative bit when below (resp. above) the $1/2$ threshold. The difference depends on the size of the available margin and the mean soft-bit value. Almost everywhere, an increase (resp. decrease) of the mean soft-bit increases (resp. decreases) the value of the augmented bit (see figure \ref{fig:margin-trick}). Note that if the $i$th bit is representative (i.e. hard-equivalent to the target function) then so is the augmented bit (see proposition \ref{prop:augmented}). We use margin packing, where appropriate, to define gradient-rich, hard-equivalents of boolean functions.
+But the augmented bit has a higher (resp. lower) value than the representative bit when below (resp. above) the $1/2$ threshold. The difference depends on the size of the available margin and the mean soft-bit value. Almost everywhere, an increase (resp. decrease) of the mean soft-bit increases (resp. decreases) the value of the augmented bit (see figure \ref{fig:margin-trick}). Note that if the $i$th bit is representative (i.e. hard-equivalent to the target function) then so is the augmented bit (see lemma \ref{prop:augmented}). We use margin packing, where appropriate, to define gradient-rich, hard-equivalents of boolean functions.
 
 \subsection{Differentiable $\wedge$}
 
@@ -282,7 +282,7 @@ Then, applying margin packing, define the differentiable function
 	{\bf x} &\mapsto \operatorname{augmented-bit}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))\text{,}
 \end{aligned}
 \end{equation*}
-which is hard-equivalent to $\operatorname{Maj}$ (see proposition \ref{prop:majority}). Note that $\partial\!\operatorname{Maj}$ is differentiable almost everywhere and gradient-rich (see figure \ref{fig:majority-plot}). If $\operatorname{sort}$ is quicksort then the the average time-complexity of $\partial\!\operatorname{Maj}$ is $\mathcal{O}(n\log{}n)$, which makes $\partial\!\operatorname{Maj}$ more expensive than $\partial_{\neg}$, $\partial_{\wedge}$, $\partial_{\vee}$ and $\partial_{\Rightarrow}$ at training time. However, in the hard $\partial\mathbb{B}$ net we efficiently implement $\operatorname{Maj}$ as a discrete program that simply checks if the majority of bits are high.
+which is hard-equivalent to $\operatorname{Maj}$ (see theorem \ref{prop:majority}). Note that $\partial\!\operatorname{Maj}$ is differentiable almost everywhere and gradient-rich (see figure \ref{fig:majority-plot}). If $\operatorname{sort}$ is quicksort then the the average time-complexity of $\partial\!\operatorname{Maj}$ is $\mathcal{O}(n\log{}n)$, which makes $\partial\!\operatorname{Maj}$ more expensive than $\partial_{\neg}$, $\partial_{\wedge}$, $\partial_{\vee}$ and $\partial_{\Rightarrow}$ at training time. However, in the hard $\partial\mathbb{B}$ net we efficiently implement $\operatorname{Maj}$ as a discrete program that simply checks if the majority of bits are high.
 
 TODO: compare to \cite{NEURIPS2019_d8c24ca8}
 
@@ -587,7 +587,7 @@ Thanks to GitHub Next, for sponsoring this research, and Pavel Augustinov, Richa
 \end{proof}
 \end{prop}
 
-\begin{prop}\label{prop:augmented}
+\begin{lemma}\label{prop:augmented}
 	If a representative bit, $x_{i}$, is hard-equivalent to a target function, $g$, then so is the augmented bit, $z$.
 	\begin{proof}
 		As $x_{i}$ is representative then $\operatorname{harden}(x_{i}) = g(\operatorname{harden}({\bf x}))$. The augmented bit, $z$, is given by  \eqref{eq:augmented-bit}:
@@ -606,7 +606,7 @@ Thanks to GitHub Next, for sponsoring this research, and Pavel Augustinov, Richa
 		\end{equation*}
 		since $x_{i} > 1/2 \Rightarrow z > 1/2$ and $x_{i} \leq 1/2 \Rightarrow z \leq 1/2$. Hence, $\operatorname{harden}(z) = \operatorname{harden}(x_{i}) = g(\operatorname{harden}({\bf x}))$
 	\end{proof}
-\end{prop}
+\end{lemma}
 
 
 \begin{prop}\label{prop:and}
@@ -681,13 +681,13 @@ In consequence, $\operatorname{harden}(\operatorname{sort}({\bf x})[i]) = \opera
 \end{proof}
 \end{lemma}
 
-\begin{prop}\label{prop:majority}
+\begin{theorem}\label{prop:majority}
 	$\partial\!\operatorname{Maj} \equiv \operatorname{Maj}$.
 \begin{proof}
 	$\partial\!\operatorname{Maj}$ augments the representative bit $x_{i} = \operatorname{sort}({\bf x})[\operatorname{majority-index}({\bf x})]$. By lemma \ref{lem:maj}, the representative bit is $\equiv \operatorname{Maj}(\operatorname{harden}({\bf x}))$.
-    By proposition \ref{prop:augmented}, the augmented bit, $\operatorname{augmented-bit}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))$, is also $\equiv \operatorname{Maj}(\operatorname{harden}({\bf x}))$. Hence $\partial\!\operatorname{Maj} \equiv \operatorname{Maj}$.
+    By lemma \ref{prop:augmented}, the augmented bit, $\operatorname{augmented-bit}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))$, is also $\equiv \operatorname{Maj}(\operatorname{harden}({\bf x}))$. Hence $\partial\!\operatorname{Maj} \equiv \operatorname{Maj}$.
 \end{proof}
-\end{prop}
+\end{theorem}
 
 \begin{prop}\label{prop:count}
 	$\partial\!\operatorname{count-hot} \equiv \operatorname{count-hot}$.
