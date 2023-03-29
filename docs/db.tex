@@ -361,7 +361,7 @@ We compose $\partial_{\neg}$, $\partial_{\wedge}$ and $\partial_{\vee}$ layers t
 
 In classification problems the final layer of a neural network is typically interpreted as a vector of real-valued logits, one for each label. The index of the maximum logit indicates the most probable label. However, we cannot interpret the final layer of a $\partial\mathbb{B}$ net as a vector of logits without violating hard-equivalence. Instead, for classification problems, the final layer of a $\partial\mathbb{B}$ net is a 1-hot soft-bit vector, constructed using $\partial\!\operatorname{count-hot}$, where the index of the high bit indicates the predicted label. The hard net then outputs a 1-hot boolean vector with the identical interpretation.
 
-In addition, at training time, loss functions should be a function of hardened bits, otherwise gradient descent may non-optimally traverse trajectories that take no account of the hard threshold at $1/2$. For example, say that an example is correctly classified by a 1-hot vector with high bit $x=0.51$. Updating the net's weights to change this value to $x=0.52$ won't increase classification accuracy but may prevent updating the weights to correctly classify another example in the training data. For this reason, $\partial\mathbb{B}$ nets have a final `hardening' layer to ensure that loss is a function of hard, not soft, bits:
+In addition, at training time, loss functions should be a function of hardened bits, otherwise gradient descent may non-optimally traverse trajectories that take no account of the hard threshold at $1/2$. For example, say that an example is correctly classified by a 1-hot vector with high bit $x=0.51$. Updating the net's weights to change this value to $0.51+\epsilon$ won't increase classification accuracy but may prevent updating the weights to correctly classify another example in the training data. For this reason, $\partial\mathbb{B}$ nets have a final `hardening' layer to ensure that loss is a function of hard, not soft, bits:
 \begin{equation*}
 \begin{aligned}
 \partial\!\operatorname{harden}: [0,1]^{n} &\to [0,1]^{n}, \\
@@ -547,12 +547,14 @@ We measure the accuracy of the final net on the test data to avoid hand-picking 
 
 \subsection{MNIST}
 
+TODO
+
 \section{Conclusion}
 
 TODO: we can write boolean functions, soften them, and place them within differentiable neural networks.
 
 \subsubsection*{Acknowledgments}
-This research was sponsored by GitHub Next and GitHub Advanced Security Products. Thanks to Pavel Augustinov, Richard Evans, Johan Rosenkilde, Max Schaefer, Tam\'{a}s Szab\'{o} and Albert Ziegler for helpful discussions and feedback.
+Thanks to GitHub Next, for sponsoring this research, and Pavel Augustinov, Richard Evans, Johan Rosenkilde, Max Schaefer, Tam\'{a}s Szab\'{o} and Albert Ziegler for helpful discussions and feedback.
 
 \bibliographystyle{iclr2021_conference}
 \bibliography{db}
@@ -688,9 +690,9 @@ In consequence, $\operatorname{harden}(\operatorname{sort}({\bf x})[i]) = \opera
 \end{prop}
 
 \begin{prop}\label{prop:count}
-	$\partial${COUNT} is hard-equivalent to COUNT.
+	$\partial\!\operatorname{count-hot} \equiv \operatorname{count-hot}$.
 	\begin{proof}
-		todo
+	Let $l$ denote the number of bits that are low in ${\bf x} = [x_{1},\dots,x_{n}]$, and let ${\bf y} = \partial\!\operatorname{count-hot}({\bf x})$. Then ${\bf y}[l+1]$ is high and any ${\bf y}[i]$, where $i \neq l+1$, is low. Let ${\bf z} = \operatorname{count-hot}(\operatorname{harden}({\bf x}))$. Then ${\bf z}[l+1]$ is high and any ${\bf z}[i]$, where $i \neq l+1$, is low. Hence, $\operatorname{harden}({\bf y}) = {\bf z}$, and therefore $\partial\!\operatorname{count-hot} \equiv \operatorname{count-hot}$.
 	\end{proof}
 \end{prop}
 
