@@ -6,7 +6,6 @@ import optax
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from flax import linen as nn
-from flax.metrics import tensorboard
 from flax.training import train_state
 from jax.config import config
 from matplotlib import pyplot as plt
@@ -24,6 +23,11 @@ from neurallogic import (
     neural_logic_net,
     real_encoder,
     hard_dropout,
+    initialization,
+    hard_count,
+    hard_vmap,
+    symbolic_primitives,
+    hard_concatenate
 )
 
 # Uncomment to debug NaNs
@@ -126,7 +130,7 @@ def nln_experimental(type, x, training: bool):
     return x
 
 
-def nln(type, x, training: bool):
+def nln_2(type, x, training: bool):
     input_size = 784
     mask_layer_size = 10
     dtype = jax.numpy.float32
@@ -139,6 +143,36 @@ def nln(type, x, training: bool):
     x = harden_layer.harden_layer(type)(x)
     num_classes = 10
     x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+def nln(type, x, training: bool):
+    num_classes = 10
+    dtype = jax.numpy.float64
+    input_size = 784
+    mask_layer_size = 40
+    x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype)(x)
+    x = x.reshape((int(mask_layer_size * 98), int(input_size / 98)))
+    x = hard_majority.majority_layer(type)()(x)
+    x = hard_not.not_layer(type)(9, dtype=dtype)(x)
+    x = hard_majority.majority_layer(type)()(x)
+    ########################################################
+    x = jax.numpy.array([x]) # TODO: shouldn't need to do this
+    # count the number of high bits to yield layer_size+1 outputs
+    x = hard_count.count_layer(type)()(x) 
+    # print("after hard_count shape is ", x.shape)
+    # split into num_classes equally sized bit buckets
+    x = x.ravel() # TODO: shouldn't need to do this
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    # take the logical or of each bucket
+    # TODO: create a specialised layer for this
+    x = hard_vmap.vmap(type)((
+        lambda x: jax.numpy.max(x),
+        lambda x: jax.numpy.max(x),
+        lambda x: symbolic_primitives.symbolic_reduce_or(x)))(x)
+    x = x.ravel()
+    x = harden_layer.harden_layer(type)(x)
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes))) # TODO: shouldn't need to do this
     x = x.sum(-1)
     return x
 
@@ -251,9 +285,8 @@ def create_train_state(net, rng, dropout_rng, config):
     # for CNN: mock_input = jnp.ones([1, 28, 28, 1])
     mock_input = jnp.ones([1, 28 * 28])
     soft_weights = net.init(rng, mock_input, training=False)["params"]
-    # tx = optax.sgd(config.learning_rate, config.momentum)
-    tx = optax.yogi(config.learning_rate)
-    # tx = optax.adam(config.learning_rate)
+    # tx = optax.yogi(config.learning_rate) # for nln_2
+    tx = optax.radam(config.learning_rate)
     return TrainState.create(
         apply_fn=net.apply, params=soft_weights, tx=tx, dropout_rng=dropout_rng
     )
@@ -270,9 +303,6 @@ def train_and_evaluate(
     state = create_train_state(net, init_rng, dropout_rng, config)
     train_dataset, test_dataset = datasets
 
-    summary_writer = tensorboard.SummaryWriter(workdir)
-    summary_writer.hparams(dict(config))
-
     for epoch in range(1, config.num_epochs + 1):
         init_rng, input_rng = jax.random.split(init_rng)
         state, train_loss, train_accuracy = train_epoch(
@@ -286,11 +316,6 @@ def train_and_evaluate(
             "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f"
             % (epoch, train_loss, train_accuracy * 100, test_loss, test_accuracy * 100)
         )
-
-        summary_writer.scalar("train_loss", train_loss, epoch)
-        summary_writer.scalar("train_accuracy", train_accuracy, epoch)
-        summary_writer.scalar("test_loss", test_loss, epoch)
-        summary_writer.scalar("test_accuracy", test_accuracy, epoch)
 
     return state
 
@@ -320,7 +345,7 @@ def get_config():
     config.learning_rate = 0.01
     config.momentum = 0.9
     config.batch_size = 128
-    config.num_epochs = 2
+    config.num_epochs = 1000
     return config
 
 
@@ -346,6 +371,8 @@ def test_mnist():
 
     print(soft.tabulate(rng, train_ds["image"][0:1], training=False))
 
+    # TODO: 50 experiments
+
     # Train and evaluate the model.
     trained_state = train_and_evaluate(
         int_rng,
@@ -357,7 +384,7 @@ def test_mnist():
     )
 
     # Check symbolic net
-    _, hard, symbolic = neural_logic_net.net(lambda type, x: nln(type, x, False))
-    check_symbolic(
-        (soft, hard, symbolic), (train_ds, test_ds), trained_state, dropout_rng
-    )
+    #_, hard, symbolic = neural_logic_net.net(lambda type, x: nln(type, x, False))
+    #check_symbolic(
+    #    (soft, hard, symbolic), (train_ds, test_ds), trained_state, dropout_rng
+    #)

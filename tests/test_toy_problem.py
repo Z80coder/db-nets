@@ -45,7 +45,7 @@ Labels:
     1 = wear coat
 """
 
-toy_data = 1
+toy_data = 2
 num_classes = 2
 if toy_data == 1:
     num_features = 1
@@ -134,7 +134,7 @@ Therefore learned class prediction is [!x, x]
 
 def nln_2(type, x, training: bool):
     dtype = jax.numpy.float32
-    x = hard_not.not_layer(type)(4)(x)
+    x = hard_not.not_layer(type)(8)(x)
     x = x.ravel()
     x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
     x = hard_majority.majority_layer(type)()(x)

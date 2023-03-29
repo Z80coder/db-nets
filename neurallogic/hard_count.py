@@ -33,7 +33,27 @@ def soft_count(x: jax.numpy.array):
     high = jax.numpy.array([1.0])
     sorted_x = jax.numpy.concatenate([low, sorted_x, high])
     return jax.vmap(low_to_high)(sorted_x[:-1], sorted_x[1:])
-    
+
+def augmented_bit(mean, representative_bit) -> float:
+    margin = jax.numpy.abs(representative_bit - 0.5)
+    margin_delta = mean * margin
+    representative_bit = jax.numpy.where(
+        representative_bit > 0.5,
+        0.5 + margin_delta,
+        representative_bit + margin_delta,
+    )
+    return representative_bit
+
+# TODO: investigate
+def soft_count_packed(x: jax.numpy.array):
+    mean = jax.numpy.mean(x, axis=-1)
+    sorted_x = jax.numpy.sort(x, axis=-1)
+    low = jax.numpy.array([0.0])
+    high = jax.numpy.array([1.0])
+    sorted_x = jax.numpy.concatenate([low, sorted_x, high])
+    sorted_x = jax.vmap(low_to_high)(sorted_x[:-1], sorted_x[1:])
+    return jax.vmap(lambda x: augmented_bit(mean, x))(sorted_x)
+
 def hard_count(x: jax.numpy.array):
     # We simply count the number of low bits
     num_low_bits = jax.numpy.sum(x <= 0.5, axis=-1)
