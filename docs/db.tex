@@ -52,44 +52,42 @@
 \maketitle
 
 \begin{abstract}
-	$\partial\mathbb{B}$ nets are differentiable neural networks 
-	that learn discrete boolean functions by gradient descent.
-	$\partial\mathbb{B}$ nets, once trained, `harden' to boolean functions with identical semantics. In consequence, the boolean functions have identical accuracy to the trained nets, unlike existing approaches to neural network binarization. Experiments demonstrate that $\partial\mathbb{B}$ nets achieve comparable performance on standard machine learning problems yet are significantly more compact (due to 1-bit weights) and interpretable (due to the logical nature of the learnt function).
+	$\partial\mathbb{B}$ nets are differentiable neural networks that learn discrete boolean functions by gradient descent. $\partial\mathbb{B}$ nets, once trained, `harden' to boolean functions with identical semantics. In consequence, the boolean functions have identical accuracy to the trained nets, unlike existing approaches to neural network binarization. Experiments demonstrate that $\partial\mathbb{B}$ nets achieve comparable performance on standard machine learning problems yet are significantly more compact (due to 1-bit weights) and interpretable (due to the logical nature of the learnt function).
 \end{abstract}
 
 \section{Introduction}
 
-Typical neural networks are differentiable functions with weights represented by machine floats. Training consists of gradient descent in weight-space, where the direction of descent minimises loss and the gradient is efficiently calculated by the backpropagation algorithm \citep{rumelhart1986learning}. This approach has led to tremendous advances in machine learning.
+Neural networks are differentiable functions with weights represented by machine floats. Networks are trained by gradient descent in weight-space, where the direction of descent minimises loss. The gradients are efficiently calculated by the backpropagation algorithm \citep{rumelhart1986learning}. This overall approach has led to tremendous advances in machine learning.
 
-However, there are drawbacks. First, the differentiability requirement means we cannot easily learn discrete functions, such as logical predicates. In consequence, interpreting or verifying what a network has learned is difficult. Also, many learning problems naturally arise in discrete rather than continuous domains. Second, representing weights as machine floats enables time-efficient training but at the cost of memory-inefficient models. For example, network quantisation techniques (TODO:refs) demonstrate that full 64 of 32-bit precision weights are often unnecessary for final predictive performance, although there is a trade-off.
+However, there are drawbacks. First, differentiability means we cannot directly learn discrete functions, such as logical predicates. In consequence, what a network has learned is difficult to interpret and verify. Second, representing weights as machine floats enables time-efficient training but at the cost of memory-inefficient models. For example, network quantisation techniques (see \cite{QIN2020107281}) demonstrate that full 64 of 32-bit precision weights are often unnecessary for final predictive performance, although there is a trade-off.
 
-This paper proposes a new approach to mitigate these drawbacks. The main idea is to define a type of neural network, called a $\partial \mathbb{B}$ net, which has two aspects: a soft net, which is a differentiable real-valued function, and a hard net, which is a non-differentiable, discrete function. Both aspects are semantically equivalent. We train the soft net as normal, using backpropagation, then `harden' the learned weights to boolean values and bind them with the hard net to yield a discrete function with identical predictive performance (see figure \ref{fig:main-idea}). In consequence, interpreting and verifying a $\partial \mathbb{B}$ net is relatively less difficult. The bias towards learning discrete functions reduces variance in some domains. And boolean-valued, 1-bit weights increase the memory-efficiency of trained models.
+A standard approach to mitigate these drawbacks is to approximate discrete functions by defining continuous relaxations. This paper explores a different approach: we define differentiable functions that `harden', without approximation, to discrete functions. Specifically, we define $\partial \mathbb{B}$ nets that have two equivalent aspects: a {\em soft net}, which is a differentiable real-valued function, and a {\em hard net}, which is a non-differentiable, discrete function. Both aspects are semantically equivalent. We train the soft net as normal, using backpropagation, then `harden' the learned weights to boolean values, which we then bind with the hard net to yield a discrete function with identical predictive performance (see figure \ref{fig:main-idea}). In consequence, interpreting and verifying a $\partial \mathbb{B}$ net is relatively less difficult. And boolean-valued, 1-bit weights significantly increase the memory-efficiency of trained models.
 
-The main contributions of this work are (i) defining novel activation functions that `harden' to semantically equivalent discrete functions without loss of predictive performance, (ii) defining novel network architectures to effectively learn discrete functions that solve multi-class classification problems, and (iii) experiments that demonstrate $\partial \mathbb{B}$ nets compete with existing approaches in terms of predictive performance yet yield considerably smaller models.
+The main contributions of this work are (i) defining novel activation functions that `harden' to semantically equivalent discrete functions, (ii) defining novel network architectures to effectively learn discrete functions that solve multi-class classification problems, and (iii) experiments that demonstrate $\partial \mathbb{B}$ nets compete with existing approaches in terms of predictive performance yet yield compact models.
 
-This paper examines related work (section \ref{sec:related-work}), (ii) etc.
+Section \ref{sec:related-work} discusses related work, section \ref{sec:db-nets} defines $\partial\mathbb{B}$ nets, section \ref{sec:experiments} presents experimental results, and section \ref{sec:conclusion} concludes.
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=1.0\textwidth]{db-net.png}
+	\includegraphics[width=0.85\textwidth]{db-net.png}
 	\caption{{\em Learning discrete functions with a $\partial\mathbb{B}$ net.} A $\partial \mathbb{B}$ net specifies (i) a differentiable neural network that is hard-equivalent to (ii) a non-differentiable discrete function. The neural network is trained as normal with backpropagation to yield a set of real weights. The real weights are hardened to boolean values and then bound with the discrete function. The result is a learned discrete function that performs identically to the trained network.}
 	\label{fig:main-idea}
 \end{figure}
 
 \section{Related work}\label{sec:related-work}
 
-Methods to learn discrete boolean functions can be broadly categorized as either non-differentiable or differentiable.
+Methods that learn discrete boolean functions can be broadly categorized as either non-differentiable or differentiable.
 
-Non-differentiable approaches include boolean-valued decision trees \citep{BreiFrieStonOlsh84}, random forests \citep{598994}, genetic programming \citep{koza1992genetic} and, more recently, Tsetlin machines \cite{granmo18}. Tsetlin machines represent propositional formulae by collections of simple automata with integer weights optimised by positive and negative feedback defined in terms of a hard threshold function. These models are relatively easier to interpret, compared to deep neural networks, because they directly represent boolean decisions. However, their non-differentiability means it is relatively harder to compose them into larger-scale systems that learn useful representations of high-dimensional data (e.g. NLP, images and audio) without manual feature engineering, although Tsetlin machines show promise on such tasks \citep{Granmo2019TheCT}.
+Non-differentiable approaches include boolean-valued decision trees \citep{BreiFrieStonOlsh84}, random forests \citep{598994}, genetic programming \citep{koza1992genetic} and, more recently, Tsetlin machines \cite{granmo18}. Tsetlin machines represent propositional formulae by collections of simple automata with integer weights optimised by positive and negative feedback defined in terms of a hard threshold function. These models directly represent boolean decisions and therefore are easier to interpret compared to deep neural networks. However, they tend to perform less well, compared to differentiable approaches such as deep learning, on large volumes of high-dimensional data (e.g. NLP, images and audio) without manual feature engineering, although Tsetlin machines show promise on such tasks \citep{Granmo2019TheCT}.
 
-Differentiable approaches include systems that integrate rule-based reasoning with neural components, and binarization techniques that quantize neural networks by converting real-valued weights and activations to binary values. For example, differentiable inductive logic programming \citep{10.5555/3241691.3241692}, neural logic machines \citep{dong2018neural} 
-and differentiable neural logic networks \cite{DBLP:phd/basesearch/Payani20} learn first-order logic rules using gradient descent. These systems combine the benefits of logical inference and interpretability with end-to-end differentiability; however, they can require combinatoric enumeration of rulesets and therefore struggle to scale to large datasets. The technique of network binarization aims to significantly reduce model size and inference costs while maintaining predictive accuracy. Binarization reduces a real-valued neural network to a binary network where nonlinear activation functions are replaced by boolean majority functions. For example, BinaryConnect \citep{10.5555/2969442.2969588}, XNOR-Net \citep{10.1007/978-3-319-46493-0_32}, and LUTNet \citep{9026948}, optimize a continuous relaxation or approximation of the binary net during training. However, binary-valued functions are intrinsically non-differentiable and therefore training by gradient descent becomes challenging. Plus, binarization throws away information, which reduces accuracy \citep{QIN2020107281}. 
+Differentiable approaches that learn boolean functions include (i) systems that integrate rule-based reasoning with neural components, and (ii) binarization techniques that quantize neural networks by converting real-valued weights and activations to binary values. For example, differentiable inductive logic programming \citep{10.5555/3241691.3241692}, neural logic machines \citep{dong2018neural} 
+and differentiable neural logic networks \cite{DBLP:phd/basesearch/Payani20} learn first-order logic rules using gradient descent. These systems combine the benefits of logical inference and interpretability with end-to-end differentiability. However, they rely on combinatoric enumeration of rulesets and therefore do not scale to large datasets. The technique of network binarization aims to significantly reduce model size and inference costs while maintaining predictive accuracy. Binarization reduces a real-valued neural network to a binary network where nonlinear activation functions are replaced by boolean majority functions. For example, BinaryConnect \citep{10.5555/2969442.2969588}, XNOR-Net \citep{10.1007/978-3-319-46493-0_32}, and LUTNet \citep{9026948}, optimize a continuous relaxation or approximation of the binary net during training. However, binary-valued functions are intrinsically non-differentiable and therefore training by gradient descent is challenging. Plus, binarization throws away information, which reduces accuracy \citep{QIN2020107281}. 
 
-Clearly, the design-space of algorithms that learn boolean functions is large, with various trade-offs. In this paper we investigate an under-explored area of the design-space where a differentiable neural network is semantically equivalent, without approximation or loss, to an arbitrarily complex boolean function. We aim to combine the benefits of deep neural networks trained by gradient descent with the efficiency, interpretability and logical bias of boolean functions -- but without loss of accuracy.
+The design-space of algorithms that learn boolean functions is large, with various trade-offs. In this paper we investigate an under-explored area of differentiable nets that are semantically equivalent, without approximation or loss, to an arbitrarily complex boolean function. We aim to combine the benefits of deep neural networks trained by gradient descent with the efficiency, interpretability and logical bias of boolean functions -- but without loss of accuracy.
 
-\section{$\partial\mathbb{B}$ nets}
+\section{$\partial\mathbb{B}$ nets}\label{sec:db-nets}
 
-A $\partial \mathbb{B}$ net has two aspects, a soft net and a hard net. Both nets use bits to represent transitory values and learnable weights. However, a soft net uses soft-bits and a hard net uses hard-bits.
+A $\partial \mathbb{B}$ net has two aspects, a soft net and a hard net. Both nets use bits to represent transitory values and learnable weights, but a soft net uses soft-bits and a hard net uses hard-bits.
 
 \begin{definition}[Soft-bits and hard-bits]
 A {\em soft-bit} is a real value in the range $[0,1]$ and a {\em hard-bit} is a boolean value from the set $\{0,1\}$. A soft-bit, $x$, is {\em high} if $x>1/2$, otherwise it is {\em low}.
@@ -120,9 +118,9 @@ A soft net is any differentiable function, $f$, that `hardens' to a semantically
 for all ${\bf x} \in [0,1]^{n}$. For shorthand write $f \equiv g$.
 \end{definition}
 
-Neural networks are typically composed of nonlinear activation functions (for representational generality) that are strictly monotonic (so gradients always exist that link changes in inputs to outputs) and differentiable (so gradients reliably represent the local loss surface). Activation functions that are monotonic but not strictly so (and therefore some gradients are zero) and differentiable almost everywhere (and therefore some gradients are undefined) also work, e.g. RELU \citep{10.5555/3104322.3104425}. $\partial \mathbb{B}$ nets are arbitrary compositions of `activation' functions that also satisfy these properties but in addition are hard-equivalent to boolean functions (and natural generalisations).
+Neural networks are typically composed of nonlinear activation functions (for representational generality) that are strictly monotonic (so gradients always exist that link changes in inputs to outputs without local minima) and differentiable (so gradients reliably represent the local loss surface). However, activation functions that are monotonic but not strictly (so some gradients are zero) and differentiable almost everywhere (so some gradients are undefined) can also work, e.g. RELU \citep{10.5555/3104322.3104425}. $\partial \mathbb{B}$ nets are composed from `activation' functions that also satisfy these properties plus the additional property of hard-equivalence to a boolean function (and natural generalisations).
 
-\begin{figure}[t]
+\begin{figure}[t!]
 	\centering
 	\includegraphics[trim=0pt 0pt 0pt 0pt, clip, width=1.0\textwidth]{logic-gates.png}
 	\caption{{\em Gradient-rich versus gradient-sparse differentiable boolean functions.} Each column contains contour plots of functions $f(x,y)$ that are hard-equivalent to a boolean function (one of $\neg(x \oplus y)$, $x \wedge y$, $x \vee y$, or $x \Rightarrow y$). Every function is continuous and differentiable almost everywhere (white lines indicate non-continuous derivatives). The upper plots are gradient-sparse, where vertical and horizontal contours indicate the function is constant with respect to one of its inputs, i.e. $\partial f/\partial y = 0$ or $\partial f/\partial x = 0$. The lower plots are gradient-rich, where the curved contours indicate the function always varies with respect to any of its inputs, i.e. $\partial f/\partial y \neq 0$ and $\partial f/\partial x \neq 0$. $\partial \mathbb{B}$ nets use gradient-rich functions to ensure that error is always backpropagated to all inputs.} 
@@ -131,7 +129,7 @@ Neural networks are typically composed of nonlinear activation functions (for re
 
 \subsection{Learning to negate}
 
-We aim to learn to negate a boolean value, $x$, or simply leave it unaltered. Represent this decision by a boolean weight, $w$, where low $w$ means negate and high $w$ means do nothing. The boolean function that meets this requirement is $\neg(x \oplus w)$. However, this function is not differentiable. We therefore define the differentiable function,
+We aim to learn to negate a boolean value, $x$, or simply leave it unaltered. Represent this decision by a boolean weight, $w$, where low $w$ means negate and high $w$ means do not negate. The boolean function that meets this requirement is $\neg(x \oplus w)$. However, this function is not differentiable. Define the differentiable function,
 	\begin{equation*}
 	\begin{aligned}
 	\partial_{\neg}: [0, 1]^{2} &\to [0,1], \\
@@ -140,23 +138,13 @@ We aim to learn to negate a boolean value, $x$, or simply leave it unaltered. Re
 	\end{equation*}
 where $\partial_{\neg}(w, x) \equiv \neg(x \oplus w)$ (see proposition \ref{prop:not}).
 
-TODO: See \cite{VANKRIEKEN2022103602} for comparable approaches to activation functions that represent logical operations (Godel, product etc.)
-
-Product logics, where for example $f(x,y) = x y$ is as a soft version of $x \wedge y$, although hard-equivalent at extreme values, e.g. $f(1,1)=1$ and $f(0,1)=0$, are not hard-equivalent at intermediate values, e.g. $f(0.6, 0.6) = 0.36 \not\equiv 1$. G\"{o}del-style $\operatorname{min}$ and $\operatorname{max}$ functions, although hard-equivalent over the entire soft-bit range, i.e. $\operatorname{min}(x,y) \equiv x \wedge y$ and $\operatorname{min}(x,y) \equiv x \vee y$, are gradient-sparse in the sense that their outputs are not always a function of all their inputs, e.g. $\frac{\partial}{\partial x} \operatorname{max}(x,y) = 0$ when $(x,y)=(0.1, 0.9)$. So although the composite function $\operatorname{max}(\operatorname{min}(w, x), \operatorname{min}(1-w, 1-x))$ is differentiable and $\equiv \neg(x \oplus w)$ it does not always backpropagate error to its inputs. In contrast, $\partial_{\neg}$ is a gradient-rich function that always backpropagates error to its inputs (see figure \ref{fig:gradient-rich}). 
+See \cite{VANKRIEKEN2022103602} for a review of differentiable fuzzy logic operators. For example, product logics, where $f(x,y) = x y$ is as a soft version of $x \wedge y$, although hard-equivalent at extreme values, e.g. $f(1,1)=1$ and $f(0,1)=0$, are not hard-equivalent at intermediate values, e.g. $f(0.6, 0.6) = 0.36 \not\equiv 1$. G\"{o}del-style $\operatorname{min}$ and $\operatorname{max}$ functions, although hard-equivalent over the entire soft-bit range, i.e. $\operatorname{min}(x,y) \equiv x \wedge y$ and $\operatorname{min}(x,y) \equiv x \vee y$, are gradient-sparse in the sense that their outputs are not always a function of all their inputs, e.g. $\frac{\partial}{\partial x} \operatorname{max}(x,y) = 0$ when $(x,y)=(0.1, 0.9)$. So although the composite function $\operatorname{max}(\operatorname{min}(w, x), \operatorname{min}(1-w, 1-x))$ is differentiable and $\equiv \neg(x \oplus w)$ it does not always backpropagate error to its inputs. In contrast, $\partial_{\neg}$ always backpropagates error to its inputs because it is a gradient-rich function (see figure \ref{fig:gradient-rich}). 
 
 \subsection{Margin packing}
 
 Say we aim to construct a differentiable analogue of $x \wedge y$. Note that $\operatorname{min}(x,y)$ essentially selects one of $x$ or $y$ as a representative soft-bit that is guaranteed hard-equivalent to $x \wedge y$. However, by selecting only one of $x$ or $y$ then $\operatorname{min}$ is also guaranteed to be gradient-sparse. We define a `margin packing' method to solve this dilemma.
 
 The main idea of margin packing is (i) select a representative bit that is hard-equivalent to the target discrete function, and then (ii) pack a fraction of the margin between the representative bit and the hard threshold $1/2$ with gradient-rich information. The result is an augmented bit that is a function of all inputs yet hard-equivalent to the target function.
-
-\begin{figure}[t]
-	\centering
-	\includegraphics[trim=30pt 5pt 30pt 10pt, clip, width=1.0\textwidth]{margin-trick.png}
-	\caption{{\em Margin packing for constructing gradient-rich, hard-equivalent functions}. A representative bit, $z$, is hard-equivalent to a discrete target function but gradient-sparse (e.g. $z=\operatorname{min}(x,y) \equiv x \wedge y$). On the left $z$ is low, $z<1/2$; on the right $z$ is high, $z>1/2$. We can pack a fraction of the margin between $z$ and the hard threshold $1/2$ with additional gradient-rich information without affecting hard-equivalence. A natural choice is the mean soft-bit, $\bar{\bf x} \in [0,1]$. The grey shaded areas denote the packed margins and the final augmented bit. On the left $\approx 60\%$ of the margin is packed; on the right $\approx 90\%$.}
-	\label{fig:margin-trick}
-\end{figure}
-% On the left, ${\bf x}=[0.9,0.23]$, $z=0.23$, $\bar{\bf x}=0.57$ and therefore $\approx 60\%$ of the margin is packed; on the right, ${\bf x}=[0.9,0.83]$,  $z=0.83$, $\bar{\bf x}=0.87$, and therefore $\approx 90\%$ of the margin is packed.
 
 More concretely, say we have a vector of soft-bit inputs ${\bf x}$ and the $i$th element represents the target discrete function (e.g. if our target is $x \wedge y$ then ${\bf x}=[x,y]$ and $i$ is 1 if $x<y$ and $i=2$ otherwise). Now, if we pack only a fraction of the available margin, $|x_{i}-1/2|$, we will not cross the $1/2$ threshold and break the hard-equivalence of the representative bit. The average soft-bit value, $\bar{\bf x} \in [0,1]$, is just such a gradient-rich fraction. We therefore define 
 \begin{equation*}
@@ -177,10 +165,17 @@ x_{i} + \operatorname{margin-fraction}({\bf x}, i) & \text{otherwise.}
 \end{aligned}
 \label{eq:augmented-bit}
 \end{equation}
-If the representative bit is high (resp. low) then the augmented bit is also high (resp. low). 
-But the augmented bit has a higher (resp. lower) value than the representative bit when below (resp. above) the $1/2$ threshold. The difference depends on the size of the available margin and the mean soft-bit value. Almost everywhere, an increase (resp. decrease) of the mean soft-bit increases (resp. decreases) the value of the augmented bit (see figure \ref{fig:margin-trick}). Note that if the $i$th bit is representative (i.e. hard-equivalent to the target function) then so is the augmented bit (see lemma \ref{prop:augmented}). We use margin packing, where appropriate, to define gradient-rich, hard-equivalents of boolean functions.
+Note that if the representative bit is high (resp. low) then the augmented bit is also high (resp. low). The difference between the augmented and representative bit depends on the size of the available margin and the mean soft-bit value. Almost everywhere, an increase (resp. decrease) of the mean soft-bit increases (resp. decreases) the value of the augmented bit (see figure \ref{fig:margin-trick}). Note that if the $i$th bit is representative (i.e. hard-equivalent to the target function) then so is the augmented bit (see lemma \ref{prop:augmented}). We will use margin packing, where appropriate, to define gradient-rich, hard-equivalents of boolean functions.
 
-\subsection{Differentiable $\wedge$}
+\begin{figure}[t!]
+	\centering
+	\includegraphics[trim=30pt 5pt 30pt 10pt, clip, width=1.0\textwidth]{margin-trick.png}
+	\caption{{\em Margin packing for constructing gradient-rich, hard-equivalent functions}. A representative bit, $z$, is hard-equivalent to a discrete target function but gradient-sparse (e.g. $z=\operatorname{min}(x,y) \equiv x \wedge y$). On the left $z$ is low, $z<1/2$; on the right $z$ is high, $z>1/2$. We can pack a fraction of the margin between $z$ and the hard threshold $1/2$ with additional gradient-rich information without affecting hard-equivalence. A natural choice is the mean soft-bit, $\bar{\bf x} \in [0,1]$. The grey shaded areas denote the packed margins and the final augmented bit. On the left $\approx 60\%$ of the margin is packed; on the right $\approx 90\%$.}
+	\label{fig:margin-trick}
+\end{figure}
+% On the left, ${\bf x}=[0.9,0.23]$, $z=0.23$, $\bar{\bf x}=0.57$ and therefore $\approx 60\%$ of the margin is packed; on the right, ${\bf x}=[0.9,0.83]$,  $z=0.83$, $\bar{\bf x}=0.87$, and therefore $\approx 90\%$ of the margin is packed.
+
+\subsection{Differentiable $\wedge$, $\vee$ and $\Rightarrow$}
 
 We aim to construct a differentiable analogue of the boolean function $\bigwedge_{i=1}^{n} x_i$. A representative bit is $\operatorname{min}(x_{1},\dots,x_{n})$. The function
 \begin{equation*}
@@ -198,8 +193,6 @@ is therefore hard-equivalent to the boolean function $\bigwedge_{i=1}^{n} x_i$ (
 	\end{cases}
 \end{equation*}
 Note that $\partial_{\wedge}$ is differentiable almost everywhere and gradient-rich (see figure \ref{fig:gradient-rich}).
-
-\subsection{Differentiable $\vee$}
 
 The differentiable analogue of $\vee$ is identical to $\wedge$, except the representative bit is selected by $\operatorname{max}$. The function
 \begin{equation*}
@@ -234,8 +227,6 @@ m + 1/2(x + y)(1/2 - m) & \text{otherwise,}
 \end{equation*}
 \end{comment}
 
-\subsection{Differentiable $\Rightarrow$}
-
 The differentiable analogue of $\Rightarrow$ is defined in terms of $\partial_{\vee}$. The function
 \begin{equation*}
 \begin{aligned}
@@ -243,7 +234,7 @@ The differentiable analogue of $\Rightarrow$ is defined in terms of $\partial_{\
 (x, y) &\mapsto \partial_{\vee}\!(y, 1-x)\text{,}
 \end{aligned}
 \end{equation*}
-is hard-equivalent to $x \Rightarrow y$ (see proposition \ref{prop:implies}). We may define  analogues of all the basic boolean operators in a similar manner.
+is hard-equivalent to $x \Rightarrow y$ (see proposition \ref{prop:implies}). We can define  analogues of all the basic boolean operators in a similar manner.
 
 \subsection{Differentiable majority}
 
@@ -263,9 +254,9 @@ The boolean majority function is particularly important for tractable learning b
 \right\rfloor\text{,}
 \end{aligned}
 \end{equation*}
-where we count $\operatorname{False}$ as $0$ and $\operatorname{True}$ as $1$. Interpret each input bit $x_{i}$ as a vote, yes or no, for a binary decision. If the majority of voters are in favour then $\operatorname{Maj}$ outputs 1. The majority function, in the context of a predictive model, aggregates multiple bits of weak evidence into a hard decision. Neural network binarization transforms real-valued activation functions into boolean threshold functions \citep{10.5555/3157382.3157557}, which indicates their close association. We aim to construct a differentiable analogue of $\operatorname{Maj}$.
+where we count $\operatorname{False}$ as $0$ and $\operatorname{True}$ as $1$. Interpret each input bit $x_{i}$ as a vote, yes or no, for a binary decision. If the majority of voters are in favour then $\operatorname{Maj}$ outputs 1. The majority function, in the context of a predictive model, aggregates multiple bits of weak evidence into a hard decision.We aim to construct a differentiable analogue of $\operatorname{Maj}$.
 
-$\operatorname{Maj}$ for $n$ bits in DNF form is a disjunction of $\binom{n}{k}$ conjunctive clauses of size $k$, where $k=\lceil n/2 \rceil$ and each clause checks whether a unique combination of a majority of the $n$ bits are all high; e.g. $\operatorname{Maj}(x, y, z) = (x \wedge y) \vee (x \wedge y) \vee (y \wedge z)$. Therefore, we could in principle implement a differentiable analogue of $\operatorname{Maj}$ in terms of $\partial_{\wedge}$ and $\partial_{\vee}$. However, the number of terms grows exponentially with the number of variables (e.g. $n=50$ generates over 100 trillion clauses, which is infeasible). There is no known general algorithm for finding the minimal representation of $\operatorname{Maj}$ for arbitrary $n$.
+$\operatorname{Maj}$ for $n$ bits in DNF form is a disjunction of $\binom{n}{k}$ conjunctive clauses of size $k$, where $k=\lceil n/2 \rceil$. Each clause checks whether a unique combination of a majority of the $n$ bits are all high, e.g. $\operatorname{Maj}(x, y, z) = (x \wedge y) \vee (x \wedge y) \vee (y \wedge z)$. In principle we can implement a differentiable analogue of $\operatorname{Maj}$ in terms of $\partial_{\wedge}$ and $\partial_{\vee}$. However, the number of terms grows exponentially with the variables (e.g. $n=50$ generates over 100 trillion clauses, which is infeasible). And no general algorithm exists to find the minimal representation of $\operatorname{Maj}$ for arbitrary $n$.
 
 Instead, we trade-off time for memory costs. Observe that if the function $\operatorname{sort}({\bf x})$ sorts the elements of ${\bf x}$ in ascending order then the `median' soft-bit is representative. For example, if ${\bf x} = [0.4, 0.9, 0.2]$ then $\operatorname{sort}({\bf x}) = [0.2, 0.4, 0.9]$ and the `median' bit $x_{2}=0.4$ is low, which is hard-equivalent to $\operatorname{Maj}(0, 1, 0) = 0$. Define the index of the `median' bit by
 \begin{equation*}
@@ -282,13 +273,11 @@ Then, applying margin packing, define the differentiable function
 	{\bf x} &\mapsto \operatorname{augmented-bit}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))\text{,}
 \end{aligned}
 \end{equation*}
-which is hard-equivalent to $\operatorname{Maj}$ (see theorem \ref{prop:majority}). Note that $\partial\!\operatorname{Maj}$ is differentiable almost everywhere and gradient-rich (see figure \ref{fig:majority-plot}). If $\operatorname{sort}$ is quicksort then the the average time-complexity of $\partial\!\operatorname{Maj}$ is $\mathcal{O}(n\log{}n)$, which makes $\partial\!\operatorname{Maj}$ more expensive than $\partial_{\neg}$, $\partial_{\wedge}$, $\partial_{\vee}$ and $\partial_{\Rightarrow}$ at training time. However, in the hard $\partial\mathbb{B}$ net we efficiently implement $\operatorname{Maj}$ as a discrete program that simply checks if the majority of bits are high.
-
-TODO: compare to \cite{NEURIPS2019_d8c24ca8}
+which is hard-equivalent to $\operatorname{Maj}$ (see theorem \ref{prop:majority}). Note that $\partial\!\operatorname{Maj}$ is differentiable almost everywhere and gradient-rich (see figure \ref{fig:majority-plot}). If $\operatorname{sort}$ is quicksort then the the average time-complexity of $\partial\!\operatorname{Maj}$ is $\mathcal{O}(n\log{}n)$, which makes $\partial\!\operatorname{Maj}$ more expensive than $\partial_{\neg}$, $\partial_{\wedge}$, $\partial_{\vee}$ and $\partial_{\Rightarrow}$ at training time. However, in the hard $\partial\mathbb{B}$ net we efficiently implement $\operatorname{Maj}$ as a discrete program that simply checks if the majority of bits are high. Note that we use sorting to define a differentiable function that is exactly equivalent to a discrete function (rather than defining a continuous approximation to sorting, e.g. \cite{NEURIPS2019_d8c24ca8}).
 
 \subsection{Differentiable counting}
 
-A boolean counting function $f({\bf x})$ has the value $1$ if a counting predicate, $c({\bf x})$, holds over its $n$ inputs. For example, $\partial\!\operatorname{Maj}({\bf x})$ is a boolean counting function where $c({\bf x}) := |\{x_{i} : x_{i} = 1 \}| \geq \lceil \frac{n}{2} \rceil$. We aim to construct a differentiable analogue of $\operatorname{count}({\bf x}, k)$ where $c({\bf x}) := |\{x_{i} : x_{i} = 1 \}| = k$ (i.e. `exactly $k$ high'). This is useful for multiclass classification problems where we interpret $k$ as a class prediction.
+A boolean counting function $f({\bf x})$ is $\operatorname{True}$ if a counting predicate, $c({\bf x})$, holds over its $n$ inputs. We aim to construct a differentiable analogue of $\operatorname{count}({\bf x}, k)$ where $c({\bf x}) := |\{x_{i} : x_{i} = 1 \}| = k$ (i.e. `exactly $k$ high'), which is useful in multiclass classification problems.
 
 As before, we use $\operatorname{sort}$ to trade-off time for memory costs. Observe that if the elements of ${\bf x}$ are in ascending order then, if any soft-bits are high, there exists a unique contiguous pair of indices $(i,i+1)$ where $x_{i}$ is low and $x_{i+1}$ is high, where index $i$ is a direct count of the number of soft-bits that are low in ${\bf x}$. In consequence, define
 \begin{equation*}
@@ -315,13 +304,15 @@ where
 \begin{equation*}
 \operatorname{k-of-n}({\bf x}, k) = \bigvee_{|S|=k} \bigwedge_{i\in S} x_i \bigwedge_{j\notin S} \neg x_j
 \end{equation*}
-(see proposition \ref{prop:count}). However, in the hard $\partial\mathbb{B}$ net we efficiently implement $\operatorname{count-hot}$ as a discrete program that simply counts the number of low bits. We can construct various kinds of boolean counting functions from $\partial\!\operatorname{count-hot}$. For example, $\partial\!\operatorname{count}({\bf x}, k)$ is straightforwardly $\partial\!\operatorname{count-hot}({\bf x})[k]$ where we can again use margin-packing to ensure that this single soft-bit is gradient-rich.
+(see proposition \ref{prop:count}). However, in the hard $\partial\mathbb{B}$ net we efficiently implement $\operatorname{count-hot}$ as a discrete program that simply counts the number of low bits.
 
-This set of basic boolean functions is sufficient to learn non-trivial relationships from data. We now turn to constructing $\partial\mathbb{B}$ nets from compositions of these basic functions.
+We can construct various kinds of boolean counting functions from $\partial\!\operatorname{count-hot}$. For example, $\partial\!\operatorname{count}({\bf x}, k)$ is straightforwardly $\partial\!\operatorname{count-hot}({\bf x})[k]$ where we can use margin-packing to ensure that this single soft-bit is gradient-rich.
+
+This basic set of boolean functions is sufficient to learn non-trivial relationships from data. We now turn to constructing $\partial\mathbb{B}$ nets from compositions of these functions.
 
 \subsection{Boolean logic layers}
 
-The possible variety of $\partial\mathbb{B}$ net architectures is similar to standard neural networks. Here we merely define some basic layers that are sufficient for classification problems. Other kinds of layers, such as convolutional, or real encoders and decoders for regression problems, will be addressed in a sequel.
+The fully variety of $\partial\mathbb{B}$ net architectures needs to be explored. Here we define basic layers sufficient for classification problems. Other kinds of layers, such as convolutional, or real encoders/decoders for regression problems, will be addressed in a sequel.
 
 A $\partial_{\neg} \!\operatorname{Layer}$ of width $n$ learns to negate up to $n$ different subsets of the elements of its input vector:
 \begin{equation*}
@@ -344,7 +335,7 @@ A $\partial_{\wedge}\!\operatorname{Neuron}$ learns to logically $\wedge$ a subs
 ({\bf w}, {\bf x}) &\mapsto \min(\partial_{\Rightarrow}\!(w_{1}, x_{1}), \dots, \partial_{\Rightarrow}\!(w_{n}, x_{n}))\text{,}
 \end{aligned}
 \end{equation*}
-where ${\bf w}$ is a weight vector. Each $\partial_{\Rightarrow}(w_{i},x_{i})$ learns to include or exclude $x_{i}$ from the conjunction depending on weight $w_{i}$. For example, if $w_{i}>0.5$ then $x_{i}$ affects the value of the conjunction because $\partial_{\Rightarrow}(w_{i},x_{i})$ passes-through a soft-bit that is high if $x_{i}$ is high, and low otherwise; but if $w_{i} \leq 0.5$ then $x_{i}$ does not affect the conjunction because $\partial_{\Rightarrow}(w_{i},x_{i})$ always passes-through a high soft-bit. A $\partial_{\wedge}\!\operatorname{Layer}$ of width $n$ learns up to $n$ different conjunctions of subsets of its input (of whatever size).
+where ${\bf w}$ is a weight vector. Each $\partial_{\Rightarrow}(w_{i},x_{i})$ learns to include or exclude $x_{i}$ from the conjunction depending on weight $w_{i}$. For example, if $w_{i}>0.5$ then $x_{i}$ affects the value of the conjunction since $\partial_{\Rightarrow}(w_{i},x_{i})$ passes-through a soft-bit that is high if $x_{i}$ is high, and low otherwise; but if $w_{i} \leq 0.5$ then $x_{i}$ does not affect the conjunction since $\partial_{\Rightarrow}(w_{i},x_{i})$ always passes-through a high soft-bit. A $\partial_{\wedge}\!\operatorname{Layer}$ of width $n$ learns up to $n$ different conjunctions of subsets of its input (of whatever size).
 
 A $\partial_{\vee}\!\operatorname{Neuron}$ is defined similarly:
 \begin{equation*}
@@ -353,15 +344,16 @@ A $\partial_{\vee}\!\operatorname{Neuron}$ is defined similarly:
 ({\bf w}, {\bf x}) &\mapsto \max(\partial_{\wedge}\!(w_{1}, x_{1}), \dots, \partial_{\wedge}\!(w_{n}, x_{n}))\text{.}
 \end{aligned}
 \end{equation*}
-Each $\partial_{\wedge}(w_{i},x_{i})$ learns to include or exclude $x_{i}$ from the disjunction depending on weight $w_{i}$. For example, if $w_{i}>0.5$ then $x_{i}$ affects the value of the conjunction because $\partial_{\wedge}(w_{i},x_{i})$ passes-through a soft-bit that is high if $x_{i}$ is high, and low otherwise; but if $w_{i} \leq 0.5$ then $x_{i}$ does not affect the conjunction because $\partial_{\Rightarrow}(w_{i},x_{i})$ always passes-through a low soft-bit. A $\partial_{\vee}\!\operatorname{Layer}$ of width $n$ learns up to $n$ different disjunctions of subsets of its input (of whatever size).
+Each $\partial_{\wedge}(w_{i},x_{i})$ learns to include or exclude $x_{i}$ from the disjunction depending on weight $w_{i}$. A $\partial_{\vee}\!\operatorname{Layer}$ of width $n$ learns up to $n$ different disjunctions of subsets of its input (of whatever size).
+%For example, if $w_{i}>0.5$ then $x_{i}$ affects the value of the conjunction because $\partial_{\wedge}(w_{i},x_{i})$ passes-through a soft-bit that is high if $x_{i}$ is high, and low otherwise; but if $w_{i} \leq 0.5$ then $x_{i}$ does not affect the conjunction because $\partial_{\Rightarrow}(w_{i},x_{i})$ always passes-through a low soft-bit. 
 
-We compose $\partial_{\neg}$, $\partial_{\wedge}$ and $\partial_{\vee}$ layers to learn boolean formulae of arbitrary width and depth.
+We can compose $\partial_{\neg}$, $\partial_{\wedge}$ and $\partial_{\vee}$ layers to learn boolean formulae of arbitrary width and depth.
 
 \subsection{Classification layers}
 
-In classification problems the final layer of a neural network is typically interpreted as a vector of real-valued logits, one for each label. The index of the maximum logit indicates the most probable label. However, we cannot interpret the final layer of a $\partial\mathbb{B}$ net as a vector of logits without violating hard-equivalence. Instead, for classification problems, the final layer of a $\partial\mathbb{B}$ net is a 1-hot soft-bit vector, constructed using $\partial\!\operatorname{count-hot}$, where the index of the high bit indicates the predicted label. The hard net then outputs a 1-hot boolean vector with the identical interpretation.
+In classification problems the final layer of a neural network is typically interpreted as a vector of real-valued logits, one for each label, where the index of the maximum logit indicates the most probable label. However, we cannot interpret the final layer of a $\partial\mathbb{B}$ net as a vector of logits without violating hard-equivalence. Instead, we define the final layer of a $\partial\mathbb{B}$ net as a 1-hot soft-bit vector, where the index of the high bit indicates the predicted label. The equivalent hard net outputs a 1-hot boolean vector with the same interpretation.
 
-In addition, at training time, loss functions should be a function of hardened bits, otherwise gradient descent may non-optimally traverse trajectories that take no account of the hard threshold at $1/2$. For example, say that an example is correctly classified by a 1-hot vector with high bit $x=0.51$. Updating the net's weights to change this value to $0.51+\epsilon$ won't increase classification accuracy but may prevent updating the weights to correctly classify another example in the training data. For this reason, $\partial\mathbb{B}$ nets have a final `hardening' layer to ensure that loss is a function of hard, not soft, bits:
+In addition, when training $\partial\mathbb{B}$ nets, loss functions should be a function of hardened bits, otherwise gradient descent may non-optimally traverse trajectories that take no account of the hard threshold at $1/2$. For example, consider that an instance is correctly classified by a 1-hot vector with high bit $x=0.51$. Updating the net's weights to change this value to $0.51+\epsilon$ will not improve accuracy and may prevent the correct classification of a different instance. For this reason, $\partial\mathbb{B}$ nets have a final `hardening' layer to ensure that loss is a function of hard, not soft, bits:
 \begin{equation*}
 \begin{aligned}
 \partial\!\operatorname{harden}: [0,1]^{n} &\to [0,1]^{n}, \\
@@ -386,11 +378,11 @@ x, & \text{otherwise.}
 \end{equation*}
 At train time $\partial\!\operatorname{dropout}$ randomly negates soft-bit values with probability $p$. At test time, and in the hard net, $\partial\!\operatorname{dropout}$ is a $\operatorname{nop}$.
 
-\section{Implementation}
+\section{Experiments}\label{sec:experiments}
 
-The $\partial\mathbb{B}$ net library is open-source and available at {\small \url{https://github.com/Z80coder/db-nets}}.
+The open-source $\partial\mathbb{B}$ net library is implemented in Flax \citep{flax2020github} and JAX \citep{jax2018github} and available at {\small \url{github.com/Z80coder/db-nets}}. Specify a $\partial\mathbb{B}$ net as Python code, which automatically defines (i) the soft net for training (weights are floats), (ii) a hard net for inference (weights are booleans), and (iii) a symbolic net for interpretation (weights and inputs are symbols). The symbolic net, when evaluated, interprets its own JAX expression and outputs a description of the discrete program it computes.
 
-\section{Experiments}
+We compare the performance of $\partial\mathbb{B}$ nets against standard ML approaches on three problems: the classic Iris dataset, an adversarial noisy XOR problem, and MNIST. But first we illustrate the kind of discrete program that a $\partial\mathbb{B}$ net learns.
 
 \subsection{Hardening}
 
@@ -401,7 +393,7 @@ The $\partial\mathbb{B}$ net library is open-source and available at {\small \ur
 	\label{fig:toy-example-architecture}
 \end{figure}
 
-We present a toy problem to illustrate hard-equivalence. First, consider the trivial problem of predicting whether a person wears a $\operatorname{t-shirt}$ (label 0) or a $\operatorname{coat}$ (label 1) conditional on the single feature $\operatorname{outside}$ (0 = False, and 1 = True). The training and test data consist of the examples in table \ref{tab:toy1}.
+We present a toy problem to illustrate hard-equivalence. C5onsider the trivial problem of predicting whether a person wears a $\operatorname{t-shirt}$ (label 0) or a $\operatorname{coat}$ (label 1) conditional on the single feature $\operatorname{outside}$ (0 = False, and 1 = True). The training and test data consist of the examples in table \ref{tab:toy1}.
 
 \begin{table}[h!]
 	\centering
@@ -433,7 +425,7 @@ def dbNet(outside):
 
 which is directly interpretable as `when outside wear a $\operatorname{coat}$, otherwise wear a $\operatorname{t-shirt}$'.
 
-Hardening scales to arbitrarily complex $\partial\mathbb{B}$ nets, although to interpret the net's predictions more post-training expression simplification is required. Second, we introduce 4 additional boolean features: $\operatorname{very-cold}$, $\operatorname{cold}$, $\operatorname{warm}$, and $\operatorname{very-warm}$. The training and test data consists of examples like those in table \ref{tab:toy2}.
+Hardening scales to arbitrarily complex $\partial\mathbb{B}$ nets. However, to interpret the net's predictions requires symbolic simplification. For example, introduce 4 additional boolean features: $\operatorname{very-cold}$, $\operatorname{cold}$, $\operatorname{warm}$, and $\operatorname{very-warm}$. The training and test data consists of examples like those in table \ref{tab:toy2}.
 
 \begin{table}[h!]
 	\centering
@@ -467,7 +459,7 @@ def dbNet(very-cold, cold, warm, very-warm, outside):
     ge(sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((0, not(xor(ne(very-cold, 0), w21)))), not(xor(ne(cold, 0), w22)))), not(xor(ne(warm, 0), w23)))), not(xor(ne(very-warm, 0), w24)))), not(xor(ne(outside, 0), w25)))), not(xor(ne(very-cold, 0), w26)))), not(xor(ne(cold, 0), w27)))), not(xor(ne(warm, 0), w28)))), not(xor(ne(very-warm, 0), w29)))), not(xor(ne(outside, 0), w30)))), not(xor(ne(very-cold, 0), w31)))), not(xor(ne(cold, 0), w32)))), not(xor(ne(warm, 0), w33)))), not(xor(ne(very-warm, 0), w34)))), not(xor(ne(outside, 0), w35)))), not(xor(ne(very-cold, 0), w36)))), not(xor(ne(cold, 0), w37)))), not(xor(ne(warm, 0), w38)))), not(xor(ne(very-warm, 0), w39)))), not(xor(ne(outside, 0), w40)))), 11)
   ]
 \end{lstlisting}
-We train the $[w_{1}, \dots, w_{40}]$ soft-bit weights as before then harden to 40 boolean weights and bind with the discrete program. Post-training the program then simplifies to:
+We train the $[w_{1}, \dots, w_{40}]$ soft-bit weights as before then harden to 40 boolean weights and bind with the discrete program. Post-training the program simplifies to:
 
 \begin{lstlisting}[language=Python,style=mystyle,frame=single]
 def dbNet(very-cold, cold, warm, very-warm, outside):
@@ -477,15 +469,13 @@ def dbNet(very-cold, cold, warm, very-warm, outside):
   ]
 \end{lstlisting}
 
-For example, the label predictions combine multiple pieces of evidence due to the presence of the $\partial\!\operatorname{Maj}$ operator: such as `if not $\operatorname{very-cold}$ and not $\operatorname{cold}$ and not $\operatorname{outside}$ then wear a $\operatorname{t-shirt}$', and `if $\operatorname{cold}$ and not ($\operatorname{warm}$ or $\operatorname{very-warm}$) and $\operatorname{outside}$ then wear a $\operatorname{coat}$' etc.
-
-TODO: note on interpreting and verifying bigger models.
+The predictions combine multiple pieces of evidence due to the presence of the $\partial\!\operatorname{Maj}$ operator. For example, we can read-off that the $\partial\mathbb{B}$ net has learned `if not $\operatorname{very-cold}$ and not $\operatorname{cold}$ and not $\operatorname{outside}$ then wear a $\operatorname{t-shirt}$'; and `if $\operatorname{cold}$ and not ($\operatorname{warm}$ or $\operatorname{very-warm}$) and $\operatorname{outside}$ then wear a $\operatorname{coat}$' etc. The discrete program is more interpretable compared to typical neural networks, and it can be exactly encoded as a SAT problem in order to verify its properties, such as robustness.
 
 \subsection{Binary Iris}
 
 \begin{figure}[t!]
 	\centering
-	\includegraphics[width=1.0\textwidth]{binary-iris-architecture.png}
+	\includegraphics[width=0.9\textwidth]{binary-iris-architecture.png}
 	\caption{{\em A $\partial\mathbb{B}$ net for the binary Iris problem}. The net concatenates the soft-bit input, ${\bf x}$ (length 16), with its negation, ${\bf 1 - x}$, and supplies the resulting vector (length 32) to a $\partial_{\wedge}\!\operatorname{Layer}$ (width 59), a $\partial\!\operatorname{dropout}$ layer for improved generalisation, a $\partial\!\operatorname{count-hot}$ layer that generates a 1-hot vector (width 60) that is reduced by $\operatorname{max}$ to a 1-hot vector of 3 classification bits. A final $\partial\!\operatorname{harden}$ ensures the loss is a function of hard bits. The net's weights, once hardened, consume $236$ bytes.}
 	\label{fig:binary-iris-architecture}
 \end{figure}
@@ -515,7 +505,7 @@ We initialize the network, described in figure \ref{fig:binary-iris-architecture
 
 \begin{figure}[t!]
 	\centering
-	\includegraphics[width=0.95\textwidth]{noisy-xor-architecture.png}
+	\includegraphics[width=0.9\textwidth]{noisy-xor-architecture.png}
 	\caption{{\em A $\partial\mathbb{B}$ net for the noisy xor problem}. The net concatenates the soft-bit input, ${\bf x}$ (length 12), with its negation, ${\bf 1 - x}$, and supplies the resulting vector (length 24) to a $\partial_{\wedge}\!\!\operatorname{Layer}$ (width 32), $\partial_{\vee}\!\!\operatorname{Layer}$ (width 32),  $\partial_{\neg} \!\operatorname{Layer}$ (width 16), and a final $\partial\!\operatorname{Maj}$ to produce a single soft-bit $y \in [0,1]$ (to predict odd parity) and its negation $1-y$ (to predict even parity). The net's weights, once hardened, consume $288$ bytes.}
 	\label{fig:noisy-xor-architecture}
 \end{figure}
@@ -549,7 +539,7 @@ We measure the accuracy of the final net on the test data to avoid hand-picking 
 
 TODO
 
-\section{Conclusion}
+\section{Conclusion}\label{sec:conclusion}
 
 TODO: we can write boolean functions, soften them, and place them within differentiable neural networks.
 
@@ -571,7 +561,7 @@ Thanks to GitHub Next, for sponsoring this research, and Pavel Augustinov, Richa
 	$\partial_{\neg}(x,y) \equiv \neg (x \oplus y)$.
 \begin{proof}
 	Table \ref{not-table} is the truth table of the boolean function $\neg (x \oplus w)$, where $h(x) = \operatorname{harden}(x)$.
-	\begin{table}[t!]
+	\begin{table}[h!]
 		\begin{center}
 			\begin{tabular}{cccccc}
 				\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$y$}  &\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial_{\neg}(h(x), h(y))$} &\multicolumn{1}{c}{$h(\partial_{\neg}(h(x), h(y)))$}
@@ -613,7 +603,7 @@ Thanks to GitHub Next, for sponsoring this research, and Pavel Augustinov, Richa
 	$\partial_{\wedge}\!(x,y) \equiv x \wedge y$.
 \begin{proof}
 	Table \ref{and-table} is the truth table of the boolean function $x \wedge y$, where $h(x) = \operatorname{harden}(x)$..
-	\begin{table}[t!]
+	\begin{table}[h!]
 		\begin{center}
 			\begin{tabular}{cccccc}
 				\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$y$}  &\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial_{\wedge}(h(x), h(y))$} &\multicolumn{1}{c}{$h(\partial_{\wedge}(h(x), h(y)))$}
@@ -633,7 +623,7 @@ Thanks to GitHub Next, for sponsoring this research, and Pavel Augustinov, Richa
 	$\partial_{\vee}\!(x,y) \equiv x \vee y$.
 \begin{proof}
 	Table \ref{or-table} is the truth table of the boolean function $x \vee y$, where $h(x) = \operatorname{harden}(x)$..
-	\begin{table}[t!]
+	\begin{table}[h!]
 	\begin{center}
 		\begin{tabular}{cccccc}
 			\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$y$}  &\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial_{\vee}(h(x), h(y))$} &\multicolumn{1}{c}{$h(\partial_{\vee}(h(x), h(y)))$}
@@ -653,7 +643,7 @@ Thanks to GitHub Next, for sponsoring this research, and Pavel Augustinov, Richa
 	$\partial_{\Rightarrow}\!(x,y) \equiv x \Rightarrow y$.
 \begin{proof}
 	Table \ref{implies-table} is the truth table of the boolean function $x \Rightarrow y$, where $h(x) = \operatorname{harden}(x)$..
-	\begin{table}[t!]
+	\begin{table}[h!]
 	\begin{center}
 		\begin{tabular}{cccccc}
 			\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$y$}  &\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial \Rightarrow(h(x), h(y))$} &\multicolumn{1}{c}{$h(\partial \Rightarrow(h(x), h(y)))$}
