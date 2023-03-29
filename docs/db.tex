@@ -10,7 +10,7 @@
 \usepackage{amsthm}
 \usepackage{graphicx}
 \usepackage{comment}
-\usepackage{algorithm}
+\usepackage{xcolor}
 \usepackage{listings}
 
 \lstset{basicstyle=\ttfamily\tiny}
@@ -453,7 +453,7 @@ We use the same architecture but increase the width of the $\partial_{\neg}\!\op
 
 \begin{comment}
 \begin{lstlisting}[language=Python,style=mystyle,frame=single]
-def dbNet(outside):
+def dbNet(very-cold, cold, warm, very-warm, outside):
   return [
     ge(sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((0, not(xor(ne(very-cold, 0), False)))), not(xor(ne(cold, 0), True)))), not(xor(ne(warm, 0), True)))), not(xor(ne(very-warm, 0), True)))), not(xor(ne(outside, 0), True)))), not(xor(ne(very-cold, 0), True)))), not(xor(ne(cold, 0), False)))), not(xor(ne(warm, 0), False)))), not(xor(ne(very-warm, 0), True)))), not(xor(ne(outside, 0), False)))), not(xor(ne(very-cold, 0), False)))), not(xor(ne(cold, 0), False)))), not(xor(ne(warm, 0), True)))), not(xor(ne(very-warm, 0), False)))), not(xor(ne(outside, 0), False)))), not(xor(ne(very-cold, 0), False)))), not(xor(ne(cold, 0), False)))), not(xor(ne(warm, 0), True)))), not(xor(ne(very-warm, 0), False)))), not(xor(ne(outside, 0), False)))), 11),
     ge(sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((0, not(xor(ne(very-cold, 0), True)))), not(xor(ne(cold, 0), False)))), not(xor(ne(warm, 0), False)))), not(xor(ne(very-warm, 0), False)))), not(xor(ne(outside, 0), False)))), not(xor(ne(very-cold, 0), True)))), not(xor(ne(cold, 0), True)))), not(xor(ne(warm, 0), False)))), not(xor(ne(very-warm, 0), True)))), not(xor(ne(outside, 0), True)))), not(xor(ne(very-cold, 0), False)))), not(xor(ne(cold, 0), True)))), not(xor(ne(warm, 0), False)))), not(xor(ne(very-warm, 0), True)))), not(xor(ne(outside, 0), False)))), not(xor(ne(very-cold, 0), False)))), not(xor(ne(cold, 0), True)))), not(xor(ne(warm, 0), False)))), not(xor(ne(very-warm, 0), False)))), not(xor(ne(outside, 0), True)))), 11)]
@@ -461,16 +461,16 @@ def dbNet(outside):
 \end{comment}
 
 \begin{lstlisting}[language=Python,style=mystyle,frame=single]
-def dbNet(outside):
+def dbNet(very-cold, cold, warm, very-warm, outside):
   return [
-    ge(sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((0, not(xor(ne(very-cold, 0), w1)))), not(xor(ne(cold, 0), w2)))), not(xor(ne(warm, 0), w3)))), not(xor(ne(very-warm, 0), w4)))), not(xor(ne(outside, 0), w5)))), not(xor(ne(very-cold, 0), w6)))), not(xor(ne(cold, 0), w7)))), not(xor(ne(warm, 0), w8)))), not(xor(ne(very-warm, 0), w9)))), not(xor(ne(outside, 0), w10)))), not(xor(ne(very-cold, 0), w11)))), not(xor(ne(cold, 0), w12)))), not(xor(ne(warm, 0), w13)))), not(xor(ne(very-warm, 0), w14)))), not(xor(ne(outside, 0), w15)))), not(xor(ne(very-cold, 0), w16)))), not(xor(ne(cold, 0), w17)))), not(xor(ne(warm, 0), w18)))), not(xor(ne(very-warm, 0), w19)))), not(xor(ne(outside, 0), w20)))), 11),
+    zge(sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((0, not(xor(ne(very-cold, 0), w1)))), not(xor(ne(cold, 0), w2)))), not(xor(ne(warm, 0), w3)))), not(xor(ne(very-warm, 0), w4)))), not(xor(ne(outside, 0), w5)))), not(xor(ne(very-cold, 0), w6)))), not(xor(ne(cold, 0), w7)))), not(xor(ne(warm, 0), w8)))), not(xor(ne(very-warm, 0), w9)))), not(xor(ne(outside, 0), w10)))), not(xor(ne(very-cold, 0), w11)))), not(xor(ne(cold, 0), w12)))), not(xor(ne(warm, 0), w13)))), not(xor(ne(very-warm, 0), w14)))), not(xor(ne(outside, 0), w15)))), not(xor(ne(very-cold, 0), w16)))), not(xor(ne(cold, 0), w17)))), not(xor(ne(warm, 0), w18)))), not(xor(ne(very-warm, 0), w19)))), not(xor(ne(outside, 0), w20)))), 11),
     ge(sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((sum((0, not(xor(ne(very-cold, 0), w21)))), not(xor(ne(cold, 0), w22)))), not(xor(ne(warm, 0), w23)))), not(xor(ne(very-warm, 0), w24)))), not(xor(ne(outside, 0), w25)))), not(xor(ne(very-cold, 0), w26)))), not(xor(ne(cold, 0), w27)))), not(xor(ne(warm, 0), w28)))), not(xor(ne(very-warm, 0), w29)))), not(xor(ne(outside, 0), w30)))), not(xor(ne(very-cold, 0), w31)))), not(xor(ne(cold, 0), w32)))), not(xor(ne(warm, 0), w33)))), not(xor(ne(very-warm, 0), w34)))), not(xor(ne(outside, 0), w35)))), not(xor(ne(very-cold, 0), w36)))), not(xor(ne(cold, 0), w37)))), not(xor(ne(warm, 0), w38)))), not(xor(ne(very-warm, 0), w39)))), not(xor(ne(outside, 0), w40)))), 11)
   ]
 \end{lstlisting}
 We train the $[w_{1}, \dots, w_{40}]$ soft-bit weights as before then harden to 40 boolean weights and bind with the discrete program. Post-training the program then simplifies to:
 
 \begin{lstlisting}[language=Python,style=mystyle,frame=single]
-def dbNet(outside):
+def dbNet(very-cold, cold, warm, very-warm, outside):
   return [
     4 !very-cold + 4 !cold + (3 warm + !warm) + (very-warm + 3 !very-warm) + (outside + 3 !outside) >= 11,
     (very-cold + 3 !very-cold) + 4 cold + 4 !warm + (3 very-warm + !very-warm) + 2 (outside + !outside) >= 11
@@ -479,6 +479,7 @@ def dbNet(outside):
 
 For example, the label predictions combine multiple pieces of evidence due to the presence of the $\partial\!\operatorname{Maj}$ operator: such as `if not $\operatorname{very-cold}$ and not $\operatorname{cold}$ and not $\operatorname{outside}$ then wear a $\operatorname{t-shirt}$', and `if $\operatorname{cold}$ and not ($\operatorname{warm}$ or $\operatorname{very-warm}$) and $\operatorname{outside}$ then wear a $\operatorname{coat}$' etc.
 
+TODO: note on interpreting and verifying bigger models.
 
 \subsection{Binary Iris}
 
@@ -667,12 +668,11 @@ This research was sponsored by GitHub Next and GitHub Advanced Security Products
 \begin{lemma}
 Let $i$ = $\operatorname{majority-index}({\bf x})$, then the $i$th element of $\operatorname{sort}({\bf x})$ is hard-equivalent to boolean majority, i.e. $\operatorname{harden}(\operatorname{sort}({\bf x})[i]) = \operatorname{Maj}(\operatorname{harden}({\bf x}))$.
 \begin{proof}
-Let $h$ denote the number of bits that are high in ${\bf x} = [x_{1}, \dots, x_{n}]$. Then the $h$th element of $\operatorname{sort}({\bf x})$ is high. 
+Let $h$ denote the number of bits that are high in ${\bf x} = [x_{1}, \dots, x_{n}]$. Then indices $\{j : n-h+1 \leq j \leq n\}$ are high in $\operatorname{sort}({\bf x})$. If the majority of bits are high, $h \geq \lfloor n/2 + 1 \rfloor$, then index $j=n - \lfloor n/2 + 1 \rfloor + 1 = n - \lfloor n/2 \rfloor = \lceil n/2 \rceil$ is high in $\operatorname{sort}({\bf x})$. $\operatorname{majority-index}$ selects index $i = \lceil n/2 \rceil$ and therefore $i=j$. Hence, if the majority of bits are high then $\operatorname{sort}({\bf x})[i]$ is high. Similarly, if the majority of bits are low, $h < \lfloor n/2 + 1 \rfloor$, then index $j=n - \lfloor n/2 + 1 \rfloor + 1 = n - \lfloor n/2 \rfloor = \lceil n/2 \rceil$ is low in $\operatorname{sort}({\bf x})$. Hence, if the majority of bits are low then $\operatorname{sort}({\bf x})[i]$ is low.
 
-Assume $h \geq \lfloor n/2 + 1 \rfloor$ then $\operatorname{Maj}({\bf x}) \geq \left\lfloor \frac{1}{2} + \frac{1}{n}\left(\frac{n}{2} + 1 - \frac{1}{2} \right) \right\rfloor
-\geq \left\lfloor 1 + \frac{1}{2n} \right\rfloor = 1$. 
+Note that $h \geq \lfloor n/2 + 1 \rfloor$ implies that $\operatorname{Maj}(\operatorname{harden}({\bf x})) \geq \left\lfloor \frac{1}{2} + \frac{1}{n}\left(\frac{n}{2} + 1 - \frac{1}{2} \right) \right\rfloor \geq \left\lfloor 1 + \frac{1}{2n} \right\rfloor = 1$, and $h < \lfloor n/2 + 1 \rfloor$ implies that $\operatorname{Maj}(\operatorname{harden}({\bf x})) < \left\lfloor 1 + \frac{1}{2n} \right\rfloor = 0$.
 
-Assume $h < \lfloor n/2 + 1 \rfloor$ then $\operatorname{Maj}({\bf x}) < \left\lfloor 1 + \frac{1}{2n} \right\rfloor = 0$.
+In consequence, $\operatorname{harden}(\operatorname{sort}({\bf x})[i]) = \operatorname{Maj}(\operatorname{harden}({\bf x}))$ for all $h \in [0,\dots, n]$.
 \end{proof}
 \end{lemma}
 
