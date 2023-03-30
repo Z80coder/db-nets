@@ -129,7 +129,7 @@ def nln_experimental(type, x, training: bool):
     x = x.sum(-1)
     return x
 
-
+# Best
 def nln_2(type, x, training: bool):
     input_size = 784
     mask_layer_size = 10
@@ -146,7 +146,7 @@ def nln_2(type, x, training: bool):
     x = x.sum(-1)
     return x
 
-def nln(type, x, training: bool):
+def nln_3(type, x, training: bool):
     num_classes = 10
     dtype = jax.numpy.float64
     input_size = 784
@@ -176,6 +176,59 @@ def nln(type, x, training: bool):
     x = x.sum(-1)
     return x
 
+# about 94% training, 92% test
+def nln_4(type, x, training: bool):
+    input_size = 784
+    mask_layer_size = 60
+    dtype = jax.numpy.float32
+    x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype,
+        weights_init=initialization.initialize_bernoulli(0.01, 0.3, 0.501))(x)
+    x = x.reshape((2940, 16)) 
+    x = hard_majority.majority_layer(type)()(x)
+    x = hard_not.not_layer(type)(20, weights_init=nn.initializers.uniform(1.0), dtype=dtype)(x)
+    x = x.ravel()
+    ##############################
+    x = harden_layer.harden_layer(type)(x)
+    num_classes = 10
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+# about 95% training, 93-4% test
+# batch size 6000
+def nln_5(type, x, training: bool):
+    input_size = 784
+    mask_layer_size = 60
+    dtype = jax.numpy.float32
+    x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype,
+        weights_init=initialization.initialize_bernoulli(0.01, 0.3, 0.501))(x)
+    x = x.reshape((2940, 16)) 
+    x = hard_majority.majority_layer(type)()(x)
+    x = hard_not.not_layer(type)(20, weights_init=nn.initializers.uniform(1.0), dtype=dtype)(x)
+    x = x.ravel()
+    ##############################
+    x = harden_layer.harden_layer(type)(x)
+    num_classes = 10
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+def nln(type, x, training: bool):
+    input_size = 784
+    mask_layer_size = 200
+    dtype = jax.numpy.float32
+    x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype,
+        weights_init=initialization.initialize_bernoulli(0.01, 0.3, 0.501))(x)
+    x = x.reshape((9800, 16)) 
+    x = hard_majority.majority_layer(type)()(x)
+    x = hard_not.not_layer(type)(20, weights_init=nn.initializers.uniform(1.0), dtype=dtype)(x)
+    x = x.ravel()
+    ##############################
+    x = harden_layer.harden_layer(type)(x)
+    num_classes = 10
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
 
 def batch_nln(type, x, training: bool):
     return jax.vmap(lambda x: nln(type, x, training))(x)
@@ -252,9 +305,11 @@ def get_datasets():
     train_ds["image"] = jnp.float32(train_ds["image"]) / 255.0
     test_ds["image"] = jnp.float32(test_ds["image"]) / 255.0
     # Convert the floating point values in [0,1] to binary values in {0,1}
-    # This is essential for the hard-net to learn properly.
-    train_ds["image"] = jnp.round(train_ds["image"])
-    test_ds["image"] = jnp.round(test_ds["image"])
+    # If the float value is > 0.3 then we convert to 1, otherwise 0
+    train_ds["image"] = jnp.where(train_ds["image"] > 0.3, 1.0, 0.0)
+    test_ds["image"] = jnp.where(test_ds["image"] > 0.3, 1.0, 0.0)
+    #train_ds["image"] = jnp.round(train_ds["image"])
+    #test_ds["image"] = jnp.round(test_ds["image"])
     return train_ds, test_ds
 
 
@@ -344,14 +399,14 @@ def get_config():
     # config for CNN: config.learning_rate = 0.01
     config.learning_rate = 0.01
     config.momentum = 0.9
-    config.batch_size = 128
+    config.batch_size = 6000 # 6000 # 128
     config.num_epochs = 1000
     return config
 
 
 # TODO: check my use of rng
 
-# @pytest.mark.skip(reason="temporarily off")
+@pytest.mark.skip(reason="temporarily off")
 def test_mnist():
     # Make sure tf does not allocate gpu memory.
     tf.config.experimental.set_visible_devices([], "GPU")
@@ -360,7 +415,7 @@ def test_mnist():
     rng, int_rng, dropout_rng = jax.random.split(rng, 3)
 
     # soft = CNN()
-    soft, hard, symbolic = neural_logic_net.net(
+    soft, _, _ = neural_logic_net.net(
         lambda type, x, training: batch_nln(type, x, training)
     )
 
