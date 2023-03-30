@@ -388,7 +388,7 @@ We compare the performance of $\partial\mathbb{B}$ nets against standard ML appr
 
 \begin{figure}[t!]
 	\centering
-	\includegraphics[width=0.65\textwidth]{toy-example-architecture.png}
+	\includegraphics[width=0.6\textwidth]{toy-example-architecture.png}
 	\caption{{\em A $\partial\mathbb{B}$ net to illustrate hardening}. The net concatenates a $\partial_{\neg}\!\operatorname{Layer}$ (of width $n$) with a reshaping layer that  outputs two vectors, which get reduced, by a $\partial\!\operatorname{Maj}$ operator,  to 2 soft-bits, one for each class label. A final $\partial\!\operatorname{harden}$ layer ensures the loss is a function of hard bits. When $|{\bf x}|=1$ we choose $n=2$ and therefore the net's weights, once hardened, consume $2$ bits. When $|{\bf x}|=5$ we choose $n=8$ and the weights consume $40$ bits ($5$ bytes).}
 	\label{fig:toy-example-architecture}
 \end{figure}
@@ -425,7 +425,7 @@ def dbNet(outside):
 
 which is directly interpretable as `when outside wear a $\operatorname{coat}$, otherwise wear a $\operatorname{t-shirt}$'.
 
-Hardening scales to arbitrarily complex $\partial\mathbb{B}$ nets. However, to interpret the net's predictions requires symbolic simplification. For example, introduce 4 additional boolean features: $\operatorname{very-cold}$, $\operatorname{cold}$, $\operatorname{warm}$, and $\operatorname{very-warm}$. The training and test data consists of examples like those in table \ref{tab:toy2}.
+Hardening scales to arbitrarily complex $\partial\mathbb{B}$ nets. Interpreting the net's predictions requires automatic symbolic simplification. For example, introduce 4 additional boolean features: $\operatorname{very-cold}$, $\operatorname{cold}$, $\operatorname{warm}$, and $\operatorname{very-warm}$. The training and test data consists of examples like those in table \ref{tab:toy2}.
 
 \begin{table}[h!]
 	\centering
@@ -469,20 +469,20 @@ def dbNet(very-cold, cold, warm, very-warm, outside):
   ]
 \end{lstlisting}
 
-The predictions combine multiple pieces of evidence due to the presence of the $\partial\!\operatorname{Maj}$ operator. For example, we can read-off that the $\partial\mathbb{B}$ net has learned `if not $\operatorname{very-cold}$ and not $\operatorname{cold}$ and not $\operatorname{outside}$ then wear a $\operatorname{t-shirt}$'; and `if $\operatorname{cold}$ and not ($\operatorname{warm}$ or $\operatorname{very-warm}$) and $\operatorname{outside}$ then wear a $\operatorname{coat}$' etc. The discrete program is more interpretable compared to typical neural networks, and it can be exactly encoded as a SAT problem in order to verify its properties, such as robustness.
+The predictions combine multiple pieces of evidence due to the presence of the $\partial\!\operatorname{Maj}$ operator. For example, we can read-off that the $\partial\mathbb{B}$ net has learned `if not $\operatorname{very-cold}$ and not $\operatorname{cold}$ and not $\operatorname{outside}$ then wear a $\operatorname{t-shirt}$'; and `if $\operatorname{cold}$ and not ($\operatorname{warm}$ or $\operatorname{very-warm}$) and $\operatorname{outside}$ then wear a $\operatorname{coat}$' etc. The discrete program is more interpretable compared to typical neural networks, and can be exactly encoded as a SAT problem in order to verify its properties, such as robustness.
 
 \subsection{Binary Iris}
 
 \begin{figure}[t!]
 	\centering
-	\includegraphics[width=0.9\textwidth]{binary-iris-architecture.png}
+	\includegraphics[width=0.8\textwidth]{binary-iris-architecture.png}
 	\caption{{\em A $\partial\mathbb{B}$ net for the binary Iris problem}. The net concatenates the soft-bit input, ${\bf x}$ (length 16), with its negation, ${\bf 1 - x}$, and supplies the resulting vector (length 32) to a $\partial_{\wedge}\!\operatorname{Layer}$ (width 59), a $\partial\!\operatorname{dropout}$ layer for improved generalisation, a $\partial\!\operatorname{count-hot}$ layer that generates a 1-hot vector (width 60) that is reduced by $\operatorname{max}$ to a 1-hot vector of 3 classification bits. A final $\partial\!\operatorname{harden}$ ensures the loss is a function of hard bits. The net's weights, once hardened, consume $236$ bytes.}
 	\label{fig:binary-iris-architecture}
 \end{figure}
 
-The Iris dataset has 150 examples with 4 inputs (sepal length and width, and petal length and width), and 3 labels ({\em setosa}, {\em versicolour}, and {\em virginica}). We use the binary version of the Iris dataset \citep{binary-iris-dataset} where each input float is represented by 4 bits. We perform 1000 experiments, each with a different random seed. Each experiment randomly partitions the data into 80\% training and 20\% test sets. 
+The Iris dataset has 150 examples with 4 inputs (sepal length and width, and petal length and width), and 3 labels ({\em setosa}, {\em versicolour}, and {\em virginica}). We use the binary version of the Iris dataset \citep{binary-iris-dataset} where each input float is represented by 4 bits. We perform 1000 experiments, each with a different random seed. Each experiment randomly partitions the data into 80\% training and 20\% test sets. We initialize the network, described in figure \ref{fig:binary-iris-architecture}, with all weights $w_{i} = 0.3$ and train for 1000 epochs with the RAdam optimizer and softmax cross-entropy loss. 
 
-We initialize the network, described in figure \ref{fig:binary-iris-architecture}, with all weights $w_{i} = 0.3$ and train for 1000 epochs with the RAdam optimizer and softmax cross-entropy loss. We measure the accuracy of the final net to avoid hand-picking the best configuration. Table \ref{tab:binary-iris-results} compares the $\delta\mathbb{B}$ net against other classifiers  \citep{granmo18}. Naive Bayes performs the worst. The Tsetlin machine performs best on this problem, with the $\partial\mathbb{B}$ net second.
+We measure the accuracy of the final net to avoid hand-picking the best configuration. Table \ref{tab:binary-iris-results} compares the $\delta\mathbb{B}$ net against other classifiers  \citep{granmo18}. Naive Bayes performs the worst. The Tsetlin machine performs best on this problem, with the $\partial\mathbb{B}$ net second.
 
 \begin{table}[t]
 	\centering
@@ -496,7 +496,7 @@ We initialize the network, described in figure \ref{fig:binary-iris-architecture
 		\multicolumn{1}{|l|}{SVM}                  & \multicolumn{1}{l|}{93.6 +/- 0.3}          & \multicolumn{1}{l|}{86.7}          & \multicolumn{1}{l|}{100.0}           & \multicolumn{1}{l|}{76.7}          & \multicolumn{1}{l|}{100.0}           \\ \hline
 		\multicolumn{1}{|l|}{naive Bayes}          & \multicolumn{1}{l|}{91.6 +/- 0.3}          & \multicolumn{1}{l|}{83.3}          & \multicolumn{1}{l|}{96.7}           & \multicolumn{1}{l|}{70.0}          & \multicolumn{1}{l|}{100.0}           \\ \hline
 	\end{tabular}
-	\caption{{\em Ranked binary Iris results}}
+	\caption{{\em Ranked binary Iris results}  measured over 1000 experiments.}
 	\label{tab:binary-iris-results}
 \end{table}
 
@@ -505,17 +505,14 @@ We initialize the network, described in figure \ref{fig:binary-iris-architecture
 
 \begin{figure}[t!]
 	\centering
-	\includegraphics[width=0.9\textwidth]{noisy-xor-architecture.png}
+	\includegraphics[width=0.8\textwidth]{noisy-xor-architecture.png}
 	\caption{{\em A $\partial\mathbb{B}$ net for the noisy xor problem}. The net concatenates the soft-bit input, ${\bf x}$ (length 12), with its negation, ${\bf 1 - x}$, and supplies the resulting vector (length 24) to a $\partial_{\wedge}\!\!\operatorname{Layer}$ (width 32), $\partial_{\vee}\!\!\operatorname{Layer}$ (width 32),  $\partial_{\neg} \!\operatorname{Layer}$ (width 16), and a final $\partial\!\operatorname{Maj}$ to produce a single soft-bit $y \in [0,1]$ (to predict odd parity) and its negation $1-y$ (to predict even parity). The net's weights, once hardened, consume $288$ bytes.}
 	\label{fig:noisy-xor-architecture}
 \end{figure}
 
-The noisy XOR dataset \citep{noisy-xor-dataset} is an adversarial parity problem with noisy non-informative features. The dataset consists of 10K examples with 12 boolean inputs and a target label (where 0 = odd and 1 = even) that is a XOR function of 2 inputs. The remaining 10 inputs are entirely random. We train on 50\% of the data where, additionally, 40\% of the labels are inverted.
-
-We initialize the network described in figure \ref{fig:noisy-xor-architecture} with random weights distributed close to the hard threshold at $1/2$ (i.e. in the $\partial_{\wedge}\!\operatorname{Layer}$, $w_{i} = 0.501 \times b + 0.3 \times (1-b)$ where $b \sim \operatorname{Bernoulli}(0.01)$; in the $\partial_{\vee}\!\operatorname{Layer}$, $w_{i} = 0.7 \times b + 0.499 \times (1-b)$ where $b \sim \operatorname{Bernoulli}(0.99)$); and in the $\partial_{\neg}\!\operatorname{Layer}$, $w_{i} \sim \operatorname{Uniform}(0.499, 0.501)$. We train for 2000 epochs with the RAdam optimizer and softmax cross-entropy loss. 
+The noisy XOR dataset \citep{noisy-xor-dataset} is an adversarial parity problem with noisy non-informative features. The dataset consists of 10K examples with 12 boolean inputs and a target label (where 0 = odd and 1 = even) that is a XOR function of 2 inputs. The remaining 10 inputs are entirely random. We train on 50\% of the data where, additionally, 40\% of the labels are inverted. We initialize the network described in figure \ref{fig:noisy-xor-architecture} with random weights distributed close to the hard threshold at $1/2$ (i.e. in the $\partial_{\wedge}\!\operatorname{Layer}$, $w_{i} = 0.501 \times b + 0.3 \times (1-b)$ where $b \sim \operatorname{Bernoulli}(0.01)$; in the $\partial_{\vee}\!\operatorname{Layer}$, $w_{i} = 0.7 \times b + 0.499 \times (1-b)$ where $b \sim \operatorname{Bernoulli}(0.99)$); and in the $\partial_{\neg}\!\operatorname{Layer}$, $w_{i} \sim \operatorname{Uniform}(0.499, 0.501)$. We train for 2000 epochs with the RAdam optimizer and softmax cross-entropy loss. 
 
 We measure the accuracy of the final net on the test data to avoid hand-picking the best configuration. Table \ref{tab:noisy-xor-results} compares the $\partial\mathbb{B}$ net against other classifiers \citep{granmo18}. The high noise causes logistic regression and naive Bayes to randomly guess. The SVM hardly performs better. In constrast, the multilayer neural network, Tsetlin machine, and  $\partial\mathbb{B}$ net all successfully learn the underlying XOR signal. The Tsetlin machine performs best on this problem, with the $\partial\mathbb{B}$ net second.
-
 
 \begin{table}[t]
 	\centering
@@ -530,14 +527,40 @@ We measure the accuracy of the final net on the test data to avoid hand-picking 
 		\multicolumn{1}{|l|}{naive Bayes}          & \multicolumn{1}{l|}{49.8 +/- 0.2}          & \multicolumn{1}{l|}{48.3}          & \multicolumn{1}{l|}{51.0}           & \multicolumn{1}{l|}{41.3}          & \multicolumn{1}{l|}{52.7}           \\ \hline
 		\multicolumn{1}{|l|}{logistic regression}  & \multicolumn{1}{l|}{49.8 +/- 0.3}          & \multicolumn{1}{l|}{47.8}          & \multicolumn{1}{l|}{51.1}           & \multicolumn{1}{l|}{41.1}          & \multicolumn{1}{l|}{53.1}           \\ \hline
 	\end{tabular}
-	\caption{{\em Ranked noisy XOR results}}
+	\caption{{\em Ranked noisy XOR results}  measured over 100 experiments.}
 	\label{tab:noisy-xor-results}
 \end{table}
 
-
 \subsection{MNIST}
 
-TODO
+\begin{figure}[t!]
+	\centering
+	\includegraphics[width=0.7\textwidth]{mnist-architecture.png}
+	\caption{{\em A $\partial\mathbb{B}$ net for MNIST}. The net consists of a $\partial_{\Rightarrow}\!\operatorname{Layer}$ (width 60), a $\partial\!\operatorname{Maj}$ layer, a $\partial_{\neg}\!\operatorname{Layer}$ (width 20), and a final $\partial\!\operatorname{harden}$ operator to generate hard-bits that are summed to produce 10 integer logits.}
+	\label{fig:mnist-architecture}
+\end{figure}
+
+The MNIST dataset \citep{726791} consists of 60K training and 10K test examples of handwritten digits (0-9). We binarize the data by replacing pixels with grey value greater than 0.3 with 1, otherwise with 0. We initialize the network described in figure \ref{fig:mnist-architecture} with random weights distributed as $w_{i} = 0.501 \times b + 0.3 \times (1-b)$ where $b \sim \operatorname{Bernoulli}(0.01)$. We train for 1000 epochs with a batch size of 6000 using the RAdam optimizer and softmax cross-entropy loss.
+
+We measure the accuracy on the final net. Table \ref{tab:mnist-table} compares the $\partial\mathbb{B}$ net against other classifiers \citep{granmo18}. A 2-layer neural network trained on grey-value pixel data performs best. A Tsetlin machine of 40,000 automata each with 256 states (and therefore 40 kb of parameters) trained on binary data achieves $\approx 98.2\%$ accuracy. The $\partial\mathbb{B}$ net with 105,840 32-bit soft-bit weights that harden to booleans (13.23 kb of parameters) trained on binary data achieves $\approx 94.0\%$ accuracy. However, this $\partial\mathbb{B}$ net underfits the training data and therefore we expect better performance from increasing the parameters. However, this causes an OOM error on my GPU. An updated draft will include this experiment.
+
+\begin{table}[t]
+	\centering
+	\begin{tabular}{lc}
+		\cline{2-2}
+		& \textbf{accuracy}                  \\ \hline
+		\multicolumn{1}{|l|}{\em 2-layer NN, 800 HU, cross-entropy loss} & \multicolumn{1}{c|}{98.6} \\ \hline
+		\multicolumn{1}{|l|}{Tsetlin}                        & \multicolumn{1}{c|}{98.2 +/- 0.0}  \\ \hline
+		\multicolumn{1}{|l|}{\em K-nearest-neighbours, L3}       & \multicolumn{1}{c|}{97.2}          \\ \hline
+		\multicolumn{1}{|l|}{$\partial\mathbb{B}$}           & \multicolumn{1}{c|}{\textbf{94.0}} \\ \hline
+		\multicolumn{1}{|l|}{Logistic regression}            & \multicolumn{1}{c|}{91.5}          \\ \hline
+		\multicolumn{1}{|l|}{\em Linear classifier (1-layer NN)} & \multicolumn{1}{c|}{88.0}          \\ \hline
+		\multicolumn{1}{|l|}{Decision tree}                  & \multicolumn{1}{c|}{87.8}          \\ \hline
+		\multicolumn{1}{|l|}{Multinomial Naive Bayes}        & \multicolumn{1}{c|}{83.2}          \\ \hline
+	\end{tabular}
+	\caption{{\em Ranked MNIST results}. A classifier in {\em italics} was trained on grey-value pixel data, otherwise the classifier was trained on binarized data. Note: $\partial\mathbb{B}$ results are currently under-fitting and represent work-in-progress.}
+	\label{tab:mnist-table}
+\end{table}
 
 \section{Conclusion}\label{sec:conclusion}
 
