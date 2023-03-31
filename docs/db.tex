@@ -52,7 +52,7 @@
 \maketitle
 
 \begin{abstract}
-	$\partial\mathbb{B}$ nets are differentiable neural networks that learn discrete boolean functions by gradient descent. $\partial\mathbb{B}$ nets, once trained, `harden' to boolean functions with identical semantics. In consequence, the boolean functions have identical accuracy to the trained nets, unlike existing approaches to neural network binarization. Experiments demonstrate that $\partial\mathbb{B}$ nets achieve comparable performance on standard machine learning problems yet are significantly more compact (due to 1-bit weights) and interpretable (due to the logical nature of the learnt function).
+	$\partial\mathbb{B}$ nets are differentiable neural networks that learn discrete boolean-valued functions by gradient descent. $\partial\mathbb{B}$ nets have two semantically equivalent aspects: a differentiable soft-net, with real weights, and a non-differentiable hard-net, with boolean weights. We train the soft-net by backpropagation then `harden' its weights to boolean values that bind with the hard-net to yield a learned discrete function. `Hardening' involves no loss of accuracy, unlike existing approaches to neural network binarization. Preliminary experiments demonstrate that $\partial\mathbb{B}$ nets achieve comparable performance on standard machine learning problems yet are compact (due to 1-bit weights) and interpretable (due to the logical nature of the learnt functions).
 \end{abstract}
 
 \section{Introduction}
@@ -61,7 +61,7 @@ Neural networks are differentiable functions with weights represented by machine
 
 However, there are drawbacks. First, differentiability means we cannot directly learn discrete functions, such as logical predicates. In consequence, what a network has learned is difficult to interpret and verify. Second, representing weights as machine floats enables time-efficient training but at the cost of memory-inefficient models. For example, network quantisation techniques (see \cite{QIN2020107281}) demonstrate that full 64 of 32-bit precision weights are often unnecessary for final predictive performance, although there is a trade-off.
 
-A standard approach to mitigate these drawbacks is to approximate discrete functions by defining continuous relaxations. This paper explores a different approach: we define differentiable functions that `harden', without approximation, to discrete functions. Specifically, we define $\partial \mathbb{B}$ nets that have two equivalent aspects: a {\em soft net}, which is a differentiable real-valued function, and a {\em hard net}, which is a non-differentiable, discrete function. Both aspects are semantically equivalent. We train the soft net as normal, using backpropagation, then `harden' the learned weights to boolean values, which we then bind with the hard net to yield a discrete function with identical predictive performance (see figure \ref{fig:main-idea}). In consequence, interpreting and verifying a $\partial \mathbb{B}$ net is relatively less difficult. And boolean-valued, 1-bit weights significantly increase the memory-efficiency of trained models.
+A standard approach to mitigate these drawbacks is to approximate discrete functions by defining continuous relaxations. This paper explores a different approach: we define differentiable functions that `harden', without approximation, to discrete functions. Specifically, we define $\partial \mathbb{B}$ nets that have two equivalent aspects: a {\em soft-net}, which is a differentiable real-valued function, and a {\em hard-net}, which is a non-differentiable, discrete function. Both aspects are semantically equivalent. We train the soft-net as normal, using backpropagation, then `harden' the learned weights to boolean values, which we then bind with the hard-net to yield a discrete function with identical predictive performance (see figure \ref{fig:main-idea}). In consequence, interpreting and verifying a $\partial \mathbb{B}$ net is relatively less difficult. And boolean-valued, 1-bit weights significantly increase the memory-efficiency of trained models.
 
 The main contributions of this work are (i) defining novel activation functions that `harden' to semantically equivalent discrete functions, (ii) defining novel network architectures to effectively learn discrete functions that solve multi-class classification problems, and (iii) experiments that demonstrate $\partial \mathbb{B}$ nets compete with existing approaches in terms of predictive performance yet yield compact models.
 
@@ -87,7 +87,7 @@ The design-space of algorithms that learn boolean functions is large, with vario
 
 \section{$\partial\mathbb{B}$ nets}\label{sec:db-nets}
 
-A $\partial \mathbb{B}$ net has two aspects, a soft net and a hard net. Both nets use bits to represent transitory values and learnable weights, but a soft net uses soft-bits and a hard net uses hard-bits.
+A $\partial \mathbb{B}$ net has two aspects, a soft-net and a hard-net. Both nets use bits to represent transitory values and learnable weights, but a soft-net uses soft-bits and a hard-net uses hard-bits.
 
 \begin{definition}[Soft-bits and hard-bits]
 A {\em soft-bit} is a real value in the range $[0,1]$ and a {\em hard-bit} is a boolean value from the set $\{0,1\}$. A soft-bit, $x$, is {\em high} if $x>1/2$, otherwise it is {\em low}.
@@ -108,7 +108,7 @@ f(x) =
 
 The soft-bit value $1/2$ is therefore a threshold. Above this threshold the soft-bit represents $\text{True}$, otherwise it represents $\text{False}$.
 
-A soft net is any differentiable function, $f$, that `hardens' to a semantically equivalent discrete function, $g$. For example, if $f(x) = 1 - x$, where $x \in [0,1]$, and $g(y) = \neg y$, where $y \in \{0,1\}$ then: if $x$ is high (resp. low) then both $f(x)$ and $g(\operatorname{harden}(x))$ are low (resp. high). In other words, $f$ is hard-equivalent to boolean negation. More generally:
+A soft-net is any differentiable function, $f$, that `hardens' to a semantically equivalent discrete function, $g$. For example, if $f(x) = 1 - x$, where $x \in [0,1]$, and $g(y) = \neg y$, where $y \in \{0,1\}$ then: if $x$ is high (resp. low) then both $f(x)$ and $g(\operatorname{harden}(x))$ are low (resp. high). In other words, $f$ is hard-equivalent to boolean negation. More generally:
 
 \begin{definition}[Hard-equivalence]
 	A function, $f: [0,1]^n \rightarrow [0,1]^m$, is {\em hard-equivalent} to a discrete function, $g: \{1,0\}^n \rightarrow \{1,0\}^m$,	if
@@ -227,7 +227,7 @@ m + 1/2(x + y)(1/2 - m) & \text{otherwise,}
 \end{equation*}
 \end{comment}
 
-The differentiable analogue of $\Rightarrow$ is defined in terms of $\partial_{\vee}$. The function
+The differentiable analogue of $\Rightarrow$ (material implication) is defined in terms of $\partial_{\vee}$. The function
 \begin{equation*}
 \begin{aligned}
 \partial_{\Rightarrow}: [0,1]^{2} &\to [0,1],\\
@@ -312,7 +312,7 @@ This basic set of boolean functions is sufficient to learn non-trivial relations
 
 \subsection{Boolean logic layers}
 
-The fully variety of $\partial\mathbb{B}$ net architectures needs to be explored. Here we define basic layers sufficient for classification problems. Other kinds of layers, such as convolutional, or real encoders/decoders for regression problems, will be addressed in a sequel.
+The fully variety of $\partial\mathbb{B}$ net architectures is to be explored. Here we focus on defining basic layers sufficient for the classification experiments in section \ref{sec:experiments}. Other kinds of layers, such as convolutional, or real encoders/decoders for regression problems, will be addressed in a sequel.
 
 A $\partial_{\neg} \!\operatorname{Layer}$ of width $n$ learns to negate up to $n$ different subsets of the elements of its input vector:
 \begin{equation*}
@@ -326,7 +326,15 @@ A $\partial_{\neg} \!\operatorname{Layer}$ of width $n$ learns to negate up to $
 \end{bmatrix}
 \end{aligned}
 \end{equation*}
-where ${\bf x}$ is a soft-bit input vector, ${\bf W}$ is a weight matrix and $n$ is the layer width.
+where ${\bf x}$ is a soft-bit input vector, ${\bf W}$ is a weight matrix and $n$ is the layer width. Similarly, A $\partial_{\Rightarrow} \!\operatorname{Layer}$ of width $n$ learns to `mask to true or $\operatorname{nop}$' up to $n$ different subsets of the elements of its input vector:
+\begin{equation*}
+\partial_{\Rightarrow} \!\operatorname{Layer}({\bf W}, {\bf x}) =
+\begin{bmatrix}
+\partial_{\Rightarrow}(w_{1,1}, x_{1}) & \dots & \partial_{\Rightarrow}(w_{1,m}, x_{m}) \\
+\vdots & \ddots & \vdots \\
+\partial_{\Rightarrow}(w_{n,1}, x_{1}) & \dots & \partial_{\Rightarrow}(w_{n,m}, x_{m})
+\end{bmatrix}\text{.}
+\end{equation*}
 
 A $\partial_{\wedge}\!\operatorname{Neuron}$ learns to logically $\wedge$ a subset of its input vector:
 \begin{equation*}
@@ -351,7 +359,7 @@ We can compose $\partial_{\neg}$, $\partial_{\wedge}$ and $\partial_{\vee}$ laye
 
 \subsection{Classification layers}
 
-In classification problems the final layer of a neural network is typically interpreted as a vector of real-valued logits, one for each label, where the index of the maximum logit indicates the most probable label. However, we cannot interpret the final layer of a $\partial\mathbb{B}$ net as a vector of logits without violating hard-equivalence. Instead, we define the final layer of a $\partial\mathbb{B}$ net as a 1-hot soft-bit vector, where the index of the high bit indicates the predicted label. The equivalent hard net outputs a 1-hot boolean vector with the same interpretation.
+In classification problems the final layer of a neural network is typically interpreted as a vector of real-valued logits, one for each label, where the index of the maximum logit indicates the most probable label. However, we cannot interpret the final layer of a $\partial\mathbb{B}$ net as a vector of logits without violating hard-equivalence. Instead, we define the final layer of a $\partial\mathbb{B}$ net as a 1-hot soft-bit vector, where the index of the high bit indicates the predicted label. The equivalent hard-net outputs a 1-hot boolean vector with the same interpretation.
 
 In addition, when training $\partial\mathbb{B}$ nets, loss functions should be a function of hardened bits, otherwise gradient descent may non-optimally traverse trajectories that take no account of the hard threshold at $1/2$. For example, consider that an instance is correctly classified by a 1-hot vector with high bit $x=0.51$. Updating the net's weights to change this value to $0.51+\epsilon$ will not improve accuracy and may prevent the correct classification of a different instance. For this reason, $\partial\mathbb{B}$ nets have a final `hardening' layer to ensure that loss is a function of hard, not soft, bits:
 \begin{equation*}
@@ -360,7 +368,7 @@ In addition, when training $\partial\mathbb{B}$ nets, loss functions should be a
 {\bf x} &\mapsto \operatorname{harden}({\bf x})\text{.}
 \end{aligned}
 \end{equation*}
-The $\operatorname{harden}$ function is not differentiable and therefore $\partial\!\operatorname{harden}$ uses the straight-through estimator \citep{DBLP:journals/corr/BengioLC13} during backpropagation. However, by restricting the straight-through estimator to the very final layer we avoid compounding gradient estimation errors to deeper parts of the network. $\partial\!\operatorname{harden}$ is hard-equivalent to a $\operatorname{nop}$.
+The $\operatorname{harden}$ function is not differentiable and therefore $\partial\!\operatorname{harden}$ uses the straight-through estimator \citep{DBLP:journals/corr/BengioLC13} during backpropagation. By restricting the use of the straight-through estimator to final layers we avoid compounding gradient estimation errors to deeper parts of the network. Note that $\partial\!\operatorname{harden}$ is hard-equivalent to a $\operatorname{nop}$.
 
 $\partial\mathbb{B}$ nets can re-use many of the techniques deployed in standard neural networks. For example, for improved generalisation, we define a `boolean' analogue of the dropout layer \citep{JMLR:v15:srivastava14a}:
 \begin{equation*}
@@ -376,15 +384,7 @@ f(x, p) = \begin{cases}
 x, & \text{otherwise.}
 \end{cases}
 \end{equation*}
-At train time $\partial\!\operatorname{dropout}$ randomly negates soft-bit values with probability $p$. At test time, and in the hard net, $\partial\!\operatorname{dropout}$ is a $\operatorname{nop}$.
-
-\section{Experiments}\label{sec:experiments}
-
-The open-source $\partial\mathbb{B}$ net library is implemented in Flax \citep{flax2020github} and JAX \citep{jax2018github} and available at {\small \url{github.com/Z80coder/db-nets}}. Specify a $\partial\mathbb{B}$ net as Python code, which automatically defines (i) the soft net for training (weights are floats), (ii) a hard net for inference (weights are booleans), and (iii) a symbolic net for interpretation (weights and inputs are symbols). The symbolic net, when evaluated, interprets its own JAX expression and outputs a description of the discrete program it computes.
-
-We compare the performance of $\partial\mathbb{B}$ nets against standard ML approaches on three problems: the classic Iris dataset, an adversarial noisy XOR problem, and MNIST. But first we illustrate the kind of discrete program that a $\partial\mathbb{B}$ net learns.
-
-\subsection{Hardening}
+At train time $\partial\!\operatorname{dropout}$ randomly negates soft-bit values with probability $p$. At test time, and in the hard-net, $\partial\!\operatorname{dropout}$ is a $\operatorname{nop}$.
 
 \begin{figure}[t!]
 	\centering
@@ -392,6 +392,14 @@ We compare the performance of $\partial\mathbb{B}$ nets against standard ML appr
 	\caption{{\em A $\partial\mathbb{B}$ net to illustrate hardening}. The net concatenates a $\partial_{\neg}\!\operatorname{Layer}$ (of width $n$) with a reshaping layer that  outputs two vectors, which get reduced, by a $\partial\!\operatorname{Maj}$ operator,  to 2 soft-bits, one for each class label. A final $\partial\!\operatorname{harden}$ layer ensures the loss is a function of hard bits. When $|{\bf x}|=1$ we choose $n=2$ and therefore the net's weights, once hardened, consume $2$ bits. When $|{\bf x}|=5$ we choose $n=8$ and the weights consume $40$ bits ($5$ bytes).}
 	\label{fig:toy-example-architecture}
 \end{figure}
+
+\section{Experiments}\label{sec:experiments}
+
+The open-source $\partial\mathbb{B}$ net library is implemented in Flax \citep{flax2020github} and JAX \citep{jax2018github} and available at {\small \url{github.com/Z80coder/db-nets}}. Specify a $\partial\mathbb{B}$ net as Python code, which automatically defines (i) the soft-net for training (weights are floats), (ii) a hard-net for inference (weights are booleans), and (iii) a symbolic net for interpretation (weights and inputs are symbols). The symbolic net, when evaluated, interprets its own JAX expression and outputs a description of the discrete program it computes.
+
+We compare the performance of $\partial\mathbb{B}$ nets against standard ML approaches on three problems: the classic Iris dataset, an adversarial noisy XOR problem, and MNIST. But first we illustrate the kind of discrete program that a $\partial\mathbb{B}$ net learns.
+
+\subsection{Hardening}
 
 We present a toy problem to illustrate hard-equivalence. C5onsider the trivial problem of predicting whether a person wears a $\operatorname{t-shirt}$ (label 0) or a $\operatorname{coat}$ (label 1) conditional on the single feature $\operatorname{outside}$ (0 = False, and 1 = True). The training and test data consist of the examples in table \ref{tab:toy1}.
 
@@ -471,14 +479,14 @@ def dbNet(very-cold, cold, warm, very-warm, outside):
 
 The predictions combine multiple pieces of evidence due to the presence of the $\partial\!\operatorname{Maj}$ operator. For example, we can read-off that the $\partial\mathbb{B}$ net has learned `if not $\operatorname{very-cold}$ and not $\operatorname{cold}$ and not $\operatorname{outside}$ then wear a $\operatorname{t-shirt}$'; and `if $\operatorname{cold}$ and not ($\operatorname{warm}$ or $\operatorname{very-warm}$) and $\operatorname{outside}$ then wear a $\operatorname{coat}$' etc. The discrete program is more interpretable compared to typical neural networks, and can be exactly encoded as a SAT problem in order to verify its properties, such as robustness.
 
-\subsection{Binary Iris}
-
 \begin{figure}[t!]
 	\centering
 	\includegraphics[width=0.8\textwidth]{binary-iris-architecture.png}
 	\caption{{\em A $\partial\mathbb{B}$ net for the binary Iris problem}. The net concatenates the soft-bit input, ${\bf x}$ (length 16), with its negation, ${\bf 1 - x}$, and supplies the resulting vector (length 32) to a $\partial_{\wedge}\!\operatorname{Layer}$ (width 59), a $\partial\!\operatorname{dropout}$ layer for improved generalisation, a $\partial\!\operatorname{count-hot}$ layer that generates a 1-hot vector (width 60) that is reduced by $\operatorname{max}$ to a 1-hot vector of 3 classification bits. A final $\partial\!\operatorname{harden}$ ensures the loss is a function of hard bits. The net's weights, once hardened, consume $236$ bytes.}
 	\label{fig:binary-iris-architecture}
 \end{figure}
+
+\subsection{Binary Iris}
 
 The Iris dataset has 150 examples with 4 inputs (sepal length and width, and petal length and width), and 3 labels ({\em setosa}, {\em versicolour}, and {\em virginica}). We use the binary version of the Iris dataset \citep{binary-iris-dataset} where each input float is represented by 4 bits. We perform 1000 experiments, each with a different random seed. Each experiment randomly partitions the data into 80\% training and 20\% test sets. We initialize the network, described in figure \ref{fig:binary-iris-architecture}, with all weights $w_{i} = 0.3$ and train for 1000 epochs with the RAdam optimizer and softmax cross-entropy loss. 
 
@@ -500,15 +508,14 @@ We measure the accuracy of the final net to avoid hand-picking the best configur
 	\label{tab:binary-iris-results}
 \end{table}
 
-
-\subsection{Noisy XOR}
-
 \begin{figure}[t!]
 	\centering
 	\includegraphics[width=0.8\textwidth]{noisy-xor-architecture.png}
 	\caption{{\em A $\partial\mathbb{B}$ net for the noisy xor problem}. The net concatenates the soft-bit input, ${\bf x}$ (length 12), with its negation, ${\bf 1 - x}$, and supplies the resulting vector (length 24) to a $\partial_{\wedge}\!\!\operatorname{Layer}$ (width 32), $\partial_{\vee}\!\!\operatorname{Layer}$ (width 32),  $\partial_{\neg} \!\operatorname{Layer}$ (width 16), and a final $\partial\!\operatorname{Maj}$ to produce a single soft-bit $y \in [0,1]$ (to predict odd parity) and its negation $1-y$ (to predict even parity). The net's weights, once hardened, consume $288$ bytes.}
 	\label{fig:noisy-xor-architecture}
 \end{figure}
+
+\subsection{Noisy XOR}
 
 The noisy XOR dataset \citep{noisy-xor-dataset} is an adversarial parity problem with noisy non-informative features. The dataset consists of 10K examples with 12 boolean inputs and a target label (where 0 = odd and 1 = even) that is a XOR function of 2 inputs. The remaining 10 inputs are entirely random. We train on 50\% of the data where, additionally, 40\% of the labels are inverted. We initialize the network described in figure \ref{fig:noisy-xor-architecture} with random weights distributed close to the hard threshold at $1/2$ (i.e. in the $\partial_{\wedge}\!\operatorname{Layer}$, $w_{i} = 0.501 \times b + 0.3 \times (1-b)$ where $b \sim \operatorname{Bernoulli}(0.01)$; in the $\partial_{\vee}\!\operatorname{Layer}$, $w_{i} = 0.7 \times b + 0.499 \times (1-b)$ where $b \sim \operatorname{Bernoulli}(0.99)$); and in the $\partial_{\neg}\!\operatorname{Layer}$, $w_{i} \sim \operatorname{Uniform}(0.499, 0.501)$. We train for 2000 epochs with the RAdam optimizer and softmax cross-entropy loss. 
 
@@ -531,18 +538,14 @@ We measure the accuracy of the final net on the test data to avoid hand-picking 
 	\label{tab:noisy-xor-results}
 \end{table}
 
-\subsection{MNIST}
-
 \begin{figure}[t!]
 	\centering
 	\includegraphics[width=0.7\textwidth]{mnist-architecture.png}
-	\caption{{\em A $\partial\mathbb{B}$ net for MNIST}. The net consists of a $\partial_{\Rightarrow}\!\operatorname{Layer}$ (width 60), a $\partial\!\operatorname{Maj}$ layer, a $\partial_{\neg}\!\operatorname{Layer}$ (width 20), and a final $\partial\!\operatorname{harden}$ operator to generate hard-bits that are summed to produce 10 integer logits.}
+	\caption{{\em A non-convolutional $\partial\mathbb{B}$ net for MNIST}. The input is a $28\times28$ bit matrix representing an image. The net consists of a $\partial_{\Rightarrow}\!\operatorname{Layer}$ (of width 60, to produce a $2940\times16$ reshaped array), a $\partial\!\operatorname{Maj}$ layer (to produce a vector of size $2940$), a $\partial_{\neg}\!\operatorname{Layer}$ (of width 20, to produce a $20 \times 2940$ array), and a final $\partial\!\operatorname{harden}$ operator to generate hard-bits split into 10 buckets and summed to produce 10 integer logits. The net's weights, once hardened, consume 13.23 kb.}
 	\label{fig:mnist-architecture}
 \end{figure}
 
-The MNIST dataset \citep{726791} consists of 60K training and 10K test examples of handwritten digits (0-9). We binarize the data by replacing pixels with grey value greater than 0.3 with 1, otherwise with 0. We initialize the network described in figure \ref{fig:mnist-architecture} with random weights distributed as $w_{i} = 0.501 \times b + 0.3 \times (1-b)$ where $b \sim \operatorname{Bernoulli}(0.01)$. We train for 1000 epochs with a batch size of 6000 using the RAdam optimizer and softmax cross-entropy loss.
-
-We measure the accuracy on the final net. Table \ref{tab:mnist-table} compares the $\partial\mathbb{B}$ net against other classifiers \citep{granmo18}. A 2-layer neural network trained on grey-value pixel data performs best. A Tsetlin machine of 40,000 automata each with 256 states (and therefore 40 kb of parameters) trained on binary data achieves $\approx 98.2\%$ accuracy. The $\partial\mathbb{B}$ net with 105,840 32-bit soft-bit weights that harden to booleans (13.23 kb of parameters) trained on binary data achieves $\approx 94.0\%$ accuracy. However, this $\partial\mathbb{B}$ net underfits the training data and therefore we expect better performance from increasing the parameters. However, this causes an OOM error on my GPU. An updated draft will include this experiment.
+\subsection{MNIST}
 
 \begin{table}[t]
 	\centering
@@ -562,17 +565,24 @@ We measure the accuracy on the final net. Table \ref{tab:mnist-table} compares t
 	\label{tab:mnist-table}
 \end{table}
 
+The MNIST dataset \citep{726791} consists of 60K training and 10K test examples of handwritten digits (0-9). We binarize the data by replacing pixels with grey value greater than 0.3 with 1, otherwise with 0. We initialize the network described in figure \ref{fig:mnist-architecture} with random weights distributed as $w_{i} = 0.501 \times b + 0.3 \times (1-b)$ where $b \sim \operatorname{Bernoulli}(0.01)$. We train for 1000 epochs with a batch size of 6000 using the RAdam optimizer and softmax cross-entropy loss.
+
+We measure the accuracy on the final net. Table \ref{tab:mnist-table} compares the $\partial\mathbb{B}$ net against other classifiers (reference data taken from \cite{granmo18} and \url{yann.lecun.com/exdb/mnist}). Basic versions of the algorithms (e.g. no convolutional nets) are applied to unenhanced data (e.g. no data augmentation). The aim is to compare raw performance rather than optimise for MNIST. A 2-layer neural network trained on grey-value pixel data performs best. A Tsetlin machine of 40,000 automata each with 256 states (and therefore 40 kb of parameters) trained on binary data achieves $\approx 98.2\%$ accuracy. A $\partial\mathbb{B}$ net with 105,840 soft-bit weights that harden to 1-bit booleans (and therefore 13.23 kb of parameters) trained on binary data achieves $\approx 94.0\%$ accuracy. However, this $\partial\mathbb{B}$ net underfits the training data and we expect better performance from a larger model. However, larger models generate OOM errors on my GPU. The next draft will include experimental results from using larger $\partial\mathbb{B}$ nets.
+
 \section{Conclusion}\label{sec:conclusion}
 
-TODO: we can write boolean functions, soften them, and place them within differentiable neural networks.
+In this paper we propose $\partial\mathbb{B}$ nets, which are differentiable neural networks that are hard-equivalent to non-differentiable, boolean-valued functions. $\partial\mathbb{B}$ nets can therefore learn discrete functions by gradient descent. The main novelty of $\partial\mathbb{B}$ nets is the semantic equivalence between their two aspects: a differentiable soft-net and a non-differentiable hard-net. Maintaining this semantic equivalence requires defining new kinds of differentiable functions that are gradient-rich yet hard-equivalent to boolean functions, including non-differentiable threshold functions such as boolean majority. We train the soft-net, using efficient backpropagation on GPUs, then `harden' to generate boolean weights that bind to the hard-net, yielding a learned discrete function. However, unlike existing approaches to neural network binarization, `hardening' introduces no loss of accuracy.
+
+$\partial\mathbb{B}$ nets, being ultimately of a discrete and logical nature, are easier to interpret compared to standard neural networks, for example generating propositional formulae that can be further analysed, by symbolic simplification and verification by SAT solvers. These properties are important in safety-critical domains. In addition, $\partial\mathbb{B}$ nets at inference time are highly compact, due to 1-bit weights, and potentially cheap to evaluate, as they reduce to bit manipulation and integer arithmetic. These properties are important in resource-poor deployment environments, such as edge devices. Further, due tp the differentiable nature of $\partial\mathbb{B}$ nets, they can be composed with standard neural nets (e.g. embedded within them as subcomponents to introduce logical bias).
+
+Preliminary experiments on three classification benchmarks demonstrate that $\partial\mathbb{B}$ nets can outperform multilayer perceptron networks, support vector machines, decision trees, naive Bayes and logistic regression. In terms of classification accuracy, the non-differentiable Tsetlin machine outperforms $\partial\mathbb{B}$ nets, which indicates room for futher performance improvements, e.g. by defining new kinds of $\partial\mathbb{B}$ net layers (e.g. threshold functions with a learnable integer threshold, boolean decision lists etc.) and $\partial\mathbb{B}$ network architectures (e.g. convolutional, regression nets etc.). In other words, this paper is only a first step towards exploring the space of differentiable nets that satisfy the requirement of hard-equivalence.
+
 
 \subsubsection*{Acknowledgments}
-Thanks to GitHub Next, for sponsoring this research, and Pavel Augustinov, Richard Evans, Johan Rosenkilde, Max Schaefer, Tam\'{a}s Szab\'{o} and Albert Ziegler for helpful discussions and feedback.
+Thanks to GitHub Next for sponsoring this research. And thanks to Pavel Augustinov, Richard Evans, Johan Rosenkilde, Max Schaefer, Tam\'{a}s Szab\'{o} and Albert Ziegler for helpful discussions and feedback.
 
 \bibliographystyle{iclr2021_conference}
 \bibliography{db}
-
-\newpage
 
 \appendix
 
