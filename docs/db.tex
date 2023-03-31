@@ -395,7 +395,7 @@ At train time $\partial\!\operatorname{dropout}$ randomly negates soft-bit value
 
 \section{Experiments}\label{sec:experiments}
 
-The open-source $\partial\mathbb{B}$ net library is implemented in Flax \citep{flax2020github} and JAX \citep{jax2018github} and available at {\small \url{github.com/Z80coder/db-nets}}. Specify a $\partial\mathbb{B}$ net as Python code, which automatically defines (i) the soft-net for training (weights are floats), (ii) a hard-net for inference (weights are booleans), and (iii) a symbolic net for interpretation (weights and inputs are symbols). The symbolic net, when evaluated, interprets its own JAX expression and outputs a description of the discrete program it computes.
+The $\partial\mathbb{B}$ net library is implemented in Flax \citep{flax2020github} and JAX \citep{jax2018github} and available at {\small \url{github.com/Z80coder/db-nets}}. The library supports the specification of a $\partial\mathbb{B}$ net as Python code, which automatically defines (i) the soft-net for training (weights are floats), (ii) a hard-net for inference (weights are booleans), and (iii) a symbolic net for interpretation (weights and inputs are symbols). The symbolic net, when evaluated, interprets its own JAX expression and outputs a description of the discrete program it computes.
 
 We compare the performance of $\partial\mathbb{B}$ nets against standard ML approaches on three problems: the classic Iris dataset, an adversarial noisy XOR problem, and MNIST. But first we illustrate the kind of discrete program that a $\partial\mathbb{B}$ net learns.
 
