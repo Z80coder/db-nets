@@ -359,9 +359,9 @@ We can compose $\partial_{\neg}$, $\partial_{\wedge}$ and $\partial_{\vee}$ laye
 
 \subsection{Classification layers}
 
-In classification problems the final layer of a neural network is typically interpreted as a vector of real-valued logits, one for each label, where the index of the maximum logit indicates the most probable label. However, we cannot interpret the final layer of a $\partial\mathbb{B}$ net as a vector of logits without violating hard-equivalence. Instead, we define the final layer of a $\partial\mathbb{B}$ net as a 1-hot soft-bit vector, where the index of the high bit indicates the predicted label. The equivalent hard-net outputs a 1-hot boolean vector with the same interpretation.
+In classification problems the final layer of a neural network is typically interpreted as a vector of real-valued logits, one for each label, where the index of the maximum logit indicates the most probable label. However, we cannot interpret a soft-bit vector as logits without violating hard-equivalence. In addition, when training $\partial\mathbb{B}$ nets, loss functions should be a function of hardened bits, otherwise gradient descent may non-optimally traverse trajectories that take no account of the hard threshold at $1/2$. For example, consider that an instance is correctly classified by a 1-hot vector with high bit $x=0.51$. Updating the net's weights to change this value to $0.51+\epsilon$ will not improve accuracy and may prevent the correct classification of a different instance. 
 
-In addition, when training $\partial\mathbb{B}$ nets, loss functions should be a function of hardened bits, otherwise gradient descent may non-optimally traverse trajectories that take no account of the hard threshold at $1/2$. For example, consider that an instance is correctly classified by a 1-hot vector with high bit $x=0.51$. Updating the net's weights to change this value to $0.51+\epsilon$ will not improve accuracy and may prevent the correct classification of a different instance. For this reason, $\partial\mathbb{B}$ nets have a final `hardening' layer to ensure that loss is a function of hard, not soft, bits:
+For these reasons, $\partial\mathbb{B}$ nets have a final `hardening' layer to ensure that loss is a function of hard, not soft, bits:
 \begin{equation*}
 \begin{aligned}
 \partial\!\operatorname{harden}: [0,1]^{n} &\to [0,1]^{n}, \\
