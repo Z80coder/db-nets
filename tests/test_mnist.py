@@ -199,6 +199,7 @@ def get_datasets():
 
 def show_img(img, ax=None, title=None):
     """Shows a single image."""
+    """
     if ax is None:
         ax = plt.gca()
     ax.imshow(img.reshape(28, 28), cmap="gray")
@@ -206,15 +207,16 @@ def show_img(img, ax=None, title=None):
     ax.set_yticks([])
     if title:
         ax.set_title(title)
-
+    """
 
 def show_img_grid(imgs, titles):
     """Shows a grid of images."""
+    """
     n = int(np.ceil(len(imgs) ** 0.5))
     _, axs = plt.subplots(n, n, figsize=(3 * n, 3 * n))
     for i, (img, title) in enumerate(zip(imgs, titles)):
         show_img(img, axs[i // n][i % n], title)
-
+    """
 
 class TrainState(train_state.TrainState):
     dropout_rng: jax.random.KeyArray
