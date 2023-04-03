@@ -3,6 +3,7 @@ import jax.numpy as jnp
 import ml_collections
 import numpy as np
 import optax
+import pytest
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from flax import linen as nn

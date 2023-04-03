@@ -5,6 +5,7 @@ import ml_collections
 import numpy
 import optax
 import scipy
+import pytest
 from flax.training import train_state
 from jax.config import config
 from tqdm import tqdm
