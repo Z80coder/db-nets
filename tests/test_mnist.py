@@ -9,7 +9,6 @@ import tensorflow_datasets as tfds
 from flax import linen as nn
 from flax.training import train_state
 from jax.config import config
-from matplotlib import pyplot as plt
 from tqdm import tqdm
 
 from neurallogic import (
