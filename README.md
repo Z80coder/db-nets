@@ -1,4 +1,4 @@
-# discrete-differentiable-networks
+# dB nets
 
 [![Python package](https://github.com/Z80coder/discrete-differentiable-networks/actions/workflows/python.yaml/badge.svg)](https://github.com/Z80coder/discrete-differentiable-networks/actions/workflows/python.yaml)
 
