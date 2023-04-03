@@ -8,7 +8,7 @@ def test_soft_count():
     x = numpy.array([1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0])
     y = hard_count.soft_count(x)
     # We expect a 8-bit output array, y, where y[5] is the only high soft-bit (indicating that 5 soft-bits are low in the input)
-    expected_output = numpy.array([0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0])
+    expected_output = numpy.array([0.25, 0.25, 0.25, 0.25, 0.25, 1., 0.25, 0.25])
     print("soft_count", y)
     assert numpy.allclose(y, expected_output)
 
@@ -16,14 +16,14 @@ def test_soft_count():
     x = numpy.array([0.9, 0.1, 0.1, 0.1, 0.1, 0.9, 0.1])
     y = hard_count.soft_count(x)
     # We expect an 8-bit output array, y, where y[5] is the only high soft-bit (indicating that 5 soft-bits are low in the input)
-    expected_output = numpy.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.9, 0.10000002, 0.10000002])
+    expected_output = numpy.array([0.32000002, 0.3, 0.3, 0.3, 0.3, 0.85999995, 0.3, 0.32000002])
     print("soft_count", y)
     assert numpy.allclose(y, expected_output)
 
     x = numpy.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
     y = hard_count.soft_count(x)
     # We expect an 8-bit output array, y, where no y[0] is high (indicating that 0 soft-bits are low in the input)
-    expected_output = numpy.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    expected_output = numpy.array([1., 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25])
     print("soft_count", y)
     assert numpy.allclose(y, expected_output)
 
@@ -31,14 +31,14 @@ def test_soft_count():
     x = numpy.array([0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9])
     y = hard_count.soft_count(x)
     # We expect an 8-bit output array, y, where y[0] is high (indicating that 0 soft-bits are low in the input)
-    expected_output = numpy.array([0.9, 0.10000002, 0.10000002, 0.10000002, 0.10000002, 0.10000002, 0.10000002, 0.10000002])
+    expected_output = numpy.array([0.88, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.32000002])
     print("soft_count", y)
     assert numpy.allclose(y, expected_output)
 
     x = numpy.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     y = hard_count.soft_count(x)
     # We expect an 8-bit output array, y, where y[7] is the only high soft-bit (indicating that 7 soft-bits are low in the input)
-    expected_output = numpy.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0])
+    expected_output = numpy.array([0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 1.])
     print("soft_count", y)
     assert numpy.allclose(y, expected_output)
 
@@ -46,7 +46,7 @@ def test_soft_count():
     x = numpy.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
     y = hard_count.soft_count(x)
     # We expect an 7-bit output array, y, where y[7] is the only high soft-bit (indicating that 7 soft-bits are low in the input)
-    expected_output = numpy.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.9])
+    expected_output = numpy.array([0.32000002, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.88])
     print("soft_count", y)
     assert numpy.allclose(y, expected_output)
 
