@@ -104,8 +104,6 @@ def get_data():
 
 Source: https://arxiv.org/pdf/1804.01508.pdf
 """
-
-
 # N.B. We use marginal versions of and/or layers for this performance
 # mean: 97.89, sem: 0.15, min: 93.58, max: 100.00, 5%: 95.40, 95%: 100.00
 def nln(type, x, training: bool):
