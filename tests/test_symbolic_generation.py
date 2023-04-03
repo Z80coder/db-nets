@@ -5,7 +5,7 @@ import numpy
 
 from neurallogic import (hard_and, hard_majority, hard_not, hard_or, hard_xor,
                          harden, harden_layer, neural_logic_net, real_encoder,
-                         symbolic_generation)
+                         symbolic_generation, hard_concatenate, hard_vmap, symbolic_primitives)
 from tests import utils
 
 
@@ -14,6 +14,8 @@ def nln(type, x, width):
     # lacks the correct tensor structure
     # x = real_encoder.real_encoder_layer(type)(2)(x)
     # x = x.ravel()
+    y = hard_vmap.vmap(type)((lambda x: 1 - x, lambda x: 1 - x, lambda x: symbolic_primitives.symbolic_not(x)))(x)
+    x = hard_concatenate.concatenate(type)([x, y], 0)
     x = hard_or.or_layer(type)(width)(x)
     x = hard_and.and_layer(type)(width)(x)
     x = hard_xor.xor_layer(type)(width)(x)

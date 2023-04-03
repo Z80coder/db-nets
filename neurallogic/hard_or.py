@@ -11,12 +11,6 @@ from neurallogic import (
 )
 
 
-# TODO: seperate out the or operation from the mask operation
-def soft_or_neuron(w, x):
-    x = jax.vmap(hard_masks.soft_mask_to_false, 0, 0)(w, x)
-    return jax.numpy.max(x)
-
-
 def soft_or(x, y):
     m = jax.numpy.maximum(x, y)
     return jax.numpy.where(
@@ -25,10 +19,26 @@ def soft_or(x, y):
         m + 0.5 * (x + y) * (0.5 - m),
     )
 
-# This doesn't work well
+def soft_or_vec(x):
+    m = jax.numpy.max(x)
+    mean = jax.numpy.mean(x)
+    delta = jax.numpy.abs(mean - 0.5)
+    return jax.numpy.where(
+        2 * m > 1,
+        0.5 + delta,
+        m + delta
+    )
+
+
+# TODO: seperate out the or operation from the mask operation
+def soft_or_neuron(w, x):
+    x = jax.vmap(hard_masks.soft_mask_to_false_margin, 0, 0)(w, x)
+    return jax.numpy.max(x)
+
+# TODO: doesn't seem to work as well
 def soft_or_neuron_deprecated(w, x):
-    x = jax.vmap(hard_masks.soft_mask_to_true, 0, 0)(w, x)
-    return jax.lax.reduce(x, 0.0, soft_or, [0])
+    x = jax.vmap(hard_masks.soft_mask_to_false_margin, 0, 0)(w, x)
+    return soft_or_vec(x)
 
 
 def hard_or_neuron(w, x):

@@ -1,0 +1,290 @@
+@misc{granmo18,
+	doi = {10.48550/ARXIV.1804.01508},
+	
+	url = {https://arxiv.org/abs/1804.01508},
+	
+	author = {Granmo, Ole-Christoffer},
+	
+	keywords = {Artificial Intelligence (cs.AI), Computer Vision and Pattern Recognition (cs.CV), Machine Learning (cs.LG), FOS: Computer and information sciences, FOS: Computer and information sciences},
+	
+	title = {The {T}setlin Machine -- A Game Theoretic Bandit Driven Approach to Optimal Pattern Recognition with Propositional Logic},
+	
+	publisher = {arXiv},
+	
+	year = {2018},
+	
+	copyright = {arXiv.org perpetual, non-exclusive license}
+}
+
+@misc{noisy-xor-dataset,
+	author = {Granmo, Ole-Christoffer},
+	title = {The noisy {XOR} dataset},
+	howpublished = {GitHub repository},
+	url = {https://github.com/cair/TsetlinMachine}
+}
+
+@misc{binary-iris-dataset,
+	author = {Granmo, Ole-Christoffer},
+	title = {The binary Iris dataset},
+	howpublished = {GitHub repository},
+	url = {https://github.com/cair/TsetlinMachine}
+}
+
+@inproceedings{
+	Liu2020On,
+	title={On the Variance of the Adaptive Learning Rate and Beyond},
+	author={Liyuan Liu and Haoming Jiang and Pengcheng He and Weizhu Chen and Xiaodong Liu and Jianfeng Gao and Jiawei Han},
+	booktitle={International Conference on Learning Representations},
+	year={2020},
+	url={https://openreview.net/forum?id=rkgz2aEKDr}
+}
+
+@article{DBLP:journals/corr/BengioLC13,
+	author    = {Yoshua Bengio and Nicholas L{\'{e}}onard and Aaron C. Courville},
+	title     = {Estimating or Propagating Gradients Through Stochastic Neurons for
+	Conditional Computation},
+	journal   = {CoRR},
+	volume    = {abs/1308.3432},
+	year      = {2013},
+	url       = {http://arxiv.org/abs/1308.3432},
+	eprinttype = {arXiv},
+	eprint    = {1308.3432},
+	timestamp = {Mon, 13 Aug 2018 16:47:35 +0200},
+	biburl    = {https://dblp.org/rec/journals/corr/BengioLC13.bib},
+	bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+@article{rumelhart1986learning,
+	title={Learning representations by back-propagating errors},
+	author={Rumelhart, David E and Hinton, Geoffrey E and Williams, Ronald J},
+	journal={Nature},
+	volume={323},
+	number={6088},
+	pages={533--536},
+	year={1986},
+	publisher={Nature Publishing Group}
+}
+
+@inproceedings{10.5555/3104322.3104425,
+	author = {Nair, Vinod and Hinton, Geoffrey E.},
+	title = {Rectified Linear Units Improve Restricted Boltzmann Machines},
+	year = {2010},
+	isbn = {9781605589077},
+	publisher = {Omnipress},
+	address = {Madison, WI, USA},
+	abstract = {Restricted Boltzmann machines were developed using binary stochastic hidden units. These can be generalized by replacing each binary unit by an infinite number of copies that all have the same weights but have progressively more negative biases. The learning and inference rules for these "Stepped Sigmoid Units" are unchanged. They can be approximated efficiently by noisy, rectified linear units. Compared with binary units, these units learn features that are better for object recognition on the NORB dataset and face verification on the Labeled Faces in the Wild dataset. Unlike binary units, rectified linear units preserve information about relative intensities as information travels through multiple layers of feature detectors.},
+	booktitle = {Proceedings of the 27th International Conference on International Conference on Machine Learning},
+	pages = {807–814},
+	numpages = {8},
+	location = {Haifa, Israel},
+	series = {ICML'10}
+}
+
+@inproceedings{10.5555/3157382.3157557,
+	author = {Hubara, Itay and Courbariaux, Matthieu and Soudry, Daniel and El-Yaniv, Ran and Bengio, Yoshua},
+	title = {Binarized Neural Networks},
+	year = {2016},
+	isbn = {9781510838819},
+	publisher = {Curran Associates Inc.},
+	address = {Red Hook, NY, USA},
+	abstract = {We introduce a method to train Binarized Neural Networks (BNNs) - neural networks with binary weights and activations at run-time. At train-time the binary weights and activations are used for computing the parameter gradients. During the forward pass, BNNs drastically reduce memory size and accesses, and replace most arithmetic operations with bit-wise operations, which is expected to substantially improve power-efficiency. To validate the effectiveness of BNNs, we conducted two sets of experiments on the Torch7 and Theano frameworks. On both, BNNs achieved nearly state-of-the-art results over the MNIST, CIFAR-10 and SVHN datasets. We also report our preliminary results on the challenging ImageNet dataset. Last but not least, we wrote a binary matrix multiplication GPU kernel with which it is possible to run our MNIST BNN 7 times faster than with an unoptimized GPU kernel, without suffering any loss in classification accuracy. The code for training and running our BNNs is available on-line.},
+	booktitle = {Proceedings of the 30th International Conference on Neural Information Processing Systems},
+	pages = {4114–4122},
+	numpages = {9},
+	location = {Barcelona, Spain},
+	series = {NIPS'16}
+}
+
+@article{JMLR:v15:srivastava14a,
+	author  = {Nitish Srivastava and Geoffrey Hinton and Alex Krizhevsky and Ilya Sutskever and Ruslan Salakhutdinov},
+	title   = {Dropout: A Simple Way to Prevent Neural Networks from Overfitting},
+	journal = {Journal of Machine Learning Research},
+	year    = {2014},
+	volume  = {15},
+	number  = {56},
+	pages   = {1929--1958},
+	url     = {http://jmlr.org/papers/v15/srivastava14a.html}
+}
+
+@inproceedings{10.5555/2969442.2969588,
+	author = {Courbariaux, Matthieu and Bengio, Yoshua and David, Jean-Pierre},
+	title = {BinaryConnect: Training Deep Neural Networks with Binary Weights during Propagations},
+	year = {2015},
+	publisher = {MIT Press},
+	address = {Cambridge, MA, USA},
+	abstract = {Deep Neural Networks (DNN) have achieved state-of-the-art results in a wide range of tasks, with the best results obtained with large training sets and large models. In the past, GPUs enabled these breakthroughs because of their greater computational speed. In the future, faster computation at both training and test time is likely to be crucial for further progress and for consumer applications on low-power devices. As a result, there is much interest in research and development of dedicated hardware for Deep Learning (DL). Binary weights, i.e., weights which are constrained to only two possible values (e.g. -1 or 1), would bring great benefits to specialized DL hardware by replacing many multiply-accumulate operations by simple accumulations, as multipliers are the most space and power-hungry components of the digital implementation of neural networks. We introduce BinaryConnect, a method which consists in training a DNN with binary weights during the forward and backward propagations, while retaining precision of the stored weights in which gradients are accumulated. Like other dropout schemes, we show that BinaryConnect acts as regularizer and we obtain near state-of-the-art results with BinaryConnect on the permutation-invariant MNIST, CIFAR-10 and SVHN.},
+	booktitle = {Proceedings of the 28th International Conference on Neural Information Processing Systems - Volume 2},
+	pages = {3123–3131},
+	numpages = {9},
+	location = {Montreal, Canada},
+	series = {NIPS'15}
+}
+
+@ARTICLE {9026948,
+	author = {E. Wang and J. J. Davis and P. K. Cheung and G. A. Constantinides},
+	journal = {IEEE Transactions on Computers},
+	title = {LUTNet: Learning FPGA Configurations for Highly Efficient Neural Network Inference},
+	year = {2020},
+	volume = {69},
+	number = {12},
+	issn = {1557-9956},
+	pages = {1795-1808},
+	abstract = {Research has shown that deep neural networks contain significant redundancy, and thus that high classification accuracy can be achieved even when weights and activations are quantized down to binary values. Network binarization on FPGAs greatly increases area efficiency by replacing resource-hungry multipliers with lightweight XNOR gates. However, an FPGA&#x27;s fundamental building block, the K-LUT, is capable of implementing far more than an XNOR: it can perform any K-input Boolean operation. Inspired by this observation, we propose LUTNet, an end-to-end hardware-software framework for the construction of area-efficient FPGA-based neural network accelerators using the native LUTs as inference operators. We describe the realization of both unrolled and tiled LUTNet architectures, with the latter facilitating smaller, less power-hungry deployment over the former while sacrificing area and energy efficiency along with throughput. For both varieties, we demonstrate that the exploitation of LUT flexibility allows for far heavier pruning than possible in prior works, resulting in significant area savings while achieving comparable accuracy. Against the state-of-the-art binarized neural network implementation, we achieve up to twice the area efficiency for several standard network models when inferencing popular datasets. We also demonstrate that even greater energy efficiency improvements are obtainable.},
+	keywords = {table lookup;deep learning;field programmable gate arrays;neural networks;logic gates;random access memory},
+	doi = {10.1109/TC.2020.2978817},
+	publisher = {IEEE Computer Society},
+	address = {Los Alamitos, CA, USA},
+	month = {dec}
+}
+
+@InProceedings{10.1007/978-3-319-46493-0_32,
+	author="Rastegari, Mohammad	and Ordonez, Vicente and Redmon, Joseph	and Farhadi, Ali",	editor="Leibe, Bastian and Matas, Jiri and Sebe, Nicu and Welling, Max",
+	title="XNOR-Net: ImageNet Classification Using Binary Convolutional Neural Networks",
+	booktitle="Computer Vision -- ECCV 2016",
+	year="2016",
+	publisher="Springer International Publishing",
+	address="Cham",
+	pages="525--542",
+	abstract="We propose two efficient approximations to standard convolutional neural networks: Binary-Weight-Networks and XNOR-Networks. In Binary-Weight-Networks, the filters are approximated with binary values resulting in 32{\$}{\$}{\backslash}times {\$}{\$}{\texttimes}memory saving. In XNOR-Networks, both the filters and the input to convolutional layers are binary. XNOR-Networks approximate convolutions using primarily binary operations. This results in 58{\$}{\$}{\backslash}times {\$}{\$}{\texttimes}faster convolutional operations (in terms of number of the high precision operations) and 32{\$}{\$}{\backslash}times {\$}{\$}{\texttimes}memory savings. XNOR-Nets offer the possibility of running state-of-the-art networks on CPUs (rather than GPUs) in real-time. Our binary networks are simple, accurate, efficient, and work on challenging visual tasks. We evaluate our approach on the ImageNet classification task. The classification accuracy with a Binary-Weight-Network version of AlexNet is the same as the full-precision AlexNet. We compare our method with recent network binarization methods, BinaryConnect and BinaryNets, and outperform these methods by large margins on ImageNet, more than {\$}{\$}16{\backslash},{\backslash}{\%}{\$}{\$}16{\%}in top-1 accuracy. Our code is available at: http://allenai.org/plato/xnornet.",
+	isbn="978-3-319-46493-0"
+}
+
+@article{QIN2020107281,
+	title = {Binary neural networks: A survey},
+	journal = {Pattern Recognition},
+	volume = {105},
+	pages = {107281},
+	year = {2020},
+	issn = {0031-3203},
+	doi = {https://doi.org/10.1016/j.patcog.2020.107281},
+	url = {https://www.sciencedirect.com/science/article/pii/S0031320320300856},
+	author = {Haotong Qin and Ruihao Gong and Xianglong Liu and Xiao Bai and Jingkuan Song and Nicu Sebe},
+	keywords = {Binary neural network, Deep learning, Model compression, Network quantization, Model acceleration},
+	abstract = {The binary neural network, largely saving the storage and computation, serves as a promising technique for deploying deep models on resource-limited devices. However, the binarization inevitably causes severe information loss, and even worse, its discontinuity brings difficulty to the optimization of the deep network. To address these issues, a variety of algorithms have been proposed, and achieved satisfying progress in recent years. In this paper, we present a comprehensive survey of these algorithms, mainly categorized into the native solutions directly conducting binarization, and the optimized ones using techniques like minimizing the quantization error, improving the network loss function, and reducing the gradient error. We also investigate other practical aspects of binary neural networks such as the hardware-friendly design and the training tricks. Then, we give the evaluation and discussions on different tasks, including image classification, object detection and semantic segmentation. Finally, the challenges that may be faced in future research are prospected.}
+}
+
+@inproceedings{
+	dong2018neural,
+	title={Neural Logic Machines},
+	author={Honghua Dong and Jiayuan Mao and Tian Lin and Chong Wang and Lihong Li and Denny Zhou},
+	booktitle={International Conference on Learning Representations},
+	year={2019},
+	url={https://openreview.net/forum?id=B1xY-hRctX},
+}
+
+@article{10.5555/3241691.3241692,
+	author = {Evans, Richard and Grefenstette, Edward},
+	title = {Learning Explanatory Rules from Noisy Data},
+	year = {2018},
+	issue_date = {January 2018},
+	publisher = {AI Access Foundation},
+	address = {El Segundo, CA, USA},
+	volume = {61},
+	number = {1},
+	issn = {1076-9757},
+	abstract = {Artificial Neural Networks are powerful function approximators capable of modelling solutions to a wide variety of problems, both supervised and unsupervised. As their size and expressivity increases, so too does the variance of the model, yielding a nearly ubiquitous over_tting problem. Although mitigated by a variety of model regularisation methods, the common cure is to seek large amounts of training data--which is not necessarily easily obtained--that sufficiently approximates the data distribution of the domain we wish to test on. In contrast, logic programming methods such as Inductive Logic Programming offer an extremely data-efficient process by which models can be trained to reason on symbolic domains. However, these methods are unable to deal with the variety of domains neural networks can be applied to: they are not robust to noise in or mislabelling of inputs, and perhaps more importantly, cannot be applied to non-symbolic domains where the data is ambiguous, such as operating on raw pixels. In this paper, we propose a Differentiable Inductive Logic framework, which can not only solve tasks which traditional ILP systems are suited for, but shows a robustness to noise and error in the training data which ILP cannot cope with. Furthermore, as it is trained by backpropagation against a likelihood objective, it can be hybridised by connecting it with neural networks over ambiguous data in order to be applied to domains which ILP cannot address, while providing data efficiency and generalisation beyond what neural networks on their own can achieve.},
+	journal = {J. Artif. Int. Res.},
+	month = {jan},
+	pages = {1–64},
+	numpages = {64}
+}
+
+@Book{BreiFrieStonOlsh84,
+	Title                    = {Classification and Regression Trees},
+	Author                   = {Leo Breiman and Jerome Friedman and Charles J. Stone and and R.A. Olshen},
+	Publisher                = {Chapman and Hall/CRC},
+	Year                     = {1984}
+}
+
+@INPROCEEDINGS{598994,
+	author={Tin Kam Ho},
+	booktitle={Proceedings of 3rd International Conference on Document Analysis and Recognition}, 
+	title={Random decision forests}, 
+	year={1995},
+	volume={1},
+	number={},
+	pages={278-282 vol.1},
+	doi={10.1109/ICDAR.1995.598994}}
+
+@book{koza1992genetic,
+	title={Genetic Programming: On the Programming of Computers by Means of Natural Selection},
+	author={Koza, J.R.},
+	isbn={9780262111706},
+	lccn={92025785},
+	series={A Bradford book},
+	url={https://books.google.co.uk/books?id=Bhtxo60BV0EC},
+	year={1992},
+	publisher={Bradford}
+}
+
+@inproceedings{NEURIPS2019_d8c24ca8,
+	author = {Cuturi, Marco and Teboul, Olivier and Vert, Jean-Philippe},
+	booktitle = {Advances in Neural Information Processing Systems},
+	editor = {H. Wallach and H. Larochelle and A. Beygelzimer and F. d\textquotesingle Alch\'{e}-Buc and E. Fox and R. Garnett},
+	pages = {},
+	publisher = {Curran Associates, Inc.},
+	title = {Differentiable Ranking and Sorting using Optimal Transport},
+	url = {https://proceedings.neurips.cc/paper_files/paper/2019/file/d8c24ca8f23c562a5600876ca2a550ce-Paper.pdf},
+	volume = {32},
+	year = {2019}
+}
+
+@article{VANKRIEKEN2022103602,
+	title = {Analyzing Differentiable Fuzzy Logic Operators},
+	journal = {Artificial Intelligence},
+	volume = {302},
+	pages = {103602},
+	year = {2022},
+	issn = {0004-3702},
+	doi = {https://doi.org/10.1016/j.artint.2021.103602},
+	url = {https://www.sciencedirect.com/science/article/pii/S0004370221001533},
+	author = {Emile {van Krieken} and Erman Acar and Frank {van Harmelen}},
+	keywords = {Fuzzy logic, Neural-symbolic AI, Learning with constraints},
+	abstract = {The AI community is increasingly putting its attention towards combining symbolic and neural approaches, as it is often argued that the strengths and weaknesses of these approaches are complementary. One recent trend in the literature is weakly supervised learning techniques that employ operators from fuzzy logics. In particular, these use prior background knowledge described in such logics to help the training of a neural network from unlabeled and noisy data. By interpreting logical symbols using neural networks, this background knowledge can be added to regular loss functions, hence making reasoning a part of learning. We study, both formally and empirically, how a large collection of logical operators from the fuzzy logic literature behave in a differentiable learning setting. We find that many of these operators, including some of the most well-known, are highly unsuitable in this setting. A further finding concerns the treatment of implication in these fuzzy logics, and shows a strong imbalance between gradients driven by the antecedent and the consequent of the implication. Furthermore, we introduce a new family of fuzzy implications (called sigmoidal implications) to tackle this phenomenon. Finally, we empirically show that it is possible to use Differentiable Fuzzy Logics for semi-supervised learning, and compare how different operators behave in practice. We find that, to achieve the largest performance improvement over a supervised baseline, we have to resort to non-standard combinations of logical operators which perform well in learning, but no longer satisfy the usual logical laws.}
+}
+
+@phdthesis{DBLP:phd/basesearch/Payani20,
+	author    = {Ali Payani},
+	title     = {Differentiable neural logic networks and their application onto inductive
+	logic programming},
+	school    = {Georgia Institute of Technology, Atlanta, GA, {USA}},
+	year      = {2020},
+	url       = {https://hdl.handle.net/1853/62833},
+	timestamp = {Wed, 04 May 2022 13:00:04 +0200},
+	biburl    = {https://dblp.org/rec/phd/basesearch/Payani20.bib},
+	bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+@article{Granmo2019TheCT,
+	title={The Convolutional Tsetlin Machine},
+	author={Ole-Christoffer Granmo and Sondre Glimsdal and Lei Jiao and Morten Goodwin Olsen and Christian Walter Peter Omlin and Geir Thore Berge},
+	journal={ArXiv},
+	year={2019},
+	volume={abs/1905.09688}
+}
+
+@software{flax2020github,
+	author = {Jonathan Heek and Anselm Levskaya and Avital Oliver and Marvin Ritter and Bertrand Rondepierre and Andreas Steiner and Marc van {Z}ee},
+	title = {{F}lax: A neural network library and ecosystem for {JAX}},
+	url = {http://github.com/google/flax},
+	version = {0.6.8},
+	year = {2023},
+}
+
+@software{jax2018github,
+	author = {James Bradbury and Roy Frostig and Peter Hawkins and Matthew James Johnson and Chris Leary and Dougal Maclaurin and George Necula and Adam Paszke and Jake Vander{P}las and Skye Wanderman-{M}ilne and Qiao Zhang},
+	title = {{JAX}: composable transformations of {P}ython+{N}um{P}y programs},
+	url = {http://github.com/google/jax},
+	version = {0.3.13},
+	year = {2018},
+}
+
+@ARTICLE{726791,
+	author={Le{C}un, Y. and Bottou, L. and Bengio, Y. and Haffner, P.},
+	journal={Proceedings of the IEEE}, 
+	title={Gradient-based learning applied to document recognition}, 
+	year={1998},
+	volume={86},
+	number={11},
+	pages={2278-2324},
+	doi={10.1109/5.726791}}

@@ -14,7 +14,6 @@ def differentiable_xor(x, y):
 def soft_xor_neuron(w, x):
     # Conditionally include input bits, according to weights
     x = jax.vmap(hard_masks.soft_mask_to_false, 0, 0)(w, x)
-
     x = jax.lax.reduce(x, jax.numpy.array(0, dtype=x.dtype), differentiable_xor, (0,))
     return x
 

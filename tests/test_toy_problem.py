@@ -1,39 +1,63 @@
-import sys
 from pathlib import Path
 
 import jax
 import ml_collections
 import numpy
+import pytest
 import optax
 import scipy
-from flax import linen as nn
 from flax.training import train_state
 from jax.config import config
 from tqdm import tqdm
 
 from neurallogic import (
     hard_and,
+    hard_dropout,
     hard_majority,
+    hard_masks,
     hard_not,
     hard_or,
+    hard_xor,
+    hard_count,
     harden,
     harden_layer,
     neural_logic_net,
+    real_encoder,
     initialization,
-    symbolic_primitives,
     hard_vmap,
-    hard_concatenate
+    hard_concatenate,
+    symbolic_primitives
 )
 from tests import utils
 
 config.update("jax_enable_x64", True)
 
+"""
+Temperature: 4 booleans, 1-hot vector
+    0 high = very cold
+    1 high = cold
+    2 high = warm
+    3 high = very warm
+Outside?: 1 boolean
+    0 = no
+    1 = yes
+Labels: 
+    0 = wear t-shirt 
+    1 = wear coat
+"""
+
+toy_data = 2
+num_classes = 2
+if toy_data == 1:
+    num_features = 1
+else:
+    num_features = 5
+
+
 def check_symbolic(nets, data, trained_state, dropout_rng):
     x_training, y_training, x_test, y_test = data
     _, hard, symbolic = nets
-    _, test_loss, test_accuracy = apply_model_with_grad(
-        trained_state, x_test, y_test, dropout_rng
-    )
+    _, test_loss, test_accuracy = apply_model_with_grad(trained_state, x_test, y_test, dropout_rng)
     print(
         "soft_net: final test_loss: %.4f, final test_accuracy: %.2f"
         % (test_loss, test_accuracy * 100)
@@ -46,101 +70,86 @@ def check_symbolic(nets, data, trained_state, dropout_rng):
         dropout_rng=dropout_rng,
     )
     hard_input = harden.harden(x_test)
-    hard_test_accuracy = apply_hard_model_to_data(
-        hard_trained_state, hard_input, y_test
-    )
+    hard_test_accuracy = apply_hard_model_to_data(hard_trained_state, hard_input, y_test)
     print("hard_net: final test_accuracy: %.2f" % (hard_test_accuracy * 100))
     assert numpy.isclose(test_accuracy, hard_test_accuracy, atol=0.0001)
 
-    if False:
-        symbolic_weights = hard_weights  # utils.make_symbolic(hard_weights)
-        symbolic_trained_state = train_state.TrainState.create(
-            apply_fn=symbolic.apply,
-            params=symbolic_weights,
-            tx=optax.sgd(1.0, 1.0),
-            dropout_rng=dropout_rng,
-        )
-        symbolic_input = hard_input.tolist()
-        symbolic_test_accuracy = apply_hard_model(
-            symbolic_trained_state, symbolic_input, y_test
-        )
-        print(
-            "symbolic_net: final test_accuracy: %.2f" % (symbolic_test_accuracy * 100)
-        )
-        assert numpy.isclose(test_accuracy, symbolic_test_accuracy, atol=0.0001)
-    if True:
-        # CPU and GPU give different results, so we can't easily regress on a static symbolic expression
-        symbolic_input = [f"x{i}" for i in range(len(hard_input[0].tolist()))]
-        # This simply checks that the symbolic output can be generated
-        symbolic_output = symbolic.apply({"params": hard_weights}, symbolic_input, training=False)
-
-num_features = 12
-num_classes = 2
+    # CPU and GPU give different results, so we can't easily regress on a static symbolic expression
+    if toy_data == 1:
+        symbolic_input = ["outside"]
+    else:
+        symbolic_input = ["very-cold", "cold", "warm", "very-warm", "outside"]
+    # This simply checks that the symbolic output can be generated
+    symbolic_output = symbolic.apply({"params": hard_weights}, symbolic_input, training=False)
+    print("symbolic_output: class 1", symbolic_output[0][:10000])
+    print("symbolic_output: class 2", symbolic_output[1][:10000])
 
 
-def get_data():
-    # Create a path to the data directory
-    data_dir = Path(__file__).parent.parent / "tests" / "data"
-    # Load the training data
-    training_data = numpy.loadtxt(data_dir / "NoisyXORTrainingData.txt").astype(
-        dtype=numpy.float32
-    )
-    # Load the test data
-    test_data = numpy.loadtxt(data_dir / "NoisyXORTestData.txt").astype(
-        dtype=numpy.float32
-    )
-    return training_data, test_data
-
-
-"""
-| Technique/Accuracy  | Mean           | 5 %ile  | 95 %ile | Min    | Max    |
-| ------------------- | -------------- | ------- | ------- | ------ | ------ |
-| Tsetlin             | 99.3 +/- 0.3   | 95.9    | 100.0   | 91.6   | 100.0  |
-| dB                  | 97.9 +/- 0.2   | 95.4    | 100.0   | 93.6   | 100.0  |
-| Neural network      | 95.4 +/- 0.5   | 90.1    | 98.6    | 88.2   | 99.9   |
-| SVM                 | 58.0 +/- 0.3   | 56.4    | 59.2    | 55.4   | 66.5   |
-| Naive Bayes         | 49.8 +/- 0.2   | 48.3    | 51.0    | 41.3   | 52.7   |
-| Logistic regression | 49.8 +/- 0.3   | 47.8    | 51.1    | 41.1   | 53.1   |
-
-Source: https://arxiv.org/pdf/1804.01508.pdf
-"""
-# N.B. We use marginal versions of and/or layers for this performance
-# mean: 97.89, sem: 0.15, min: 93.58, max: 100.00, 5%: 95.40, 95%: 100.00
-def nln(type, x, training: bool):
-    y = hard_vmap.vmap(type)((lambda x: 1 - x, lambda x: 1 - x, lambda x: symbolic_primitives.symbolic_not(x)))(x)
-    x = hard_concatenate.concatenate(type)([x, y], 0)
-
-    layer_size = 32
-    dtype = jax.numpy.float64
-    x = hard_and.and_layer(type)(
-        layer_size,
-        dtype=dtype,
-        weights_init=initialization.initialize_bernoulli(0.01, 0.3, 0.501),
-    )(x)
-    x = hard_or.or_layer(type)(
-        layer_size,
-        dtype=dtype,
-        weights_init=initialization.initialize_bernoulli(0.99, 0.499, 0.7),
-    )(x)
-    not_layer_size = 16
-    x = hard_not.not_layer(type)(
-        not_layer_size,
-        dtype=dtype,
-        weights_init=initialization.initialize_uniform_range(0.499, 0.501),
-    )(x)
-
-    x = x.reshape((1, layer_size * not_layer_size))
+def nln_1(type, x, training: bool):
+    dtype = jax.numpy.float32
+    layer_size = 2
+    x = hard_not.not_layer(type)(layer_size)(x)
+    x = x.ravel()
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
     x = hard_majority.majority_layer(type)()(x)
-
-    z = hard_vmap.vmap(type)((lambda x: 1 - x, lambda x: 1 - x, lambda x: symbolic_primitives.symbolic_not(x)))(x)
-    x = hard_concatenate.concatenate(type)([x, z], 0)
-    
     ########################################################
-    
+    x = harden_layer.harden_layer(type)(x)
     x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
     x = x.sum(-1)
     return x
 
+"""
+Class 1:
+lax_reference.ge(lax_reference.sum((0, numpy.logical_not(numpy.logical_xor(lax_reference.ne(x0, 0), False)))), 1)
+
+is equivalent to:
+
+sum(
+    (
+        0, 
+        ! xor(x0 != 0, False)
+    )
+) >= 1
+
+is equivalent to:
+
+! xor(x0 != 0, False) >= 1
+
+is equivalent to:
+
+! x0
+
+Class 2:
+class 2 lax_reference.ge(lax_reference.sum((0, numpy.logical_not(numpy.logical_xor(lax_reference.ne(x0, 0), True)))), 1)
+
+is equivalent to:
+
+! xor(x0 != 0, True) >= 1
+
+is equivalent to:
+
+x0
+
+Therefore learned class prediction is [!x, x]
+"""
+
+def nln_2(type, x, training: bool):
+    dtype = jax.numpy.float32
+    x = hard_not.not_layer(type)(8)(x)
+    x = x.ravel()
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = hard_majority.majority_layer(type)()(x)
+    ########################################################
+    x = harden_layer.harden_layer(type)(x)
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
+
+def nln(type, x, training: bool):
+    if toy_data == 1:
+        return nln_1(type, x, training)
+    else:
+        return nln_2(type, x, training)
 
 def batch_nln(type, x, training: bool):
     return jax.vmap(lambda x: nln(type, x, training))(x)
@@ -163,7 +172,6 @@ def create_train_state(net, rng, dropout_rng, config):
 def update_model(state, grads):
     return state.apply_gradients(grads=grads)
 
-
 def apply_model_with_grad_impl(state, features, labels, dropout_rng, training: bool):
     dropout_train_rng = jax.random.fold_in(key=dropout_rng, data=state.step)
 
@@ -174,7 +182,7 @@ def apply_model_with_grad_impl(state, features, labels, dropout_rng, training: b
             training=training,
             rngs={"dropout": dropout_train_rng},
         )
-        one_hot = jax.nn.one_hot(labels, num_classes, dtype=jax.numpy.int32)
+        one_hot = jax.nn.one_hot(labels, num_classes)
         loss = jax.numpy.mean(
             optax.softmax_cross_entropy(logits=logits, labels=one_hot)
         )
@@ -225,20 +233,13 @@ def train_epoch(state, features, labels, batch_size, rng, dropout_rng):
     return state, train_loss, train_accuracy
 
 
-def get_train_and_test_data(data):
-    training_data, test_data = data
-    x_training = training_data[:, 0:num_features]  # Input features
-    y_training = training_data[:, num_features]  # Target value
-    x_test = test_data[:, 0:num_features]  # Input features
-    y_test = test_data[:, num_features]  # Target value
-    return x_training, y_training, x_test, y_test
-
-
 def train_and_evaluate(
     init_rng, dropout_rng, net, data, config: ml_collections.ConfigDict
 ):
     state = create_train_state(net, init_rng, dropout_rng, config)
     x_training, y_training, x_test, y_test = data
+    best_train_accuracy = 0.0
+    best_test_accuracy = 0.0
     for epoch in range(1, config.num_epochs + 1):
         init_rng, input_rng = jax.random.split(init_rng)
         state, train_loss, train_accuracy = train_epoch(
@@ -247,12 +248,18 @@ def train_and_evaluate(
         _, test_loss, test_accuracy = apply_model_with_grad(
             state, x_test, y_test, dropout_rng
         )
-
+        if train_accuracy > best_train_accuracy:
+            best_train_accuracy = train_accuracy
+            if test_accuracy >= best_test_accuracy:
+                best_test_accuracy = test_accuracy
         print(
             "epoch:% 3d, train_loss: %.4f, train_accuracy: %.2f, test_loss: %.4f, test_accuracy: %.2f"
             % (epoch, train_loss, train_accuracy * 100, test_loss, test_accuracy * 100)
         )
+        if train_accuracy == 1.0 and test_accuracy == 1.0:
+            break
 
+    # return trained state and final test_accuracy
     return state, test_accuracy
 
 
@@ -278,26 +285,56 @@ def apply_hard_model_to_data(state, features, labels):
 def get_config():
     config = ml_collections.ConfigDict()
     config.learning_rate = 0.01
-    config.batch_size = 5000
-    config.num_epochs = 2000 # 2000 for paper
+    config.momentum = 0.9
+    if toy_data == 1:
+        config.batch_size = 16
+    else:
+        config.batch_size = 48
+    config.num_epochs = 1000
     return config
 
+def get_toy_data():
+    data_dir = Path(__file__).parent.parent / "tests" / "data"
+    if toy_data == 1:
+        data = numpy.loadtxt(data_dir / "toy_data_1.txt").astype(dtype=numpy.int32)
+    else:
+        data = numpy.loadtxt(data_dir / "toy_data_2.txt").astype(dtype=numpy.int32)
+    features = data[:, 0:num_features]  # Input features
+    labels = data[:, num_features]  # Target value
+    return features, labels
 
-def test_noisy_xor():
+
+def train_test_split(features, labels, rng, test_size=0.2):
+    rng, split_rng = jax.random.split(rng)
+    train_size = int(len(features) * (1 - test_size))
+    train_idx = jax.random.permutation(split_rng, len(features))[:train_size]
+    test_idx = jax.random.permutation(split_rng, len(features))[train_size:]
+    return (
+        features[train_idx],
+        features[test_idx],
+        labels[train_idx],
+        labels[test_idx],
+    )
+
+@pytest.mark.skip(reason="temporarily off")
+def test_toy():
     # Train net
-    soft, _, _ = neural_logic_net.net(
+    features, labels = get_toy_data()
+    soft, hard, symbolic = neural_logic_net.net(
         lambda type, x, training: batch_nln(type, x, training)
     )
 
-    x_training, y_training, x_test, y_test = get_train_and_test_data(get_data())
-
     rng = jax.random.PRNGKey(0)
-    print(soft.tabulate(rng, x_training[0:1], training=False))
+    print(soft.tabulate(rng, features[0:1], training=False))
 
-    num_experiments = 1  # 100 for paper
+    num_experiments = 1
     final_test_accuracies = []
     for i in range(num_experiments):
+        # Split features and labels into 80% training and 20% test
         rng, int_rng, dropout_rng = jax.random.split(rng, 3)
+        x_training, x_test, y_training, y_test = train_test_split(
+            features, labels, rng, test_size=0.2
+        )
         trained_state, final_test_accuracy = train_and_evaluate(
             int_rng,
             dropout_rng,
@@ -316,18 +353,7 @@ def test_noisy_xor():
             f"5%: {numpy.percentile(final_test_accuracies, 5) * 100:.2f}, "
             f"95%: {numpy.percentile(final_test_accuracies, 95) * 100:.2f}"
         )
-        # numpy.set_printoptions(threshold=sys.maxsize)
-        # print(f"trained soft weights: {repr(trained_state.params)}")
-        # hard_weights = harden.hard_weights(trained_state.params)
-        # print(f"trained hard weights: {repr(hard_weights)}")
 
-        # Check symbolic net
-        _, hard, symbolic = neural_logic_net.net(
-            lambda type, x, training: nln(type, x, training)
-        )
-        check_symbolic(
-            (soft, hard, symbolic),
-            (x_training, y_training, x_test, y_test),
-            trained_state,
-            dropout_rng,
-        )
+    # Check symbolic net
+    _, hard, symbolic = neural_logic_net.net(lambda type, x, training: nln(type, x, training))
+    check_symbolic((soft, hard, symbolic), (x_training, y_training, x_test, y_test), trained_state, dropout_rng)

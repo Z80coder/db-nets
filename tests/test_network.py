@@ -43,7 +43,7 @@ def test_train_network():
     output = jnp.array(y)
 
     # Train the and layer
-    tx = optax.sgd(0.01)
+    tx = optax.sgd(0.1)
     state = train_state.TrainState.create(apply_fn=jax.vmap(
         soft.apply, in_axes=(None, 0)), params=soft_weights, tx=tx)
     grad_fn = jax.jit(jax.value_and_grad(lambda params, x,

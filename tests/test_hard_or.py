@@ -13,9 +13,9 @@ def test_neuron():
     test_data = [
         [[1.0, 1.0], [1.0, 1.0], 1.0],
         [[0.0, 0.0], [0.0, 0.0], 0.0],
-        [[1.0, 0.0], [0.0, 1.0], 0.0],
-        [[0.0, 1.0], [1.0, 0.0], 0.0],
-        [[0.0, 1.0], [0.0, 0.0], 0.0],
+        [[1.0, 0.0], [0.0, 1.0], 0.25],
+        [[0.0, 1.0], [1.0, 0.0], 0.25],
+        [[0.0, 1.0], [0.0, 0.0], 0.25],
         [[0.0, 1.0], [1.0, 1.0], 1.0],
     ]
     for input, weights, expected in test_data:
@@ -36,22 +36,22 @@ def test_layer():
         [
             [1.0, 0.0],
             [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0], [0.0, 0.2]],
-            [1.0, 0.0, 1.0, 0.0],
+            [1., 0.25, 1., 0.25],
         ],
         [
             [1.0, 0.4],
             [[1.0, 1.0], [0.0, 1.0], [1.0, 0.0], [0.0, 0.0]],
-            [1.0, 0.39999998, 1.0, 0.0],
+            [1., 0.47, 1., 0.25],
         ],
         [
             [0.0, 1.0],
             [[1.0, 1.0], [0.0, 0.8], [1.0, 0.0], [0.0, 0.0]],
-            [1.0, 0.8, 0.0, 0.0],
+            [1., 0.77, 0.25, 0.25],
         ],
         [
             [0.0, 0.0],
             [[1.0, 0.01], [0.0, 1.0], [1.0, 0.0], [0.0, 0.0]],
-            [0.0, 0.0, 0.0, 0.0],
+            [0.25, 0.25, 0.25, 0.],
         ],
     ]
     for input, weights, expected in test_data:
@@ -82,15 +82,18 @@ def test_or():
     hard_weights = harden.hard_weights(weights)
 
     test_data = [
-        [[1.0, 1.0], [0.45491087, 0.36511207, 0.62628365, 0.95989954]],
-        [[1.0, 0.0], [0.2715416, 0.03128195, 0.01773429, 0.5896025]],
-        [[0.0, 1.0], [0.45491087, 0.36511207, 0.62628365, 0.95989954]],
-        [[0.0, 0.0], [0.0, 0.0, 0.0, 0.0]],
+        [[1.0, 1.0], [0.4877112, 0.45718065, 0.6026865, 0.95067847]],
+        [[1.0, 0.0], [0.41678876, 0.27297217, 0.26314348, 0.57121617]],
+        [[0.0, 1.0], [0.4877112, 0.45718065, 0.6026865, 0.95067847]],
+        [[0.0, 0.0], [0.11372772, 0.09127802, 0.15657091, 0.23997489]],
     ]
     for input, expected in test_data:
         # Check that the soft function performs as expected
+        output = soft.apply(weights, jax.numpy.array(input))
+        print("output", output)
+        print("expected", expected)
         assert jax.numpy.allclose(
-            soft.apply(weights, jax.numpy.array(input)), jax.numpy.array(expected)
+            output, jax.numpy.array(expected)
         )
 
         # Check that the hard function performs as expected
@@ -136,7 +139,7 @@ def test_train_or():
             lambda params, x, y: jax.numpy.mean((state.apply_fn(params, x) - y) ** 2)
         )
     )
-    for epoch in range(1, 100):
+    for epoch in range(1, 500):
         loss, grads = grad_fn(state.params, input, output)
         state = state.apply_gradients(grads=grads)
 
@@ -148,6 +151,8 @@ def test_train_or():
         hard_input = harden.harden(jax.numpy.array(input))
         hard_expected = harden.harden(jax.numpy.array(expected))
         hard_result = hard.apply(hard_weights, hard_input)
+        print("hard expected", hard_expected)
+        print("hard result", hard_result)
         assert jax.numpy.allclose(hard_result, hard_expected)
         symbolic_output = symbolic.apply(hard_weights, hard_input)
         assert jax.numpy.array_equal(symbolic_output, hard_expected)

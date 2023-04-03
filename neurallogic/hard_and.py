@@ -6,12 +6,6 @@ from flax import linen as nn
 from neurallogic import hard_masks, neural_logic_net, symbolic_generation, initialization
 
 
-# TODO: seperate and operation from mask operation
-def soft_and_neuron(w, x):
-    x = jax.vmap(hard_masks.soft_mask_to_true, 0, 0)(w, x)
-    return jax.numpy.min(x)
-
-
 def soft_and(x, y):
     m = jax.numpy.minimum(x, y)
     return jax.numpy.where(
@@ -20,10 +14,26 @@ def soft_and(x, y):
         m + 0.5 * (x + y) * (0.5 - m),
     )
 
-# This doesn't work well
+def soft_and_vec(x):
+    m = jax.numpy.min(x)
+    mean = jax.numpy.mean(x)
+    delta = jax.numpy.abs(mean - 0.5)
+    return jax.numpy.where(
+        2 * m > 1,
+        0.5 + delta,
+        m + delta
+    )
+
+# TODO: seperate and operation from mask operation
+def soft_and_neuron(w, x):
+    x = jax.vmap(hard_masks.soft_mask_to_true_margin, 0, 0)(w, x)
+    #x = jax.vmap(hard_masks.soft_mask_to_true, 0, 0)(w, x)
+    return jax.numpy.min(x)
+
+# TODO: doesn't seem to work as well
 def soft_and_neuron_deprecated(w, x):
-    x = jax.vmap(hard_masks.soft_mask_to_true, 0, 0)(w, x)
-    return jax.lax.reduce(x, 1.0, soft_and, [0])
+    x = jax.vmap(hard_masks.soft_mask_to_true_margin, 0, 0)(w, x)
+    return soft_and_vec(x)
 
 def hard_and_neuron(w, x):
     x = jax.vmap(hard_masks.hard_mask_to_true, 0, 0)(w, x)
