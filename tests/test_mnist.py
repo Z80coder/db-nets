@@ -96,7 +96,7 @@ def check_symbolic(nets, datasets, trained_state, dropout_rng):
 
 # about 95% training, 93-4% test
 # batch size 6000
-def nln(type, x, training: bool):
+def nln_1(type, x, training: bool):
     input_size = 784
     mask_layer_size = 60
     dtype = jax.numpy.float32
@@ -113,6 +113,22 @@ def nln(type, x, training: bool):
     x = x.sum(-1)
     return x
 
+def nln(type, x, training: bool):
+    input_size = 784
+    mask_layer_size = 200
+    dtype = jax.numpy.float32
+    x = hard_masks.mask_to_true_layer(type)(mask_layer_size, dtype=dtype,
+        weights_init=initialization.initialize_bernoulli(0.01, 0.3, 0.501))(x)
+    x = x.reshape((9800, 16)) 
+    x = hard_majority.majority_layer(type)()(x)
+    x = hard_not.not_layer(type)(20, weights_init=nn.initializers.uniform(1.0), dtype=dtype)(x)
+    x = x.ravel()
+    ##############################
+    x = harden_layer.harden_layer(type)(x)
+    num_classes = 10
+    x = x.reshape((num_classes, int(x.shape[0] / num_classes)))
+    x = x.sum(-1)
+    return x
 
 def batch_nln(type, x, training: bool):
     return jax.vmap(lambda x: nln(type, x, training))(x)
@@ -285,12 +301,12 @@ def get_config():
     # config for CNN: config.learning_rate = 0.01
     config.learning_rate = 0.01
     config.momentum = 0.9
-    config.batch_size = 6000 # 6000 # 128
-    config.num_epochs = 1000
+    config.batch_size = 3000 # 6000 # 128
+    config.num_epochs = 5000
     return config
 
 
-@pytest.mark.skip(reason="temporarily off")
+#@pytest.mark.skip(reason="temporarily off")
 def test_mnist():
     # Make sure tf does not allocate gpu memory.
     tf.config.experimental.set_visible_devices([], "GPU")

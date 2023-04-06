@@ -1,20 +1,30 @@
-# discrete-differentiable-networks
+# ∂B nets
 
 [![Python package](https://github.com/Z80coder/discrete-differentiable-networks/actions/workflows/python.yaml/badge.svg)](https://github.com/Z80coder/discrete-differentiable-networks/actions/workflows/python.yaml)
 
-A Boolean Logic Network library for learning boolean functions on GPUs with gradient descent.
+A nerual network library for learning boolean-valued, discrete functions on GPUs with gradient descent.
 
-The working prototype is implemented in Wolfram. The production library is implemented in Python.
+The library is implemented in Python using the [Flax](https://github.com/google/flax) and [JAX](https://github.com/google/jax) frameworks.
 
 Questions? Ask @Z80coder
 
+## Draft paper
+
+["∂B nets: learning discrete functions by gradient descent"](./docs/db.pdf) (March 2023).
+
 ## Demos
 
-Neural logic nets
+[∂B nets](https://drive.google.com/file/d/1UUhv6loBrFnZ7jwiHBofnp06at_8bm_F/view?usp=share_link) (1 hour).
+
+# Prototype
+
+The working prototype was implemented in Wolfram. The demos below were snapshots of work-in-progress.
+
+## Demos
 
 - [Neural logic nets](https://drive.google.com/file/d/1_IECuI0f58o_aIIdaQhRo6qPH517YaMa/view?usp=share_link) (15m)
 
-## Development videos   
+## Development snapshots
 
 - [The Soft-NOT operator](https://drive.google.com/file/d/1z2WFpz4eWLb9xauRnIl6mSXhkbU-XR6X/view?usp=share_link) (10m)
 - [The Soft-AND operator](https://drive.google.com/file/d/1l9Y2cWJYYdYSsgqwfH-Dfo2Nxmiewia-/view?usp=share_link) (10m)
@@ -33,4 +43,4 @@ Neural logic nets
 - [Boolean logic nets and MNIST](https://drive.google.com/file/d/12Rwx8H76UTNRdBK4WAwe_QeTWiGrbP-_/view?usp=share_link) (18m)
 - [Neural logic nets for differentiable QL](https://drive.google.com/file/d/15rAagCh7LxEN0CHVNkTY6iPWSxrAG0pW/view?usp=share_link) (30m)
 
-More to come!
+
