@@ -20,11 +20,11 @@ Questions? Ask @Z80coder
 
 The working prototype was implemented in Wolfram. The demos below were snapshots of work-in-progress.
 
-### Demos
+### Prototype demos
 
 - [Neural logic nets](https://drive.google.com/file/d/1_IECuI0f58o_aIIdaQhRo6qPH517YaMa/view?usp=share_link) (15m)
 
-### Development snapshots
+### Prototype development snapshots
 
 - [The Soft-NOT operator](https://drive.google.com/file/d/1z2WFpz4eWLb9xauRnIl6mSXhkbU-XR6X/view?usp=share_link) (10m)
 - [The Soft-AND operator](https://drive.google.com/file/d/1l9Y2cWJYYdYSsgqwfH-Dfo2Nxmiewia-/view?usp=share_link) (10m)
