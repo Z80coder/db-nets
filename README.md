@@ -2,7 +2,7 @@
 
 [![Python package](https://github.com/Z80coder/discrete-differentiable-networks/actions/workflows/python.yaml/badge.svg)](https://github.com/Z80coder/discrete-differentiable-networks/actions/workflows/python.yaml)
 
-A nerual network library for learning boolean-valued, discrete functions on GPUs with gradient descent.
+A neural network library for learning boolean-valued, discrete functions on GPUs with gradient descent.
 
 The library is implemented in Python using the [Flax](https://github.com/google/flax) and [JAX](https://github.com/google/jax) frameworks.
 
