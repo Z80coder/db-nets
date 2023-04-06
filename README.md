@@ -16,15 +16,15 @@ Questions? Ask @Z80coder
 
 [∂B nets](https://drive.google.com/file/d/1UUhv6loBrFnZ7jwiHBofnp06at_8bm_F/view?usp=share_link) (1 hour).
 
-# Prototype
+## Prototype
 
 The working prototype was implemented in Wolfram. The demos below were snapshots of work-in-progress.
 
-## Demos
+### Demos
 
 - [Neural logic nets](https://drive.google.com/file/d/1_IECuI0f58o_aIIdaQhRo6qPH517YaMa/view?usp=share_link) (15m)
 
-## Development snapshots
+### Development snapshots
 
 - [The Soft-NOT operator](https://drive.google.com/file/d/1z2WFpz4eWLb9xauRnIl6mSXhkbU-XR6X/view?usp=share_link) (10m)
 - [The Soft-AND operator](https://drive.google.com/file/d/1l9Y2cWJYYdYSsgqwfH-Dfo2Nxmiewia-/view?usp=share_link) (10m)
