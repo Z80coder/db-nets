@@ -8,6 +8,7 @@
 \usepackage{hyperref}
 \usepackage{url}
 \usepackage{amsthm}
+\usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{comment}
 \usepackage{xcolor}
@@ -45,6 +46,20 @@
 \newtheorem{prop}{Proposition}
 \newtheorem{lemma}{Lemma}
 
+\makeatletter
+\newcommand{\tleft}{\mathrel\triangleleft}
+\newcommand{\tright}{\mathrel\triangleright}
+\DeclareRobustCommand{\btleft}{\mathrel{\mathpalette\btlr@\blacktriangleleft}}
+\DeclareRobustCommand{\btright}{\mathrel{\mathpalette\btlr@\blacktriangleright}}
+
+\newcommand{\btlr@}[2]{%
+	\begingroup
+	\sbox\z@{$\m@th#1\triangleright$}%
+	\sbox\tw@{\resizebox{1.1\wd\z@}{1.1\ht\z@}{\raisebox{\depth}{$\m@th#1\mkern-1mu#2$}}}%
+	\ht\tw@=\ht\z@ \dp\tw@=\dp\z@ \wd\tw@=\wd\z@
+	\copy\tw@
+	\endgroup
+}
 
 \iclrfinalcopy % Uncomment for camera-ready version, but NOT for submission.
 \begin{document}
@@ -113,9 +128,9 @@ A soft-net is any differentiable function, $f$, that `hardens' to a semantically
 \begin{definition}[Hard-equivalence]
 	A function, $f: [0,1]^n \rightarrow [0,1]^m$, is {\em hard-equivalent} to a discrete function, $g: \{1,0\}^n \rightarrow \{1,0\}^m$,	if
 	\begin{equation*}
-	\operatorname{harden}(f(\operatorname{harden}({\bf x}))) = g(\operatorname{harden}({\bf x}))
+	\operatorname{harden}(f({\bf x})) = g(\operatorname{harden}({\bf x}))
 	\end{equation*}
-for all ${\bf x} \in [0,1]^{n}$. For shorthand write $f \equiv g$.
+for all ${\bf x} \in [0,1]^{n}$. For shorthand write $f \btright g$.
 \end{definition}
 
 Neural networks are typically composed of nonlinear activation functions (for representational generality) that are strictly monotonic (so gradients always exist that link changes in inputs to outputs without local minima) and differentiable (so gradients reliably represent the local loss surface). However, activation functions that are monotonic but not strictly (so some gradients are zero) and differentiable almost everywhere (so some gradients are undefined) can also work, e.g. RELU \citep{10.5555/3104322.3104425}. $\partial \mathbb{B}$ nets are composed from `activation' functions that also satisfy these properties plus the additional property of hard-equivalence to a boolean function (and natural generalisations).
@@ -136,9 +151,9 @@ We aim to learn to negate a boolean value, $x$, or simply leave it unaltered. Re
 	(w, x) &\mapsto 1 - w + x (2w - 1)\text{,}
 	\end{aligned}
 	\end{equation*}
-where $\partial_{\neg}(w, x) \equiv \neg(x \oplus w)$ (see proposition \ref{prop:not}).
+where $\partial_{\neg}(w, x) \btright \neg(x \oplus w)$ (see proposition \ref{prop:not}).
 
-There are many kinds of differentiable fuzzy logic operators (see \cite{VANKRIEKEN2022103602} for a review). So why this functional form? Product logics, where $f(x,y) = x y$ is as a soft version of $x \wedge y$, although hard-equivalent at extreme values, e.g. $f(1,1)=1$ and $f(0,1)=0$, are not hard-equivalent at intermediate values, e.g. $f(0.6, 0.6) = 0.36 \not\equiv 1$. G\"{o}del-style $\operatorname{min}$ and $\operatorname{max}$ functions, although hard-equivalent over the entire soft-bit range, i.e. $\operatorname{min}(x,y) \equiv x \wedge y$ and $\operatorname{min}(x,y) \equiv x \vee y$, are gradient-sparse in the sense that their outputs are not always a function of all their inputs, e.g. $\frac{\partial}{\partial x} \operatorname{max}(x,y) = 0$ when $(x,y)=(0.1, 0.9)$. So although the composite function $\operatorname{max}(\operatorname{min}(w, x), \operatorname{min}(1-w, 1-x))$ is differentiable and $\equiv \neg(x \oplus w)$ it does not always backpropagate error to its inputs. In contrast, $\partial_{\neg}$ always backpropagates error to its inputs because it is a gradient-rich function (see figure \ref{fig:gradient-rich}). 
+There are many kinds of differentiable fuzzy logic operators (see \cite{VANKRIEKEN2022103602} for a review). So why this functional form? Product logics, where $f(x,y) = x y$ is as a soft version of $x \wedge y$, although hard-equivalent at extreme values, e.g. $f(1,1)=1$ and $f(0,1)=0$, are not hard-equivalent at intermediate values, e.g. $f(0.6, 0.6) = 0.36$, which hardens to $\operatorname{False}$ not $\operatorname{True}$. G\"{o}del-style $\operatorname{min}$ and $\operatorname{max}$ functions, although hard-equivalent over the entire soft-bit range, i.e. $\operatorname{min}(x,y) \btright x \wedge y$ and $\operatorname{max}(x,y) \btright x \vee y$, are gradient-sparse in the sense that their outputs are not always a function of all their inputs, e.g. $\frac{\partial}{\partial x} \operatorname{max}(x,y) = 0$ when $(x,y)=(0.1, 0.9)$. So although the composite function $\operatorname{max}(\operatorname{min}(w, x), \operatorname{min}(1-w, 1-x))$ is differentiable and $\btright \neg(x \oplus w)$ it does not always backpropagate error to its inputs. In contrast, $\partial_{\neg}$ always backpropagates error to its inputs because it is a gradient-rich function (see figure \ref{fig:gradient-rich}). 
 
 \subsection{Margin packing}
 
@@ -170,7 +185,7 @@ Note that if the representative bit is high (resp. low) then the augmented bit i
 \begin{figure}[t!]
 	\centering
 	\includegraphics[trim=30pt 5pt 30pt 10pt, clip, width=1.0\textwidth]{margin-trick.png}
-	\caption{{\em Margin packing for constructing gradient-rich, hard-equivalent functions}. A representative bit, $z$, is hard-equivalent to a discrete target function but gradient-sparse (e.g. $z=\operatorname{min}(x,y) \equiv x \wedge y$). On the left $z$ is low, $z<1/2$; on the right $z$ is high, $z>1/2$. We can pack a fraction of the margin between $z$ and the hard threshold $1/2$ with additional gradient-rich information without affecting hard-equivalence. A natural choice is the mean soft-bit, $\bar{\bf x} \in [0,1]$. The grey shaded areas denote the packed margins and the final augmented bit. On the left $\approx 60\%$ of the margin is packed; on the right $\approx 90\%$.}
+	\caption{{\em Margin packing for constructing gradient-rich, hard-equivalent functions}. A representative bit, $z$, is hard-equivalent to a discrete target function but gradient-sparse (e.g. $z=\operatorname{min}(x,y) \btright x \wedge y$). On the left $z$ is low, $z<1/2$; on the right $z$ is high, $z>1/2$. We can pack a fraction of the margin between $z$ and the hard threshold $1/2$ with additional gradient-rich information without affecting hard-equivalence. A natural choice is the mean soft-bit, $\bar{\bf x} \in [0,1]$. The grey shaded areas denote the packed margins and the final augmented bit. On the left $\approx 60\%$ of the margin is packed; on the right $\approx 90\%$.}
 	\label{fig:margin-trick}
 \end{figure}
 % On the left, ${\bf x}=[0.9,0.23]$, $z=0.23$, $\bar{\bf x}=0.57$ and therefore $\approx 60\%$ of the margin is packed; on the right, ${\bf x}=[0.9,0.83]$,  $z=0.83$, $\bar{\bf x}=0.87$, and therefore $\approx 90\%$ of the margin is packed.
@@ -241,7 +256,7 @@ is hard-equivalent to $x \Rightarrow y$ (see proposition \ref{prop:implies}). We
 \begin{figure}[t]
 	\centering
 	\includegraphics[trim=0pt 0pt 0pt 0pt, clip, width=1.0\textwidth]{majority-gates.png}
-	\caption{{\em Differentiable boolean majority.} The boolean majority function for three variables in DNF form is $\operatorname{Maj}(x,y,z) = (x \wedge y) \vee (x \wedge y) \vee (y \wedge z)$. The upper row contains contour plots of $f(x,y,z) = \operatorname{min}(\operatorname{max}(x,y), \operatorname{max}(x,z), \operatorname{max}(y,z))$ for values of $z \in \{0.2, 0.4, 0.6, 0.8\}$. $f$ is differentiable and $\equiv \operatorname{Maj}$ but gradient-sparse (vertical and horizontal contours indicate constancy with respect to an input). Also, the number of terms in $f$ grows exponentially with the number of variables. The lower row contains contour plots of $\partial\!\operatorname{Maj}(x,y,z)$ for the same values of $z$. $\partial\!\operatorname{Maj}$ is differentiable and $\equiv \operatorname{Maj}$ yet gradient-rich (curved contours indicate variability with respect to any inputs). In addition, the number of terms in $\partial\!\operatorname{Maj}$ is constant with respect to the number of variables.} 
+	\caption{{\em Differentiable boolean majority.} The boolean majority function for three variables in DNF form is $\operatorname{Maj}(x,y,z) = (x \wedge y) \vee (x \wedge y) \vee (y \wedge z)$. The upper row contains contour plots of $f(x,y,z) = \operatorname{min}(\operatorname{max}(x,y), \operatorname{max}(x,z), \operatorname{max}(y,z))$ for values of $z \in \{0.2, 0.4, 0.6, 0.8\}$. $f$ is differentiable and $\btright\!\operatorname{Maj}$ but gradient-sparse (vertical and horizontal contours indicate constancy with respect to an input). Also, the number of terms in $f$ grows exponentially with the number of variables. The lower row contains contour plots of $\partial\!\operatorname{Maj}(x,y,z)$ for the same values of $z$. $\partial\!\operatorname{Maj}$ is differentiable and $\btright\!\operatorname{Maj}$ yet gradient-rich (curved contours indicate variability with respect to any inputs). In addition, the number of terms in $\partial\!\operatorname{Maj}$ is constant with respect to the number of variables.} 
 	\label{fig:majority-plot}
 \end{figure}
 
@@ -591,7 +606,7 @@ Thanks to GitHub Next for sponsoring this research. And thanks to Pavel Augustin
 \section{Proofs}
 
 \begin{prop}\label{prop:not}
-	$\partial_{\neg}(x,y) \equiv \neg (x \oplus y)$.
+	$\partial_{\neg}(x,y) \btright \neg (x \oplus y)$.
 \begin{proof}
 	Table \ref{not-table} is the truth table of the boolean function $\neg (x \oplus w)$, where $h(x) = \operatorname{harden}(x)$.
 	\begin{table}[h!]
@@ -605,7 +620,7 @@ Thanks to GitHub Next for sponsoring this research. And thanks to Pavel Augustin
 				$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & 1 & 1\\[0.1cm]
 			\end{tabular}
 		\end{center}
-		\caption{$\partial_{\neg}(x,y) \equiv \neg (y \oplus x)$.}\label{not-table}
+		\caption{$\partial_{\neg}(x,y) \btright \neg (y \oplus x)$.}\label{not-table}
 	\end{table}
 \end{proof}
 \end{prop}
@@ -633,7 +648,7 @@ Thanks to GitHub Next for sponsoring this research. And thanks to Pavel Augustin
 
 
 \begin{prop}\label{prop:and}
-	$\partial_{\wedge}\!(x,y) \equiv x \wedge y$.
+	$\partial_{\wedge}\!(x,y) \btright x \wedge y$.
 \begin{proof}
 	Table \ref{and-table} is the truth table of the boolean function $x \wedge y$, where $h(x) = \operatorname{harden}(x)$..
 	\begin{table}[h!]
@@ -647,13 +662,13 @@ Thanks to GitHub Next for sponsoring this research. And thanks to Pavel Augustin
 				$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & 1 & 1\\[0.1cm]
 			\end{tabular}
 		\end{center}
-		\caption{$\partial_{\wedge}(x,y) \equiv x \wedge y$.}\label{and-table}
+		\caption{$\partial_{\wedge}(x,y) \btright x \wedge y$.}\label{and-table}
 	\end{table}			
 \end{proof}
 \end{prop}
 
 \begin{prop}\label{prop:or}
-	$\partial_{\vee}\!(x,y) \equiv x \vee y$.
+	$\partial_{\vee}\!(x,y) \btright x \vee y$.
 \begin{proof}
 	Table \ref{or-table} is the truth table of the boolean function $x \vee y$, where $h(x) = \operatorname{harden}(x)$..
 	\begin{table}[h!]
@@ -667,13 +682,13 @@ Thanks to GitHub Next for sponsoring this research. And thanks to Pavel Augustin
 			$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & 1 & 1\\[0.1cm]
 		\end{tabular}
 	\end{center}
-	\caption{$\partial_{\vee}(x,y) \equiv x \vee y$.}\label{or-table}
+	\caption{$\partial_{\vee}(x,y) \btright x \vee y$.}\label{or-table}
 	\end{table}			
 \end{proof}
 \end{prop}
 
 \begin{prop}\label{prop:implies}
-	$\partial_{\Rightarrow}\!(x,y) \equiv x \Rightarrow y$.
+	$\partial_{\Rightarrow}\!(x,y) \btright x \Rightarrow y$.
 \begin{proof}
 	Table \ref{implies-table} is the truth table of the boolean function $x \Rightarrow y$, where $h(x) = \operatorname{harden}(x)$..
 	\begin{table}[h!]
@@ -687,7 +702,7 @@ Thanks to GitHub Next for sponsoring this research. And thanks to Pavel Augustin
 			$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & $\frac{3}{4}$ & 1\\[0.1cm]
 		\end{tabular}
 	\end{center}
-	\caption{$\partial \Rightarrow(x,y) \equiv x \Rightarrow y$.}\label{implies-table}
+	\caption{$\partial \Rightarrow(x,y) \btright x \Rightarrow y$.}\label{implies-table}
 	\end{table}			
 \end{proof}
 \end{prop}
@@ -705,17 +720,17 @@ In consequence, $\operatorname{harden}(\operatorname{sort}({\bf x})[i]) = \opera
 \end{lemma}
 
 \begin{theorem}\label{prop:majority}
-	$\partial\!\operatorname{Maj} \equiv \operatorname{Maj}$.
+	$\partial\!\operatorname{Maj} \btright \operatorname{Maj}$.
 \begin{proof}
-	$\partial\!\operatorname{Maj}$ augments the representative bit $x_{i} = \operatorname{sort}({\bf x})[\operatorname{majority-index}({\bf x})]$. By lemma \ref{lem:maj}, the representative bit is $\equiv \operatorname{Maj}(\operatorname{harden}({\bf x}))$.
-    By lemma \ref{prop:augmented}, the augmented bit, $\operatorname{augmented-bit}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))$, is also $\equiv \operatorname{Maj}(\operatorname{harden}({\bf x}))$. Hence $\partial\!\operatorname{Maj} \equiv \operatorname{Maj}$.
+	$\partial\!\operatorname{Maj}$ augments the representative bit $x_{i} = \operatorname{sort}({\bf x})[\operatorname{majority-index}({\bf x})]$. By lemma \ref{lem:maj}, the representative bit is $\btright\!\operatorname{Maj}(\operatorname{harden}({\bf x}))$.
+    By lemma \ref{prop:augmented}, the augmented bit, $\operatorname{augmented-bit}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))$, is also $\btright\!\operatorname{Maj}(\operatorname{harden}({\bf x}))$. Hence $\partial\!\operatorname{Maj} \btright\!\operatorname{Maj}$.
 \end{proof}
 \end{theorem}
 
 \begin{prop}\label{prop:count}
-	$\partial\!\operatorname{count-hot} \equiv \operatorname{count-hot}$.
+	$\partial\!\operatorname{count-hot} \btright \operatorname{count-hot}$.
 	\begin{proof}
-	Let $l$ denote the number of bits that are low in ${\bf x} = [x_{1},\dots,x_{n}]$, and let ${\bf y} = \partial\!\operatorname{count-hot}({\bf x})$. Then ${\bf y}[l+1]$ is high and any ${\bf y}[i]$, where $i \neq l+1$, is low. Let ${\bf z} = \operatorname{count-hot}(\operatorname{harden}({\bf x}))$. Then ${\bf z}[l+1]$ is high and any ${\bf z}[i]$, where $i \neq l+1$, is low. Hence, $\operatorname{harden}({\bf y}) = {\bf z}$, and therefore $\partial\!\operatorname{count-hot} \equiv \operatorname{count-hot}$.
+	Let $l$ denote the number of bits that are low in ${\bf x} = [x_{1},\dots,x_{n}]$, and let ${\bf y} = \partial\!\operatorname{count-hot}({\bf x})$. Then ${\bf y}[l+1]$ is high and any ${\bf y}[i]$, where $i \neq l+1$, is low. Let ${\bf z} = \operatorname{count-hot}(\operatorname{harden}({\bf x}))$. Then ${\bf z}[l+1]$ is high and any ${\bf z}[i]$, where $i \neq l+1$, is low. Hence, $\operatorname{harden}({\bf y}) = {\bf z}$, and therefore $\partial\!\operatorname{count-hot} \btright \operatorname{count-hot}$.
 	\end{proof}
 \end{prop}
 
