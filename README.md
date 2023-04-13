@@ -14,7 +14,9 @@ Questions? Ask @Z80coder
 
 ## Demos
 
-[∂B nets](https://drive.google.com/file/d/1UUhv6loBrFnZ7jwiHBofnp06at_8bm_F/view?usp=share_link) (1 hour).
+[∂B nets quick overview](https://drive.google.com/file/d/1wi0uCpCgdSSlyXlb1XmzeE_u7adugAEa/view?usp=sharing) (30 mins).
+
+[∂B nets overview](https://drive.google.com/file/d/1UUhv6loBrFnZ7jwiHBofnp06at_8bm_F/view?usp=share_link) (1 hour).
 
 ## Prototype
 
