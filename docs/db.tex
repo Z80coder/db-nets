@@ -130,7 +130,7 @@ A soft-net is any differentiable function, $f$, that `hardens' to a semantically
 	\begin{equation*}
 	\operatorname{harden}(f({\bf x})) = g(\operatorname{harden}({\bf x}))
 	\end{equation*}
-for all ${\bf x} \in [0,1]^{n}$. For shorthand write $f \btright g$.
+	for all ${\bf x} \in \{(x_{1}, \dots, x_{n}) ~|~ x_{i} \in [0,1] \setminus \{1/2\}\}$. For shorthand write $f \btright g$.
 \end{definition}
 
 Neural networks are typically composed of nonlinear activation functions (for representational generality) that are strictly monotonic (so gradients always exist that link changes in inputs to outputs without local minima) and differentiable (so gradients reliably represent the local loss surface). However, activation functions that are monotonic but not strictly (so some gradients are zero) and differentiable almost everywhere (so some gradients are undefined) can also work, e.g. RELU \citep{10.5555/3104322.3104425}. $\partial \mathbb{B}$ nets are composed from `activation' functions that also satisfy these properties plus the additional property of hard-equivalence to a boolean function (and natural generalisations).
@@ -154,6 +154,12 @@ We aim to learn to negate a boolean value, $x$, or simply leave it unaltered. Re
 where $\partial_{\neg}(w, x) \btright \neg(x \oplus w)$ (see proposition \ref{prop:not}).
 
 There are many kinds of differentiable fuzzy logic operators (see \cite{VANKRIEKEN2022103602} for a review). So why this functional form? Product logics, where $f(x,y) = x y$ is as a soft version of $x \wedge y$, although hard-equivalent at extreme values, e.g. $f(1,1)=1$ and $f(0,1)=0$, are not hard-equivalent at intermediate values, e.g. $f(0.6, 0.6) = 0.36$, which hardens to $\operatorname{False}$ not $\operatorname{True}$. G\"{o}del-style $\operatorname{min}$ and $\operatorname{max}$ functions, although hard-equivalent over the entire soft-bit range, i.e. $\operatorname{min}(x,y) \btright x \wedge y$ and $\operatorname{max}(x,y) \btright x \vee y$, are gradient-sparse in the sense that their outputs are not always a function of all their inputs, e.g. $\frac{\partial}{\partial x} \operatorname{max}(x,y) = 0$ when $(x,y)=(0.1, 0.9)$. So although the composite function $\operatorname{max}(\operatorname{min}(w, x), \operatorname{min}(1-w, 1-x))$ is differentiable and $\btright \neg(x \oplus w)$ it does not always backpropagate error to its inputs. In contrast, $\partial_{\neg}$ always backpropagates error to its inputs because it is a gradient-rich function (see figure \ref{fig:gradient-rich}). 
+
+\begin{definition}[Gradient-rich]
+	A function, $f: [0,1]^n \rightarrow [0,1]^m$, is {\em gradient-rich} if $\frac{\partial f({\bf x})}{\partial x_{i}} \neq {\bf 0}$ for all ${\bf x} \in \{(x_{1}, \dots, x_{n}) ~|~ x_{i} \in [0,1] \setminus \{1/2\}\}$.
+\end{definition}
+
+TODO: explain
 
 \subsection{Margin packing}
 
@@ -611,13 +617,14 @@ Thanks to GitHub Next for sponsoring this research. And thanks to Pavel Augustin
 	Table \ref{not-table} is the truth table of the boolean function $\neg (x \oplus w)$, where $h(x) = \operatorname{harden}(x)$.
 	\begin{table}[h!]
 		\begin{center}
-			\begin{tabular}{cccccc}
-				\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$y$}  &\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial_{\neg}(h(x), h(y))$} &\multicolumn{1}{c}{$h(\partial_{\neg}(h(x), h(y)))$}
+			\begin{tabular}{ccccccc}
+				\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$y$}  &\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial_{\neg}(x, y)$} &\multicolumn{1}{c}{$h(\partial_{\neg}(x, y))$}
+				&\multicolumn{1}{c}{$\neg (h(y) \oplus h(x))$}
 				\\ \hline \\
-				$\left[0, \frac{1}{2}\right]$ & $\left[0, \frac{1}{2}\right]$ & 0 & 0 & 1 & 1\\[0.1cm]
-				$\left(\frac{1}{2}, 1\right]$ & $\left[0, \frac{1}{2}\right]$ &1 & 0 & 0 & 0\\[0.1cm]
-				$\left[0, \frac{1}{2}\right]$ & $\left(\frac{1}{2}, 1\right]$ &0 & 1 & 0 & 0\\[0.1cm]
-				$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & 1 & 1\\[0.1cm]
+				$\left[0, \frac{1}{2}\right)$ & $\left[0, \frac{1}{2}\right)$ & 0 & 0 & $\left(\frac{1}{2},1\right]$ & 1 & 1\\[0.1cm] 
+				$\left(\frac{1}{2}, 1\right]$ & $\left[0, \frac{1}{2}\right)$ &1 & 0 & $\left[0, \frac{1}{2}\right)$ & 0 & 0\\[0.1cm]
+				$\left[0, \frac{1}{2}\right)$ & $\left(\frac{1}{2}, 1\right]$ &0 & 1 & $\left[0, \frac{1}{2}\right)$ & 0 & 0\\[0.1cm]
+				$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & $\left(\frac{1}{2}, 1\right]$ & 1 & 1\\[0.1cm]
 			\end{tabular}
 		\end{center}
 		\caption{$\partial_{\neg}(x,y) \btright \neg (y \oplus x)$.}\label{not-table}
@@ -653,13 +660,14 @@ Thanks to GitHub Next for sponsoring this research. And thanks to Pavel Augustin
 	Table \ref{and-table} is the truth table of the boolean function $x \wedge y$, where $h(x) = \operatorname{harden}(x)$..
 	\begin{table}[h!]
 		\begin{center}
-			\begin{tabular}{cccccc}
-				\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$y$}  &\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial_{\wedge}(h(x), h(y))$} &\multicolumn{1}{c}{$h(\partial_{\wedge}(h(x), h(y)))$}
+			\begin{tabular}{ccccccc}
+				\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$y$}  &\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial_{\wedge}(x, y)$} &\multicolumn{1}{c}{$h(\partial_{\wedge}(x, y))$}
+				&\multicolumn{1}{c}{$h(x) \wedge h(y)$}
 				\\ \hline \\
-				$\left[0, \frac{1}{2}\right]$ & $\left[0, \frac{1}{2}\right]$ & 0 & 0 & 0 & 0\\[0.1cm]
-				$\left(\frac{1}{2}, 1\right]$ & $\left[0, \frac{1}{2}\right]$ &1 & 0 & $\frac{1}{4}$ & 0\\[0.1cm]
-				$\left[0, \frac{1}{2}\right]$ & $\left(\frac{1}{2}, 1\right]$ &0 & 1 & $\frac{1}{4}$ & 0\\[0.1cm]
-				$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & 1 & 1\\[0.1cm]
+				$\left[0, \frac{1}{2}\right)$ & $\left[0, \frac{1}{2}\right)$ & 0 & 0 & $\left[0, \frac{1}{2}\right)$ & 0 & 0\\[0.1cm]
+				$\left(\frac{1}{2}, 1\right]$ & $\left[0, \frac{1}{2}\right)$ &1 & 0 & $\left(\frac{1}{4}, \frac{1}{2}\right)$ & 0 & 0\\[0.1cm]
+				$\left[0, \frac{1}{2}\right)$ & $\left(\frac{1}{2}, 1\right]$ &0 & 1 & $\left(\frac{1}{4}, \frac{1}{2}\right)$ & 0 & 0\\[0.1cm]
+				$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & $\left(\frac{1}{2}, 1\right]$ & 1 & 1\\[0.1cm]
 			\end{tabular}
 		\end{center}
 		\caption{$\partial_{\wedge}(x,y) \btright x \wedge y$.}\label{and-table}
@@ -673,13 +681,14 @@ Thanks to GitHub Next for sponsoring this research. And thanks to Pavel Augustin
 	Table \ref{or-table} is the truth table of the boolean function $x \vee y$, where $h(x) = \operatorname{harden}(x)$..
 	\begin{table}[h!]
 	\begin{center}
-		\begin{tabular}{cccccc}
-			\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$y$}  &\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial_{\vee}(h(x), h(y))$} &\multicolumn{1}{c}{$h(\partial_{\vee}(h(x), h(y)))$}
+		\begin{tabular}{ccccccc}
+			\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$y$}  &\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial_{\vee}(x, y)$} &\multicolumn{1}{c}{$h(\partial_{\vee}(x, y))$}
+			&\multicolumn{1}{c}{$h(x) \vee h(y)$}
 			\\ \hline \\
-			$\left[0, \frac{1}{2}\right]$ & $\left[0, \frac{1}{2}\right]$ & 0 & 0 & 0 & 0\\[0.1cm]
-			$\left(\frac{1}{2}, 1\right]$ & $\left[0, \frac{1}{2}\right]$ &1 & 0 & $\frac{3}{4}$ & 1\\[0.1cm]
-			$\left[0, \frac{1}{2}\right]$ & $\left(\frac{1}{2}, 1\right]$ &0 & 1 & $\frac{3}{4}$ & 1\\[0.1cm]
-			$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & 1 & 1\\[0.1cm]
+			$\left[0, \frac{1}{2}\right)$ & $\left[0, \frac{1}{2}\right)$ & 0 & 0 & $\left[0,\frac{1}{2}\right)$ & 0 & 0\\[0.1cm]
+			$\left(\frac{1}{2}, 1\right]$ & $\left[0, \frac{1}{2}\right)$ &1 & 0 & $\left(\frac{1}{2},1\right]$ & 1 & 1\\[0.1cm]
+			$\left[0, \frac{1}{2}\right)$ & $\left(\frac{1}{2}, 1\right]$ &0 & 1 & $\left(\frac{1}{2},1\right]$ & 1 & 1\\[0.1cm]
+			$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & $\left(\frac{1}{2},1\right]$ & 1 & 1\\[0.1cm]
 		\end{tabular}
 	\end{center}
 	\caption{$\partial_{\vee}(x,y) \btright x \vee y$.}\label{or-table}
@@ -693,16 +702,17 @@ Thanks to GitHub Next for sponsoring this research. And thanks to Pavel Augustin
 	Table \ref{implies-table} is the truth table of the boolean function $x \Rightarrow y$, where $h(x) = \operatorname{harden}(x)$..
 	\begin{table}[h!]
 	\begin{center}
-		\begin{tabular}{cccccc}
-			\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$y$}  &\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial \Rightarrow(h(x), h(y))$} &\multicolumn{1}{c}{$h(\partial \Rightarrow(h(x), h(y)))$}
+		\begin{tabular}{ccccccc}
+			\multicolumn{1}{c}{$x$}  &\multicolumn{1}{c}{$y$}  &\multicolumn{1}{c}{$h(x)$}  &\multicolumn{1}{c}{$h(y)$} &\multicolumn{1}{c}{$\partial_{\Rightarrow}(x, y)$} &\multicolumn{1}{c}{$h(\partial_{\Rightarrow}(x, y))$}
+			&\multicolumn{1}{c}{$h(x) \Rightarrow h(y)$}
 			\\ \hline \\
-			$\left[0, \frac{1}{2}\right]$ & $\left[0, \frac{1}{2}\right]$ & 0 & 0 & $\frac{3}{4}$ & 1\\[0.1cm]
-			$\left(\frac{1}{2}, 1\right]$ & $\left[0, \frac{1}{2}\right]$ &1 & 0 & 0 & 0\\[0.1cm]
-			$\left[0, \frac{1}{2}\right]$ & $\left(\frac{1}{2}, 1\right]$ &0 & 1 & 1 & 1\\[0.1cm]
-			$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & $\frac{3}{4}$ & 1\\[0.1cm]
+			$\left[0, \frac{1}{2}\right)$ & $\left[0, \frac{1}{2}\right)$ & 0 & 0 & $\left(\frac{1}{2}, 1\right]$ & 1 & 0\\[0.1cm]
+			$\left(\frac{1}{2}, 1\right]$ & $\left[0, \frac{1}{2}\right)$ &1 & 0 & $\left[0, \frac{1}{2}\right)$ & 0 & 0\\[0.1cm]
+			$\left[0, \frac{1}{2}\right)$ & $\left(\frac{1}{2}, 1\right]$ &0 & 1 & $\left(\frac{1}{2},1\right]$ & 1 & 0\\[0.1cm]
+			$\left(\frac{1}{2}, 1\right]$ & $\left(\frac{1}{2}, 1\right]$ &1 & 1 & $\left(\frac{1}{2}, \frac{7}{8}\right)$ & 1 & 0\\[0.1cm]
 		\end{tabular}
 	\end{center}
-	\caption{$\partial \Rightarrow(x,y) \btright x \Rightarrow y$.}\label{implies-table}
+	\caption{$\partial_{\Rightarrow}(x,y) \btright x \Rightarrow y$.}\label{implies-table}
 	\end{table}			
 \end{proof}
 \end{prop}
@@ -722,7 +732,7 @@ In consequence, $\operatorname{harden}(\operatorname{sort}({\bf x})[i]) = \opera
 \begin{theorem}\label{prop:majority}
 	$\partial\!\operatorname{Maj} \btright \operatorname{Maj}$.
 \begin{proof}
-	$\partial\!\operatorname{Maj}$ augments the representative bit $x_{i} = \operatorname{sort}({\bf x})[\operatorname{majority-index}({\bf x})]$. By lemma \ref{lem:maj}, the representative bit is $\btright\!\operatorname{Maj}(\operatorname{harden}({\bf x}))$.
+	$\partial\!\operatorname{Maj}$ augments the representative bit $x_{i} = \operatorname{sort}({\bf x})[\operatorname{majority-index}({\bf x})]$. By lemma \ref{lem:maj} the representative bit is $\btright \operatorname{Maj}(\operatorname{harden}({\bf x}))$.
     By lemma \ref{prop:augmented}, the augmented bit, $\operatorname{augmented-bit}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))$, is also $\btright\!\operatorname{Maj}(\operatorname{harden}({\bf x}))$. Hence $\partial\!\operatorname{Maj} \btright\!\operatorname{Maj}$.
 \end{proof}
 \end{theorem}
