@@ -10,7 +10,7 @@ Questions? Ask @Z80coder
 
 ## Draft paper
 
-["∂B nets: learning discrete functions by gradient descent"](./docs/db.pdf) (March 2023).
+["∂B nets: learning discrete functions by gradient descent"](./docs/db.pdf) (April 2023).
 
 ## Demos
 
