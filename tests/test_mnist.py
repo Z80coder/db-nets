@@ -306,7 +306,7 @@ def get_config():
     return config
 
 
-@pytest.mark.skip(reason="temporarily off")
+#@pytest.mark.skip(reason="temporarily off")
 def test_mnist():
     # Make sure tf does not allocate gpu memory.
     tf.config.experimental.set_visible_devices([], "GPU")
