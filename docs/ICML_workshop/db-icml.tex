@@ -19,10 +19,10 @@
 \newcommand{\theHalgorithm}{\arabic{algorithm}}
 
 % Use the following line for the initial blind version submitted for review:
-\usepackage{icml2023/icml2023}
+%\usepackage{icml2023/icml2023}
 
 % If accepted, instead use the following line for the camera-ready submission:
-% \usepackage[accepted]{icml2023}
+\usepackage[accepted]{icml2023/icml2023}
 
 % For theorems and such
 \usepackage{amsmath}
@@ -78,10 +78,64 @@
 %\usepackage[disable,textsize=tiny]{todonotes}
 \usepackage[textsize=tiny]{todonotes}
 
+\usepackage{comment}
 
 % The \icmltitle you define below is probably too long as a header.
 % Therefore, a short form for the running title is supplied here:
 \icmltitlerunning{Lossless hardening with $\partial\mathbb{B}$ nets}
+
+
+\begin{comment}
+	Reviewer feedback:
+	
+	Differentiable and differentiable a.e. (almost everywhere) should be distinguished more clearly. (Esp. in Section 2.3. it only becomes clear at the end that it’s actually diff. a.e. instead of diff.) Please adjust the framing throughout the paper to clarify the proposed operators (at least some of them) are differentiable a.e. (I think in the title it’s fine to call it differentiable, but it should become clear early on that it’s only a.e. and not just mentioning it only on page 3 for the first time.)
+	
+	Answer: TODO
+	
+	Differentiable logic gate networks [A] should be referenced and a short discussion of differences should be included.
+	[A] Felix Petersen, Christian Borgelt, Hilde Kuehne, and Oliver Deussen. “Deep Differentiable Logic Gate Networks”. Advances in Neural Information Processing Systems (NeurIPS). 2022.
+	
+	Answer: TODO
+	
+	It would be interesting (not necessary for the camera-ready, but would strengthen the paper significantly) to provide an empirical comparison between the proposed relaxations of logic and standard relaxations of logic. Specifically, what would be the performance of the method when using product logic with dB nets?
+
+	Answer: This empirical comparison wouldn't be meaningful because the proposed relaxations are hard-equivalent whereas standard relaxations, such as product logic, are not. So swapping in product logic will necessarily introduce a mismatch between the soft and hard net. And what we care about is the performance of the (compact and discrete) hard net. For this purpose, we already know that product logics must perform worse. Godel-style min/max operators, although hard-equivalent, are not gradient-rich, and my own experiments indicate this harms training performance. I agree that the paper would be better if it included a discussion of these differences.
+	
+	Additional relaxations of sorting that could be referenced in l. 152 (right) are Differentiable Sorting Networks (https://arxiv.org/abs/2203.09630) and NeuralSort (https://openreview.net/pdf?id=H1eSS3CcKX).
+	
+	Answer: Done.
+	
+	hard-netX or Section Y should be capitalized (i.e., if they refer to a specific Section / hard-net/ table, as it is part of the “name” of the figure). It is good style to capitalize titles and Section titles (basically all relevant words being capitalized (e.g., Learning to Negate, Lossless Hardening with Nets))
+	
+	Answer: Fixed.
+	
+	In Figures 3 and 4, it could be helpful to use a “smoother” visualization / color coding. The current is somewhat hard to understand and ambiguous. Something like viridis, the default in matplotlib could be more intuitive. Maybe the isolines could be maintained while replacing the only the coloring.
+	
+	Answer: The hard transition in the color coding is intended to reflect the hard-equivalence of the differentiable functions. The positive (pink) and negative (gray) continuous output values perfectly match the 4 boolean quadrants. So I would prefer to retain this color coding because it clarifies the relationship between soft and hard output values.
+	
+	
+	Positive
+	
+	Presentation The presentation is very clear and good to understand.
+	
+	Method The method proposes wo novel contributions, the margin packing and mainly the network architecture. Both are novel contributions and can be explored further.
+	
+	Experiments The experiments are, for the stage of the paper, in sufficient quantity.
+	
+	Negative
+	
+	Method and Experiments The paper lacks a discussion and comparison to important previous work:
+	
+	While DB nets propose to learn the subset of inputs for an output neuron with fixed functionality per layer, [1] proposes to learn the logic operator at a specific neuron while having fixed (random) inputs. Although both methods are not equal, they have certain similarities, db-nets is biased by the choice of the logic operator per layer, which can not be learned, while [1] has fixed initialized connectivity. A comparison and discussion, and/or experimental evaluation would be adequate. A comparison between the proposed partial method and standard differentiable fuzzy logic (e.g. product logics) would be good.
+	
+	[1]: Petersen et. al. 2022 “Deep Differentiable Logic Gate Networks”
+	
+	Answer: TODO
+	
+	Typo/grammar: 141 R ‘the’
+	
+	Answer: fixed
+\end{comment}
 
 \begin{document}
 
@@ -104,7 +158,7 @@
 \icmlsetsymbol{equal}{*}
 
 \begin{icmlauthorlist}
-\icmlauthor{Ian Wright}{equal,comp}
+\icmlauthor{Ian Wright}{comp}
 \end{icmlauthorlist}
 
 \icmlaffiliation{comp}{GitHub, Oxford, UK}
@@ -128,7 +182,7 @@
 % Remove it (just {}) if you do not need this facility.
 
 %\printAffiliationsAndNotice{}  % leave blank if no need to mention equal contribution
-\printAffiliationsAndNotice{\icmlEqualContribution} % otherwise use the standard text.
+\printAffiliationsAndNotice{{}} % otherwise use the standard text.
 
 \begin{abstract}
 		$\partial\mathbb{B}$ nets are differentiable neural networks that learn discrete boolean-valued functions by gradient descent. $\partial\mathbb{B}$ nets have two semantically equivalent aspects: a differentiable soft-net, with real weights, and a non-differentiable hard-net, with boolean weights. We train the soft-net by backpropagation and then `harden' the learned weights to yield boolean weights that bind with the hard-net. The result is a learned discrete function. Unlike existing approaches to neural network binarization the `hardening' operation involves no loss of accuracy. Preliminary experiments demonstrate that $\partial\mathbb{B}$ nets achieve comparable performance on standard machine learning problems yet are compact (due to 1-bit weights) and interpretable (due to the logical nature of the learnt functions).	
@@ -140,7 +194,7 @@
 
 Neural networks must be differentiable. But differentiability means we cannot directly learn discrete functions, such as logical predicates. We can approximate discrete functions by defining continuous relaxations. This paper explores a different approach: we define differentiable functions that `harden', without approximation, to discrete functions. 
 
-Specifically, $\partial \mathbb{B}$ nets have two aspects: a {\em soft-net}, which is a differentiable function with real weights, and a {\em hard-net}, which is a discrete function with boolean weights. Both aspects are semantically equivalent. We train the soft-net as normal, using backpropagation, then `harden' the learned weights to boolean values, which bind with the hard-net to yield a discrete function with identical predictive performance (see figure \ref{fig:main-idea}).
+Specifically, $\partial \mathbb{B}$ nets have two aspects: a {\em soft-net}, which is a differentiable function with real weights, and a {\em hard-net}, which is a discrete function with boolean weights. Both aspects are semantically equivalent. We train the soft-net as normal, using backpropagation, then `harden' the learned weights to boolean values, which bind with the hard-net to yield a discrete function with identical predictive performance (see Figure \ref{fig:main-idea}).
 
 \begin{figure}[h]
 	\centering
@@ -175,7 +229,7 @@ Say we aim to learn to negate a boolean value, $x$, or leave it unaltered. Repre
 $\partial_{\neg}(w, x) = 1 - w + x (2w - 1)$,
 where $\partial_{\neg}(w, x) \btright \neg(x \oplus w)$ (see proposition \ref{prop:not}).
 
-There are many kinds of differentiable fuzzy logic operators (see \citemyauthoryear{VANKRIEKEN2022103602} for a review). So why this functional form? Product logics, where $f(x,y) = x y$ is as a soft version of $x \wedge y$, although hard-equivalent at extreme values, e.g. $f(1,1)=1$ and $f(0,1)=0$, are not hard-equivalent at intermediate values, e.g. $f(0.6, 0.6) = 0.36$, which hardens to $\operatorname{False}$ not $\operatorname{True}$. G\"{o}del-style $\operatorname{min}$ and $\operatorname{max}$ functions, although hard-equivalent over the entire soft-bit range, i.e. $\operatorname{min}(x,y) \btright x \wedge y$ and $\operatorname{max}(x,y) \btright x \vee y$, are gradient-sparse in the sense that their outputs do not always vary when any input changes, e.g. $\frac{\partial}{\partial x} \operatorname{max}(x,y) = 0$ when $(x,y)=(0.1, 0.9)$. So although the composite function $\operatorname{max}(\operatorname{min}(w, x), \operatorname{min}(1-w, 1-x))$ is differentiable and $\btright \neg(x \oplus w)$ it does not always backpropagate error to its inputs. In contrast, $\partial_{\neg}$ always backpropagates error to its inputs because it is a gradient-rich function (see figure \ref{fig:gradient-rich}). 
+There are many kinds of differentiable fuzzy logic operators (see \citemyauthoryear{VANKRIEKEN2022103602} for a review). So why this functional form? Product logics, where $f(x,y) = x y$ is as a soft version of $x \wedge y$, although hard-equivalent at extreme values, e.g. $f(1,1)=1$ and $f(0,1)=0$, are not hard-equivalent at intermediate values, e.g. $f(0.6, 0.6) = 0.36$, which hardens to $\operatorname{False}$ not $\operatorname{True}$. G\"{o}del-style $\operatorname{min}$ and $\operatorname{max}$ functions, although hard-equivalent over the entire soft-bit range, i.e. $\operatorname{min}(x,y) \btright x \wedge y$ and $\operatorname{max}(x,y) \btright x \vee y$, are gradient-sparse in the sense that their outputs do not always vary when any input changes, e.g. $\frac{\partial}{\partial x} \operatorname{max}(x,y) = 0$ when $(x,y)=(0.1, 0.9)$. So although the composite function $\operatorname{max}(\operatorname{min}(w, x), \operatorname{min}(1-w, 1-x))$ is differentiable and $\btright \neg(x \oplus w)$ it does not always backpropagate error to its inputs. In contrast, $\partial_{\neg}$ always backpropagates error to its inputs because it is a gradient-rich function (see Figure \ref{fig:gradient-rich}). 
 
 \begin{definition}[Gradient-rich]
 	A function, $f: [0,1]^n \rightarrow [0,1]^m$, is {\em gradient-rich} if $\frac{\partial f({\bf x})}{\partial x_{i}} \neq {\bf 0}$ for all ${\bf x} \in \{(x_{1}, \dots, x_{n}) ~|~ x_{i} \in [0,1] \setminus \{1/2\}\}$.
@@ -207,7 +261,7 @@ x_{i} + \operatorname{margin-fraction}({\bf x}, i) & \text{otherwise.}
 \end{aligned}
 \label{eq:augmented-bit}
 \end{equation}
-Note that if the representative bit is high (resp. low) then the augmented bit is also high (resp. low). The difference between the augmented and representative bit depends on the size of the available margin and the mean soft-bit value. Almost everywhere, an increase (resp. decrease) of the mean soft-bit increases (resp. decreases) the value of the augmented bit (see figure \ref{fig:margin-trick}). Note that if the $i$th bit is representative (i.e. hard-equivalent to the target function) then so is the augmented bit (see lemma \ref{prop:augmented}). We use margin packing, where appropriate, to define gradient-rich, hard-equivalents of boolean functions.
+Note that if the representative bit is high (resp. low) then the augmented bit is also high (resp. low). The difference between the augmented and representative bit depends on the size of the available margin and the mean soft-bit value. Almost everywhere, an increase (resp. decrease) of the mean soft-bit increases (resp. decreases) the value of the augmented bit (see Figure \ref{fig:margin-trick}). Note that if the $i$th bit is representative (i.e. hard-equivalent to the target function) then so is the augmented bit (see lemma \ref{prop:augmented}). We use margin packing, where appropriate, to define gradient-rich, hard-equivalents of boolean functions.
 
 \subsection{Differentiable $\wedge$, $\vee$ and $\Rightarrow$}
 
@@ -222,9 +276,9 @@ We aim to construct a differentiable analogue of the boolean function $\bigwedge
 $\partial_{\wedge}({\bf x}) = \operatorname{augmented-bit}({\bf x}, \operatorname{argmin}\limits_{i} x[i])$
 is therefore hard-equivalent to the boolean function $\bigwedge_{i=1}^{n} x_i$ (see proposition \ref{prop:and}). In the special case $n=2$ we get the piecewise function,
 $\partial_{\wedge}\!(x, y) = 1/2 + 1/2(x + y)(\operatorname{min}(x,y) - 1/2)$ if $\operatorname{min}(x,y) > 1/2$, and $\partial_{\wedge}\!(x, y) = \operatorname{min}(x,y) + 1/2(x + y)(1/2 - \operatorname{min}(x,y))$
-otherwise. Note that $\partial_{\wedge}$ is differentiable almost everywhere and gradient-rich (see figure \ref{fig:gradient-rich}).
+otherwise. Note that $\partial_{\wedge}$ is differentiable almost everywhere and gradient-rich (see Figure \ref{fig:gradient-rich}).
 The differentiable analogue of $\vee$ is identical to $\wedge$, except the representative bit is selected by $\operatorname{max}$. The function
-$\partial_{\vee}({\bf x}) = \operatorname{augmented-bit}({\bf x}, \operatorname{argmax}\limits_{i} x[i])$ is hard-equivalent to the boolean function $\bigvee_{i=1}^{n} x_i$ (see proposition \ref{prop:or}) (see figure \ref{fig:gradient-rich}).
+$\partial_{\vee}({\bf x}) = \operatorname{augmented-bit}({\bf x}, \operatorname{argmax}\limits_{i} x[i])$ is hard-equivalent to the boolean function $\bigvee_{i=1}^{n} x_i$ (see proposition \ref{prop:or}) (see Figure \ref{fig:gradient-rich}).
 The differentiable analogue of $\Rightarrow$ (material implication) is defined in terms of $\partial_{\vee}$. The function
 $\partial_{\Rightarrow}(x, y) = \partial_{\vee}\!(y, 1-x)$,
 is hard-equivalent to $x \Rightarrow y$ (see proposition \ref{prop:implies}). We can define  analogues of all the basic boolean operators in a similar manner.
@@ -252,13 +306,13 @@ $\operatorname{Maj}$ for $n$ bits in DNF form is a disjunction of $\binom{n}{k}$
 $\operatorname{majority-index}({\bf x}) = \lceil \frac{|{\bf x}|}{2} \rceil$,
 is representative. Applying margin packing, define the differentiable function
 $\partial\!\operatorname{Maj}({\bf x}) = \operatorname{augmented-bit}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))$,
-which is hard-equivalent to $\operatorname{Maj}$ (see theorem \ref{prop:majority}). Note that $\partial\!\operatorname{Maj}$ is differentiable almost everywhere and gradient-rich (see figure \ref{fig:majority-plot}). If $\operatorname{sort}$ is quicksort then the the average time-complexity of $\partial\!\operatorname{Maj}$ is $\mathcal{O}(n\log{}n)$, which makes $\partial\!\operatorname{Maj}$ more expensive than $\partial_{\neg}$, $\partial_{\wedge}$, $\partial_{\vee}$ and $\partial_{\Rightarrow}$ at training time. The $\operatorname{sort}$ operation could be replaced by the Floyd-Rivest algorithm, which has linear average time complexity \cite{KIWIEL2005214}. However, in the hard $\partial\mathbb{B}$ net we efficiently implement $\operatorname{Maj}$ as a discrete program that simply checks if the majority of bits are high. Note that we use $\operatorname{sort}$ to define a differentiable function that is exactly equivalent to a discrete function (rather than defining a continuous approximation to sorting, e.g. \citemyauthoryear{NEURIPS2019_d8c24ca8}).
+which is hard-equivalent to $\operatorname{Maj}$ (see theorem \ref{prop:majority}). Note that $\partial\!\operatorname{Maj}$ is differentiable almost everywhere and gradient-rich (see Figure \ref{fig:majority-plot}). If $\operatorname{sort}$ is quicksort then the average time-complexity of $\partial\!\operatorname{Maj}$ is $\mathcal{O}(n\log{}n)$, which makes $\partial\!\operatorname{Maj}$ more expensive than $\partial_{\neg}$, $\partial_{\wedge}$, $\partial_{\vee}$ and $\partial_{\Rightarrow}$ at training time. The $\operatorname{sort}$ operation could be replaced by the Floyd-Rivest algorithm, which has linear average time complexity \cite{KIWIEL2005214}. However, in the hard $\partial\mathbb{B}$ net we efficiently implement $\operatorname{Maj}$ as a discrete program that simply checks if the majority of bits are high. Note that we use $\operatorname{sort}$ to define a differentiable function that is exactly equivalent to a discrete function (rather than defining a continuous approximation to sorting, e.g. \citemyauthoryear{NEURIPS2019_d8c24ca8}, \citemyauthoryear{grover2018stochastic} and \citemyauthoryear{petersen2022monotonic}).
 
-We apply this methodology to construct functions that harden to other kinds of boolean functions, such as boolean counting (see section \ref{sec:counting}). This basic set of functions is sufficient to learn non-trivial relationships from data. $\partial\mathbb{B}$ net layers are compositions of these functions, where composition preserves hard-equivalence  (see sections \ref{sec:layers} and \ref{sec:classification}). 
+We apply this methodology to construct functions that harden to other kinds of boolean functions, such as boolean counting (see Section \ref{sec:counting}). This basic set of functions is sufficient to learn non-trivial relationships from data. $\partial\mathbb{B}$ net layers are compositions of these functions, where composition preserves hard-equivalence  (see Sections \ref{sec:layers} and \ref{sec:classification}). 
 
 \section{Learning discrete functions}\label{sec:discrete}
 
-We briefly illustrate the kind of discrete program that $\partial\mathbb{B}$ nets can learn. Consider the toy problem of predicting whether a person wears a $\operatorname{t-shirt}$ (label 0) or a $\operatorname{coat}$ (label 1) conditional on 5 boolean features (see table \ref{tab:toy2}).
+We briefly illustrate the kind of discrete program that $\partial\mathbb{B}$ nets can learn. Consider the toy problem of predicting whether a person wears a $\operatorname{t-shirt}$ (label 0) or a $\operatorname{coat}$ (label 1) conditional on 5 boolean features (see Table \ref{tab:toy2}).
 
 \begin{table}[h!]
 	\centering
@@ -274,7 +328,7 @@ We briefly illustrate the kind of discrete program that $\partial\mathbb{B}$ net
 	\label{tab:toy2}
 \end{table}
 
-We train the $\partial\mathbb{B}$ net described in figure \ref{fig:toy-example-architecture}. Once trained we harden the net to a discrete program (see section \ref{sec:discrete}) that generates 2 hard-bits, corresponding to each label. The program symbolically simplifies to:
+We train the $\partial\mathbb{B}$ net described in Figure 5\ref{fig:toy-example-architecture}. Once trained we harden the net to a discrete program (see Section \ref{sec:discrete}) that generates 2 hard-bits, corresponding to each label. The program symbolically simplifies to:
 
 \begin{lstlisting}[language=Python,style=mystyle,frame=single]
 def dbNet(very-cold, cold, warm, very-warm, outside):
@@ -422,7 +476,7 @@ We can construct various kinds of boolean counting functions from $\partial\!\op
 	\label{fig:toy-example-architecture}
 \end{figure}
 
-The $\partial\mathbb{B}$ net specified in figure \ref{fig:toy-example-architecture} (with 40 soft-bit weights) has two single-bit output ports and is hard-equivalent to the following discrete program (with 40 hard-bit weights):
+The $\partial\mathbb{B}$ net specified in Figure \ref{fig:toy-example-architecture} (with 40 soft-bit weights) has two single-bit output ports and is hard-equivalent to the following discrete program (with 40 hard-bit weights):
 
 \begin{lstlisting}[language=Python,style=mystyle,frame=single]
 def dbNet(very-cold, cold, warm, very-warm, outside):
@@ -448,7 +502,7 @@ We compare the performance of $\partial\mathbb{B}$ nets against standard ML appr
 \end{figure}
 
 
-The Iris dataset has 150 examples with 4 inputs (sepal length and width, and petal length and width), and 3 labels ({\em setosa}, {\em versicolour}, and {\em virginica}). We use the binary version of the Iris dataset \cite{binary-iris-dataset} where each input float is represented by 4 bits. We perform 1000 experiments, each with a different random seed. Each experiment randomly partitions the data into 80\% training and 20\% test sets. We initialize the network, described in figure \ref{fig:binary-iris-architecture}, with all weights $w_{i} = 0.3$ and train for 1000 epochs with the RAdam optimizer and softmax cross-entropy loss. 
+The Iris dataset has 150 examples with 4 inputs (sepal length and width, and petal length and width), and 3 labels ({\em setosa}, {\em versicolour}, and {\em virginica}). We use the binary version of the Iris dataset \cite{binary-iris-dataset} where each input float is represented by 4 bits. We perform 1000 experiments, each with a different random seed. Each experiment randomly partitions the data into 80\% training and 20\% test sets. We initialize the network, described in Figure \ref{fig:binary-iris-architecture}, with all weights $w_{i} = 0.3$ and train for 1000 epochs with the RAdam optimizer and softmax cross-entropy loss. 
 
 We measure the accuracy of the final net to avoid hand-picking the best configuration. Table \ref{tab:binary-iris-results} compares the $\delta\mathbb{B}$ net against other classifiers  \cite{granmo18}. Naive Bayes performs the worst. The Tsetlin machine performs best on this problem, with the $\partial\mathbb{B}$ net second.
 
@@ -477,9 +531,9 @@ We measure the accuracy of the final net to avoid hand-picking the best configur
 	\label{fig:noisy-xor-architecture}
 \end{figure}
 
-The noisy XOR dataset \cite{noisy-xor-dataset} is an adversarial parity problem with noisy non-informative features. The dataset consists of 10K examples with 12 boolean inputs and a target label (where 0 = odd and 1 = even) that is a XOR function of 2 of the inputs. The remaining 10 inputs are entirely random. We train on 50\% of the data where, additionally, 40\% of the labels are inverted. We initialize the network described in figure \ref{fig:noisy-xor-architecture} with random weights distributed close to the hard threshold at $1/2$ (i.e. in the $\partial_{\wedge}\!\operatorname{Layer}$, $w_{i} = 0.501 \times b + 0.3 \times (1-b)$ where $b \sim \operatorname{Bernoulli}(0.01)$; in the $\partial_{\vee}\!\operatorname{Layer}$, $w_{i} = 0.7 \times b + 0.499 \times (1-b)$ where $b \sim \operatorname{Bernoulli}(0.99)$); and in the $\partial_{\neg}\!\operatorname{Layer}$, $w_{i} \sim \operatorname{Uniform}(0.499, 0.501)$. We train for 2000 epochs with the RAdam optimizer and softmax cross-entropy loss. 
+The noisy XOR dataset \cite{noisy-xor-dataset} is an adversarial parity problem with noisy non-informative features. The dataset consists of 10K examples with 12 boolean inputs and a target label (where 0 = odd and 1 = even) that is a XOR function of 2 of the inputs. The remaining 10 inputs are entirely random. We train on 50\% of the data where, additionally, 40\% of the labels are inverted. We initialize the network described in Figure \ref{fig:noisy-xor-architecture} with random weights distributed close to the hard threshold at $1/2$ (i.e. in the $\partial_{\wedge}\!\operatorname{Layer}$, $w_{i} = 0.501 \times b + 0.3 \times (1-b)$ where $b \sim \operatorname{Bernoulli}(0.01)$; in the $\partial_{\vee}\!\operatorname{Layer}$, $w_{i} = 0.7 \times b + 0.499 \times (1-b)$ where $b \sim \operatorname{Bernoulli}(0.99)$); and in the $\partial_{\neg}\!\operatorname{Layer}$, $w_{i} \sim \operatorname{Uniform}(0.499, 0.501)$. We train for 2000 epochs with the RAdam optimizer and softmax cross-entropy loss. 
 
-We measure the accuracy of the final net on the test data to avoid hand-picking the best configuration. Table \ref{tab:noisy-xor-results} compares the $\partial\mathbb{B}$ net against other classifiers \cite{granmo18}. The high noise causes logistic regression and naive Bayes to randomly guess. The SVM hardly performs better. In constrast, the multilayer neural network, Tsetlin machine, and  $\partial\mathbb{B}$ net all successfully learn the underlying XOR signal. The Tsetlin machine performs best on this problem, with the $\partial\mathbb{B}$ net second.
+We measure the accuracy of the final net on the test data to avoid hand-picking the best configuration. Table \ref{tab:noisy-xor-results} compares the $\partial\mathbb{B}$ net against other classifiers \cite{granmo18}. The high noise causes logistic regression and naive Bayes to randomly guess. The SVM hardly performs better. In contrast, the multilayer neural network, Tsetlin machine, and  $\partial\mathbb{B}$ net all successfully learn the underlying XOR signal. The Tsetlin machine performs best on this problem, with the $\partial\mathbb{B}$ net second.
 
 \begin{table}[t]
 	\centering
@@ -526,7 +580,7 @@ We measure the accuracy of the final net on the test data to avoid hand-picking 
 	\label{tab:mnist-table}
 \end{table}
 
-The MNIST dataset \cite{726791} consists of 60K training and 10K test examples of handwritten digits (0-9). We binarize the data by replacing pixels with grey value greater than 0.3 with 1, otherwise with 0. We initialize the network described in figure \ref{fig:mnist-architecture} with random weights distributed as $w_{i} = 0.501 \times b + 0.3 \times (1-b)$ where $b \sim \operatorname{Bernoulli}(0.01)$. We train for 1000 epochs with a batch size of 6000 using the RAdam optimizer and softmax cross-entropy loss.
+The MNIST dataset \cite{726791} consists of 60K training and 10K test examples of handwritten digits (0-9). We binarize the data by replacing pixels with grey value greater than 0.3 with 1, otherwise with 0. We initialize the network described in Figure \ref{fig:mnist-architecture} with random weights distributed as $w_{i} = 0.501 \times b + 0.3 \times (1-b)$ where $b \sim \operatorname{Bernoulli}(0.01)$. We train for 1000 epochs with a batch size of 6000 using the RAdam optimizer and softmax cross-entropy loss.
 
 We measure the accuracy on the final net. Table \ref{tab:mnist-table} compares the $\partial\mathbb{B}$ net against other classifiers (reference data taken from \citemyauthoryear{granmo18}). Basic versions of the algorithms (e.g. no convolutional nets) are applied to unenhanced data (e.g. no data augmentation). The aim is to compare raw performance rather than optimise for MNIST. A 2-layer neural network trained on grey-value pixel data performs best. A Tsetlin machine of 40,000 automata each with 256 states (and therefore 40 kb of parameters) trained on binary data achieves $\approx 98.2\%$ accuracy. A $\partial\mathbb{B}$ net with 105,840 soft-bit weights that harden to 1-bit booleans (and therefore 13.23 kb of parameters) trained on binary data achieves $\approx 94.0\%$ accuracy. However, this $\partial\mathbb{B}$ net underfits the training data and we expect better performance from a larger model.
 
