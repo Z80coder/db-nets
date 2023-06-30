@@ -12,6 +12,7 @@
 % If your build breaks (sometimes temporarily if a hyperlink spans a page)
 % please comment out the following usepackage line and replace
 % \usepackage{icml2023} with \usepackage[nohyperref]{icml2023} above.
+\usepackage[hyphens]{url}
 \usepackage{hyperref}
 
 
@@ -90,12 +91,12 @@
 	
 	Differentiable and differentiable a.e. (almost everywhere) should be distinguished more clearly. (Esp. in Section 2.3. it only becomes clear at the end that it’s actually diff. a.e. instead of diff.) Please adjust the framing throughout the paper to clarify the proposed operators (at least some of them) are differentiable a.e. (I think in the title it’s fine to call it differentiable, but it should become clear early on that it’s only a.e. and not just mentioning it only on page 3 for the first time.)
 	
-	Answer: TODO
+	Answer: At the beginning of the paper, in section 2, I now define a soft-net as a differentiable, or differentiable a.e., function. Also, earlier in section 2.2 on margin packing I emphasise that the agumented bit defines a differentiable a.e. function.
 	
 	Differentiable logic gate networks [A] should be referenced and a short discussion of differences should be included.
 	[A] Felix Petersen, Christian Borgelt, Hilde Kuehne, and Oliver Deussen. “Deep Differentiable Logic Gate Networks”. Advances in Neural Information Processing Systems (NeurIPS). 2022.
 	
-	Answer: TODO
+	Answer: Done
 	
 	It would be interesting (not necessary for the camera-ready, but would strengthen the paper significantly) to provide an empirical comparison between the proposed relaxations of logic and standard relaxations of logic. Specifically, what would be the performance of the method when using product logic with dB nets?
 
@@ -113,7 +114,7 @@
 	
 	Answer: The hard transition in the color coding is intended to reflect the hard-equivalence of the differentiable functions. The positive (pink) and negative (gray) continuous output values perfectly match the 4 boolean quadrants. So I would prefer to retain this color coding because it clarifies the relationship between soft and hard output values.
 	
-	
+
 	Positive
 	
 	Presentation The presentation is very clear and good to understand.
@@ -130,11 +131,12 @@
 	
 	[1]: Petersen et. al. 2022 “Deep Differentiable Logic Gate Networks”
 	
-	Answer: TODO
+	Answer: Done
 	
 	Typo/grammar: 141 R ‘the’
 	
-	Answer: fixed
+	Answer: Fixed
+	
 \end{comment}
 
 \begin{document}
@@ -163,7 +165,7 @@
 
 \icmlaffiliation{comp}{GitHub, Oxford, UK}
 
-\icmlcorrespondingauthor{Ian Wright}{iwright@gmail.com}
+\icmlcorrespondingauthor{Ian Wright}{wrighti@acm.org}
 
 % You may provide any keywords that you
 % find helpful for describing your paper; these are used to populate
@@ -214,7 +216,7 @@ A hardening function converts soft-bits to hard-bits.
 \end{definition}
 
 Soft-nets use soft-bits and hard-nets use hard-bits. A soft-net learns 1-bit weights by representing them, at training time, as real numbers. The equivalent hard-net, at inference time, simply uses 1-bit weights. 
-A soft-net is any differentiable function, $f$, that `hardens' to a hard-net that is a semantically equivalent discrete function, $g$.
+A soft-net is any differentiable, or differentiable a.e., function, $f$, that `hardens' to a hard-net that is a semantically equivalent discrete function, $g$.
 
 \begin{definition}[Hard-equivalence]
 	A function, $f: [0,1]^n \rightarrow [0,1]^m$, is {\em hard-equivalent} to a discrete function, $g: \{1,0\}^n \rightarrow \{1,0\}^m$,	if $\operatorname{harden}(f({\bf x})) = g(\operatorname{harden}({\bf x}))$
@@ -225,11 +227,11 @@ $\partial \mathbb{B}$ nets are composed from `activation' functions that are har
 
 \subsection{Learning to negate}
 
-Say we aim to learn to negate a boolean value, $x$, or leave it unaltered. Represent this decision by a boolean weight, $w$, where low $w$ means negate and high $w$ means do not negate. The boolean function that meets this requirement is $\neg(x \oplus w)$. However, this function is not differentiable. Define the differentiable function,
+Say we aim to learn to negate a boolean value, $x$, or leave it unaltered. Represent this decision by a boolean weight, $w$, where low $w$ means negate and high $w$ means do not. The boolean function that meets this requirement is $\neg(x \oplus w)$. However, this function is not differentiable. Define the differentiable function,
 $\partial_{\neg}(w, x) = 1 - w + x (2w - 1)$,
 where $\partial_{\neg}(w, x) \btright \neg(x \oplus w)$ (see proposition \ref{prop:not}).
 
-There are many kinds of differentiable fuzzy logic operators (see \citemyauthoryear{VANKRIEKEN2022103602} for a review). So why this functional form? Product logics, where $f(x,y) = x y$ is as a soft version of $x \wedge y$, although hard-equivalent at extreme values, e.g. $f(1,1)=1$ and $f(0,1)=0$, are not hard-equivalent at intermediate values, e.g. $f(0.6, 0.6) = 0.36$, which hardens to $\operatorname{False}$ not $\operatorname{True}$. G\"{o}del-style $\operatorname{min}$ and $\operatorname{max}$ functions, although hard-equivalent over the entire soft-bit range, i.e. $\operatorname{min}(x,y) \btright x \wedge y$ and $\operatorname{max}(x,y) \btright x \vee y$, are gradient-sparse in the sense that their outputs do not always vary when any input changes, e.g. $\frac{\partial}{\partial x} \operatorname{max}(x,y) = 0$ when $(x,y)=(0.1, 0.9)$. So although the composite function $\operatorname{max}(\operatorname{min}(w, x), \operatorname{min}(1-w, 1-x))$ is differentiable and $\btright \neg(x \oplus w)$ it does not always backpropagate error to its inputs. In contrast, $\partial_{\neg}$ always backpropagates error to its inputs because it is a gradient-rich function (see Figure \ref{fig:gradient-rich}). 
+Many kinds of differentiable fuzzy logic operators exist (see \citemyauthoryear{VANKRIEKEN2022103602} for a review). So why this functional form? Product logics, where $f(x,y) = x y$ is as a soft version of $x \wedge y$, although hard-equivalent at extreme values, e.g. $f(1,1)=1$ and $f(0,1)=0$, are not hard-equivalent at intermediate values, e.g. $f(0.6, 0.6) = 0.36$, which hardens to $\operatorname{False}$ not $\operatorname{True}$. G\"{o}del-style $\operatorname{min}$ and $\operatorname{max}$ functions, although hard-equivalent over the entire soft-bit range, i.e. $\operatorname{min}(x,y) \btright x \wedge y$ and $\operatorname{max}(x,y) \btright x \vee y$, are gradient-sparse in the sense that their outputs do not always vary when any input changes, e.g. $\frac{\partial}{\partial x} \operatorname{max}(x,y) = 0$ when $(x,y)=(0.1, 0.9)$. So although the composite function $\operatorname{max}(\operatorname{min}(w, x), \operatorname{min}(1-w, 1-x))$ is differentiable and $\btright \neg(x \oplus w)$ it does not always backpropagate error to its inputs. In contrast, $\partial_{\neg}$ always backpropagates error to its inputs because it is a gradient-rich function (see Figure \ref{fig:gradient-rich}). 
 
 \begin{definition}[Gradient-rich]
 	A function, $f: [0,1]^n \rightarrow [0,1]^m$, is {\em gradient-rich} if $\frac{\partial f({\bf x})}{\partial x_{i}} \neq {\bf 0}$ for all ${\bf x} \in \{(x_{1}, \dots, x_{n}) ~|~ x_{i} \in [0,1] \setminus \{1/2\}\}$.
@@ -249,26 +251,26 @@ $\partial \mathbb{B}$ nets are composed of hard-equivalent `activation' function
 
 Say we aim to construct a differentiable analogue of $x \wedge y$. Note that $\operatorname{min}(x,y)$ essentially selects one of $x$ or $y$ as a representative soft-bit that is guaranteed hard-equivalent to $x \wedge y$. However, by selecting only one of $x$ or $y$ then $\operatorname{min}$ is also guaranteed to be gradient-sparse. We define a `margin packing' method to solve this dilemma.
 
-The main idea of margin packing is (i) select a representative bit that is hard-equivalent to the target discrete function, and then (ii) pack a fraction of the margin between the representative bit and the hard threshold $1/2$ with gradient-rich information. The result is an augmented bit that is a function of all inputs yet hard-equivalent to the target function. More concretely, say we have a vector of soft-bit inputs ${\bf x}$ and the $i$th element represents the target discrete function (e.g. if our target is $x \wedge y$ then ${\bf x}=[x,y]$ and $i$ is 1 if $x<y$ and $i=2$ otherwise). Now, if we pack only a fraction of the available margin, $|x_{i}-1/2|$, we will not cross the $1/2$ threshold and break the hard-equivalence of the representative bit. The average soft-bit value, $\bar{\bf x} \in [0,1]$, is just such a gradient-rich fraction. We therefore define $\operatorname{margin-fraction}({\bf x}, i)  \bar{\bf x} \times \left|x_{i} - 1/2\right|$. The packed fraction, $\bar{\bf x}$, of the margin increases or decreases with the average soft-bit value. The available margin, $\left|x_{i} - 1/2\right|$, tends to zero as the representative bit, $x_{i}$, tends to the hard threshold $1/2$. At the threshold point there is no margin to pack. Now, define the augmented bit as
+The main idea of margin packing is (i) select a representative bit that is hard-equivalent to the target discrete function, and then (ii) pack a fraction of the margin between the representative bit and the hard threshold $1/2$ with gradient-rich information. The result is an augmented bit that is a function of all inputs yet hard-equivalent to the target function. More concretely, say a vector of soft-bit inputs ${\bf x}$ has an $i$th element that represents the target discrete function (e.g. if our target is $x \wedge y$ then ${\bf x}=[x,y]$ and $i$ is 1 if $x<y$ and $i=2$ otherwise). Now, if we pack only a fraction of the available margin, $|x_{i}-1/2|$, we will not cross the $1/2$ threshold and break the hard-equivalence of the representative bit. The average soft-bit value, $\bar{\bf x} \in [0,1]$, is just such a gradient-rich fraction. We therefore define $\operatorname{margin-fraction}({\bf x}, i) = \bar{\bf x} \times \left|x_{i} - 1/2\right|$. The packed fraction, $\bar{\bf x}$, of the margin increases or decreases with the average soft-bit value. The available margin, $\left|x_{i} - 1/2\right|$, tends to zero as the representative bit, $x_{i}$, tends to the hard threshold $1/2$. At the threshold point there is no margin to pack. Now, define the augmented bit as
 \begin{equation}
 \begin{aligned}
 &\operatorname{augmented-bit}({\bf x}, i) =\\
 & ~~~~~~ 
 \begin{cases}
 1/2 + \operatorname{margin-fraction}({\bf x}, i) & \text{if } x_{i} > 1/2 \\
-x_{i} + \operatorname{margin-fraction}({\bf x}, i) & \text{otherwise.}
+x_{i} + \operatorname{margin-fraction}({\bf x}, i) & \text{otherwise,}
 \end{cases}
 \end{aligned}
 \label{eq:augmented-bit}
 \end{equation}
-Note that if the representative bit is high (resp. low) then the augmented bit is also high (resp. low). The difference between the augmented and representative bit depends on the size of the available margin and the mean soft-bit value. Almost everywhere, an increase (resp. decrease) of the mean soft-bit increases (resp. decreases) the value of the augmented bit (see Figure \ref{fig:margin-trick}). Note that if the $i$th bit is representative (i.e. hard-equivalent to the target function) then so is the augmented bit (see lemma \ref{prop:augmented}). We use margin packing, where appropriate, to define gradient-rich, hard-equivalents of boolean functions.
+which is differentiable a.e. Note that if the representative bit is high (resp. low) then the augmented bit is also high (resp. low). The difference between the augmented and representative bit depends on the size of the available margin and the mean soft-bit value. Almost everywhere, an increase (resp. decrease) of the mean soft-bit increases (resp. decreases) the value of the augmented bit (see Figure \ref{fig:margin-trick}). Note that if the $i$th bit is representative (i.e. hard-equivalent to the target function) then so is the augmented bit (see lemma \ref{prop:augmented}). We use margin packing, where appropriate, to define gradient-rich, hard-equivalents of boolean functions.
 
 \subsection{Differentiable $\wedge$, $\vee$ and $\Rightarrow$}
 
 \begin{figure*}[t!]
 	\centering
 	\includegraphics[trim=0pt 0pt 0pt 0pt, clip, width=0.8\textwidth]{../logic-gates.png}
-	\caption{{\em Gradient-rich versus gradient-sparse differentiable boolean functions.} Each column contains contour plots of functions $f(x,y)$ that are hard-equivalent to a boolean function (one of $\neg(x \oplus y)$, $x \wedge y$, $x \vee y$, or $x \Rightarrow y$). Every function is continuous and differentiable almost everywhere (white lines indicate non-continuous derivatives). The upper plots are gradient-sparse, where vertical and horizontal contours indicate the function is constant with respect to one of its inputs, i.e. $\partial f/\partial y = 0$ or $\partial f/\partial x = 0$. The lower plots are gradient-rich, where the curved contours indicate the function always varies with respect to any of its inputs, i.e. $\partial f/\partial y \neq 0$ and $\partial f/\partial x \neq 0$. $\partial \mathbb{B}$ nets use gradient-rich functions to ensure that error is always backpropagated to all inputs.} 
+	\caption{{\em Gradient-rich versus gradient-sparse differentiable boolean functions.} Each column contains contour plots of functions $f(x,y)$ that are hard-equivalent to a boolean function (one of $\neg(x \oplus y)$, $x \wedge y$, $x \vee y$, or $x \Rightarrow y$). Every function is continuous and differentiable a.e. (white lines indicate non-continuous derivatives). The upper plots are gradient-sparse, where vertical and horizontal contours indicate the function is constant with respect to one of its inputs, i.e. $\partial f/\partial y = 0$ or $\partial f/\partial x = 0$. The lower plots are gradient-rich, where the curved contours indicate the function always varies with respect to any of its inputs, i.e. $\partial f/\partial y \neq 0$ and $\partial f/\partial x \neq 0$. $\partial \mathbb{B}$ nets use gradient-rich functions to ensure that error is always backpropagated to all inputs.} 
 	\label{fig:gradient-rich}
 \end{figure*}
 
@@ -276,8 +278,7 @@ We aim to construct a differentiable analogue of the boolean function $\bigwedge
 $\partial_{\wedge}({\bf x}) = \operatorname{augmented-bit}({\bf x}, \operatorname{argmin}\limits_{i} x[i])$
 is therefore hard-equivalent to the boolean function $\bigwedge_{i=1}^{n} x_i$ (see proposition \ref{prop:and}). In the special case $n=2$ we get the piecewise function,
 $\partial_{\wedge}\!(x, y) = 1/2 + 1/2(x + y)(\operatorname{min}(x,y) - 1/2)$ if $\operatorname{min}(x,y) > 1/2$, and $\partial_{\wedge}\!(x, y) = \operatorname{min}(x,y) + 1/2(x + y)(1/2 - \operatorname{min}(x,y))$
-otherwise. Note that $\partial_{\wedge}$ is differentiable almost everywhere and gradient-rich (see Figure \ref{fig:gradient-rich}).
-The differentiable analogue of $\vee$ is identical to $\wedge$, except the representative bit is selected by $\operatorname{max}$. The function
+otherwise. Note that $\partial_{\wedge}$ is differentiable a.e. and gradient-rich (see Figure \ref{fig:gradient-rich}). The differentiable analogue of $\vee$ is identical to $\wedge$, except the representative bit is selected by $\operatorname{max}$. The function
 $\partial_{\vee}({\bf x}) = \operatorname{augmented-bit}({\bf x}, \operatorname{argmax}\limits_{i} x[i])$ is hard-equivalent to the boolean function $\bigvee_{i=1}^{n} x_i$ (see proposition \ref{prop:or}) (see Figure \ref{fig:gradient-rich}).
 The differentiable analogue of $\Rightarrow$ (material implication) is defined in terms of $\partial_{\vee}$. The function
 $\partial_{\Rightarrow}(x, y) = \partial_{\vee}\!(y, 1-x)$,
@@ -306,7 +307,7 @@ $\operatorname{Maj}$ for $n$ bits in DNF form is a disjunction of $\binom{n}{k}$
 $\operatorname{majority-index}({\bf x}) = \lceil \frac{|{\bf x}|}{2} \rceil$,
 is representative. Applying margin packing, define the differentiable function
 $\partial\!\operatorname{Maj}({\bf x}) = \operatorname{augmented-bit}(\operatorname{sort}({\bf x}), \operatorname{majority-index}({\bf x}))$,
-which is hard-equivalent to $\operatorname{Maj}$ (see theorem \ref{prop:majority}). Note that $\partial\!\operatorname{Maj}$ is differentiable almost everywhere and gradient-rich (see Figure \ref{fig:majority-plot}). If $\operatorname{sort}$ is quicksort then the average time-complexity of $\partial\!\operatorname{Maj}$ is $\mathcal{O}(n\log{}n)$, which makes $\partial\!\operatorname{Maj}$ more expensive than $\partial_{\neg}$, $\partial_{\wedge}$, $\partial_{\vee}$ and $\partial_{\Rightarrow}$ at training time. The $\operatorname{sort}$ operation could be replaced by the Floyd-Rivest algorithm, which has linear average time complexity \cite{KIWIEL2005214}. However, in the hard $\partial\mathbb{B}$ net we efficiently implement $\operatorname{Maj}$ as a discrete program that simply checks if the majority of bits are high. Note that we use $\operatorname{sort}$ to define a differentiable function that is exactly equivalent to a discrete function (rather than defining a continuous approximation to sorting, e.g. \citemyauthoryear{NEURIPS2019_d8c24ca8}, \citemyauthoryear{grover2018stochastic} and \citemyauthoryear{petersen2022monotonic}).
+which is hard-equivalent to $\operatorname{Maj}$ (see theorem \ref{prop:majority}). Note that $\partial\!\operatorname{Maj}$ is differentiable a.e. and gradient-rich (see Figure \ref{fig:majority-plot}). If $\operatorname{sort}$ is quicksort then the average time-complexity of $\partial\!\operatorname{Maj}$ is $\mathcal{O}(n\log{}n)$, which makes $\partial\!\operatorname{Maj}$ more expensive than $\partial_{\neg}$, $\partial_{\wedge}$, $\partial_{\vee}$ and $\partial_{\Rightarrow}$ at training time. The $\operatorname{sort}$ operation could be replaced by the Floyd-Rivest algorithm, which has linear average time complexity \cite{KIWIEL2005214}. However, in the hard $\partial\mathbb{B}$ net we efficiently implement $\operatorname{Maj}$ as a discrete program that simply checks if the majority of bits are high. Note that we use $\operatorname{sort}$ to define a differentiable function that is exactly equivalent to a discrete function (rather than defining a continuous approximation to sorting, e.g. \citemyauthoryear{NEURIPS2019_d8c24ca8}, \citemyauthoryear{grover2018stochastic} and \citemyauthoryear{petersen2022monotonic}).
 
 We apply this methodology to construct functions that harden to other kinds of boolean functions, such as boolean counting (see Section \ref{sec:counting}). This basic set of functions is sufficient to learn non-trivial relationships from data. $\partial\mathbb{B}$ net layers are compositions of these functions, where composition preserves hard-equivalence  (see Sections \ref{sec:layers} and \ref{sec:classification}). 
 
@@ -340,14 +341,17 @@ return [
 
 Note that the program linearly weights multiple pieces of evidence due to the presence of the $\partial\!\operatorname{Maj}$ operator (overkill for this toy problem). We can read-off that the $\partial\mathbb{B}$ net has learned `if not $\operatorname{very-cold}$ and not $\operatorname{cold}$ and not $\operatorname{outside}$ then wear a $\operatorname{t-shirt}$'; and `if $\operatorname{cold}$ and not ($\operatorname{warm}$ or $\operatorname{very-warm}$) and $\operatorname{outside}$ then wear a $\operatorname{coat}$' etc. Section \ref{sec:experiments} compares $\partial\mathbb{B}$ net performance against other classification algorithms on standard machine learning problems.
 
+\section{Related work}
+
+Binary neural networks, e.g. \citemyauthoryear{10.5555/2969442.2969588}, reduce real weights and/or activations to binary, saving model size and inference costs. The binarization step is lossy, which loses accuracy \citep{QIN2020107281}. Deep differentiable logic gate networks \citep{NEURIPS2022_0d3496dd} consist of 2-input neurons arranged in a fixed topology. Each neuron learns a differentiable probability distribution over the 16 possible binary functions. Post-training the neurons are discretized to the most probable binary function. This step is lossy, which loses accuracy. $\partial\mathbb{B}$ nets aim to explore the design space of differentiable nets that enable lossless hardening.
+
 \section{Conclusion}\label{sec:conclusion}
 
-$\partial\mathbb{B}$ nets are differentiable neural networks that are hard-equivalent to non-differentiable, boolean-valued functions. $\partial\mathbb{B}$ nets can therefore learn discrete functions by gradient descent. The main novelty of $\partial\mathbb{B}$ nets is the semantic equivalence between their two aspects: a differentiable soft-net and a non-differentiable hard-net. Maintaining this semantic equivalence requires defining new kinds of differentiable functions that are hard-equivalent to boolean functions. `Margin packing' is a potentially general technique for constructing differentiable functions that are hard-equivalent yet gradient-rich. An advantage of $\partial\mathbb{B}$ nets is that `hardening' to 1-bit weights has provably identical accuracy. At inference time $\partial\mathbb{B}$ nets are highly compact and potentially cheap to evaluate. Preliminary experiments demonstrate that $\partial\mathbb{B}$ nets are competitive with existing classification approaches. However, this paper is only a first step towards exploring the space of differentiable nets that satisfy the requirement of hard-equivalence.
+$\partial\mathbb{B}$ nets are differentiable nets that are hard-equivalent to non-differentiable, boolean-valued functions. $\partial\mathbb{B}$ nets can therefore learn discrete functions by gradient descent. Ensuring hard-equivalence requires defining new kinds of activation functions and network layers. `Margin packing' is a potentially general technique for constructing differentiable functions that are hard-equivalent yet gradient-rich. An advantage of $\partial\mathbb{B}$ nets is that `hardening' to 1-bit weights has provably identical accuracy. At inference time $\partial\mathbb{B}$ nets are highly compact and potentially cheap to evaluate. Preliminary experiments demonstrate that $\partial\mathbb{B}$ nets are competitive with existing classification approaches. 
 
 % Acknowledgements should only appear in the accepted version.
 %\section*{Acknowledgements}
 %Thanks to GitHub Next for sponsoring this research. And thanks to Pavel Augustinov, Richard Evans, Johan Rosenkilde, Max Schaefer, Ganesh Sittampalam, Tam\'{a}s Szab\'{o} and Albert Ziegler for helpful discussions and feedback.
-
 
 \bibliography{../db.bib}
 \bibliographystyle{icml2023/icml2023}
