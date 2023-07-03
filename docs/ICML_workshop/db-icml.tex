@@ -85,60 +85,6 @@
 % Therefore, a short form for the running title is supplied here:
 \icmltitlerunning{Lossless hardening with $\partial\mathbb{B}$ nets}
 
-
-\begin{comment}
-	Reviewer feedback:
-	
-	Differentiable and differentiable a.e. (almost everywhere) should be distinguished more clearly. (Esp. in Section 2.3. it only becomes clear at the end that it’s actually diff. a.e. instead of diff.) Please adjust the framing throughout the paper to clarify the proposed operators (at least some of them) are differentiable a.e. (I think in the title it’s fine to call it differentiable, but it should become clear early on that it’s only a.e. and not just mentioning it only on page 3 for the first time.)
-	
-	Answer: At the beginning of the paper, in section 2, I now define a soft-net as a differentiable, or differentiable a.e., function. Also, earlier in section 2.2 on margin packing I emphasise that the agumented bit defines a differentiable a.e. function.
-	
-	Differentiable logic gate networks [A] should be referenced and a short discussion of differences should be included.
-	[A] Felix Petersen, Christian Borgelt, Hilde Kuehne, and Oliver Deussen. “Deep Differentiable Logic Gate Networks”. Advances in Neural Information Processing Systems (NeurIPS). 2022.
-	
-	Answer: Done
-	
-	It would be interesting (not necessary for the camera-ready, but would strengthen the paper significantly) to provide an empirical comparison between the proposed relaxations of logic and standard relaxations of logic. Specifically, what would be the performance of the method when using product logic with dB nets?
-
-	Answer: This empirical comparison wouldn't be meaningful because the proposed relaxations are hard-equivalent whereas standard relaxations, such as product logic, are not. So swapping in product logic will necessarily introduce a mismatch between the soft and hard net. And what we care about is the performance of the (compact and discrete) hard net. For this purpose, we already know that product logics must perform worse. Godel-style min/max operators, although hard-equivalent, are not gradient-rich, and my own experiments indicate this harms training performance. I agree that the paper would be better if it included a discussion of these differences.
-	
-	Additional relaxations of sorting that could be referenced in l. 152 (right) are Differentiable Sorting Networks (https://arxiv.org/abs/2203.09630) and NeuralSort (https://openreview.net/pdf?id=H1eSS3CcKX).
-	
-	Answer: Done.
-	
-	hard-netX or Section Y should be capitalized (i.e., if they refer to a specific Section / hard-net/ table, as it is part of the “name” of the figure). It is good style to capitalize titles and Section titles (basically all relevant words being capitalized (e.g., Learning to Negate, Lossless Hardening with Nets))
-	
-	Answer: Fixed.
-	
-	In Figures 3 and 4, it could be helpful to use a “smoother” visualization / color coding. The current is somewhat hard to understand and ambiguous. Something like viridis, the default in matplotlib could be more intuitive. Maybe the isolines could be maintained while replacing the only the coloring.
-	
-	Answer: The hard transition in the color coding is intended to reflect the hard-equivalence of the differentiable functions. The positive (pink) and negative (gray) continuous output values perfectly match the 4 boolean quadrants. So I would prefer to retain this color coding because it clarifies the relationship between soft and hard output values.
-	
-
-	Positive
-	
-	Presentation The presentation is very clear and good to understand.
-	
-	Method The method proposes wo novel contributions, the margin packing and mainly the network architecture. Both are novel contributions and can be explored further.
-	
-	Experiments The experiments are, for the stage of the paper, in sufficient quantity.
-	
-	Negative
-	
-	Method and Experiments The paper lacks a discussion and comparison to important previous work:
-	
-	While DB nets propose to learn the subset of inputs for an output neuron with fixed functionality per layer, [1] proposes to learn the logic operator at a specific neuron while having fixed (random) inputs. Although both methods are not equal, they have certain similarities, db-nets is biased by the choice of the logic operator per layer, which can not be learned, while [1] has fixed initialized connectivity. A comparison and discussion, and/or experimental evaluation would be adequate. A comparison between the proposed partial method and standard differentiable fuzzy logic (e.g. product logics) would be good.
-	
-	[1]: Petersen et. al. 2022 “Deep Differentiable Logic Gate Networks”
-	
-	Answer: Done
-	
-	Typo/grammar: 141 R ‘the’
-	
-	Answer: Fixed
-	
-\end{comment}
-
 \begin{document}
 
 \twocolumn[
