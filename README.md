@@ -8,9 +8,11 @@ The library is implemented in Python using the [Flax](https://github.com/google/
 
 Questions? Ask @Z80coder
 
-## Draft paper
+## Papers
 
-["∂B nets: learning discrete functions by gradient descent"](https://arxiv.org/abs/2305.07315) (April 2023).
+[Lossless hardening with ∂𝔹 nets](https://differentiable.xyz/papers/paper_21.pdf). I. Wright. In ["Differentiable Almost Everything: Differentiable Relaxations, Algorithms, Operators, and Simulators"](https://differentiable.xyz/papers), ICML 2023 Workshop, Honolulu, 2023.
+
+Draft paper: ["∂B nets: learning discrete functions by gradient descent"](https://arxiv.org/abs/2305.07315) (April 2023).
 
 ## Demos
 
