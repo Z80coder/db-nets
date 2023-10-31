@@ -207,6 +207,8 @@ And then we compose the encoders into a single input layer that outputs a single
 
 We'll now define a complete db-net architecture to learn this classification problem.
 
+[Skip forward to start training and then skip back to here]
+
 It has two layers, an logical OR layer, followed by a logical NOT layer. Each layer has 64 neurons.
 
 We have 4 output ports for each class. Each output port is a vector of bits. Essentially we add up the bits in each port, and interpret them as relative class probabilities. Then we use a standard cross-entropy loss for training.
@@ -221,14 +223,41 @@ And once trained, we can extract the trained net.
 
 Let's do a quick evaluation on the test data.
 
-Here I use the ClassifierMeasurements function to evaluate the trained soft-net and a hardened version of the soft-net. The hardened version is exactly the same as the soft-net except we convert all its weights to 0s and 1s.
+Here I use the ClassifierMeasurements function to evaluate the trained soft-net and a hardened version of the soft-net. The hardened version is exactly the same as the soft-net except we harden all its weights to 0s and 1s. But, at this stage, the 0s and 1s are still represented as floating-point values.
 
 The confusion matrix shows that the db-net has solved this problem, and that -- even with hard-weights, it behaves exactly the same.
 
 # Bind weights with hard-net
 
-But what we really want is to extract the boolean function that predicts whether a car is acceptable or not.
+But what we really want is to extract the boolean function that predicts whether a car is acceptable or not. We extract the boolean classifier by binding the trained weights from the soft-net with the corresponding hard-net.
 
-We extract the boolean classifier by binding the trained weights from the soft-net with the corresponding hard-net.
+What we get is a Wolfram function with associated boolean weights. This is the hard-net representation.
 
-And we can actually symbolically examine the learnt boolean expression.
+And we can actually symbolically evaluate it, to see precisely what boolean function has been learned. Here the b's correspond to the 21 inputs bits, which represents featrures of the car, and the logical ORs and NOTs represent the boolean functions computed on the net's output ports. Essentially the net has learned to combine different features as evidence for different classification labels.
+
+# Evaluate boolean classifier
+
+But is this boolean function really hard-equivalent to the soft-net? Well we can use it as a classifier, and therefore evaluate its performance on the test data.
+
+It gets an accuracy of 99.4%, which as you can see, is identical to the soft-net's performance. So there is no loss of accuracy when using 1-bit weights.
+
+And we get this accuracy with a much, much smaller net at query-time. In fact the weights for this classifier only consume 0.2 k.
+
+A minimal-size MLP on this same problem consumes about 16 k.
+
+The db-net has comparable performance but is much more compact, which is great for deploying on edge devices.
+
+# Conclusion
+
+OK, let's come to a close.
+
+The Wolfram Language is great for rapidly prototyping new ideas. Everything works out-of-the-box and works together no problems. You don't have to think about choosing packages, or versions, or dependencies. You can immediately start working on your problem, without distractions or frustrations.
+
+The Neural Network support is very high-level yet very flexible and configurable.
+If you want to push what neural nets can do, and explore different kinds of differentiable functions, then you can.
+
+I had to rapidly implement and evaluate 100s of ideas before solving my research problem. Without Wolfram Language I think I may have given up. But it's such a joy to use, and the gap between idea and reality is so small, that I enjoyed every step -- even when many of my ideas failed.
+
+If you want to learn more about db-nets then there's a paper published at ICML. And a GitHub repo with all the code.
+
+Thanks for listening!
