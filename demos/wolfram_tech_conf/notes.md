@@ -1,4 +1,4 @@
-# Title
+# Neural network research with the Wolfram Language
 
 Hi everyone, my name is Ian Wright, and I'm a Machine Learning Engineer at GitHub.
 
@@ -145,7 +145,7 @@ We can have learn-to-AND, OR, NOT layers, and all kinds of more exotic variants.
 
 Here I want to look at a differentiable Majority layer, because it shows just how far we can push Wolfram Language's support for neural networks, and get it to some rather surprising things.
 
-The boolean Majority function outputs True if the majority of its inputs are True. It's a discrete analogue of a threshold function, and we can think of it as counting multiple independent bits of evidence.
+The boolean Majority function outputs True if the majority of its inputs are True. It's a discrete analogue of a threshold function, and very useful for learning problems.
 
 Majority can be computed in terms of AND and ORs. But the number of terms grows exponentially with the size of the inputs. And no algorithm exists for finding the minimal boolean representation of Majority. In neural net applications we may want thousands of inputs bits to a single majority neuron. This rapidly gets explosive to compute at training time.
 
@@ -245,7 +245,7 @@ And we get this accuracy with a much, much smaller net at query-time. In fact th
 
 A minimal-size MLP on this same problem consumes about 16 k.
 
-The db-net has comparable performance but is much more compact, which is great for deploying on edge devices.
+The db-net has comparable performance but is much more compact. Also boolean and integer operations can be cheaper than floating-point operations. So this makes db-nets a potentially good choice when deploying ML on edge devices.
 
 # Conclusion
 
