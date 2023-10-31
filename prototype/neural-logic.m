@@ -361,6 +361,12 @@ DifferentiableHardAND[b_, w_] := Max[b, 1 - w]
   DifferentiableHardAND[b_, w_] := If[w > 1/2, If[b > 1/2, b, (2w -1)b + 1 - w], If[b > 1/2, -2w(1 - b) + 1, 1 - w]]
 *)
 
+(* For Wolfram Tech conference demo *)
+(*
+DifferentiableHardAND[b_, w_] := If[Min[b, w] > 1/2, 1/2 + 1/2 (b + w) Abs[(-(1/2) + Min[b, w])], 
+ 1/2 (b + w) Abs[(-(1/2) + Min[b, w])] + Min[b, w]]
+*)
+
 HardAND[input_, weight_] := Or[input, Not[weight]]
 
 HardAND[input_/;VectorQ[input], weights_/;VectorQ[weights]] := Block[{},
