@@ -6,246 +6,373 @@ I want to talk about my experience using the Wolfram Language for neural network
 
 # Abstract
 
-In particular, I want to relate how I used various language features to rapidly explore and prototype a new kind of neural network, which can learn highly compact, non-differentiable Boolean functions.
+In particular, I want to give an overview of how I used various language features to rapidly explore and prototype a new kind of neural network, which can learn highly compact, non-differentiable Boolean functions.
 
 So let's get straight into it.
 
 # R&D goals
 
-A neural network is a function with learnable parameters, called weights. Training iteratively adjusts the weights by backpropagating an error signal to minimize a measure of loss on the training data. Essentially, this process performs gradient descent in a high-dimensional weight space.
+We train neural nets by iteratively adjusting their weights by backpropagating an error signal to minimize the loss on the training data. Essentially, this process performs gradient descent in a high-dimensional weight space.
 
-Neural networks must therefore be differentiable functions.
+For backprop to work, neural networks must be differentiable functions.
 
 But this creates some problems.
 
 We can't learn discrete, non-differentiable functions, such as boolean functions. Discrete functions give better bias for some learning problems.
 
-Also, nets can be huge because we must store floating point numbers for every weight. And they can be expensive to query because we must perform large numbers of floating point operations.
+And the nets can be huge and expensive to query, because we store and operate on floating point numbers.
 
-There's a lot of work to reduce net sizes, such as weight quantization, which represents floats with less bits. But quantization is a kind of lossy compression which degrades the network's predictive performance.
+There's plenty of existing work that aims to reduce net sizes, such as weight quantization, which reduces the number of bits per weight. But quantization is a kind of lossy compression which degrades the network's predictive performance.
 
-I wanted to see whether we could have our cake and eat it.
+So I wanted to see whether we could have our cake and eat it.
 
-I wanted to see whether we could define a new kind of neural network, which is differentiable, so we can train it efficiently with backpropoagation, but post-training convert it to an equivalent boolean function with 1-bit weights without any loss of performance.
+I wanted to see whether we can define a new kind of network, which is differentiable, so we can train it efficiently with backpropoagation, but post-training convert it to an equivalent boolean function with 1-bit weights -- but without any loss of performance.
 
-This is the idea for db-nets.
+This is the idea behind db-nets.
 
-A db-net has two aspects: a soft-net, which is differentiable, and a hard-net, which is a boolean function. We train the soft-net as normal, convert its weights to 1-bit booleans, and bind them with the boolean function. And this boolean function behaves in exactly the same way as the soft net.
+Look at this diagram.
+
+A db-net has two aspects: a soft-net, which is differentiable, and a hard-net, which is a boolean function. We train the soft-net as normal, convert its weights to 1-bit booleans, and bind them with the boolean function. Then the boolean function behaves in exactly the same way as the soft net.
 
 So this is what I set out to do. I wasn't sure if it was possible. And I knew I had to rapidly explore, and test, lots and lots of ideas.
 
-So that's why I chose to prototype in the Wolfram language.
+Which is why I chose to prototype in the Wolfram language.
 
 # Hard and soft-bits
 
-To get started, we need to define two kinds of bits.
+Let's just start with some basics. We need to define two kinds of bits.
 
-A soft-bit is a real number between 0 and 1. A hard-bit is a boolean value.
+A hard-bit is a boolean value. A soft-bit is a real number between 0 and 1. 
+
+## Conversion
 
 A soft-bit convers to True if its greater than 1/2. Otherwise it converts to False.
 
-This "Hard" function performs the conversion.
+For example, this vector of soft-bits converts to a vector of hard-bits.
 
-We want the soft-net and hard-net to be semantically equivalent. 
+## Hard equivalence
 
-The LHS of this equation says: we supply an input x to the soft-net and get an output. We then harden that output to boolean values.
+We want the hard-net to be semantically equivalent to the soft-net. What do we mean by that?
 
-The RHS says: we harden the same input x to boolean values and then supply this to the hard-net to get another output.
+The LHS of this equation says: supply an input x to the soft-net and get an output. And then harden that output to hard-bits.
 
-If these two outputs are identical for all possible inputs then the soft and hard-nets are semantically equivalent.
+The RHS says: harden the same input x, and then supply the hard-bits to the hard-net to get another output.
 
-This is a hard-equivalence requirement that db-nets need to satisfy. The soft-net needs to be differentiable but nonetheless harden, without error, to a boolean function with 1-bit weights.
+If these two outputs are identical, for all possible inputs, then the soft and hard-nets are semantically equivalent.
 
-And this requirement turned out to be surprisingly hard to satsify! I had to try lots and lots of different approaches.
+This is a "hard-equivalence" requirement that db-nets must satisfy.
+
+This requirement turned out to be surprisingly hard to satsify! I had to try lots and lots of different approaches.
 
 Over a period of a few months I prototyped -- no exaggeration -- 100s of ideas.
 
-The Wolfram Language, because its a single, unified system that provides everything immedaitely out-of-the-box, and it all works together, I essentially had a playground to try all kinds of wacky and wonderful ideas. The ability to quickly dynamically visualise functions, and their gradients, was really helpful, providing quick intuition. Most ideas didn't work. But I could prototype really fast, and discard them.
+The Wolfram Language, because its a single, unified system that provides everything immedaitely out-of-the-box, and it all works together, I essentially had a playground to try all kinds of wacky and wonderful ideas. I made extensive use of the ability to quickly dynamically visualise functions, and their gradients, to give me immediate intuition. Most ideas didn't work. But I could prototype really fast, and discard them.
 
 # Learning to AND
 
-Here I'll briefly explain my eventual solution.
+I'll briefly explain how db-nets satisfy hard-equivalence by stepping through a simple example.
 
-Let's start with a simple problem that will help illustrate the general solution.
+Imagine we want a network component that can learn to mask an input x to False if a learnable weight w is False; otherwise we pass-through its value unaltered.
 
-Say we want a network component that can learn whether to mask an input value, x. If a learnable weight, w, is True, then the input value is passed through. But if the learnable weight, w, is False, then the input value is masked to False.
+Essentially, we we want to learn a boolean weight, w, for the boolean function And. 
 
-So we want to learn a boolean weight, w, for the boolean function And. And obviously logical And is not a differentiable function.
+We can see this more clearly by using the TruthTable function from the Wolfram function repository.
+
+[Show Truth Table, and explain logic]
+
+Now, logical And is not a differentiable function. So we can't simply stick it inside a neural network and expect backprop to work.
 
 # Product logic
 
-Real-valued relaxations of boolean logic already exist. For example, product logic implements logical And as multiplication.
+Real-valued relaxations of boolean logic already exist. For example, product logic implements logical And by multiplying soft-bits.
 
-In this plot the horizontal axis is the soft-bit input x. The vertical axis the output.
+How does this work? Let's use Wolfram's Manipulate functionality to see how.
 
-Here the weight is 1 or True. And we can see that the input-value passes-through to the output, perfectly. When the input is low the output is low, and when its high the output is high.
+[Execute Manipulate line]
 
-But look what happens when we decrease the learnable weight. It's about 0.6 now. Which means the weight is hard-equivalent to True. But if the input is, say, 0.6, then the output is 0.4, which is hard-equivalent to False. So ProductAnd, in this situation, is not hard-equivalent to logical And.
+In this plot the horizontal axis is the input x. The vertical axis is the output. And we can vary the value of the learnable weight.
+
+Here the weight is 1 or True, so ProductAnd should act as a pass-through. And we can see that output always equals the input.
+
+Now, let's set the weight to 0 or False. Now we can see that ProductAnd is entirely masking the input. The output is always 0 or False.
+
+So ProductAnd is acting just like logical And.
+
+But look what happens at intermediate values. Let's set the weight to w=0.6, which hardens to True. We want the output to high when the input is high.
+But there's a region where this doesn't work. The output is less than 0.5, which hardens to False.
+
+So ProductAnd, in this region, is not hard-equivalent to logical And.
 
 That's a problem.
 
-We can visualise this problem all-at-once, using Wolfram's countour plot.
+Now, the output varies continuously with both the input, x, and the weight, w. So ProductAnd has a gradient everywhere, and therefore 
+is differentiable in the right way for backpropagation. It's a gradient-rich function.
 
-Again, the horizontal axis is the soft-bit input. But now the vertical axis is the soft-bit weight. The countours represent the output of ProductAnd. And I've coloured all outputs that harden to True as pink. And outputs that harden to False as Gray.
-
-And here you can see the problem even more clearly. For hard-equivalence to And the whole top-right quadrant must be entirely pink. The hard boundaries at 0.5, where a soft-bit chantges from True to False, need to be respected. But they're not.
-
-Now, the countour lines are curved, which means that ProductAnd provides a gradient everywhere, in other words is differentiable in the right way.
-
-But it's not hard-equivalent. So it won't do. If we used it at training-time, and then hardened the learned weights, we'd get different behaviour.
+But it's not hard-equivalent. If we used it at training-time, and then hardened the learned weights, we'd get completly different behaviour in the hard-net. The soft-net's training wouldn't transfer to the hard-net.
 
 # Godel logic
 
-There's another relaxation of boolean logic named after Godel. It defines a differentiable version of And using Min.
+The are different relaxations of boolean logic we can try. Godel logic defines logical And in terms of Min.
 
-When the weight is 1 it all looks good again. What happens when we decrease it?
+Again, let's visualise it to get some quick intuition.
 
-Very different behaviour! Unlike before it respects hard-equivalence. In fact as the weight just gets below the hard-boundary at 0.5, the output becomes less than 0.5. And so it masks the soft-bit input.
+When the weight is 1 it all looks good. And when the weight is 0 it all looks good.
 
-We can see this more clearly again using a countour plot. This time the top-right quadrant is all pink, which means Godel-and is hard-equivalent to logical And.
+Let's look at intermediate values. When the weight is 0.6 we can see that Godel And still works. 
+That's because when the input is high the output is also high. It respects the hard transition at 0.5 betwen soft-bits and hard-bits.
 
-But there's a problem! The countour lines are straight not curves. That's because the Min operator essentially selects either the input value, or the weight, as its output. So any change in the unselected value doesn't change the value of the output. And so there's no gradient! There's no gradient information to backpropagate in these circumstances. And that's bad for learning.
+But there's a problem! 
 
-Godel-And is hard-equivalent, but it isn't gradient rich.
+The Min operator essentially selects either the input value, or the weight, as its output. So any change in the unselected value doesn't change the value of the output. 
 
-So this won't work!
+That's why the output is sometimes flat. Because any variation in the input value x has no effect on the output value.
+
+And that means there is no gradient. It means we can only backpropagate error through one of the inputs. And that's bad for learning. 
+
+So Godel-And is hard-equivalent, but it isn't gradient rich.
+
+So this won't work either!
 
 # Margin packing
 
-For db-nets we want real-valued relaxations of logical operators that are both hard-equivalent and gradient rich.
+We need db-nets to be composed of relaxations of logical operators that are both hard-equivalent and gradient rich.
+How can we have our cake and eat it?
 
-We saw that Godel-And is hard-equivalent to logical And. So let's use Godel-And to define a "representative bit", which is guaranteed to be hard-equivalent to logical And.
+My eventual solution, after prototyping lots of different approaches, is something I call margin packing.
 
-Here you can see the representative bit as a bold vertical line. The two manipulable parameters are the input value and the weight.
+I'll explain it with a dynamic visualisation -- which was easy to set-up in the Wolfram Language.
 
-If we set the weight to 1 this function should act as a pass-through. And you can see that it does as I vary the input x.
+[Activate visualization]
 
-But notice that there's always a margin between the 
-representative bit and the threshold at 1/2. Any output-value between the representative bit and the threshold at 1/2 will still be hard-equivalent to logical And.
+Here we can manipulate both the input value, x, and the weight, w.
+I'll set the weight to 1 so this should act as a pass-through.
 
-So we pack that margin with extra, gradient-rich information. In other words, we compute an augmented-bit that always varies with both the input and the weight values.
+[Set weight to w]
 
-So even when I vary a parameter ignored by the Min operator the augmented bit still varies. Yet it preserves hard-equivalence. The mathematical details of margin packing aren't important now.
+We saw that Godel-And is hard-equivalent to logical And. So we'll use Godel-And to define a "representative bit", which is guaranteed to be hard-equivalent to logical And.
 
-But in this case we get a new, piecewise function.
+The representative bit as the bold vertical line. Currently the output is 0 because the input is 0.
 
-Which we can plot as a countour plot. So this new function is hard-equivalent to logical And (because the top-right quadrant only is entirely pink). But notice that the countour lines are curves -- which means there are gradients everywhere! 
+[Vary x]
+
+But as I vary x, we can see the representative bit behave like Godel-And. The output is exactly the same as the input.
+
+The next thing to notice is that there's always a margin between the representative bit and the hard threshold at 1/2.
+
+And any output-values within the margin are guaranteed to be hard-equivalent to logical And.
+
+So we don't have to choose the representative bit. We can pack that margin with extra, gradient-rich information.
+
+In other words, we can compute an augmented-bit, which is a always function of both the input and the weight.
+
+So although the representative bit doesn't vary, the augmented bit does.
+[Show how the agumented bit varies but the representative bit doesn't]
+
+The mathematical details of margin packing aren't important now.
+
+But we can margin-pack Godel-And to get a new, piecewise differentiable function.
+
+Let's visualize its behaviour again.
+
+We can immiediately see that this new function is both hard-equivalent with no flat gradients, and therefore gradient-rich.
 
 (Actually this function is differentiable almost everywhere, which is sufficient for backpropagation to work.)
 
-We construct db-nets by composing margin-packed, differentiable analogues of boolean operators into multi-input neurons, then into multi-input layers, and then finally into complete net architectures.
+So we construct db-nets from margin-packed, differentiable analogues of boolean operators. We can compose these new differentiable
+functions into multi-input neurons, then into multi-input layers, and then finally into complete net architectures.
+
+So let's do that.
 
 # Neural network layers
 
-So we're off. 
+I rapidly prototyped a db-nets library, building on top of Wolfram Language's neural network support.
 
-I implemented a db-nets library that uses the Wolfram Language support for neural networks to create new kinds of differentiable boolean logic layers.
+Wolfram's neural net functions are beautifully high-level and composable, but also give a lot of low-level control.
 
-We can have learn-to-AND, OR, NOT layers, and all kinds of more exotic variants.
+So I could quickly try out lots of new ideas, and quickly test them.
 
-Here I want to look at a differentiable Majority layer, because it shows just how far we can push Wolfram Language's support for neural networks, and get it to some rather surprising things.
+I defined layers that learn to perform different kinds of logical operations on subsets of their inputs. 
 
-The boolean Majority function outputs True if the majority of its inputs are True. It's a discrete analogue of a threshold function, and very useful for learning problems.
+## Boolean majority
 
-Majority can be computed in terms of AND and ORs. But the number of terms grows exponentially with the size of the inputs. And no algorithm exists for finding the minimal boolean representation of Majority. In neural net applications we may want thousands of inputs bits to a single majority neuron. This rapidly gets explosive to compute at training time.
+But here we'll look at just one example, which I think is interesting, because it demonstrates the power of the Wolfram Language.
 
-But notice that if we sort the soft-bits in ascending order then the "middle bit" is representative and therefore hard-equivalent to boolean majority. 
+The boolean Majority function outputs True if the majority of its inputs are True. It's a discrete analogue of a threshold function, which turns out to be very useful for learning.
 
-And, remarkably, we can easily define a network layer using Wolfram's FunctionLayer and PartLayer. The FunctionLayer sorts the inputs, and the PartLayer picks out the "middle bit". And this is 2 lines of Wolfram code! And the Wolfram Language takes care of everything, including compiling it down to differentiable code. The error is then backpropped through the representative bit.
+[Run examples of Majority]
 
-But we can margin-pack this bit to backprop error through all input bits.
+Majority can be implemented in terms of AND and ORs.
 
-So we avoid the exponential blow-up by paying the run-time cost of Sorting.
+[Show DNF form]
+
+However, the number of terms grows exponentially with the inputs.
+
+And no algorithm exists for finding the minimal boolean representation of Majority.
+
+In machine-learning applications we may want thousands of inputs bits to a single majority neuron. And thousands of neurons. So implementing Majority in terms of differentiable combinations of ANDs and ORs becomes explosive to compute at training time.
+
+So what can we do?
+
+Notice that if we sorted the soft-bit inputs in ascending size then the "middle bit" would be a representative bit, and therefore hard-equivalent
+to boolean majority.
+
+Why? Because if the majority of bits are high, then the middle of the sorted list is also guaranteed to be high.
+
+And, remarkably, we can easily implement this logic using Wolfram's FunctionLayer and PartLayer.
+
+The FunctionLayer sorts the inputs, and the PartLayer picks out the "middle bit". And this is just 2 lines of Wolfram code!
+
+And the Wolfram Language takes care of everything, including compiling it down to differentiable code.
+
+You might think: how on earth can we backpropagate through a Sort algorithm? Well we're not. We're backpropagating through
+the representative bit selected by a Sorting algorithm. The error is then backpropped through the representative bit.
+
+But we can then margin-pack this bit to backprop error through all the input bits.
+
+So we avoid the explosive blow-up by paying the run-time cost of Sorting.
 
 ## Soft net
 
-Let's define a majority layer that takes 8 inputs. Every time you define a db-net component you get 2 things: the soft-net and the corresponding hard-net.
+So here's such a differentiable majority layer, which takes 8 inputs.
 
-Let's look at the soft-net. Wolfram's out-of-the-box net visualisations really help when wiring things together. And it's pretty incredible how Wolfram Language just wires this all together into a differentiable layer.
+Every time you define a db-net component you get 2 things: the soft-net and the corresponding hard-net.
 
-And we can interactively test our new layers, to see how they behave.
+Let's look at the soft-net. Wolfram's out-of-the-box visualisations really help when wiring nets together.
 
-Let's define some test input.
+And it's pretty incredible how Wolfram Language just automatically wires the above 2 lines into a differentiable layer.
+[Just play with visualization]
 
-And then let's see what the layer outputs. 
+And we can immediately test this layer, to see how it behaves.
+
+[Run and briefly explain the 2 lines of code]
 
 ## Hard net
 
-It's just a Wolfram function (with some extra complexity to allow it to be composed into a hard network). But all it reduces to is the boolean Majority function.
+What does the corresponding hard-net look like?
 
-That means, post-training, when throw away the Sorting, because it's all hard-equivalent to boolean Majority, which is extremely fast to compute (it's just counting bits).
+It's just a Wolfram function (with some extra complexity we can ignore). Because really, in the insides, its just the Wolfram's built-in boolean
+Majority function.
+[Highlight it]
 
-And we can check that it behaves the same as the soft-net. 
+This means, post-training, we throw away any Sorting. Instead, at query-time, we just use boolean Majority, which is extremely fast to compute
+(becuase we just count bits).
 
-It's pretty incredible that we can define a differentiable analogue of boolean majority.
+## Hard equivalence
 
-The db-nets library uses other advanced features, such as Wolfram's CompiledLayer to define special neurons that behave differently in their forward and backward passes. This kinds of control is needed to ensure db-nets backpropagate the right kind of error signal. The details aren't important. But what is important is that Wolfram Language allows you very deep control, which is essential when exploring novel research ideas.
+And we can quickly check that it behaves the same as the soft-net. 
+
+The db-nets library exploits many different features of Wolfram's neural network support.
+
+For example, I use a CompiledLayer to define special neurons that behave differently in their forward and backward passes. The details aren't important.
+
+But what is important is that Wolfram Language allows you very deep control, which is essential for research purposes, when
+you're exploring novel ideas.
 
 # A classification problem
 
-OK, let's put this all together, and quickly look at a toy-example of db-nets working in practice.
+OK, let's put this all together, and demonstrate db-nets working in practice.
 
-Let's get some data using the Wolfram data repository.
+Let's get a small dataset from the Wolfram data repository.
 
-Basically it's table describing features of cars. And the aim is to predict whether a car is worth buying, that is one of
+It's a dataset describing features of cars. The aim is to predict 4 labels, one of
 - unacceptable
 - acceptable
 - good
-- or very good.
+- or very good
+which defines whether a car is worth buying.
 
-So it's a small multi-class classification problem. With numeric and categorical features.
+So this is a multi-class classification problem. With numeric and categorical features.
 
 # A classification problem
 
+Let's quickly split the data into a train and test set, using another function from the Wolfram function repository.
+
 We'll use a function from the Wolfram function repository to split the data into a train and test set.
 
-And we'll use NetEncoder functionality to automatically convert the input features into an indicator vector of booleans.
+## Input encoder
 
-And then we compose the encoders into a single input layer that outputs a single vector of booleans. It's really cool how easy it is to do this, and how we can clearly visualize what's going on.
+The built-in NetEncoder function make it really easy to convert the input features into an indicator vector of booleans.
+
+And then we compose the encoders into a single input layer. 
+[Show input encoder layer]
+You can see that this layer convers the input features into a vector of 21 hard-bits.
+
+It's really cool how easy it is to do this, and visualize what's going on.
 
 # Define db-net
 
+[Just immediately run all the lines of code]
+
 We'll now define a complete db-net architecture to learn this classification problem.
 
-[Skip forward to start training and then skip back to here]
+It has two layers, an logical OR layer, followed by a logical NOT layer. Each layer has 64 "logical" neurons, with new kinds of activation functions.
 
-It has two layers, an logical OR layer, followed by a logical NOT layer. Each layer has 64 neurons.
+The net has 4 output ports for each class. Each output port is a vector of bits. 
+We add up the bits in each port, and interpret them as relative class probabilities. 
 
-We have 4 output ports for each class. Each output port is a vector of bits. Essentially we add up the bits in each port, and interpret them as relative class probabilities. Then we use a standard cross-entropy loss for training.
+Then we use a standard cross-entropy loss for training.
 
 # Train db-net
 
-Training on my laptop's GPU just works out-of-the-box.
+This is now reeady to train. And training on my laptop's GPU just works out-of-the-box.
+
+We can see that the loss decreases. So it's definitely learning something!
+
+And we can stop the training at anytime. [Stop after less than a minute]
 
 And once trained, we can extract the trained net.
 
 # Evaluate db-net
 
-Let's do a quick evaluation on the test data.
+Let's quickly evaluate its performance on the test data.
 
-Here I use the ClassifierMeasurements function to evaluate the trained soft-net and a hardened version of the soft-net. The hardened version is exactly the same as the soft-net except we harden all its weights to 0s and 1s. But, at this stage, the 0s and 1s are still represented as floating-point values.
+Here I use Wolfram's ClassifierMeasurements function to evaluate the soft-net. It automatically give lots of useful information.
 
-The confusion matrix shows that the db-net has solved this problem, and that -- even with hard-weights, it behaves exactly the same.
+The confusion matrix shows that the db-net has solved this problem. In fact it seems to have got only X examples wrong.
+And the estimated accuracy is about XX%.
 
 # Bind weights with hard-net
 
-But what we really want is to extract the boolean function that predicts whether a car is acceptable or not. We extract the boolean classifier by binding the trained weights from the soft-net with the corresponding hard-net.
+But what we really want is the boolean function that predicts whether a car is acceptable or not.
+
+We extract it by binding the hardened trained weights from the soft-net with the corresponding hard-net.
+[Run first line of code]
 
 What we get is a Wolfram function with associated boolean weights. This is the hard-net representation.
+[Show then delete large output]
 
-And we can actually symbolically evaluate it, to see precisely what boolean function has been learned. Here the b's correspond to the 21 inputs bits, which represents featrures of the car, and the logical ORs and NOTs represent the boolean functions computed on the net's output ports. Essentially the net has learned to combine different features as evidence for different classification labels.
+And because this is a Wolfram function we can symbolically evaluate it to see precisely what boolean function has been learned!
+
+[Run second line of code]
+
+Here we're looking at the symbolic hard-bits that are outputted by the net on 1 of its 4 ports.
+The b's correspond to the 21 inputs bits, which represents features of the car.
+Each boolean expression logically combines different feature values to give 1-bit of predictive information.
+
+So we have learned, by backpropoagation, a boolean function that classifies cars!
 
 # Evaluate boolean classifier
 
-But is this boolean function really hard-equivalent to the soft-net? Well we can use it as a classifier, and therefore evaluate its performance on the test data.
+How does this boolean classifier peform? Well, because of hard-equivalence, it should perform identically to the soft-net
 
-It gets an accuracy of 99.4%, which as you can see, is identical to the soft-net's performance. So there is no loss of accuracy when using 1-bit weights.
+Let's evaluate its performance on the test data.
+[Run 2 lines of code]
 
-And we get this accuracy with a much, much smaller net at query-time. In fact the weights for this classifier only consume 0.2 k.
+It gets an accuracy of 99.4%, which as you can see, is identical to the soft-net's performance.
+So there is no loss of accuracy. The non-differentiable boolean function is semantically equivalent to the differentiable net.
 
-A minimal-size MLP on this same problem consumes about 16 k.
+## Size of boolean classifier
 
-The db-net has comparable performance but is much more compact. Also boolean and integer operations can be cheaper than floating-point operations. So this makes db-nets a potentially good choice when deploying ML on edge devices.
+And we get this accuracy with a much, much smaller net at query-time.
+In fact the weights for this classifier only consume 0.2 k.
+
+In comparison, a minimal-size MLP on this same problem consumes about 16 k.
+
+Also boolean and integer operations can be much cheaper than floating-point operations.
+So this makes db-nets a potentially good choice when deploying ML on edge devices.
+
+And db-nets are not restricted to toy classification problems. We can use them for numerical regression problems.
+And image recognition. In fact, anything.
 
 # Conclusion
 
@@ -253,10 +380,13 @@ OK, let's come to a close.
 
 The Wolfram Language is great for rapidly prototyping new ideas. Everything works out-of-the-box and works together no problems. You don't have to think about choosing packages, or versions, or dependencies. You can immediately start working on your problem, without distractions or frustrations.
 
-The Neural Network support is very high-level yet very flexible and configurable.
-If you want to push what neural nets can do, and explore different kinds of differentiable functions, then you can.
+The Neural Network support is very high-level, yet very flexible and configurable. You can work fast.
 
-I had to rapidly implement and evaluate 100s of ideas before solving my research problem. Without Wolfram Language I think I may have given up. But it's such a joy to use, and the gap between idea and reality is so small, that I enjoyed every step -- even when many of my ideas failed.
+And if you want to push what neural nets can do, and explore entirely new kinds of neural nets, then you can.
+
+I had to rapidly implement and evaluate 100s of ideas before solving my research problem. Without Wolfram Language I think I may have given up. But it's such a joy to use, and the gap between ideas and reality is so small, that I enjoyed every step -- even when many of my ideas failed.
+
+## More on db-nets
 
 If you want to learn more about db-nets then there's a paper published at ICML. And a GitHub repo with all the code.
 
