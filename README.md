@@ -16,6 +16,8 @@ Draft paper: ["∂B nets: learning discrete functions by gradient descent"](http
 
 ## Demos
 
+[Neural network research with the Wolfram language](https://youtu.be/FeIwI49AEgM?si=HCOAFOTLHmFmwOXn) (30 mins).
+
 [∂B nets quick overview](https://drive.google.com/file/d/1wi0uCpCgdSSlyXlb1XmzeE_u7adugAEa/view?usp=sharing) (30 mins).
 
 [∂B nets overview](https://drive.google.com/file/d/1UUhv6loBrFnZ7jwiHBofnp06at_8bm_F/view?usp=share_link) (1 hour).
